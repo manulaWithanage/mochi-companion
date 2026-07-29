@@ -98,8 +98,8 @@ export const Footer: React.FC = () => {
         </div>
       </div>
 
-      {/* 🌸 BOTTOM SECTION: PRISTINE 3D PAPERCRAFT LANDSCAPE BANNER */}
-      <div style={{ position: 'relative', width: '100%', height: '480px', overflow: 'hidden', margin: 0, padding: 0 }}>
+      {/* 🌸 BOTTOM SECTION: EXPANDED 620px TALL 3D PAPERCRAFT LANDSCAPE BANNER */}
+      <div style={{ position: 'relative', width: '100%', height: '620px', overflow: 'hidden', margin: 0, padding: 0 }}>
         
         {/* Silky Feather-Soft Top Gradient Transition (Zero Divide Lines!) */}
         <div style={{
@@ -107,7 +107,7 @@ export const Footer: React.FC = () => {
           top: 0,
           left: 0,
           right: 0,
-          height: '110px',
+          height: '120px',
           background: 'linear-gradient(to bottom, #ffffff 0%, rgba(255, 255, 255, 0.85) 45%, transparent 100%)',
           zIndex: 2,
           pointerEvents: 'none'
@@ -121,7 +121,7 @@ export const Footer: React.FC = () => {
             width: '100%',
             height: 'calc(100% + 24px)',
             objectFit: 'cover',
-            objectPosition: 'center center',
+            objectPosition: 'center 40%',
             transform: 'scale(1.04) translateY(12px)',
             display: 'block',
             zIndex: 1
