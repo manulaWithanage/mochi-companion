@@ -35,3 +35,10 @@ Thumbs.db
 
 # Packaged installers
 release/
+
+# Build artifacts — distribute via GitHub Releases, never in git.
+# Mochi.exe is 215MB, over GitHub's 100MB hard limit.
+*.exe
+*.dmg
+*.AppImage
+*.blockmap
