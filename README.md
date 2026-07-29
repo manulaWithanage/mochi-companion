@@ -12,6 +12,7 @@
 
 - 🎭 **Animated Desktop Pet**: Floating, transparent, click-through desktop companion with dynamic state animations (idle, thinking, alert, focused, sleeping).
 - 🔑 **Bring Your Own Key (BYOK)**: Supports **OpenAI (GPT-4o)**, **Anthropic (Claude 3.5)**, **Google Gemini**, and **Ollama / LM Studio** for local LLMs.
+- 📧 **Zero-Audit Gmail & Calendar Integration**: Local OAuth 2.0 PKCE & IMAP support ($0 Google audit fees, 100% private).
 - 📅 **Smart Calendar & Email Assistant**: Proactive alerts for upcoming meetings, morning briefings, email summaries, and 1-click quick-reply drafts.
 - ⏱️ **Focus & Habit Buddy**: Built-in Pomodoro timer and task syncing with Todoist, Notion, and Google Tasks.
 - 🔒 **Privacy-First Architecture**: Your API keys and data are stored 100% locally in your system keychain with zero cloud telemetry.
@@ -20,13 +21,14 @@
 
 ---
 
-## 🛠️ Planned Tech Stack
+## 🛠️ Recommended Tech Stack
 
-- **Desktop Shell**: Electron / Tauri v2
-- **Frontend Framework**: React + TypeScript + Vite
-- **Animation Engine**: Rive / Lottie / WebGL Canvas
-- **Backend / Integrations**: Node.js & OAuth 2.0 PKCE (Google Workspace & MS Graph API)
-- **Local Storage**: System Keychain (`keytar`) & SQLite
+- **Desktop Shell**: Electron + Vite
+- **Frontend Framework**: React + TypeScript
+- **Styling Engine**: Glassmorphic Vanilla CSS
+- **Animation Engine**: Rive / Lottie / WebGL Canvas State Machine
+- **Integrations**: `googleapis` (OAuth 2.0 PKCE) & `node-imap`
+- **Local Vault**: Native System Keychain (`keytar`) & SQLite
 
 ---
 
