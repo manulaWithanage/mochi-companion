@@ -43,7 +43,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGoToDashboard }) => 
   const handleMascotClick = () => {
     const companionQuotes = [
       "Oh! You clicked me! Ready to focus together? 🍡",
-      "Click 'Focus Time' below to see me type on my mini laptop! ⏱️",
+      "I log your work time in 1 click so you don't need timesheets! ⏱️",
       "Did you take a sip of water and stretch your shoulders today? 💧",
       "Mochi is right here on your desktop whenever you need help! ⭐",
       "Great progress today! Take a quick 5-minute break when ready! 🚀"
@@ -51,19 +51,6 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGoToDashboard }) => 
     setClickCount((prev) => prev + 1);
     setMascotState('idle');
     setSpeechMessage(companionQuotes[clickCount % companionQuotes.length]);
-  };
-
-  const handleStateChange = (newState: 'idle' | 'working' | 'resting' | 'coffee') => {
-    setMascotState(newState);
-    if (newState === 'working') {
-      setSpeechMessage("Work timer started! Typing alongside you on my mini laptop... 💻");
-    } else if (newState === 'resting') {
-      setSpeechMessage("Taking a quiet little nap while you take your break! 💤");
-    } else if (newState === 'coffee') {
-      setSpeechMessage("9:00 AM Check-in: Time for coffee & a healthy breakfast! ☕");
-    } else {
-      setSpeechMessage("Standing by on your desktop whenever you need me! 🍡");
-    }
   };
 
   return (
@@ -74,7 +61,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGoToDashboard }) => 
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
-        padding: '20px 48px',
+        padding: '18px 48px',
         borderBottom: '1px solid rgba(0, 0, 0, 0.06)',
         background: 'rgba(255, 255, 255, 0.45)',
         backdropFilter: 'blur(16px)',
@@ -127,20 +114,20 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGoToDashboard }) => 
         </div>
       </nav>
 
-      {/* 🌸 FULL-BLEED 100% SCREEN WIDTH 3D PAPERCRAFT HERO SECTION */}
+      {/* 🌸 FULL-BLEED 100% SCREEN WIDTH 3D PAPERCRAFT HERO SECTION (Compact Height) */}
       <section style={{
         position: 'relative',
         width: '100%',
-        minHeight: '820px',
+        minHeight: '660px',
         overflow: 'hidden',
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
         justifyContent: 'center',
-        padding: '60px 24px'
+        padding: '40px 24px'
       }}>
         
-        {/* Full-Bleed 100% Screen Width Background Artwork (Zero Left/Right White Bars!) */}
+        {/* Full-Bleed 100% Screen Width Background Artwork */}
         <img
           src="/hero_papercraft_art.jpg"
           alt="Mochi 3D Papercraft Origami Hero Background Art"
@@ -157,11 +144,11 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGoToDashboard }) => 
           }}
         />
 
-        {/* 📄 ONE SINGLE UNIFIED CRYSTAL GLASS CARD (Ultra Translucent 0.15 Opacity) */}
+        {/* 📄 ONE SINGLE UNIFIED COMPACT CRYSTAL GLASS CARD */}
         <div style={{
           position: 'relative',
           zIndex: 10,
-          maxWidth: '960px',
+          maxWidth: '920px',
           width: '100%',
           display: 'flex',
           flexDirection: 'column',
@@ -170,9 +157,9 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGoToDashboard }) => 
           background: 'rgba(255, 255, 255, 0.15)',
           backdropFilter: 'blur(10px)',
           WebkitBackdropFilter: 'blur(10px)',
-          borderRadius: '36px',
+          borderRadius: '32px',
           border: '1px solid rgba(255, 255, 255, 0.35)',
-          padding: '44px 48px 40px 48px',
+          padding: '36px 44px 28px 44px',
           boxShadow: '0 20px 60px rgba(0, 0, 0, 0.05), inset 0 1px 1px rgba(255, 255, 255, 0.7)'
         }}>
           
@@ -181,16 +168,16 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGoToDashboard }) => 
             display: 'inline-flex',
             alignItems: 'center',
             gap: '8px',
-            padding: '6px 18px',
+            padding: '5px 16px',
             borderRadius: '20px',
             background: 'rgba(255, 255, 255, 0.65)',
             backdropFilter: 'blur(8px)',
             border: '1px solid rgba(79, 70, 229, 0.25)',
-            fontSize: '12.5px',
+            fontSize: '12px',
             fontWeight: '700',
             color: '#4f46e5',
             letterSpacing: '0.02em',
-            marginBottom: '22px',
+            marginBottom: '18px',
             boxShadow: '0 4px 14px rgba(0, 0, 0, 0.04)'
           }}>
             Super-Intelligent Desktop Workflow Companion
@@ -198,10 +185,10 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGoToDashboard }) => 
 
           {/* Hero Title */}
           <h1 style={{
-            fontSize: '54px',
+            fontSize: '50px',
             fontWeight: '800',
             lineHeight: '1.14',
-            marginBottom: '20px',
+            marginBottom: '16px',
             color: '#0f172a',
             letterSpacing: '-0.03em'
           }}>
@@ -209,21 +196,21 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGoToDashboard }) => 
           </h1>
 
           <p style={{
-            fontSize: '18px',
+            fontSize: '17px',
             color: '#0f172a',
-            lineHeight: '1.6',
-            marginBottom: '32px',
+            lineHeight: '1.55',
+            marginBottom: '26px',
             fontWeight: '600',
-            maxWidth: '760px',
-            margin: '0 auto 32px auto'
+            maxWidth: '720px',
+            margin: '0 auto 26px auto'
           }}>
             Mochi lives right on your computer screen. It logs your work hours with 1 click, reminds you to drink water and enjoy breakfast, and keeps your workday calm, focused, and on schedule.
           </p>
 
           {/* CTA Button Row */}
-          <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap', justifyContent: 'center', marginBottom: '40px' }}>
+          <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap', justifyContent: 'center', marginBottom: '24px' }}>
             <a href="/Mochi-Setup.exe" download style={{
-              padding: '14px 32px',
+              padding: '13px 30px',
               fontSize: '15px',
               fontWeight: '700',
               borderRadius: '30px',
@@ -238,7 +225,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGoToDashboard }) => 
             </a>
 
             <button onClick={onGoToDashboard} style={{
-              padding: '14px 28px',
+              padding: '13px 26px',
               fontSize: '15px',
               fontWeight: '700',
               borderRadius: '30px',
@@ -257,9 +244,9 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGoToDashboard }) => 
             flexWrap: 'wrap',
             justifyContent: 'center',
             gap: '10px 18px',
-            marginBottom: '28px',
+            marginBottom: '22px',
             color: '#0f172a',
-            fontSize: '13px',
+            fontSize: '12.5px',
             fontWeight: '700'
           }}>
             <span>Windows desktop app</span>
@@ -269,14 +256,14 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGoToDashboard }) => 
             <span>Your data stays 100% local</span>
           </div>
 
-          {/* 🍡 INTERACTIVE MOCHI MASCOT & PLAYGROUND INSIDE THE BIG GLASS CARD */}
+          {/* 🍡 INTERACTIVE MOCHI MASCOT & SPEECH BUBBLE */}
           <div style={{
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
             justifyContent: 'center',
             width: '100%',
-            paddingTop: '24px',
+            paddingTop: '20px',
             borderTop: '1px solid rgba(0, 0, 0, 0.06)'
           }}>
             {/* Apple Liquid Glassmorphic Speech Bubble */}
@@ -285,14 +272,14 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGoToDashboard }) => 
               backdropFilter: 'blur(16px)',
               WebkitBackdropFilter: 'blur(16px)',
               color: '#0f172a',
-              padding: '10px 22px',
+              padding: '9px 20px',
               borderRadius: '24px',
-              fontSize: '13.5px',
+              fontSize: '13px',
               fontWeight: '600',
-              maxWidth: '480px',
+              maxWidth: '460px',
               textAlign: 'center',
               boxShadow: '0 12px 32px rgba(0, 0, 0, 0.1), inset 0 1px 2px rgba(255, 255, 255, 0.95)',
-              marginBottom: '14px',
+              marginBottom: '10px',
               position: 'relative',
               border: '1px solid rgba(255, 255, 255, 0.95)'
             }}>
@@ -312,85 +299,12 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGoToDashboard }) => 
             </div>
 
             {/* Live Interactive Mascot Canvas (Starts Sleeping ( ^_^ ) z Z) */}
-            <div style={{ filter: 'drop-shadow(0 12px 24px rgba(0, 0, 0, 0.12))', marginBottom: '20px' }}>
+            <div style={{ filter: 'drop-shadow(0 10px 20px rgba(0, 0, 0, 0.1))' }}>
               <LandingMascotCanvas
                 state={mascotState}
-                size={185}
+                size={165}
                 onMascotClick={handleMascotClick}
               />
-            </div>
-
-            {/* Interactive Mode Switcher Pills */}
-            <div style={{
-              display: 'flex',
-              justifyContent: 'center',
-              gap: '10px',
-              flexWrap: 'wrap'
-            }}>
-              <button
-                onClick={() => handleStateChange('idle')}
-                style={{
-                  fontSize: '13px',
-                  fontWeight: '600',
-                  padding: '9px 20px',
-                  borderRadius: '24px',
-                  border: 'none',
-                  cursor: 'pointer',
-                  background: mascotState === 'idle' ? 'var(--primary-gradient)' : 'rgba(255, 255, 255, 0.85)',
-                  color: mascotState === 'idle' ? '#ffffff' : '#334155',
-                  boxShadow: mascotState === 'idle' ? '0 4px 16px rgba(79, 70, 229, 0.35)' : '0 2px 8px rgba(0,0,0,0.06)'
-                }}
-              >
-                Standing By
-              </button>
-              <button
-                onClick={() => handleStateChange('working')}
-                style={{
-                  fontSize: '13px',
-                  fontWeight: '600',
-                  padding: '9px 20px',
-                  borderRadius: '24px',
-                  border: 'none',
-                  cursor: 'pointer',
-                  background: mascotState === 'working' ? 'var(--primary-gradient)' : 'rgba(255, 255, 255, 0.85)',
-                  color: mascotState === 'working' ? '#ffffff' : '#334155',
-                  boxShadow: mascotState === 'working' ? '0 4px 16px rgba(79, 70, 229, 0.35)' : '0 2px 8px rgba(0,0,0,0.06)'
-                }}
-              >
-                Focus Time (Stopwatch)
-              </button>
-              <button
-                onClick={() => handleStateChange('resting')}
-                style={{
-                  fontSize: '13px',
-                  fontWeight: '600',
-                  padding: '9px 20px',
-                  borderRadius: '24px',
-                  border: 'none',
-                  cursor: 'pointer',
-                  background: mascotState === 'resting' ? 'var(--primary-gradient)' : 'rgba(255, 255, 255, 0.85)',
-                  color: mascotState === 'resting' ? '#ffffff' : '#334155',
-                  boxShadow: mascotState === 'resting' ? '0 4px 16px rgba(79, 70, 229, 0.35)' : '0 2px 8px rgba(0,0,0,0.06)'
-                }}
-              >
-                Rest Mode (Sleeping)
-              </button>
-              <button
-                onClick={() => handleStateChange('coffee')}
-                style={{
-                  fontSize: '13px',
-                  fontWeight: '600',
-                  padding: '9px 20px',
-                  borderRadius: '24px',
-                  border: 'none',
-                  cursor: 'pointer',
-                  background: mascotState === 'coffee' ? 'var(--primary-gradient)' : 'rgba(255, 255, 255, 0.85)',
-                  color: mascotState === 'coffee' ? '#ffffff' : '#334155',
-                  boxShadow: mascotState === 'coffee' ? '0 4px 14px rgba(79, 70, 229, 0.35)' : '0 2px 8px rgba(0,0,0,0.06)'
-                }}
-              >
-                9 AM Coffee & Habit
-              </button>
             </div>
           </div>
 
