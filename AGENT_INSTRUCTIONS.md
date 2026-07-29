@@ -1,27 +1,35 @@
 # 🍡 Mochi — AI Agent Master Specification & Implementation Plan
 
-> **Instructions for AI Coding Agents**: This document defines the architectural goals, core requirements, technical stack, and step-by-step roadmap for building **Mochi**, an open-source, BYOK animated desktop companion.
+> **Instructions for AI Coding Agents**: This document defines the architectural goals, core requirements, technical stack, detailed objectives, and step-by-step roadmap for building **Mochi**, an open-source, BYOK animated desktop companion.
 
 ---
 
-## 🎯 Project Objective
+## 🎯 Primary Project Objectives
 
-Build **Mochi** — a cross-platform desktop AI assistant that sits on the user's screen as a small, customizable animated mascot. Mochi proactively manages calendar events, summarizes emails, tracks focus/tasks, and answers questions using the user's own AI API keys (OpenAI, Gemini, Anthropic, or local Ollama).
+### 1. 🤖 Animated Desktop Companion Engine
+- Build a frameless, transparent, click-through desktop overlay window that houses a reactive 2D/3D mascot.
+- Mascot changes visual animation states dynamically based on activity: `idle`, `thinking`, `speaking`, `alert`, `sleeping`, `focused`.
+- Speech bubble overlay for mascot responses, daily debriefs, and calendar notifications.
 
----
+### 2. 🔑 Privacy-First & BYOK (Bring Your Own Key)
+- Zero centralized telemetry, tracking, or mandatory backend server.
+- Support **OpenAI (GPT-4o)**, **Anthropic (Claude 3.5)**, **Google Gemini**, and **Local Ollama / LM Studio**.
+- Store all API keys and OAuth tokens 100% locally in system keychain (`keytar` / native OS credential manager).
 
-## 🧩 Key Architectural Principles
+### 3. 📅 Proactive Workflow & Schedule Assistant
+- Background monitoring service (every 15 min) checking upcoming calendar meetings and unread emails.
+- Morning briefing generator ("Good morning! Here are your 3 meetings today and 2 high-priority emails.").
+- Instant 1-click meeting join and email draft replies.
 
-1. **Privacy-First & BYOK (Bring Your Own Key)**:
-   - Zero telemetry, no central proxy server.
-   - All API keys and OAuth tokens stored locally in system keychain / encrypted local SQLite database.
-2. **Transparent Floating Desktop Overlay**:
-   - Frameless, always-on-top, transparent desktop window.
-   - Click-through toggle so the mascot doesn't obstruct normal computer usage.
-3. **State-Driven Mascot Animations**:
-   - Interactive mascot with visual states: `idle`, `thinking`, `speaking`, `alert`, `sleeping`, `focused`.
-4. **User Customization**:
-   - Allow users to rename their in-app mascot (e.g., Navi, Barkley, Jarvis) and switch avatar skins.
+### 4. ⏱️ Focus & Productivity Buddy
+- Built-in Pomodoro timer where mascot works alongside the user.
+- Sync with To-Do lists (Todoist, Notion, Google Tasks, Apple Reminders).
+- Celebratory mascot animations when tasks are checked off.
+
+### 5. 🎨 Customization & Open-Core Roadmap
+- Allow users to rename their companion avatar (e.g. Navi, Barkley, Jarvis, Mochi).
+- Support community skin packs (Rive, Lottie, WebGL pixel art).
+- Maintain 100% free open-source core with optional future SaaS hosting & avatar marketplace add-ons.
 
 ---
 
@@ -54,7 +62,7 @@ Build **Mochi** — a cross-platform desktop AI assistant that sits on the user'
 ### Phase 3: Proactive Workflow Integrations (Calendar & Email)
 - [ ] Implement OAuth 2.0 PKCE flow for Google Workspace (Gmail & Google Calendar) and Microsoft Graph.
 - [ ] Build background polling service (running every 15 mins) for upcoming events & urgent unread emails.
-- [ ] Implement daily morning briefing generator ("Here are your 3 meetings today...").
+- [ ] Implement daily morning briefing generator.
 
 ### Phase 4: Focus & Habit Buddy (Pomodoro & Tasks)
 - [ ] Build mini Pomodoro timer where mascot works alongside user.
