@@ -38,6 +38,7 @@ export interface IpcContext {
     forgetKey(provider: ProviderId): LlmStatus;
     setDailyTokenCap(cap: number): LlmStatus;
     refresh(): Promise<LlmStatus>;
+    test(): Promise<{ ok: boolean; text: string; model?: string; tokens?: number }>;
   };
 }
 
@@ -135,6 +136,8 @@ export function registerIpc(ctx: IpcContext): void {
   );
 
   ipcMain.handle('llm:refresh', () => ctx.llm.refresh());
+
+  ipcMain.handle('llm:test', () => ctx.llm.test());
 
   // ---- skins -------------------------------------------------------------
   ipcMain.handle('skin:list', () => listSkins());

@@ -121,6 +121,11 @@ export interface MochiBridge {
     setDailyTokenCap(cap: number): Promise<LlmStatus>;
     /** Re-probe Ollama, e.g. after the user starts it. */
     refresh(): Promise<LlmStatus>;
+    /**
+     * Make one real call, so the user can confirm the whole chain works
+     * before relying on it. Returns the model's own words.
+     */
+    test(): Promise<{ ok: boolean; text: string; model?: string; tokens?: number }>;
     onChange(listener: (status: LlmStatus) => void): () => void;
   };
 

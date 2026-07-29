@@ -77,6 +77,13 @@ const bridge: MochiBridge = {
     setDailyTokenCap: (cap) =>
       ipcRenderer.invoke('llm:setDailyTokenCap', cap) as Promise<LlmStatus>,
     refresh: () => ipcRenderer.invoke('llm:refresh') as Promise<LlmStatus>,
+    test: () =>
+      ipcRenderer.invoke('llm:test') as Promise<{
+        ok: boolean;
+        text: string;
+        model?: string;
+        tokens?: number;
+      }>,
     onChange: (listener) => subscribe<LlmStatus>('llm:changed', listener),
   },
 

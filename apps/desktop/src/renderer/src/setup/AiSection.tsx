@@ -83,6 +83,21 @@ export function AiSection(): JSX.Element {
     }
   }, [keyInput]);
 
+  const runTest = useCallback(async () => {
+    setBusy(true);
+    setMessage(null);
+    try {
+      const r = await window.mochi.llm.test();
+      setMessage(
+        r.ok
+          ? { ok: true, text: `${r.model}: “${r.text}” (${r.tokens} tokens)` }
+          : { ok: false, text: r.text },
+      );
+    } finally {
+      setBusy(false);
+    }
+  }, []);
+
   if (status === null) return <div style={box}>Checking for models…</div>;
 
   const capPct =
@@ -197,6 +212,25 @@ export function AiSection(): JSX.Element {
           </p>
         )}
       </div>
+
+      {status.ready && (
+        <button
+          onClick={() => void runTest()}
+          disabled={busy}
+          style={{
+            alignSelf: 'flex-start',
+            background: 'transparent',
+            border: '1px solid #3b3244',
+            color: '#f4eef6',
+            borderRadius: 8,
+            padding: '6px 14px',
+            fontSize: 13,
+            cursor: busy ? 'default' : 'pointer',
+          }}
+        >
+          {busy ? 'Asking…' : 'Test it'}
+        </button>
+      )}
 
       {status.ready && (
         <div>

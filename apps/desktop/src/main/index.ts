@@ -34,6 +34,7 @@ import { SetupWindow } from './windows/setup.js';
 import { MochiTray } from './tray.js';
 import { RoutineService } from './services/routine-service.js';
 import { LlmService } from './services/llm-service.js';
+import { LlmClient } from './services/llm-client.js';
 import { registerIpc } from './ipc.js';
 
 interface SayOptions {
@@ -106,6 +107,7 @@ async function bootstrap(): Promise<void> {
   });
 
   const llm = new LlmService();
+  const llmClient = new LlmClient(llm);
 
   registerIpc({
     timer,
@@ -121,6 +123,18 @@ async function bootstrap(): Promise<void> {
       forgetKey: (provider) => llm.forgetKey(provider),
       setDailyTokenCap: (cap) => llm.setDailyTokenCap(cap),
       refresh: () => llm.refresh(),
+      // One real call, so the user can confirm the chain works end to end
+      // rather than discovering it is broken during a briefing.
+      test: async () => {
+        const result = await llmClient.generate({
+          task: 'phrase',
+          system: 'You are Mochi, a small desktop companion. Reply in one short sentence.',
+          prompt: 'Say hello and mention you are ready to help.',
+        });
+        return result.ok
+          ? { ok: true, text: result.text, model: result.model, tokens: result.tokens }
+          : { ok: false, text: result.reason };
+      },
     },
   });
 
