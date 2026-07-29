@@ -69,4 +69,20 @@ export default tseslint.config(
       'no-restricted-imports': 'off',
     },
   },
+
+  // Build-time scripts run under plain Node and print progress.
+  {
+    files: ['scripts/**/*.mjs', 'scripts/**/*.js'],
+    languageOptions: {
+      globals: {
+        Buffer: 'readonly',
+        console: 'readonly',
+        process: 'readonly',
+        URL: 'readonly',
+      },
+    },
+    rules: {
+      'no-console': 'off',
+    },
+  },
 );

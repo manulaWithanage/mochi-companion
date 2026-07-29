@@ -1,0 +1,23 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "composite": false,
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "types": ["node", "electron-vite/node"],
+    "lib": ["ES2023"],
+    "noEmit": true,
+    "allowImportingTsExtensions": true,
+    "paths": {
+      "@mochi/core": ["../../packages/core/src/index.ts"],
+      "@mochi/db": ["../../packages/db/src/index.ts"]
+    }
+  },
+  "include": [
+    "src/main/**/*.ts",
+    "src/preload/**/*.ts",
+    "electron.vite.config.ts",
+    "electron-builder.yml"
+  ],
+  "exclude": ["**/*.test.ts"]
+}

@@ -5,5 +5,6 @@ export * from './timer/session.js';
 export * from './mascot/state.js';
 export * from './mascot/manifest.js';
 export * from './storage/adapter.js';
+export * from './geometry/clamp.js';
 export * from './settings/settings.js';
 export type * from './types/bridge.js';
