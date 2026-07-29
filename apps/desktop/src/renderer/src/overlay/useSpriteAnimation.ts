@@ -109,32 +109,50 @@ export function useSpriteAnimation({ canvas, skin, state, visible }: Options): v
     ctx.imageSmoothingEnabled = false;
 
     let raf = 0;
-    let lastFrameIndex = -1;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    let disposed = false;
     let lastState: MascotState | null = null;
     let animationStart = performance.now();
 
-    const draw = (now: number): void => {
-      raf = requestAnimationFrame(draw);
+    /**
+     * Frames are scheduled with setTimeout at the exact next boundary, then
+     * drawn inside a single rAF so the paint still lands in sync with the
+     * compositor.
+     *
+     * A plain rAF loop fires at display refresh — 120+ times a second on a
+     * high-refresh panel — and throws away all but 8 of those callbacks.
+     * Measured at ~8% of a core; this schedules only the frames we actually
+     * draw.
+     */
+    const scheduleNext = (delayMs: number): void => {
+      if (disposed) return;
+      timer = setTimeout(() => {
+        raf = requestAnimationFrame(tick);
+      }, delayMs);
+    };
+
+    const tick = (now: number): void => {
+      if (disposed) return;
 
       const current = stateRef.current;
       const sheet = sheetsRef.current[current] ?? sheetsRef.current[skin.defaultState];
-      if (sheet === undefined) return;
+      if (sheet === undefined) {
+        // Sheets may still be decoding on first paint.
+        scheduleNext(100);
+        return;
+      }
 
       // Restart timing on a state change so animations always begin at frame 0.
       if (current !== lastState) {
         lastState = current;
         animationStart = now;
-        lastFrameIndex = -1;
       }
 
       const fps = onBatteryRef.current ? Math.max(1, Math.floor(sheet.fps / 2)) : sheet.fps;
+      const frameDuration = 1000 / fps;
       const elapsed = now - animationStart;
-      const raw = Math.floor(elapsed / (1000 / fps));
+      const raw = Math.floor(elapsed / frameDuration);
       const index = sheet.loop ? raw % sheet.frames : Math.min(raw, sheet.frames - 1);
-
-      // The whole point: no draw call unless the visible frame changed.
-      if (index === lastFrameIndex) return;
-      lastFrameIndex = index;
 
       const frameW = sheet.image.width / sheet.frames;
       const frameH = sheet.image.height;
@@ -151,9 +169,19 @@ export function useSpriteAnimation({ canvas, skin, state, visible }: Options): v
         cssWidth * dpr,
         cssHeight * dpr,
       );
+
+      // A non-looping animation on its last frame has nothing left to do.
+      if (!sheet.loop && raw >= sheet.frames - 1) return;
+
+      scheduleNext(Math.max(0, frameDuration - (elapsed % frameDuration)));
     };
 
-    raf = requestAnimationFrame(draw);
-    return () => cancelAnimationFrame(raf);
+    raf = requestAnimationFrame(tick);
+
+    return () => {
+      disposed = true;
+      if (timer !== undefined) clearTimeout(timer);
+      cancelAnimationFrame(raf);
+    };
   }, [canvas, skin, visible]);
 }
