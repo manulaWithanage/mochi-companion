@@ -314,30 +314,6 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGoToDashboard }) => 
       {/* 🔮 SECTION 1: WHY MOCHI EXISTS — SYMMETRICAL 3D PAPERCRAFT CARDS WITH MATCHING ARTWORK BANNERS */}
       <section style={{ maxWidth: '1140px', margin: '0 auto', padding: '80px 24px 40px 24px', position: 'relative' }}>
         
-        {/* Background Paper Origami Accent Ornaments */}
-        <div style={{
-          position: 'absolute',
-          top: '20px',
-          left: '0',
-          fontSize: '48px',
-          opacity: 0.15,
-          pointerEvents: 'none',
-          userSelect: 'none'
-        }}>
-          🌸
-        </div>
-        <div style={{
-          position: 'absolute',
-          top: '40px',
-          right: '0',
-          fontSize: '48px',
-          opacity: 0.15,
-          pointerEvents: 'none',
-          userSelect: 'none'
-        }}>
-          ⛩️
-        </div>
-
         <div style={{ textAlign: 'center', marginBottom: '56px' }}>
           <div style={{
             display: 'inline-flex',
