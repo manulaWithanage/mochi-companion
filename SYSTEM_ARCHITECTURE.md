@@ -24,18 +24,20 @@ To connect the Desktop App to `app.mochi.ai` in **1 click** (without typing emai
 ```
 
 ### Why PKCE (Proof Key for Code Exchange) Security is Required:
+
 - Any app on a user's machine can attempt to register the `mochi://` protocol scheme.
 - PKCE generates a local `verifier` and `challenge = sha256(verifier)`.
 - Redeeming the pairing code requires the local `verifier` (which NEVER left the Electron main process). This completely blocks malicious local apps from squatting the protocol or stealing accounts!
 
 ### Seamless Deep-Link Handshake Implementation:
+
 ```typescript
 // main process (apps/desktop/src/main/index.ts)
 app.setAsDefaultProtocolClient('mochi');
 
 // Windows / Linux deep-link handler
 app.on('second-instance', (_e, argv) => {
-  const url = argv.find(arg => arg.startsWith('mochi://'));
+  const url = argv.find((arg) => arg.startsWith('mochi://'));
   if (url) handleDeepLink(url);
 });
 
@@ -47,8 +49,10 @@ app.on('open-url', (e, url) => {
 ```
 
 ### Manual Fallback:
+
 If protocol handlers are blocked by OS corporate policy:
-- Display fallback code on web: *"Nothing happened? Enter code 4KP-92X at app.mochi.ai/link"*.
+
+- Display fallback code on web: _"Nothing happened? Enter code 4KP-92X at app.mochi.ai/link"_.
 
 ---
 
