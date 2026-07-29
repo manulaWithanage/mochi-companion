@@ -1,63 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { MochiIcon } from './MochiIcon';
-import { LandingMascotCanvas } from './LandingMascotCanvas';
 
 export const Footer: React.FC = () => {
-  const [currentMessageIdx, setCurrentMessageIdx] = useState(0);
-  const [isFading, setIsFading] = useState(false);
-
-  const companionMessages: Array<{
-    text: string;
-    state: 'idle' | 'working' | 'resting' | 'coffee';
-  }> = [
-    {
-      text: "Logged 1 hour of focus time with you today! Great job! ⏱️",
-      state: 'working'
-    },
-    {
-      text: "Good morning! Ready for coffee & breakfast? ☕",
-      state: 'coffee'
-    },
-    {
-      text: "Remember to take a quick sip of water and stretch! 💧",
-      state: 'idle'
-    },
-    {
-      text: "You have 2 focus sessions scheduled this afternoon! 🚀",
-      state: 'working'
-    },
-    {
-      text: "Taking a quick nap while you take a break! 💤",
-      state: 'resting'
-    },
-    {
-      text: "Everything we work on stays 100% private on your PC! 🔒",
-      state: 'idle'
-    }
-  ];
-
-  // Auto cycle companion messages smoothly with fade animation
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setIsFading(true);
-      setTimeout(() => {
-        setCurrentMessageIdx((prev) => (prev + 1) % companionMessages.length);
-        setIsFading(false);
-      }, 250);
-    }, 4500);
-    return () => clearInterval(timer);
-  }, []);
-
-  const handleNextExample = () => {
-    setIsFading(true);
-    setTimeout(() => {
-      setCurrentMessageIdx((prev) => (prev + 1) % companionMessages.length);
-      setIsFading(false);
-    }, 200);
-  };
-
-  const currentMessage = companionMessages[currentMessageIdx];
-
   return (
     <footer style={{
       position: 'relative',
@@ -154,8 +98,8 @@ export const Footer: React.FC = () => {
         </div>
       </div>
 
-      {/* 🌸 BOTTOM SECTION: SILKY FEATHER-SOFT GRADIENT BLEND INTO 3D PAPERCRAFT BANNER */}
-      <div style={{ position: 'relative', width: '100%', height: '540px', overflow: 'hidden', margin: 0, padding: 0 }}>
+      {/* 🌸 BOTTOM SECTION: PRISTINE 3D PAPERCRAFT LANDSCAPE BANNER */}
+      <div style={{ position: 'relative', width: '100%', height: '480px', overflow: 'hidden', margin: 0, padding: 0 }}>
         
         {/* Silky Feather-Soft Top Gradient Transition (Zero Divide Lines!) */}
         <div style={{
@@ -183,68 +127,6 @@ export const Footer: React.FC = () => {
             zIndex: 1
           }}
         />
-
-        {/* 🍡 INTERACTIVE MOCHI MASCOT WITH AUTO-FITTING APPLE GLASSMORPHIC PILL */}
-        <div
-          onClick={handleNextExample}
-          style={{
-            position: 'absolute',
-            bottom: '28px',
-            left: '50%',
-            transform: 'translateX(-50%)',
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            zIndex: 10,
-            cursor: 'pointer'
-          }}
-          title="Click to talk to Mochi!"
-        >
-          {/* Auto-Fitting Apple Liquid Glassmorphic Pill */}
-          <div style={{
-            background: 'rgba(255, 255, 255, 0.85)',
-            backdropFilter: 'blur(20px)',
-            WebkitBackdropFilter: 'blur(20px)',
-            color: '#0f172a',
-            width: 'auto',
-            maxWidth: '85vw',
-            display: 'inline-flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            padding: '9px 20px',
-            borderRadius: '24px',
-            fontSize: '13px',
-            fontWeight: '600',
-            border: '1px solid rgba(255, 255, 255, 0.95)',
-            boxShadow: '0 10px 30px rgba(0, 0, 0, 0.08), inset 0 1px 2px rgba(255, 255, 255, 0.9)',
-            marginBottom: '12px',
-            position: 'relative',
-            opacity: isFading ? 0.2 : 1,
-            transform: isFading ? 'translateY(-2px)' : 'translateY(0)',
-            transition: 'all 0.25s ease',
-            whiteSpace: 'nowrap'
-          }}>
-            {currentMessage.text}
-            
-            {/* Glass Pointer Tail */}
-            <div style={{
-              position: 'absolute',
-              bottom: '-6px',
-              left: '50%',
-              transform: 'translateX(-50%)',
-              width: 0,
-              height: 0,
-              borderLeft: '6px solid transparent',
-              borderRight: '6px solid transparent',
-              borderTop: '6px solid rgba(255, 255, 255, 0.88)'
-            }}></div>
-          </div>
-
-          {/* Mascot Canvas with Clean Soft Shadow */}
-          <div style={{ filter: 'drop-shadow(0 8px 14px rgba(0, 0, 0, 0.08))' }}>
-            <LandingMascotCanvas state={currentMessage.state} size={135} />
-          </div>
-        </div>
       </div>
 
     </footer>
