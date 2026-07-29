@@ -4,52 +4,57 @@ import { LandingMascotCanvas } from './LandingMascotCanvas';
 
 export const Footer: React.FC = () => {
   const [mascotState, setMascotState] = useState<'idle' | 'working' | 'resting' | 'coffee'>('idle');
-  const [speechBubble, setSpeechBubble] = useState("Thanks for stopping by! Mochi is waiting to sit on your desktop 🍡");
+  const [speechBubble, setSpeechBubble] = useState("Welcome to Mochi's Zen Haven 🌸 Mochi is ready to sit on your desktop!");
 
   return (
-    <footer style={{ position: 'relative', background: '#080c14', color: 'var(--text-main)', overflow: 'hidden' }}>
+    <footer style={{ position: 'relative', background: '#070b12', color: 'var(--text-main)', overflow: 'hidden' }}>
       
-      {/* 🌲 3D Papercraft Origami Scenery Banner (Full Bleed, High Visibility) */}
-      <div style={{ position: 'relative', width: '100%', height: '340px', overflow: 'hidden' }}>
-        
-        {/* Full Bleed Papercraft Landscape Image */}
+      {/* 🌸 Japanese Zen Garden & Mount Fuji Scenery Banner */}
+      <div style={{
+        position: 'relative',
+        width: '100%',
+        height: '380px',
+        background: '#070b12'
+      }}>
+        {/* Full Bleed Unconstrained Landscape Image */}
         <img
-          src="/papercraft_footer.jpg"
-          alt="Mochi 3D Papercraft Origami Scenery"
+          src="/japan_zen_footer.jpg"
+          alt="Mochi Japanese Zen Garden & Mount Fuji Scenery"
           style={{
             width: '100%',
             height: '100%',
             objectFit: 'cover',
-            objectPosition: 'center center',
+            objectPosition: 'center 40%',
             display: 'block'
           }}
         />
 
-        {/* Soft Smooth Gradient Overlays (Subtle, No Dark Letterboxing) */}
+        {/* Soft Natural Top Transition */}
         <div style={{
           position: 'absolute',
           top: 0,
           left: 0,
           right: 0,
-          height: '60px',
+          height: '80px',
           background: 'linear-gradient(to bottom, #080c14 0%, transparent 100%)',
           pointerEvents: 'none'
         }}></div>
 
+        {/* Soft Natural Bottom Transition into Navigation */}
         <div style={{
           position: 'absolute',
           bottom: 0,
           left: 0,
           right: 0,
-          height: '80px',
-          background: 'linear-gradient(to top, #080c14 0%, transparent 100%)',
+          height: '120px',
+          background: 'linear-gradient(to top, #070b12 0%, transparent 100%)',
           pointerEvents: 'none'
         }}></div>
 
-        {/* 🍡 Mochi Mascot Anchored Beautifully in the Center of the Landscape */}
+        {/* 🍡 Interactive Mochi Mascot sitting in the Zen Garden */}
         <div style={{
           position: 'absolute',
-          bottom: '24px',
+          bottom: '20px',
           left: '50%',
           transform: 'translateX(-50%)',
           display: 'flex',
@@ -61,17 +66,17 @@ export const Footer: React.FC = () => {
           <div style={{
             background: 'rgba(255, 255, 255, 0.95)',
             color: '#0f172a',
-            padding: '8px 18px',
-            borderRadius: '16px',
+            padding: '10px 20px',
+            borderRadius: '18px',
             fontSize: '13px',
             fontWeight: '600',
-            boxShadow: '0 10px 30px rgba(0, 0, 0, 0.4)',
-            marginBottom: '12px',
+            boxShadow: '0 12px 36px rgba(0, 0, 0, 0.4)',
+            marginBottom: '10px',
             whiteSpace: 'nowrap',
             position: 'relative'
           }}>
             {speechBubble}
-            {/* Tail */}
+            {/* Bubble Tail */}
             <div style={{
               position: 'absolute',
               bottom: '-6px',
@@ -88,7 +93,7 @@ export const Footer: React.FC = () => {
           {/* Interactive Mascot Canvas */}
           <div
             onClick={() => setMascotState(mascotState === 'idle' ? 'resting' : mascotState === 'resting' ? 'coffee' : 'idle')}
-            style={{ cursor: 'pointer', filter: 'drop-shadow(0 12px 24px rgba(0,0,0,0.5))' }}
+            style={{ cursor: 'pointer', filter: 'drop-shadow(0 12px 24px rgba(0,0,0,0.6))' }}
           >
             <LandingMascotCanvas state={mascotState} size={150} />
           </div>
@@ -108,9 +113,9 @@ export const Footer: React.FC = () => {
               </span>
             </div>
             <p style={{ fontSize: '13px', color: 'var(--text-muted)', lineHeight: '1.6', marginBottom: '16px' }}>
-              Your cozy, open-source desktop AI companion & 1-click time tracker. Make work feel effortless and calm.
+              Your cozy, open-source desktop AI companion & 1-click time tracker. Inspired by peaceful Japanese Zen simplicity.
             </p>
-            <div style={{ display: 'flex', gap: '8px' }}>
+            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
               <span style={{ fontSize: '11px', fontWeight: '700', padding: '3px 10px', borderRadius: '12px', background: 'rgba(99,102,241,0.15)', color: '#818cf8', border: '1px solid rgba(99,102,241,0.3)' }}>
                 MIT Licensed
               </span>
@@ -120,7 +125,7 @@ export const Footer: React.FC = () => {
             </div>
           </div>
 
-          {/* Col 2: Product & Features */}
+          {/* Col 2: Product & Tools */}
           <div>
             <h4 style={{ fontSize: '15px', fontWeight: '700', color: 'var(--text-main)', marginBottom: '16px' }}>Product & Tools</h4>
             <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '10px', fontSize: '13px', color: 'var(--text-muted)' }}>
