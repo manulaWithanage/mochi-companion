@@ -35,7 +35,18 @@ export function App() {
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
         <Header onOpenPairing={() => setIsPairingModalOpen(true)} />
 
-        <main style={{ padding: '32px', flex: 1, display: 'flex', flexDirection: 'column', gap: '32px', maxWidth: '1400px', margin: '0 auto', width: '100%' }}>
+        <main
+          style={{
+            padding: '32px',
+            flex: 1,
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '32px',
+            maxWidth: '1400px',
+            margin: '0 auto',
+            width: '100%',
+          }}
+        >
           {/* Top Return to Landing Button */}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <button

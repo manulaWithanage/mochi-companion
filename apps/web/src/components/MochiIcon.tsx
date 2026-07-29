@@ -16,7 +16,7 @@ export const MochiIcon: React.FC<MochiIconProps> = ({ size = 32, glow = true }) 
       style={{
         display: 'inline-block',
         verticalAlign: 'middle',
-        filter: glow ? 'drop-shadow(0 0 8px rgba(99, 102, 241, 0.5))' : 'none'
+        filter: glow ? 'drop-shadow(0 0 8px rgba(99, 102, 241, 0.5))' : 'none',
       }}
     >
       {/* Outer Glow / Aura */}
@@ -31,7 +31,15 @@ export const MochiIcon: React.FC<MochiIconProps> = ({ size = 32, glow = true }) 
       />
 
       {/* Top Highlight Sheen */}
-      <ellipse cx="34" cy="28" rx="10" ry="5" transform="rotate(-20 34 28)" fill="white" opacity="0.85" />
+      <ellipse
+        cx="34"
+        cy="28"
+        rx="10"
+        ry="5"
+        transform="rotate(-20 34 28)"
+        fill="white"
+        opacity="0.85"
+      />
 
       {/* Rosy Cheeks (Warm Amber/Peach) */}
       <ellipse cx="27" cy="56" rx="7.5" ry="4.5" fill="#fb923c" opacity="0.6" />
@@ -42,11 +50,24 @@ export const MochiIcon: React.FC<MochiIconProps> = ({ size = 32, glow = true }) 
       <path d="M 55,46 Q 61,39 68,46" stroke="#0f172a" strokeWidth="3.5" strokeLinecap="round" />
 
       {/* Happy Smile */}
-      <path d="M 45,58 Q 50,63 55,58" stroke="#0f172a" strokeWidth="3" strokeLinecap="round" fill="none" />
+      <path
+        d="M 45,58 Q 50,63 55,58"
+        stroke="#0f172a"
+        strokeWidth="3"
+        strokeLinecap="round"
+        fill="none"
+      />
 
       {/* Gradient Definitions */}
       <defs>
-        <linearGradient id="mochiGradient" x1="50" y1="16" x2="50" y2="84" gradientUnits="userSpaceOnUse">
+        <linearGradient
+          id="mochiGradient"
+          x1="50"
+          y1="16"
+          x2="50"
+          y2="84"
+          gradientUnits="userSpaceOnUse"
+        >
           <stop stopColor="#FFFFFF" />
           <stop offset="1" stopColor="#F1F5F9" />
         </linearGradient>

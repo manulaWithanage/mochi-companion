@@ -18,19 +18,21 @@ export const DeepLinkPairingModal: React.FC<DeepLinkPairingModalProps> = ({ isOp
   };
 
   return (
-    <div style={{
-      position: 'fixed',
-      top: 0,
-      left: 0,
-      right: 0,
-      bottom: 0,
-      background: 'rgba(7, 9, 14, 0.85)',
-      backdropFilter: 'blur(12px)',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      zIndex: 100
-    }}>
+    <div
+      style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        background: 'rgba(7, 9, 14, 0.85)',
+        backdropFilter: 'blur(12px)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        zIndex: 100,
+      }}
+    >
       <div className="glass-card" style={{ width: '480px', padding: '32px', position: 'relative' }}>
         {/* Close Button */}
         <button
@@ -43,7 +45,7 @@ export const DeepLinkPairingModal: React.FC<DeepLinkPairingModalProps> = ({ isOp
             border: 'none',
             color: 'var(--text-muted)',
             fontSize: '20px',
-            cursor: 'pointer'
+            cursor: 'pointer',
           }}
         >
           ✕
@@ -55,19 +57,22 @@ export const DeepLinkPairingModal: React.FC<DeepLinkPairingModalProps> = ({ isOp
             Pair Desktop Companion
           </h3>
           <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: '6px' }}>
-            1-Click PKCE Handshake (`mochi://`) to link your desktop pet overlay with your cloud account.
+            1-Click PKCE Handshake (`mochi://`) to link your desktop pet overlay with your cloud
+            account.
           </p>
         </div>
 
         {isLinked ? (
-          <div style={{
-            padding: '20px',
-            borderRadius: '12px',
-            background: 'rgba(16, 185, 129, 0.15)',
-            border: '1px solid #10b981',
-            textAlign: 'center',
-            marginBottom: '20px'
-          }}>
+          <div
+            style={{
+              padding: '20px',
+              borderRadius: '12px',
+              background: 'rgba(16, 185, 129, 0.15)',
+              border: '1px solid #10b981',
+              textAlign: 'center',
+              marginBottom: '20px',
+            }}
+          >
             <div style={{ fontSize: '24px', marginBottom: '6px' }}>🎉</div>
             <div style={{ fontSize: '15px', fontWeight: '700', color: '#10b981' }}>
               Successfully Handshaked!
@@ -80,14 +85,26 @@ export const DeepLinkPairingModal: React.FC<DeepLinkPairingModalProps> = ({ isOp
           <button
             onClick={handlePair}
             className="btn-primary"
-            style={{ width: '100%', justifyContent: 'center', padding: '14px', fontSize: '15px', marginBottom: '24px' }}
+            style={{
+              width: '100%',
+              justifyContent: 'center',
+              padding: '14px',
+              fontSize: '15px',
+              marginBottom: '24px',
+            }}
           >
             🚀 Open Mochi App (mochi://linked)
           </button>
         )}
 
         {/* Fallback Section */}
-        <div style={{ borderTop: '1px solid var(--glass-border)', paddingTop: '20px', textAlign: 'center' }}>
+        <div
+          style={{
+            borderTop: '1px solid var(--glass-border)',
+            paddingTop: '20px',
+            textAlign: 'center',
+          }}
+        >
           <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: '10px' }}>
             Nothing happened? Enter fallback pairing code:
           </div>
@@ -105,11 +122,13 @@ export const DeepLinkPairingModal: React.FC<DeepLinkPairingModalProps> = ({ isOp
                 border: '1px solid var(--glass-border)',
                 color: 'var(--text-main)',
                 fontSize: '14px',
-                outline: 'none'
+                outline: 'none',
               }}
             />
             <button
-              onClick={() => { if (manualCode) setIsLinked(true); }}
+              onClick={() => {
+                if (manualCode) setIsLinked(true);
+              }}
               className="btn-secondary"
               style={{ padding: '10px 16px' }}
             >

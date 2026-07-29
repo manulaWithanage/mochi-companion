@@ -9,7 +9,7 @@ interface LandingMascotCanvasProps {
 export const LandingMascotCanvas: React.FC<LandingMascotCanvasProps> = ({
   state,
   size = 180,
-  onMascotClick
+  onMascotClick,
 }) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
@@ -28,7 +28,7 @@ export const LandingMascotCanvas: React.FC<LandingMascotCanvasProps> = ({
 
       const centerX = canvas.width / 2;
       const centerY = canvas.height / 2;
-      
+
       // Floating bobbing math
       const floatOffsetY = Math.sin(tick * 0.05) * (state === 'resting' ? 2 : 4);
       const squishX = Math.cos(tick * 0.05) * 0.02;
@@ -45,7 +45,7 @@ export const LandingMascotCanvas: React.FC<LandingMascotCanvasProps> = ({
       // 2. Mochi Body Base (Soft rounded dumpling shape)
       ctx.beginPath();
       ctx.ellipse(0, 0, 46 + squishX * 10, 40, 0, 0, Math.PI * 2);
-      
+
       // Mochi Gradient Fill (Soft warm white to subtle indigo cream)
       const bodyGrad = ctx.createLinearGradient(0, -40, 0, 40);
       bodyGrad.addColorStop(0, '#ffffff');
@@ -70,7 +70,7 @@ export const LandingMascotCanvas: React.FC<LandingMascotCanvasProps> = ({
       ctx.globalAlpha = 0.6;
       ctx.beginPath();
       ctx.ellipse(-26, 6, 7.5, 4.5, 0, 0, Math.PI * 2); // Left cheek
-      ctx.ellipse(26, 6, 7.5, 4.5, 0, 0, Math.PI * 2);  // Right cheek
+      ctx.ellipse(26, 6, 7.5, 4.5, 0, 0, Math.PI * 2); // Right cheek
       ctx.fill();
       ctx.globalAlpha = 1.0;
 
@@ -80,13 +80,13 @@ export const LandingMascotCanvas: React.FC<LandingMascotCanvasProps> = ({
         ctx.strokeStyle = '#334155';
         ctx.lineWidth = 3.5;
         ctx.lineCap = 'round';
-        
+
         ctx.beginPath();
         ctx.arc(-16, 2, 7, Math.PI, 0); // Left closed eye
         ctx.stroke();
 
         ctx.beginPath();
-        ctx.arc(16, 2, 7, Math.PI, 0);  // Right closed eye
+        ctx.arc(16, 2, 7, Math.PI, 0); // Right closed eye
         ctx.stroke();
 
         // Small smile
@@ -96,12 +96,11 @@ export const LandingMascotCanvas: React.FC<LandingMascotCanvasProps> = ({
 
         // Floating 'z Z' Sleeping Particle (Electric Purple)
         const zOffsetY = (tick % 60) * 0.4;
-        const zAlpha = 1 - (zOffsetY / 24);
+        const zAlpha = 1 - zOffsetY / 24;
         ctx.fillStyle = `rgba(168, 85, 247, ${zAlpha > 0 ? zAlpha : 0})`;
         ctx.font = 'bold 16px Outfit, sans-serif';
         ctx.fillText('z Z', 24, -24 - zOffsetY);
-      } 
-      else if (state === 'working') {
+      } else if (state === 'working') {
         // CLEAN WORKING EYES (Determined & Cute ^_^)
         ctx.strokeStyle = '#0f172a';
         ctx.lineWidth = 3.5;
@@ -157,8 +156,7 @@ export const LandingMascotCanvas: React.FC<LandingMascotCanvasProps> = ({
         ctx.arc(10, 20 - tapOffsetY, 4.5, 0, Math.PI * 2);
         ctx.fill();
         ctx.stroke();
-      } 
-      else if (state === 'coffee') {
+      } else if (state === 'coffee') {
         // Happy Savoring Eyes ( ^_^ )
         ctx.strokeStyle = '#0f172a';
         ctx.lineWidth = 3.5;
@@ -169,7 +167,7 @@ export const LandingMascotCanvas: React.FC<LandingMascotCanvasProps> = ({
         ctx.stroke();
 
         ctx.beginPath();
-        ctx.arc(16, -3, 6, Math.PI, 0);  // Right closed happy eye
+        ctx.arc(16, -3, 6, Math.PI, 0); // Right closed happy eye
         ctx.stroke();
 
         // Cute Contented Smile
@@ -210,7 +208,7 @@ export const LandingMascotCanvas: React.FC<LandingMascotCanvasProps> = ({
 
         // Animated Rising Steam Waves (♨️)
         const steam1Y = (tick * 0.8) % 30;
-        const steam2Y = ((tick * 0.8) + 15) % 30;
+        const steam2Y = (tick * 0.8 + 15) % 30;
         const alpha1 = Math.max(0, 1 - steam1Y / 28);
         const alpha2 = Math.max(0, 1 - steam2Y / 28);
 
@@ -230,8 +228,8 @@ export const LandingMascotCanvas: React.FC<LandingMascotCanvasProps> = ({
         ctx.moveTo(4, 15 - steam2Y);
         ctx.bezierCurveTo(7, 10 - steam2Y, 1, 5 - steam2Y, 4, 0 - steam2Y);
         ctx.stroke();
-      } 
-      else { // Idle
+      } else {
+        // Idle
         // Open Happy Eyes
         ctx.fillStyle = '#0f172a';
         ctx.beginPath();
@@ -270,10 +268,14 @@ export const LandingMascotCanvas: React.FC<LandingMascotCanvasProps> = ({
         cursor: 'pointer',
         display: 'inline-block',
         transition: 'transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1)',
-        userSelect: 'none'
+        userSelect: 'none',
       }}
-      onMouseDown={(e) => { (e.currentTarget as HTMLElement).style.transform = 'scale(0.9, 1.15)'; }}
-      onMouseUp={(e) => { (e.currentTarget as HTMLElement).style.transform = 'scale(1)'; }}
+      onMouseDown={(e) => {
+        (e.currentTarget as HTMLElement).style.transform = 'scale(0.9, 1.15)';
+      }}
+      onMouseUp={(e) => {
+        (e.currentTarget as HTMLElement).style.transform = 'scale(1)';
+      }}
       title="Click Mochi to interact!"
     >
       <canvas
