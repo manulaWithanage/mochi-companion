@@ -159,29 +159,76 @@ export const LandingMascotCanvas: React.FC<LandingMascotCanvasProps> = ({
         ctx.stroke();
       } 
       else if (state === 'coffee') {
-        // Coffee sipping ^_^
-        ctx.strokeStyle = '#334155';
-        ctx.lineWidth = 3;
+        // Happy Savoring Eyes ( ^_^ )
+        ctx.strokeStyle = '#0f172a';
+        ctx.lineWidth = 3.5;
+        ctx.lineCap = 'round';
+
         ctx.beginPath();
-        ctx.arc(-14, 0, 6, Math.PI, 0);
-        ctx.arc(14, 0, 6, Math.PI, 0);
+        ctx.arc(-16, -3, 6, Math.PI, 0); // Left closed happy eye
         ctx.stroke();
 
-        // Steamy Mug
-        ctx.fillStyle = '#6366f1';
-        ctx.roundRect(-8, 12, 16, 18, 4);
+        ctx.beginPath();
+        ctx.arc(16, -3, 6, Math.PI, 0);  // Right closed happy eye
+        ctx.stroke();
+
+        // Cute Contented Smile
+        ctx.beginPath();
+        ctx.arc(0, 7, 4.5, 0, Math.PI);
+        ctx.stroke();
+
+        // Cozy Ceramic Coffee Mug (Positioned neatly below mouth)
+        ctx.fillStyle = '#4f46e5';
+        ctx.roundRect(-11, 20, 22, 18, 5);
+        ctx.fill();
+        ctx.strokeStyle = '#312e81';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        // Mug Golden Rim Accent
+        ctx.fillStyle = '#fbbf24';
+        ctx.roundRect(-9, 18, 18, 4, 2);
         ctx.fill();
 
-        ctx.fillStyle = '#fbbf24';
-        ctx.fillRect(-6, 10, 12, 4);
-
-        // Steam particle
-        const steamY = (tick % 40) * 0.3;
-        ctx.strokeStyle = 'rgba(255,255,255,0.6)';
-        ctx.lineWidth = 2;
+        // Mug Handle
+        ctx.strokeStyle = '#4f46e5';
+        ctx.lineWidth = 3;
         ctx.beginPath();
-        ctx.moveTo(0, 8 - steamY);
-        ctx.lineTo(3, 2 - steamY);
+        ctx.arc(13, 28, 5, -Math.PI / 2, Math.PI / 2);
+        ctx.stroke();
+
+        // Cute Little Paws Holding Mug
+        ctx.fillStyle = '#ffffff';
+        ctx.strokeStyle = '#475569';
+        ctx.lineWidth = 2;
+
+        ctx.beginPath();
+        ctx.arc(-12, 26, 4.5, 0, Math.PI * 2);
+        ctx.arc(12, 26, 4.5, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+
+        // Animated Rising Steam Waves (♨️)
+        const steam1Y = (tick * 0.8) % 30;
+        const steam2Y = ((tick * 0.8) + 15) % 30;
+        const alpha1 = Math.max(0, 1 - steam1Y / 28);
+        const alpha2 = Math.max(0, 1 - steam2Y / 28);
+
+        ctx.lineWidth = 2;
+        ctx.lineCap = 'round';
+
+        // Steam wave 1
+        ctx.strokeStyle = `rgba(99, 102, 241, ${alpha1 * 0.7})`;
+        ctx.beginPath();
+        ctx.moveTo(-4, 15 - steam1Y);
+        ctx.bezierCurveTo(-7, 10 - steam1Y, -1, 5 - steam1Y, -4, 0 - steam1Y);
+        ctx.stroke();
+
+        // Steam wave 2
+        ctx.strokeStyle = `rgba(99, 102, 241, ${alpha2 * 0.7})`;
+        ctx.beginPath();
+        ctx.moveTo(4, 15 - steam2Y);
+        ctx.bezierCurveTo(7, 10 - steam2Y, 1, 5 - steam2Y, 4, 0 - steam2Y);
         ctx.stroke();
       } 
       else { // Idle
