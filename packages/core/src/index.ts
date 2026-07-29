@@ -11,4 +11,5 @@ export * from './messages/messages.js';
 export * from './events/events.js';
 export * from './governor/governor.js';
 export * from './scheduler/scheduler.js';
+export * from './routines/routines.js';
 export type * from './types/bridge.js';

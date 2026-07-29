@@ -31,6 +31,7 @@ import { MascotService } from './services/mascot-service.js';
 import { OverlayWindow } from './windows/overlay.js';
 import { SetupWindow } from './windows/setup.js';
 import { MochiTray } from './tray.js';
+import { RoutineService } from './services/routine-service.js';
 import { registerIpc } from './ipc.js';
 
 interface SayOptions {
@@ -94,6 +95,13 @@ async function bootstrap(): Promise<void> {
     doNotDisturb: settings.get().doNotDisturb,
   });
   const bus = new EventBus();
+
+  // Mochi's first unprompted behaviour. Everything it emits still has to get
+  // past the governor above — routines are a source, not a shortcut.
+  const routines = new RoutineService(bus, {
+    getWorkHours: () => settings.get().workHours,
+    isPaused: () => settings.get().paused,
+  });
 
   registerIpc({ timer, mascot, settings, storage, overlay, setup, governor });
 
@@ -161,7 +169,9 @@ async function bootstrap(): Promise<void> {
 
     if (snapshot.running && !wasRunning) {
       say('timer-started', { source: 'timer', subject: 'timer', userInitiated: true });
+      if (snapshot.session !== null) routines.onSessionStarted(snapshot.session.startedAt);
     } else if (!snapshot.running && wasRunning) {
+      routines.onSessionStopped();
       // The session just closed; report what it was worth. A misclick gets a
       // plain acknowledgement instead of hollow congratulation.
       void storage.listSessions({ limit: 1 }).then((recent) => {
@@ -180,12 +190,14 @@ async function bootstrap(): Promise<void> {
   mascot.onChange((state) => overlay.send('mascot:state', state));
   settings.onChange((next) => {
     governor.configure({ doNotDisturb: next.doNotDisturb });
+    routines.replan();
     setup.send('settings:changed', next);
     overlay.send('settings:changed', next);
   });
 
   await timer.restore();
   mascot.start();
+  routines.start();
 
   overlay.create(settings.get().overlayPosition);
   if (settings.get().paused) overlay.setPaused(true);
@@ -208,6 +220,7 @@ async function bootstrap(): Promise<void> {
   app.on('second-instance', () => setup.open());
 
   app.on('before-quit', () => {
+    routines.stop();
     mascot.stop();
     tray.destroy();
     void storage.close();
