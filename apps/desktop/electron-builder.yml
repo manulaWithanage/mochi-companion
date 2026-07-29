@@ -1,0 +1,57 @@
+appId: dev.mochi.companion
+productName: Mochi
+copyright: Copyright (c) 2026 Manula Withanage
+
+directories:
+  output: release
+  buildResources: assets
+
+# Everything is bundled by electron-vite, so only the build output and the
+# manifest need to ship. No native modules, so no rebuild step either.
+files:
+  - out/**/*
+  - package.json
+  - '!**/*.map'
+
+npmRebuild: false
+
+# skin-loader reads process.resourcesPath/skins when packaged. Without this the
+# app installs fine and then cannot draw the mascot.
+extraResources:
+  - from: ../../skins
+    to: skins
+    filter:
+      - '**/*'
+      - '!**/*.md'
+
+win:
+  target:
+    - target: nsis
+      arch: [x64]
+  icon: assets/icon.png
+  # No signing configured. Windows SmartScreen will warn on first run until
+  # an OV/EV certificate is purchased and wired in here.
+
+nsis:
+  # A wizard rather than a silent one-click install: users installing an
+  # unsigned app deserve to see what is happening and choose the location.
+  oneClick: false
+  perMachine: false
+  allowToChangeInstallationDirectory: true
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+  shortcutName: Mochi
+  artifactName: ${productName}-Setup-${version}-${arch}.${ext}
+
+mac:
+  target:
+    - target: dmg
+      arch: [arm64, x64]
+  icon: assets/icon.png
+  category: public.app-category.productivity
+
+linux:
+  target:
+    - AppImage
+  icon: assets/icon.png
+  category: Utility

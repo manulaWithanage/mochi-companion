@@ -22,10 +22,10 @@ import { fileURLToPath } from 'node:url';
 const OUT_DIR = join(dirname(fileURLToPath(import.meta.url)), '..', 'skins', 'default');
 // 192 rather than 128: the overlay draws the sprite into a 200px backing
 // store, so a 128px source was being upscaled and going soft.
-const FRAME = 192;
-const SS = 4; // supersampling factor
+let FRAME = 192;
+let SS = 4; // supersampling factor
 /** Design unit — the character was proportioned against a 128px frame. */
-const U = FRAME / 128;
+let U = FRAME / 128;
 
 // ---------------------------------------------------------------------------
 // Palette
@@ -414,3 +414,19 @@ for (const [file, [frames, opts]] of Object.entries(SHEETS)) {
   console.log(`${file.padEnd(13)} ${String(frames).padStart(2)} frames  ${png.length} bytes`);
 }
 console.log(`\nWrote ${OUT_DIR}`);
+
+// ---------------------------------------------------------------------------
+// App icon — one idle frame, large. electron-builder converts PNG to .ico
+// and .icns itself, so a single 512px source covers every platform.
+// ---------------------------------------------------------------------------
+const ICON_DIR = join(dirname(fileURLToPath(import.meta.url)), '..', 'apps', 'desktop', 'assets');
+FRAME = 512;
+U = FRAME / 128;
+SS = 2; // 1024px working surface is plenty at this output size
+
+const iconSurface = new Surface(FRAME * SS, FRAME * SS);
+drawMochi(iconSurface, { squash: 0, bob: -2, eyes: 'open' });
+mkdirSync(ICON_DIR, { recursive: true });
+const icon = encodePng(FRAME, FRAME, iconSurface.downsample(SS));
+writeFileSync(join(ICON_DIR, 'icon.png'), icon);
+console.log(`icon.png       ${FRAME}x${FRAME}    ${icon.length} bytes`);

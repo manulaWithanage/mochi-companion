@@ -4,6 +4,14 @@
   "private": true,
   "license": "MIT",
   "description": "Mochi desktop companion — transparent overlay mascot and 1-click project stopwatch",
+  "// productName": "Electron derives app.getName() from this. Without it the name falls back to \"@mochi/desktop\", which puts user data in %APPDATA%\\@mochi\\desktop and shows the scoped package name in the UI.",
+  "productName": "Mochi",
+  "// author": "Also fills the Windows CompanyName resource. Without it Electron's own metadata leaks through and the app reports its publisher as GitHub, Inc.",
+  "author": {
+    "name": "Manula Withanage",
+    "email": "manula.withanage@gmail.com"
+  },
+  "homepage": "https://github.com/manulaWithanage/mochi-companion",
   "main": "./out/main/index.mjs",
   "scripts": {
     "dev": "electron-vite dev",
