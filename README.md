@@ -11,7 +11,7 @@
 ## ✨ The Mochi Vibe & Philosophy
 
 - ☕ **Cozy & Unobtrusive**: Sits quietly in the corner of your screen sipping coffee or reading a book until you need help or an important alert arrives.
-- ⚡ **30-Second Setup**: Simple, frictionless onboarding. Just name your companion, paste your API key, and set your work hours.
+- ⚡ **30-Second Setup**: Simple, frictionless onboarding. Name your companion, pick a skin, set your work hours — no account and no API key needed to start.
 - ⏱️ **Effortless Time Tracking (V1 Anchor Feature)**: 1-click stopwatch for projects without cumbersome timesheets. Mochi dons glasses and types alongside you on a mini laptop!
 - 🌅 **Daily Lifestyle Rhythm**: 9:00 AM breakfast reminders, gentle hydration checks, and evening wind-down recaps so you never burn out.
 - 🤖 **Super-Intelligent Assistant**: On-demand and schedule-aware Gmail & Calendar triage powered by BYOK LLMs (OpenAI, Gemini, Claude, Ollama).
@@ -23,8 +23,9 @@
 - 🎭 **Animated Desktop Pet**: Floating, transparent, click-through desktop companion with Canvas 2D sprite states (`idle`, `thinking`, `speaking`, `alert`, `working`, `resting`).
 - ⏱️ **1-Click Project Stopwatch**: Track active work time per task with zero friction and view live/historical analytics on `app.mochi.ai`.
 - 🌅 **Lifestyle & Wellness Nudges**: Breakfast reminders, posture checks, hydration prompts, and evening recap briefings.
-- 🔑 **Bring Your Own Key (BYOK)**: Supports **OpenAI (GPT-4o)**, **Anthropic (Claude 3.5)**, **Google Gemini**, and **Ollama / LM Studio**. All keys stored 100% locally in OS `safeStorage`.
-- 🔒 **Zero-Compliance Privacy Architecture**: Zero mail bodies or OAuth tokens stored on external servers. All email/calendar LLM parsing originates strictly on your desktop.
+- 🔑 **Bring Your Own Key (BYOK)**: Supports **OpenAI**, **Anthropic**, **Google Gemini**, and **Ollama / LM Studio**. Paste a key and Mochi fetches that provider's current model list live — no model IDs are ever hardcoded, so the picker never goes stale. All keys stored locally in OS `safeStorage`.
+- 🦙 **Works With No Key At All**: If Ollama is running locally, Mochi detects it on launch and every AI feature works with zero keys and zero accounts.
+- 🔒 **No Mochi Servers In The Loop**: Mochi runs no backend that touches your data. Your keys never leave your machine, and no mail bodies or OAuth tokens are ever stored on external servers — all email and calendar processing originates on your desktop. When you choose a cloud model, the content you ask about goes to **that provider** and nowhere else. Choose Ollama and nothing leaves your machine at all.
 - 🏷️ **Custom Avatar Naming**: Rename your in-app mascot anytime (e.g., Navi, Barkley, Jarvis, Mochi).
 
 ---
