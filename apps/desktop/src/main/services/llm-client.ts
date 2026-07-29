@@ -62,10 +62,10 @@ function buildModel(model: DiscoveredModel, key: string | null) {
     case 'google':
       return createGoogleGenerativeAI({ apiKey: key ?? '' })(model.id);
     case 'azure': {
-      // key is stored as `resourceName::deploymentName::rawApiKey`
+      // key is stored as `azure::resourceName::deploymentName::rawApiKey`
       const parts = (key ?? '').split('::');
-      const resourceName = parts[0] ?? '';
-      const apiKey = parts[2] ?? parts[0] ?? '';
+      const resourceName = parts[1] ?? ''; // parts[0] is the literal 'azure' prefix
+      const apiKey = parts[3] ?? '';
       const azure = createAzure({ resourceName, apiKey });
       return azure(model.id);
     }

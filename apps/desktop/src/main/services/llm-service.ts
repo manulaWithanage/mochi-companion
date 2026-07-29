@@ -76,7 +76,7 @@ export class LlmService {
         return { ok: false, provider: 'azure', redacted: '••••', modelCount: 0, error: 'This system cannot encrypt secrets.' };
       }
       this.vault.store('azure', rawKey);
-      // Synthetic model: deployment name is parts[2]
+      // Format: azure::resourceName::deploymentName::apiKey → parts[2] is deployment
       const parts = rawKey.split('::');
       const deploymentName = parts[2] ?? 'azure-deployment';
       const model: import('@mochi/core').DiscoveredModel = { id: deploymentName, provider: 'azure', capabilities: ['text', 'tools'] };
