@@ -1,0 +1,9 @@
+# Prettier is configured with endOfLine: lf. Normalize in the repo so Windows
+# checkouts stop reporting every file as modified.
+* text=auto eol=lf
+
+*.png binary
+*.jpg binary
+*.ico binary
+*.icns binary
+pnpm-lock.yaml -diff
