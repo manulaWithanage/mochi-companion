@@ -11,13 +11,17 @@
 import { powerMonitor } from 'electron';
 import {
   DEFAULT_ROUTINES,
+  dueToday,
+  overdue,
   planDailyRoutines,
   planLongSession,
+  planTaskNudge,
   ROUTINE_PREFIX,
   Scheduler,
   type EventBus,
   type MochiEvent,
   type RoutineConfig,
+  type Task,
   type WorkHours,
 } from '@mochi/core';
 
@@ -27,6 +31,8 @@ const REPLAN_INTERVAL_MS = 30 * 60_000;
 export interface RoutineInputs {
   getWorkHours(): WorkHours;
   isPaused(): boolean;
+  /** Read at plan time, so the nudge reflects the list as it stands. */
+  listTasks(): Promise<readonly Task[]>;
 }
 
 export class RoutineService {
@@ -69,13 +75,42 @@ export class RoutineService {
    * service tracking what it scheduled last time.
    */
   replan(now: Date = new Date()): void {
-    const items = planDailyRoutines({
-      now,
-      workHours: this.inputs.getWorkHours(),
-      config: this.config,
-    });
+    const workHours = this.inputs.getWorkHours();
+    const items = planDailyRoutines({ now, workHours, config: this.config });
     this.scheduler.replaceNamespace(ROUTINE_PREFIX, items);
     this.lastPlannedDay = now.toISOString().slice(0, 10);
+
+    // Task counts need a read, so the nudge is scheduled after the rest
+    // rather than blocking them. replaceNamespace above already cleared any
+    // previous one, so this cannot stack.
+    void this.scheduleTaskNudge(now);
+  }
+
+  /**
+   * Schedule the end-of-day task nudge from the list as it currently stands.
+   *
+   * Re-run whenever tasks change, so ticking the last item removes the nudge
+   * rather than leaving Mochi to ask about an empty list.
+   */
+  async scheduleTaskNudge(now: Date = new Date()): Promise<void> {
+    const tasks = await this.inputs.listTasks();
+    const item = planTaskNudge(
+      dueToday(tasks, now).length,
+      overdue(tasks, now).length,
+      this.inputs.getWorkHours(),
+      now,
+    );
+    if (item === null) {
+      this.scheduler.cancel(`${ROUTINE_PREFIX}tasks-open`);
+      this.scheduler.cancel(`${ROUTINE_PREFIX}tasks-overdue`);
+      return;
+    }
+    // Only one of the two keys is ever live; clear the other.
+    const other = item.key.endsWith('tasks-overdue')
+      ? `${ROUTINE_PREFIX}tasks-open`
+      : `${ROUTINE_PREFIX}tasks-overdue`;
+    this.scheduler.cancel(other);
+    this.scheduler.schedule(item);
   }
 
   /** Called when a tracked session starts, to arm the long-session nudge. */

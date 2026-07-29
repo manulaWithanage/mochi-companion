@@ -145,21 +145,23 @@ Do not maintain a second copy of the prompt here — two prompts drift apart, an
 
 Decisions already made and re-litigated more than once. Do not reintroduce:
 
-| Retired                            | Use instead                      | Why                                                                                            |
-| :--------------------------------- | :------------------------------- | :--------------------------------------------------------------------------------------------- |
-| `keytar`                           | Electron `safeStorage`           | Archived and unmaintained; `safeStorage` has zero native deps                                  |
-| `node-imap` / `imap`               | `ImapFlow`                       | Last published 2017                                                                            |
-| Hardcoded `gpt-4o`, `claude-3.5`   | Runtime model discovery          | Any hardcoded list is stale within a quarter                                                   |
-| `localhost:3000` callback          | Ephemeral port on `127.0.0.1`    | Port 3000 collides with almost every dev server                                                |
-| OAuth "Testing" mode               | Publish app → "In Production"    | Testing-mode refresh tokens die after 7 days                                                   |
-| Poll-driven meeting alerts         | Local timers off a synced cache  | A 15-min poll cannot fire a 5-min warning                                                      |
-| 60 FPS mascot                      | 8–12 FPS, 0 when hidden          | An always-on pet that spins a core gets uninstalled                                            |
-| Rive as the skin format            | Canvas 2D sprite sheets          | Rive's editor is paid — it paywalls community contribution                                     |
-| LangChain.js                       | Vercel AI SDK                    | Heavy abstraction for what is ~4 functions                                                     |
-| `ipcRenderer` in renderer          | `contextBridge` surface          | Requires disabling context isolation                                                           |
-| Cloud-side email summaries         | Desktop-originated LLM calls     | Incompatible with local `safeStorage` + BYOK; triggers CASA                                    |
-| `better-sqlite3`                   | `node:sqlite`                    | No Node 24 prebuild; forced a node-gyp build needing MSVC. Electron 43 ships SQLite in core    |
-| `electron-store`                   | JSON file + `normalizeSettings`  | ESM-only, and a sandboxed CJS preload cannot import it. Not worth a dependency                 |
-| ESM preload output                 | CJS (`index.cjs`)                | Sandboxed preloads cannot use ESM imports, and `sandbox: true` is non-negotiable               |
-| Bundling `electron`                | Mark it external                 | Bundling inlines the installer shim; app dies with "Electron failed to install correctly"      |
-| Continuous `requestAnimationFrame` | Timer-scheduled frames + one rAF | rAF fires at refresh rate and discards all but 8 callbacks — measured 7.9% of a core, now 1.8% |
+| Retired                              | Use instead                       | Why                                                                                                                                |
+| :----------------------------------- | :-------------------------------- | :--------------------------------------------------------------------------------------------------------------------------------- |
+| `keytar`                             | Electron `safeStorage`            | Archived and unmaintained; `safeStorage` has zero native deps                                                                      |
+| `node-imap` / `imap`                 | `ImapFlow`                        | Last published 2017                                                                                                                |
+| Hardcoded `gpt-4o`, `claude-3.5`     | Runtime model discovery           | Any hardcoded list is stale within a quarter                                                                                       |
+| `localhost:3000` callback            | Ephemeral port on `127.0.0.1`     | Port 3000 collides with almost every dev server                                                                                    |
+| OAuth "Testing" mode                 | Publish app → "In Production"     | Testing-mode refresh tokens die after 7 days                                                                                       |
+| Poll-driven meeting alerts           | Local timers off a synced cache   | A 15-min poll cannot fire a 5-min warning                                                                                          |
+| 60 FPS mascot                        | 8–12 FPS, 0 when hidden           | An always-on pet that spins a core gets uninstalled                                                                                |
+| Rive as the skin format              | Canvas 2D sprite sheets           | Rive's editor is paid — it paywalls community contribution                                                                         |
+| LangChain.js                         | Vercel AI SDK                     | Heavy abstraction for what is ~4 functions                                                                                         |
+| `ipcRenderer` in renderer            | `contextBridge` surface           | Requires disabling context isolation                                                                                               |
+| Cloud-side email summaries           | Desktop-originated LLM calls      | Incompatible with local `safeStorage` + BYOK; triggers CASA                                                                        |
+| `better-sqlite3`                     | `node:sqlite`                     | No Node 24 prebuild; forced a node-gyp build needing MSVC. Electron 43 ships SQLite in core                                        |
+| `electron-store`                     | JSON file + `normalizeSettings`   | ESM-only, and a sandboxed CJS preload cannot import it. Not worth a dependency                                                     |
+| ESM preload output                   | CJS (`index.cjs`)                 | Sandboxed preloads cannot use ESM imports, and `sandbox: true` is non-negotiable                                                   |
+| Bundling `electron`                  | Mark it external                  | Bundling inlines the installer shim; app dies with "Electron failed to install correctly"                                          |
+| Continuous `requestAnimationFrame`   | Timer-scheduled frames + one rAF  | rAF fires at refresh rate and discards all but 8 callbacks — measured 7.9% of a core, now 1.8%                                     |
+| Changing `productName`               | **Never change it after release** | It decides `userData`. Renaming silently orphans every user's database — history simply disappears, with no error and no migration |
+| `provider(modelId)` for local models | `provider.chat(modelId)`          | `@ai-sdk/openai` defaults to the Responses API; Ollama and LM Studio only implement `/v1/chat/completions`                         |

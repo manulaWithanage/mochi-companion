@@ -104,6 +104,7 @@ async function bootstrap(): Promise<void> {
   const routines = new RoutineService(bus, {
     getWorkHours: () => settings.get().workHours,
     isPaused: () => settings.get().paused,
+    listTasks: () => storage.listTasks(),
   });
 
   const llm = new LlmService();
@@ -112,6 +113,9 @@ async function bootstrap(): Promise<void> {
   const notifyTasks = async () => {
     const tasks = await storage.listTasks();
     setup.send('tasks:changed', tasks);
+    // Ticking the last item should remove the nudge, not leave Mochi asking
+    // about an empty list.
+    void routines.scheduleTaskNudge();
     return tasks;
   };
 

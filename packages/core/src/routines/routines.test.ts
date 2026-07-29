@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
+  planTaskNudge,
+  taskNudgeText,
   DEFAULT_ROUTINES,
   planDailyRoutines,
   planLongSession,
@@ -152,5 +154,58 @@ describe('planLongSession', () => {
 
   it('returns null when disabled', () => {
     expect(planLongSession(at(9).getTime(), cfg({ longSession: false }), at(9, 1))).toBeNull();
+  });
+});
+
+describe('taskNudgeText', () => {
+  it('names the count and asks rather than scolds', () => {
+    const msg = taskNudgeText('tasks-open', 3);
+    expect(msg).toContain('3 things');
+    expect(msg).toContain('?');
+  });
+
+  it('handles the singular', () => {
+    expect(taskNudgeText('tasks-open', 1)).toContain('1 thing');
+    expect(taskNudgeText('tasks-open', 1)).not.toContain('1 things');
+  });
+
+  it('says something different for overdue', () => {
+    expect(taskNudgeText('tasks-overdue', 2)).not.toBe(taskNudgeText('tasks-open', 2));
+  });
+});
+
+describe('planTaskNudge', () => {
+  it('lands 15 minutes before the day ends, with time left to act', () => {
+    const item = planTaskNudge(3, 0, HOURS, at(9), () => 0);
+    expect(item).not.toBeNull();
+    const d = new Date(item!.at);
+    expect(d.getHours()).toBe(16);
+    expect(d.getMinutes()).toBe(45);
+  });
+
+  it('says nothing when the list is clear', () => {
+    expect(planTaskNudge(0, 0, HOURS, at(9), () => 0)).toBeNull();
+  });
+
+  it('prefers the overdue message when anything has slipped', () => {
+    const item = planTaskNudge(5, 2, HOURS, at(9), () => 0);
+    expect(item!.event.kind).toBe('tasks-overdue');
+    // The count reported is the overdue one, not the total.
+    expect(item!.event.text).toContain('2 things');
+  });
+
+  it('returns null once the moment has passed', () => {
+    // Asked at 16:50, the nudge slot is behind us.
+    expect(planTaskNudge(3, 0, HOURS, at(16, 50), () => 0)).toBeNull();
+  });
+
+  it('uses one stable key so re-planning replaces rather than stacks', () => {
+    const a = planTaskNudge(3, 0, HOURS, at(9), () => 0);
+    const b = planTaskNudge(9, 0, HOURS, at(10), () => 0);
+    expect(a!.key).toBe(b!.key);
+  });
+
+  it('survives malformed work hours', () => {
+    expect(planTaskNudge(3, 0, { start: '09:00', end: 'home time' }, at(9), () => 0)).toBeNull();
   });
 });

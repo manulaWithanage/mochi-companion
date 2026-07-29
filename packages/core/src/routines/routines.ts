@@ -15,7 +15,8 @@ import { makeEvent, type MochiEvent } from '../events/events.js';
 import { parseHhMm, type WorkHours } from '../mascot/state.js';
 import type { ScheduledItem } from '../scheduler/scheduler.js';
 
-export type RoutineKind = 'day-start' | 'day-end' | 'break' | 'long-session';
+export type RoutineKind =
+  'day-start' | 'day-end' | 'break' | 'long-session' | 'tasks-open' | 'tasks-overdue';
 
 export interface RoutineConfig {
   readonly dayStart: boolean;
@@ -61,7 +62,23 @@ const TEXT: Record<RoutineKind, readonly string[]> = {
     "You've been at this a long while. Still with me?",
     "That's a long stretch — remember to move.",
   ],
+  // Filled in by taskNudgeText — the count is the whole message.
+  'tasks-open': [],
+  'tasks-overdue': [],
 };
+
+/**
+ * Task nudges name a number, so the template list cannot carry them.
+ *
+ * Phrased as a question rather than a scold. The list is the user's, and a
+ * companion that tuts at an unfinished day gets muted.
+ */
+export function taskNudgeText(kind: 'tasks-open' | 'tasks-overdue', count: number): string {
+  const things = count === 1 ? '1 thing' : `${count} things`;
+  return kind === 'tasks-overdue'
+    ? `${things} slipped past their day. Move them to today?`
+    : `${things} still on today's list. Carry them over?`;
+}
 
 function pick(options: readonly string[], random: () => number): string {
   const i = Math.min(options.length - 1, Math.max(0, Math.floor(random() * options.length)));
@@ -84,7 +101,12 @@ export interface PlanInput {
   readonly random?: () => number;
 }
 
-function routineEvent(kind: RoutineKind, at: number, random: () => number): MochiEvent {
+function routineEvent(
+  kind: RoutineKind,
+  at: number,
+  random: () => number,
+  overrideText?: string,
+): MochiEvent {
   const day = new Date(at).toISOString().slice(0, 10);
   return makeEvent({
     // Subject is stable per kind per day, so dismissing "today's break nudge"
@@ -94,7 +116,7 @@ function routineEvent(kind: RoutineKind, at: number, random: () => number): Moch
     kind,
     at,
     subject: `${ROUTINE_PREFIX}${kind}:${day}`,
-    text: pick(TEXT[kind], random),
+    text: overrideText ?? pick(TEXT[kind], random),
     priority: 'low',
     // A day-start nudge is meaningless by lunchtime. Let it expire rather
     // than surface late.
@@ -164,5 +186,37 @@ export function planLongSession(
     key: `${ROUTINE_PREFIX}long-session`,
     at,
     event: routineEvent('long-session', at, random),
+  };
+}
+
+/**
+ * A nudge about unfinished tasks, scheduled just before the working day ends.
+ *
+ * Deliberately one nudge, once, at a moment when acting on it is still
+ * possible — not a running count that pesters all afternoon.
+ */
+export function planTaskNudge(
+  openCount: number,
+  overdueCount: number,
+  workHours: WorkHours,
+  now: Date,
+  random: () => number = Math.random,
+): ScheduledItem | null {
+  if (openCount === 0 && overdueCount === 0) return null;
+
+  const end = todayAt(now, workHours.end);
+  if (end === null) return null;
+
+  // Fifteen minutes before the end, so there is time to actually do something.
+  const at = end - 15 * 60_000;
+  if (at <= now.getTime()) return null;
+
+  const kind: RoutineKind = overdueCount > 0 ? 'tasks-overdue' : 'tasks-open';
+  const count = overdueCount > 0 ? overdueCount : openCount;
+
+  return {
+    key: `${ROUTINE_PREFIX}${kind}`,
+    at,
+    event: routineEvent(kind, at, random, taskNudgeText(kind, count)),
   };
 }
