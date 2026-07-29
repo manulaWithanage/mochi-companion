@@ -1,4 +1,5 @@
 # 🍡 Mochi — The Super Assistant (mochi-ai)
+
 > **Your Open-Source Animated Desktop AI Workflow Companion & Lifestyle Assistant**
 
 ![Mochi Banner](https://img.shields.io/badge/License-MIT-blue.svg)

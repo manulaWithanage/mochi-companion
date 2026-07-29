@@ -8,21 +8,38 @@ Milestones are ordered by **what unblocks what**, not by what is exciting. Each 
 
 ## Where we are
 
-|                                                        | Status                                       |
-| :----------------------------------------------------- | :------------------------------------------- |
-| Desktop shell, mascot, stopwatch, tray, speech bubbles | ✅ shipped                                   |
-| Windows installer, CI green on 3 platforms, 144 tests  | ✅ shipped                                   |
-| Event bus, interruption governor                       | ✅ shipped                                   |
-| **Scheduler**                                          | ❌ **missing — blocks everything proactive** |
-| AI, integrations, cloud                                | ❌ not started                               |
+|                                                        | Status         |
+| :----------------------------------------------------- | :------------- |
+| Desktop shell, mascot, stopwatch, tray, speech bubbles | ✅ shipped     |
+| Windows installer, CI green on 3 platforms             | ✅ shipped     |
+| Event bus, interruption governor                       | ✅ shipped     |
+| Scheduler, routines — Mochi speaks unprompted          | ✅ shipped     |
+| AI, integrations                                       | ❌ not started |
 
-Mochi currently only speaks when spoken to. Every message is user-initiated. That is deliberate and it is also the ceiling.
+184 tests. Mochi now says things you did not ask for — start of day, break nudges, end of day, long session — all gated by the governor.
 
 ---
 
-## M0 · Prove it — 1 week, no code
+## 🖥️ Architecture: desktop-only
+
+**Decided 2026-07-29.** Mochi runs entirely on the user's machine. There is no Mochi account, no Mochi server, and no cloud dependency.
+
+- **All data local** — sessions, projects, settings, cache. SQLite and a JSON file in userData.
+- **LLM keys local** — `safeStorage`, main process only. Calls go straight from the desktop to whichever provider the user chose.
+- **Google linked from the desktop** — OAuth loopback flow in the settings window. No web app involved.
+- **The dashboard is a desktop view**, not a website. Time logs, charts and history read straight from local SQLite.
+
+**Why:** it removes the account, the hosting bill, the AGPL service, and the second deployment target. It also makes the privacy claim simple and absolute — _there are no servers_, which is far stronger than _our servers are careful_.
+
+The only thing this gives up is viewing your time logs from another device. That is what M6 would buy, and it is now genuinely optional rather than deferred.
+
+---
+
+## M0 · Prove it — 1 week, no code ← **you are here**
 
 **Use Mochi every day for a week.** Nothing else.
+
+This could not run before M1: with no unprompted behaviour, a week of use could only tell you about the stopwatch. Now that Mochi speaks on its own, the week tests the thing that actually matters.
 
 The governor's defaults — 3 interruptions/hour, 90-second gap, 20:00–08:00 quiet — were reasoned, not measured. So was the bubble duration, the rest threshold, and the decision that a sub-10-second session is a misclick.
 
@@ -34,13 +51,13 @@ Every one of those is a guess that a week of real use converts into evidence. Bu
 
 ---
 
-## M1 · Finish the proactive spine — ~1 week
+## M1 · Finish the proactive spine — ✅ done
 
 The scheduler, plus Mochi's first unprompted behaviour.
 
-- **Scheduler** — converts cached data into local timers. Poll to sync a cache; fire alerts from timers. A 15-minute poll can never deliver a 5-minute warning.
-- **Routines source** — start-of-day, end-of-day, break and hydration nudges, driven entirely by the work hours already in settings.
-- Wire both through the existing bus → governor → mascot path.
+- ✅ **Scheduler** — cached data → local timers. Chains long delays past setTimeout's 32-bit overflow, reconciles after sleep, drops badly-overdue items as `missed`.
+- ✅ **Routines** — start-of-day, break, end-of-day and long-session nudges from the work hours already in settings.
+- ✅ Both wired through bus → governor → mascot.
 
 **Why this before AI or integrations:** it exercises the governor against _real_ interruptions with **zero external dependencies** — no OAuth, no API key, no network. It is the cheapest possible way to find out whether the interruption model is right, and everything proactive depends on it.
 
@@ -76,6 +93,8 @@ The demo the whole project has been building toward.
 - Meeting alerts on local timers; one-click join for Zoom/Meet/Teams links.
 - Briefing fires on **first unlock after the configured time**, never on boot.
 - Progressive unlock UI replacing the current "Locked" placeholder.
+- **Connections panel in the settings window** — the entire OAuth flow lives here. No web app is involved in linking Google.
+- **Local dashboard** — time per project, daily and weekly totals, session history, read straight from SQLite. A desktop view, not a website.
 
 **Why Calendar and not Gmail:** Calendar scopes are _sensitive_; Gmail scopes are _restricted_ and carry a recurring CASA assessment. The briefing needs only Calendar. This ships the headline feature without touching a single restricted scope.
 
@@ -111,9 +130,11 @@ Only if M0–M4 show people want it.
 
 ---
 
-## M6 · Cloud and dashboard — ~4 weeks, on demand only
+## M6 · Cloud sync — optional, may never happen
 
-**Do not start this until users ask for it.**
+**Not deferred — optional.** Mochi is complete without it. The only thing it buys is seeing your time logs on a device that is not the one running Mochi.
+
+Build it only if a real user asks for that specific thing.
 
 - Supabase — Postgres, Auth, and RLS doing the real work.
 - Deep-link pairing (`mochi://linked`) with PKCE binding; short code as fallback.
@@ -143,7 +164,7 @@ M0 use it ──> M1 scheduler ──> M2 Ollama/LLM ──> M3 calendar briefin
                                                         (both on demand only)
 ```
 
-M5 and M6 are **branches, not continuations**. Mochi is a complete product at M4.
+M5 and M6 are **branches, not continuations**. Mochi is a complete, serverless product at M4 — no account, no backend, nothing to host.
 
 ---
 
