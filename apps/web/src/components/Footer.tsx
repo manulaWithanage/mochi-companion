@@ -4,22 +4,22 @@ import { LandingMascotCanvas } from './LandingMascotCanvas';
 
 export const Footer: React.FC = () => {
   const [mascotState, setMascotState] = useState<'idle' | 'working' | 'resting' | 'coffee'>('idle');
-  const [speechBubble, setSpeechBubble] = useState("Welcome to Mochi's Zen Haven 🌸 Mochi is ready to sit on your desktop!");
+  const [speechBubble, setSpeechBubble] = useState("Welcome to Mochi's 3D Papercraft World 🌸 Mochi is ready to sit on your desktop!");
 
   return (
     <footer style={{
       position: 'relative',
       width: '100%',
-      minHeight: '620px',
+      minHeight: '640px',
       overflow: 'hidden',
       borderTop: '1px solid var(--glass-border)',
-      background: '#070b12'
+      background: '#080c14'
     }}>
       
-      {/* 🌸 FULL-FOOTER ARTWORK BACKGROUND (No Gradient Fades!) */}
+      {/* 🌸 FULL-BLEED TACTILE 3D PAPERCRAFT DIORAMA BACKGROUND */}
       <img
-        src="/japan_zen_footer.jpg"
-        alt="Mochi Japanese Zen Garden & Mount Fuji Scenery"
+        src="/japan_3d_papercraft_diorama.jpg"
+        alt="Mochi 3D Papercraft Diorama Landscape"
         style={{
           position: 'absolute',
           top: 0,
@@ -27,13 +27,13 @@ export const Footer: React.FC = () => {
           width: '100%',
           height: '100%',
           objectFit: 'cover',
-          objectPosition: 'center 30%',
+          objectPosition: 'center center',
           display: 'block',
           zIndex: 1
         }}
       />
 
-      {/* 🍡 INTERACTIVE MOCHI MASCOT STAGE (Centered in the Zen Landscape) */}
+      {/* 🍡 INTERACTIVE MOCHI MASCOT STAGE (Centered in the Papercraft Diorama) */}
       <div style={{
         position: 'relative',
         zIndex: 10,
@@ -41,7 +41,7 @@ export const Footer: React.FC = () => {
         flexDirection: 'column',
         alignItems: 'center',
         paddingTop: '60px',
-        paddingBottom: '40px'
+        paddingBottom: '32px'
       }}>
         {/* Speech Bubble */}
         <div style={{
@@ -51,7 +51,7 @@ export const Footer: React.FC = () => {
           borderRadius: '20px',
           fontSize: '14px',
           fontWeight: '600',
-          boxShadow: '0 12px 36px rgba(0, 0, 0, 0.4)',
+          boxShadow: '0 14px 40px rgba(0, 0, 0, 0.5)',
           marginBottom: '12px',
           whiteSpace: 'nowrap',
           position: 'relative',
@@ -81,22 +81,22 @@ export const Footer: React.FC = () => {
         </div>
       </div>
 
-      {/* 📄 GLASSMORPHIC CONTENT TRAY OVERLAID DIRECTLY ON TOP OF THE ARTWORK */}
+      {/* 📄 TACTILE GLASSMORPHIC CONTENT TRAY OVERLAID ON TOP OF DIORAMA */}
       <div style={{
         position: 'relative',
         zIndex: 10,
         maxWidth: '1240px',
-        margin: '0 auto 32px auto',
+        margin: '0 auto 36px auto',
         padding: '0 24px'
       }}>
         <div style={{
-          background: 'rgba(8, 12, 20, 0.82)',
-          backdropFilter: 'blur(20px)',
-          WebkitBackdropFilter: 'blur(20px)',
-          border: '1px solid rgba(255, 255, 255, 0.12)',
+          background: 'rgba(10, 15, 26, 0.82)',
+          backdropFilter: 'blur(24px)',
+          WebkitBackdropFilter: 'blur(24px)',
+          border: '1px solid rgba(255, 255, 255, 0.15)',
           borderRadius: '24px',
           padding: '36px 40px 24px 40px',
-          boxShadow: '0 20px 50px rgba(0, 0, 0, 0.5)'
+          boxShadow: '0 24px 60px rgba(0, 0, 0, 0.6), 0 0 40px rgba(99, 102, 241, 0.1)'
         }}>
           {/* 4 Navigation Columns */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '32px', marginBottom: '32px' }}>
