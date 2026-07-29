@@ -114,20 +114,20 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGoToDashboard }) => 
         </div>
       </nav>
 
-      {/* 🌸 FULL-BLEED 100% SCREEN WIDTH 3D PAPERCRAFT HERO SECTION (Compact Height) */}
+      {/* 🌸 FULL VIEWPORT (100vh) 3D PAPERCRAFT HERO SECTION */}
       <section style={{
         position: 'relative',
         width: '100%',
-        minHeight: '660px',
+        minHeight: 'calc(100vh - 75px)', // Industry standard 100% viewport height fill!
         overflow: 'hidden',
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
         justifyContent: 'center',
-        padding: '40px 24px'
+        padding: '48px 24px'
       }}>
         
-        {/* Full-Bleed 100% Screen Width Background Artwork */}
+        {/* Full-Bleed Viewport Background Artwork */}
         <img
           src="/hero_papercraft_art.jpg"
           alt="Mochi 3D Papercraft Origami Hero Background Art"
@@ -138,7 +138,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGoToDashboard }) => 
             width: '100%',
             height: '100%',
             objectFit: 'cover',
-            objectPosition: 'center top',
+            objectPosition: 'center center',
             display: 'block',
             zIndex: 1
           }}
