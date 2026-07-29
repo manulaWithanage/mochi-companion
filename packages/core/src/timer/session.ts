@@ -25,8 +25,7 @@ export type TimerError =
   | { readonly kind: 'not-running' };
 
 export type TimerResult<T> =
-  | { readonly ok: true; readonly value: T }
-  | { readonly ok: false; readonly error: TimerError };
+  { readonly ok: true; readonly value: T } | { readonly ok: false; readonly error: TimerError };
 
 export const emptyTimerState: TimerState = { active: null };
 

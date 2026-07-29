@@ -34,7 +34,10 @@ Mochi **NEVER hardcodes model names**. Models are fetched dynamically on key pas
 
 ```typescript
 // Detect provider from key prefix and fetch model list dynamically
-async function discoverModels(provider: 'openai' | 'anthropic' | 'gemini' | 'ollama', apiKey?: string): Promise<string[]> {
+async function discoverModels(
+  provider: 'openai' | 'anthropic' | 'gemini' | 'ollama',
+  apiKey?: string,
+): Promise<string[]> {
   if (provider === 'ollama') {
     const res = await fetch('http://127.0.0.1:11434/api/tags');
     const data = await res.json();
@@ -53,15 +56,15 @@ To protect the user from unexpected API charges, Mochi includes a built-in **Tok
 
 ```typescript
 export type BudgetConfig = {
-  dailyTokenCap: number;                     // e.g. 50,000 tokens/day
+  dailyTokenCap: number; // e.g. 50,000 tokens/day
   onExceed: 'downgrade-to-local' | 'pause' | 'ask';
-  showEstimateBeforeExpensiveOps: boolean;   // Confirm before heavy RAG
+  showEstimateBeforeExpensiveOps: boolean; // Confirm before heavy RAG
 };
 
 export type TaskRoute = {
   task: 'briefing' | 'triage' | 'draft' | 'chat' | 'screen';
   requires: ('text' | 'tools' | 'vision')[];
-  primary: string;                           // Plain Model ID string
+  primary: string; // Plain Model ID string
   fallback: string | 'local' | 'skip';
   maxTokens: number;
 };
@@ -78,9 +81,9 @@ export type TaskRoute = {
 
 Local 7B models can struggle with complex MCP tool calling schema arguments. Mochi explicitly tags task capabilities and warns users gracefully:
 
-| Task | Required Capability | Local 3B/7B | Cloud / Local 30B+ | Action |
-| :--- | :--- | :--- | :--- | :--- |
-| **Daily Briefing / Summarize** | `text` | ✅ Supported | ✅ Supported | Runs locally or on cheapest tier |
-| **Stopwatch / Time Tracking** | `text` | ✅ Supported | ✅ Supported | Runs 100% locally |
-| **MCP Tool Calling / Calendar**| `tools` | ⚠️ Unreliable | ✅ Supported | Graceful warning: *"Calendar actions require tool calling. Pick a cloud model or larger local model."* |
-| **Screen Reading (Hotkey)** | `vision` | ❌ Unsupported | ✅ Supported | Fallback to OCR text parsing |
+| Task                            | Required Capability | Local 3B/7B    | Cloud / Local 30B+ | Action                                                                                                 |
+| :------------------------------ | :------------------ | :------------- | :----------------- | :----------------------------------------------------------------------------------------------------- |
+| **Daily Briefing / Summarize**  | `text`              | ✅ Supported   | ✅ Supported       | Runs locally or on cheapest tier                                                                       |
+| **Stopwatch / Time Tracking**   | `text`              | ✅ Supported   | ✅ Supported       | Runs 100% locally                                                                                      |
+| **MCP Tool Calling / Calendar** | `tools`             | ⚠️ Unreliable  | ✅ Supported       | Graceful warning: _"Calendar actions require tool calling. Pick a cloud model or larger local model."_ |
+| **Screen Reading (Hotkey)**     | `vision`            | ❌ Unsupported | ✅ Supported       | Fallback to OCR text parsing                                                                           |

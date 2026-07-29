@@ -1,0 +1,74 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+# A new push to the same branch makes the in-flight run obsolete.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    name: ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          # Matches the Node that Electron 43 bundles. node:sqlite needs 22.5+,
+          # and pinning the major keeps local and CI behaviour identical.
+          node-version: 24
+          cache: pnpm
+
+      # --frozen-lockfile fails the build if the lockfile is stale rather than
+      # silently resolving something different from what was committed.
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Format check
+        run: pnpm format:check
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      - name: Test
+        run: pnpm test
+
+      # Catches the class of failure that only appears at build time —
+      # electron-vite externals, preload module format, entry paths.
+      - name: Build
+        run: pnpm build
+
+      # The default skin is generated. Catches editing the generator without
+      # committing the regenerated sheets, which would leave the manifest
+      # describing frames that no longer exist.
+      #
+      # One OS only: the encoder is deterministic for a given zlib, but zlib
+      # output is not guaranteed byte-identical across platforms, and a false
+      # failure on three runners is just noise.
+      - name: Verify generated artwork is up to date
+        if: matrix.os == 'ubuntu-latest'
+        shell: bash
+        run: |
+          node scripts/generate-default-skin.mjs
+          if ! git diff --quiet -- skins apps/desktop/assets; then
+            echo "::error::Generated artwork is out of date. Run: node scripts/generate-default-skin.mjs"
+            git --no-pager diff --stat -- skins apps/desktop/assets
+            exit 1
+          fi

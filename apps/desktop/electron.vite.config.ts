@@ -14,11 +14,7 @@ const externalize = () => externalizeDepsPlugin({ exclude: ['@mochi/core', '@moc
  * Listed explicitly rather than relying on the default, because passing
  * options to externalizeDepsPlugin overrides it.
  */
-const nodeExternals = [
-  'electron',
-  ...builtinModules,
-  ...builtinModules.map((m) => `node:${m}`),
-];
+const nodeExternals = ['electron', ...builtinModules, ...builtinModules.map((m) => `node:${m}`)];
 
 export default defineConfig({
   main: {

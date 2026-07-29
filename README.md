@@ -1,4 +1,5 @@
 # 🍡 Mochi — The Super Assistant (mochi-ai)
+
 > **Your Cozy, Open-Source Animated Desktop AI Companion, Lifestyle Manager & Work Tracker**
 
 ![Mochi Banner](https://img.shields.io/badge/License-MIT-blue.svg)
@@ -49,10 +50,10 @@
 
 Mochi is **split-licensed** — see [LICENSING.md](LICENSING.md) for the authoritative map.
 
-| Part | License |
-| :--- | :--- |
-| Desktop app, shared packages, skins, docs | **[MIT](LICENSE)** |
-| Cloud dashboard (`apps/web`) & services | **[AGPL-3.0-or-later](LICENSE-AGPL-3.0.txt)** |
+| Part                                      | License                                       |
+| :---------------------------------------- | :-------------------------------------------- |
+| Desktop app, shared packages, skins, docs | **[MIT](LICENSE)**                            |
+| Cloud dashboard (`apps/web`) & services   | **[AGPL-3.0-or-later](LICENSE-AGPL-3.0.txt)** |
 
 The desktop client is MIT so you can use, fork, embed, or ship it commercially with no obligations beyond keeping the copyright notice. The cloud service is AGPL so nobody can fork it, close the source, and sell hosted Mochi — self-hosting, modified or not, is always fine.
 

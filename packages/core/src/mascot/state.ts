@@ -70,9 +70,7 @@ export function isWithinWorkHours(now: Date, hours: WorkHours): boolean {
 
   const minutes = now.getHours() * 60 + now.getMinutes();
   if (start === end) return false;
-  return start < end
-    ? minutes >= start && minutes < end
-    : minutes >= start || minutes < end; // spans midnight
+  return start < end ? minutes >= start && minutes < end : minutes >= start || minutes < end; // spans midnight
 }
 
 export interface MascotContext {

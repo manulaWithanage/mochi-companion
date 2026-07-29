@@ -103,8 +103,7 @@ export function resolvePlacement(
   displays: readonly DisplayInfo[],
   primaryDisplayId: number,
 ): ResolvedPlacement {
-  const primary =
-    displays.find((d) => d.id === primaryDisplayId) ?? displays[0] ?? null;
+  const primary = displays.find((d) => d.id === primaryDisplayId) ?? displays[0] ?? null;
 
   if (primary === null) {
     // No displays reported at all — nothing sensible to compute.

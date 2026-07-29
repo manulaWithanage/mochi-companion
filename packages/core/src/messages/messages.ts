@@ -14,11 +14,7 @@
 import { formatDuration } from '../timer/session.js';
 
 export type MessageKind =
-  | 'welcome'
-  | 'greeting'
-  | 'timer-started'
-  | 'timer-stopped'
-  | 'timer-stopped-brief';
+  'welcome' | 'greeting' | 'timer-started' | 'timer-stopped' | 'timer-stopped-brief';
 
 export interface MessageContext {
   readonly assistantName: string;

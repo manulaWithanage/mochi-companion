@@ -76,7 +76,10 @@ export function Overlay(): JSX.Element {
     const offTimer = window.mochi.timer.onChange(setTimer);
     const offVisible = window.mochi.overlay.onVisibilityChange(setVisible);
     const offSettings = window.mochi.settings.onChange((next) => {
-      void window.mochi.skin.load(next.skinName).then(setSkin).catch(() => undefined);
+      void window.mochi.skin
+        .load(next.skinName)
+        .then(setSkin)
+        .catch(() => undefined);
     });
     return () => {
       offState();

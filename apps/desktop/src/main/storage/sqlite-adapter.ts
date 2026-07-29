@@ -13,13 +13,7 @@
 import { DatabaseSync, type StatementSync } from 'node:sqlite';
 import { dirname } from 'node:path';
 import { mkdirSync } from 'node:fs';
-import type {
-  Project,
-  SessionQuery,
-  SessionId,
-  StorageAdapter,
-  WorkSession,
-} from '@mochi/core';
+import type { Project, SessionQuery, SessionId, StorageAdapter, WorkSession } from '@mochi/core';
 import {
   CONNECTION_PRAGMAS,
   DEFAULT_PROJECT,
@@ -117,7 +111,8 @@ export class SqliteStorageAdapter implements StorageAdapter {
   }
 
   private migrate(): void {
-    const row = this.db.prepare('PRAGMA user_version').get() as { user_version: number } | undefined;
+    const row = this.db.prepare('PRAGMA user_version').get() as
+      { user_version: number } | undefined;
     const current = row?.user_version ?? 0;
 
     if (current > LATEST_VERSION) {

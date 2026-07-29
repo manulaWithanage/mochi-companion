@@ -60,7 +60,8 @@ const bridge: MochiBridge = {
     get: () => ipcRenderer.invoke('settings:get') as Promise<MochiSettings>,
     completeSetup: (payload: SetupPayload) =>
       ipcRenderer.invoke('settings:completeSetup', payload) as Promise<MochiSettings>,
-    setPaused: (paused) => ipcRenderer.invoke('settings:setPaused', paused) as Promise<MochiSettings>,
+    setPaused: (paused) =>
+      ipcRenderer.invoke('settings:setPaused', paused) as Promise<MochiSettings>,
     onChange: (listener) => subscribe<MochiSettings>('settings:changed', listener),
   },
 

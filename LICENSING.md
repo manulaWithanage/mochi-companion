@@ -2,14 +2,14 @@
 
 Mochi is split-licensed. **Which license applies depends on which part of the repository you are using.**
 
-| Path | License | Full text |
-| :--- | :--- | :--- |
-| `apps/desktop/` | **MIT** | [LICENSE](LICENSE) |
-| `packages/**` | **MIT** | [LICENSE](LICENSE) |
-| `skins/**` | **MIT** (code) — see *Artwork* below | [LICENSE](LICENSE) |
-| Specs & docs (`*.md`) | **MIT** | [LICENSE](LICENSE) |
-| `apps/web/` | **AGPL-3.0-or-later** | [LICENSE-AGPL-3.0.txt](LICENSE-AGPL-3.0.txt) |
-| `services/**` | **AGPL-3.0-or-later** | [LICENSE-AGPL-3.0.txt](LICENSE-AGPL-3.0.txt) |
+| Path                  | License                              | Full text                                    |
+| :-------------------- | :----------------------------------- | :------------------------------------------- |
+| `apps/desktop/`       | **MIT**                              | [LICENSE](LICENSE)                           |
+| `packages/**`         | **MIT**                              | [LICENSE](LICENSE)                           |
+| `skins/**`            | **MIT** (code) — see _Artwork_ below | [LICENSE](LICENSE)                           |
+| Specs & docs (`*.md`) | **MIT**                              | [LICENSE](LICENSE)                           |
+| `apps/web/`           | **AGPL-3.0-or-later**                | [LICENSE-AGPL-3.0.txt](LICENSE-AGPL-3.0.txt) |
+| `services/**`         | **AGPL-3.0-or-later**                | [LICENSE-AGPL-3.0.txt](LICENSE-AGPL-3.0.txt) |
 
 Anything not listed above is MIT.
 
@@ -21,7 +21,7 @@ Anything not listed above is MIT.
 
 **The cloud service is AGPL-3.0** because AGPL §13 covers the one case MIT cannot: running modified software as a network service. Under AGPL, anyone who hosts a modified version of `apps/web` or `services/**` must publish their source. Fork it and self-host for yourself — that is fine and encouraged. Fork it, close it, and sell hosting — that is not.
 
-The desktop app is deliberately *not* AGPL, because §13 does nothing for locally-run software anyway. It would impose copyleft costs with none of the anti-SaaS benefit.
+The desktop app is deliberately _not_ AGPL, because §13 does nothing for locally-run software anyway. It would impose copyleft costs with none of the anti-SaaS benefit.
 
 ---
 

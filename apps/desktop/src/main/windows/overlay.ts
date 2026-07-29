@@ -27,7 +27,12 @@ const SAVE_DEBOUNCE_MS = 400;
 
 const toDisplayInfo = (d: Display): DisplayInfo => ({
   id: d.id,
-  workArea: { x: d.workArea.x, y: d.workArea.y, width: d.workArea.width, height: d.workArea.height },
+  workArea: {
+    x: d.workArea.x,
+    y: d.workArea.y,
+    width: d.workArea.width,
+    height: d.workArea.height,
+  },
 });
 
 export interface OverlayCallbacks {

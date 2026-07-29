@@ -10,7 +10,7 @@
 - **Zero CASA Audit Exposure & $0 Server LLM Costs**: Mochi Cloud stores **NO Google OAuth tokens or mail bodies**. All email/calendar LLM parsing originates strictly from the local desktop client.
 - **2-Second Unlock Briefing**: The briefing doesn't need to compute while the PC is off. Upon screen unlock, the desktop client fetches cached calendar data plus one fresh local API call, delivering a full briefing within 2 seconds.
 
-> **The contradiction this architecture exists to avoid.** A 24/7 cloud brain that produces email summaries while the PC is off must hold the user's Google refresh token, fetch mail bodies onto your servers, and call an LLM with *someone's* key — the user's key is in their local `safeStorage` on a machine that is switched off. That design cannot coexist with local-vault BYOK, and it triggers CASA Tier 2 plus GDPR data-controller obligations. Desktop-originated processing is the resolution. **Any proposal that moves mail content or OAuth tokens server-side reopens all of it.**
+> **The contradiction this architecture exists to avoid.** A 24/7 cloud brain that produces email summaries while the PC is off must hold the user's Google refresh token, fetch mail bodies onto your servers, and call an LLM with _someone's_ key — the user's key is in their local `safeStorage` on a machine that is switched off. That design cannot coexist with local-vault BYOK, and it triggers CASA Tier 2 plus GDPR data-controller obligations. Desktop-originated processing is the resolution. **Any proposal that moves mail content or OAuth tokens server-side reopens all of it.**
 
 ---
 
@@ -45,6 +45,7 @@ The **1-Click Project Stopwatch** is the core anchor feature for V1:
 > **Scope boundary.** V1 is **local only**. `apps/web` is a placeholder package with no Next.js scaffold, and Supabase sync lands in **V1.5** once the desktop app is proven. `CLAUDE_KICKOFF_PROMPT.md` is authoritative on this.
 
 ### Why Stopwatch is the Ideal V1:
+
 - 🟢 **Zero Compliance/CASA Risk**: Time logging carries zero privacy weight — no Google OAuth, no restricted scopes, no assessment, no GDPR exposure.
 - 🟢 **Zero LLM Cost**: No inference at all, so no BYOK requirement and no spend risk during onboarding.
 - 🟢 **Cannot Annoy The User**: Entirely user-initiated. No interruption risk, which is the failure mode that gets desktop pets uninstalled.

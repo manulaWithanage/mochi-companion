@@ -10,11 +10,11 @@ Regenerate after editing the script:
 node scripts/generate-default-skin.mjs
 ```
 
-| State | Frames | FPS | What it does |
-| :--- | ---: | ---: | :--- |
-| `idle` | 12 | 8 | Breathes gently, blinks near the end of the cycle |
-| `working` | 12 | 12 | Glasses on, tiny laptop, quicker double-bounce |
-| `resting` | 8 | 4 | Eyes closed, slow sway, drifting `z`s |
+| State     | Frames | FPS | What it does                                      |
+| :-------- | -----: | --: | :------------------------------------------------ |
+| `idle`    |     12 |   8 | Breathes gently, blinks near the end of the cycle |
+| `working` |     12 |  12 | Glasses on, tiny laptop, quicker double-bounce    |
+| `resting` |      8 |   4 | Eyes closed, slow sway, drifting `z`s             |
 
 The body is deliberately **identical across all three states**. Mochi is differentiated by expression, accessory and motion — never by recolouring the whole character, which would read as three different mascots rather than one in three moods.
 
@@ -42,7 +42,7 @@ A skin is a directory containing `manifest.json` and one horizontal sprite-sheet
 
 ### Rules
 
-- **Sheets are horizontal strips.** Frame *n* is at `x = n * frameWidth`.
+- **Sheets are horizontal strips.** Frame _n_ is at `x = n * frameWidth`.
 - **`idle`, `working` and `resting` are required.** `thinking`, `speaking` and `alert` are V2 states; if you omit them Mochi falls back to `defaultState`.
 - **`fps` must be 1–24.** Mochi is an always-on desktop app — 8–12 is the intended range. High frame rates get the app uninstalled, so they are rejected at load.
 - **`file` must be a bare filename**, no paths. Manifests are third-party content and are not allowed to reference anything outside their own directory.

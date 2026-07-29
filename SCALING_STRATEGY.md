@@ -23,15 +23,18 @@
 ## 🌟 Why Option 2 is a Game-Changer for Users & SaaS Monetization
 
 ### 1. 📬 "While You Were Away" Intelligent Catch-Up
+
 - When the user turns on their PC or wakes up their laptop, the thin desktop avatar immediately connects to `wss://api.mochi.ai`.
 - Mochi animates cheerfully and delivers an instant briefing:
-  > *"Good morning! While you were offline, I processed 5 emails, drafted 2 replies, and your first meeting is in 30 minutes. Let's grab breakfast!"*
+  > _"Good morning! While you were offline, I processed 5 emails, drafted 2 replies, and your first meeting is in 30 minutes. Let's grab breakfast!"_
 
 ### 2. ⚡ Ultra-Low Desktop Resource Footprint
+
 - All heavy email parsing, vector searching, and background calendar polling happen on cloud servers.
 - The desktop avatar runs with **near 0% CPU and low memory**, ensuring laptop battery lasts all day and fans stay silent.
 
 ### 3. 💰 Perfect SaaS Business Model ($5 - $12/month)
+
 - Running 24/7 cloud workers per user provides **massive tangible value**, making users happy to pay a monthly subscription.
 - **Freemium Strategy**:
   - **Free Tier**: Local Desktop companion (runs background polling only while PC is awake).
