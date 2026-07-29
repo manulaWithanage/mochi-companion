@@ -1,0 +1,7 @@
+{
+  "name": "@mochi/web",
+  "version": "0.0.0",
+  "private": true,
+  "license": "AGPL-3.0-or-later",
+  "description": "PLACEHOLDER. The Mochi Cloud dashboard (app.mochi.ai) is V1.5 — see SYSTEM_ARCHITECTURE.md. Do not scaffold Next.js here during Phase 1."
+}

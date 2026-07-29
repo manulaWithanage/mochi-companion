@@ -1,0 +1,8 @@
+node_modules
+dist
+out
+build
+pnpm-lock.yaml
+LICENSE
+LICENSE-AGPL-3.0.txt
+*.png
