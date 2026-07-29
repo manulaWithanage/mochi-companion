@@ -16,6 +16,8 @@
 import { contextBridge, ipcRenderer, type IpcRendererEvent } from 'electron';
 import type {
   BubbleMessage,
+  KeyResult,
+  LlmStatus,
   LoadedSkin,
   MascotState,
   MochiBridge,
@@ -65,6 +67,17 @@ const bridge: MochiBridge = {
     setDoNotDisturb: (dnd) =>
       ipcRenderer.invoke('settings:setDoNotDisturb', dnd) as Promise<MochiSettings>,
     onChange: (listener) => subscribe<MochiSettings>('settings:changed', listener),
+  },
+
+  llm: {
+    status: () => ipcRenderer.invoke('llm:status') as Promise<LlmStatus>,
+    // The raw key goes to main and never comes back (RULE 1).
+    saveKey: (rawKey) => ipcRenderer.invoke('llm:saveKey', rawKey) as Promise<KeyResult>,
+    forgetKey: (provider) => ipcRenderer.invoke('llm:forgetKey', provider) as Promise<LlmStatus>,
+    setDailyTokenCap: (cap) =>
+      ipcRenderer.invoke('llm:setDailyTokenCap', cap) as Promise<LlmStatus>,
+    refresh: () => ipcRenderer.invoke('llm:refresh') as Promise<LlmStatus>,
+    onChange: (listener) => subscribe<LlmStatus>('llm:changed', listener),
   },
 
   skin: {

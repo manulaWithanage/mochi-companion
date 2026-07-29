@@ -33,7 +33,7 @@ import { OverlayWindow } from './windows/overlay.js';
 import { SetupWindow } from './windows/setup.js';
 import { MochiTray } from './tray.js';
 import { RoutineService } from './services/routine-service.js';
-import { ProviderService } from './services/provider-service.js';
+import { LlmService } from './services/llm-service.js';
 import { registerIpc } from './ipc.js';
 
 interface SayOptions {
@@ -105,7 +105,26 @@ async function bootstrap(): Promise<void> {
     isPaused: () => settings.get().paused,
   });
 
-  registerIpc({ timer, mascot, settings, storage, overlay, setup, governor });
+  const llm = new LlmService();
+
+  registerIpc({
+    timer,
+    mascot,
+    settings,
+    storage,
+    overlay,
+    setup,
+    governor,
+    llm: {
+      status: () => llm.status(),
+      saveKey: (rawKey) => llm.saveKey(rawKey),
+      forgetKey: (provider) => llm.forgetKey(provider),
+      setDailyTokenCap: (cap) => llm.setDailyTokenCap(cap),
+      refresh: () => llm.refresh(),
+    },
+  });
+
+  llm.onChange((status) => setup.send('llm:changed', status));
 
   /**
    * The only path to the user's attention.
@@ -202,10 +221,9 @@ async function bootstrap(): Promise<void> {
   routines.start();
 
   // Zero-key onboarding: if Ollama is running, every AI feature works with
-  // nothing pasted and no account. Fire-and-forget with a short timeout —
-  // the mascot must never wait on a network call to appear.
-  const providers = new ProviderService();
-  void providers.probe();
+  // nothing pasted and no account. Fire-and-forget — the mascot must never
+  // wait on a network call to appear.
+  void llm.initialize();
 
   overlay.create(settings.get().overlayPosition);
   if (settings.get().paused) overlay.setPaused(true);

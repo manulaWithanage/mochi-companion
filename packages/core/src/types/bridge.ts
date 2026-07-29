@@ -9,10 +9,31 @@
  * is a compile error rather than a runtime `undefined is not a function`.
  */
 
+import type { DiscoveredModel, ProviderId } from '../llm/providers.js';
 import type { MascotState, WorkHours } from '../mascot/state.js';
 import type { MochiSettings } from '../settings/settings.js';
 import type { Project } from '../storage/adapter.js';
 import type { WorkSession } from '../timer/session.js';
+
+export interface LlmStatus {
+  /** Ollama answered on localhost — the zero-key path is live. */
+  readonly ollamaAvailable: boolean;
+  /** Providers with a stored, working key. Never includes the key itself. */
+  readonly configured: readonly { provider: ProviderId; redacted: string }[];
+  readonly models: readonly DiscoveredModel[];
+  /** True when Mochi can call a model right now, by any route. */
+  readonly ready: boolean;
+  readonly spentToday: number;
+  readonly dailyTokenCap: number;
+}
+
+export interface KeyResult {
+  readonly ok: boolean;
+  readonly provider: ProviderId | null;
+  readonly redacted: string;
+  readonly modelCount: number;
+  readonly error?: string;
+}
 
 export interface BubbleMessage {
   readonly text: string;
@@ -87,6 +108,20 @@ export interface MochiBridge {
     setPaused(paused: boolean): Promise<MochiSettings>;
     setDoNotDisturb(dnd: boolean): Promise<MochiSettings>;
     onChange(listener: (settings: MochiSettings) => void): () => void;
+  };
+
+  readonly llm: {
+    status(): Promise<LlmStatus>;
+    /**
+     * Validate and store a key. The raw key crosses to main and never comes
+     * back — the result carries only a redacted form (RULE 1).
+     */
+    saveKey(rawKey: string): Promise<KeyResult>;
+    forgetKey(provider: ProviderId): Promise<LlmStatus>;
+    setDailyTokenCap(cap: number): Promise<LlmStatus>;
+    /** Re-probe Ollama, e.g. after the user starts it. */
+    refresh(): Promise<LlmStatus>;
+    onChange(listener: (status: LlmStatus) => void): () => void;
   };
 
   readonly skin: {

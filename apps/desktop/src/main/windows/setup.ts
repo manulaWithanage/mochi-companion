@@ -20,7 +20,7 @@ export class SetupWindow {
 
     this.win = new BrowserWindow({
       width: 520,
-      height: 620,
+      height: 760,
       resizable: true,
       minimizable: true,
       maximizable: false,

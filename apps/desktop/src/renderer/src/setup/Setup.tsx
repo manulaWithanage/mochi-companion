@@ -8,6 +8,7 @@ import {
   type SkinSummary,
   type WorkSession,
 } from '@mochi/core';
+import { AiSection } from './AiSection.js';
 
 /**
  * First run: a 3-step wizard — name, skin, work hours. Under 15 seconds,
@@ -153,18 +154,19 @@ export function Setup(): JSX.Element {
           </p>
         )}
 
+        <AiSection />
+
         <div
           style={{
-            marginTop: 'auto',
-            paddingTop: 16,
+            paddingTop: 12,
             borderTop: '1px solid #2c2634',
             fontSize: 12,
             opacity: 0.5,
           }}
         >
-          Locked — needs a connection you haven&apos;t set up yet:
+          Still locked — needs a Google connection:
           <br />
-          Morning Briefing · Email triage · Calendar alerts
+          Morning Briefing · Calendar alerts · Email triage
         </div>
 
         <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>

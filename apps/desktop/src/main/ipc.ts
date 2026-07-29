@@ -8,7 +8,13 @@
 
 import { ipcMain } from 'electron';
 import { randomUUID } from 'node:crypto';
-import type { InterruptionGovernor, SetupPayload, StorageAdapter } from '@mochi/core';
+import type {
+  InterruptionGovernor,
+  LlmStatus,
+  ProviderId,
+  SetupPayload,
+  StorageAdapter,
+} from '@mochi/core';
 import { parseHhMm } from '@mochi/core';
 import { DEFAULT_PROJECT } from '@mochi/db';
 import type { TimerService } from './services/timer-service.js';
@@ -26,6 +32,13 @@ export interface IpcContext {
   overlay: OverlayWindow;
   setup: SetupWindow;
   governor: InterruptionGovernor;
+  llm: {
+    status(): LlmStatus;
+    saveKey(rawKey: string): Promise<import('@mochi/core').KeyResult>;
+    forgetKey(provider: ProviderId): LlmStatus;
+    setDailyTokenCap(cap: number): LlmStatus;
+    refresh(): Promise<LlmStatus>;
+  };
 }
 
 const asString = (value: unknown, fallback: string): string =>
@@ -104,6 +117,24 @@ export function registerIpc(ctx: IpcContext): void {
     ctx.overlay.setPaused(next.paused);
     return next;
   });
+
+  // ---- llm ---------------------------------------------------------------
+  ipcMain.handle('llm:status', () => ctx.llm.status());
+
+  // The raw key arrives here and stops here. Nothing returned contains it.
+  ipcMain.handle('llm:saveKey', (_e, rawKey: unknown) =>
+    ctx.llm.saveKey(typeof rawKey === 'string' ? rawKey : ''),
+  );
+
+  ipcMain.handle('llm:forgetKey', (_e, provider: unknown) =>
+    ctx.llm.forgetKey(asString(provider, 'openai') as ProviderId),
+  );
+
+  ipcMain.handle('llm:setDailyTokenCap', (_e, cap: unknown) =>
+    ctx.llm.setDailyTokenCap(Math.max(0, Math.round(asFiniteNumber(cap)))),
+  );
+
+  ipcMain.handle('llm:refresh', () => ctx.llm.refresh());
 
   // ---- skins -------------------------------------------------------------
   ipcMain.handle('skin:list', () => listSkins());
