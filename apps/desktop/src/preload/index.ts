@@ -91,6 +91,8 @@ const bridge: MochiBridge = {
     status: () => ipcRenderer.invoke('llm:status') as Promise<LlmStatus>,
     // The raw key goes to main and never comes back (RULE 1).
     saveKey: (rawKey) => ipcRenderer.invoke('llm:saveKey', rawKey) as Promise<KeyResult>,
+    saveAzureKey: (resourceName, deploymentName, apiKey) =>
+      ipcRenderer.invoke('llm:saveAzureKey', resourceName, deploymentName, apiKey) as Promise<KeyResult>,
     forgetKey: (provider) => ipcRenderer.invoke('llm:forgetKey', provider) as Promise<LlmStatus>,
     setDailyTokenCap: (cap) =>
       ipcRenderer.invoke('llm:setDailyTokenCap', cap) as Promise<LlmStatus>,

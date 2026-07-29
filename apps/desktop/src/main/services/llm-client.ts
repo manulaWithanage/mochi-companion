@@ -13,6 +13,7 @@ import { generateText } from 'ai';
 import { createOpenAI } from '@ai-sdk/openai';
 import { createAnthropic } from '@ai-sdk/anthropic';
 import { createGoogleGenerativeAI } from '@ai-sdk/google';
+import { createAzure } from '@ai-sdk/azure';
 import {
   OLLAMA_DEFAULT_HOST,
   route,
@@ -41,6 +42,9 @@ export type GenerateResult =
  * `/v1/chat/completions`, so `.chat()` is required. Calling `provider(id)`
  * instead targets OpenAI's Responses API and fails against every local
  * runtime. That distinction is invisible until it breaks at runtime.
+ *
+ * Azure keys are stored as `RESOURCE::DEPLOYMENT::apikey` in the vault.
+ * The resource and deployment are extracted here and never logged.
  */
 function buildModel(model: DiscoveredModel, key: string | null) {
   switch (model.provider) {
@@ -57,6 +61,14 @@ function buildModel(model: DiscoveredModel, key: string | null) {
       return createAnthropic({ apiKey: key ?? '' })(model.id);
     case 'google':
       return createGoogleGenerativeAI({ apiKey: key ?? '' })(model.id);
+    case 'azure': {
+      // key is stored as `resourceName::deploymentName::rawApiKey`
+      const parts = (key ?? '').split('::');
+      const resourceName = parts[0] ?? '';
+      const apiKey = parts[2] ?? parts[0] ?? '';
+      const azure = createAzure({ resourceName, apiKey });
+      return azure(model.id);
+    }
   }
 }
 

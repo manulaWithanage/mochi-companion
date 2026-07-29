@@ -113,7 +113,7 @@ export class GmailManager {
 
     // Use the LLM to generate the draft
     const llmResult = await this.llmClient.generate({
-      task: 'BRIEFING',
+      task: 'draft',
       system: promptInput.system,
       prompt: promptInput.prompt,
     });

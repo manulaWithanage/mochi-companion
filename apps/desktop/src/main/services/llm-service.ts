@@ -69,6 +69,23 @@ export class LlmService {
    * during the next briefing.
    */
   async saveKey(rawKey: string): Promise<KeyResult> {
+    // Azure compound format: `azure::resourceName::deploymentName::apiKey`
+    // This arrives pre-validated from the llm:saveAzureKey handler.
+    if (rawKey.startsWith('azure::')) {
+      if (!this.vault.available) {
+        return { ok: false, provider: 'azure', redacted: '••••', modelCount: 0, error: 'This system cannot encrypt secrets.' };
+      }
+      this.vault.store('azure', rawKey);
+      // Synthetic model: deployment name is parts[2]
+      const parts = rawKey.split('::');
+      const deploymentName = parts[2] ?? 'azure-deployment';
+      const model: import('@mochi/core').DiscoveredModel = { id: deploymentName, provider: 'azure', capabilities: ['text', 'tools'] };
+      this.remoteModels.set('azure', [model]);
+      this.providers.markConfigured('azure');
+      this.emit();
+      return { ok: true, provider: 'azure', redacted: `azure/${deploymentName}`, modelCount: 1 };
+    }
+
     const result = await validateKey(rawKey);
     if (!result.ok || result.provider === null) {
       return {

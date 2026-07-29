@@ -10,7 +10,7 @@
  * It performs no network calls — apps/desktop does that (RULE 2).
  */
 
-export type ProviderId = 'openai' | 'anthropic' | 'google' | 'ollama';
+export type ProviderId = 'openai' | 'anthropic' | 'google' | 'ollama' | 'azure';
 
 /**
  * What a task needs from a model.
@@ -58,6 +58,13 @@ export const PROVIDERS: Record<ProviderId, ProviderInfo> = {
     modelsUrl: `${OLLAMA_DEFAULT_HOST}/api/tags`,
     local: true,
   },
+  azure: {
+    id: 'azure',
+    label: 'Azure OpenAI',
+    // modelsUrl is dynamic — built from the user's resource name at runtime.
+    modelsUrl: '',
+    local: false,
+  },
 };
 
 /**
@@ -72,6 +79,9 @@ export function detectProvider(rawKey: string): ProviderId | null {
   if (key.startsWith('sk-ant-')) return 'anthropic';
   if (key.startsWith('AIza')) return 'google';
   if (key.startsWith('sk-')) return 'openai';
+  // Azure OpenAI keys are 32-char hex strings (with or without dashes)
+  if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(key)) return 'azure';
+  if (/^[0-9a-f]{32}$/i.test(key)) return 'azure';
   return null;
 }
 

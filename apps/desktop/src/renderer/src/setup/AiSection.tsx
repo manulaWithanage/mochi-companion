@@ -23,7 +23,7 @@ const box: React.CSSProperties = {
   background: '#221d29',
 };
 
-const input: React.CSSProperties = {
+const inputStyle: React.CSSProperties = {
   width: '100%',
   padding: '10px 12px',
   borderRadius: 10,
@@ -32,10 +32,15 @@ const input: React.CSSProperties = {
   color: '#f4eef6',
   fontSize: 14,
   boxSizing: 'border-box',
+  fontFamily: 'inherit',
+};
+
+const monoInputStyle: React.CSSProperties = {
+  ...inputStyle,
   fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace',
 };
 
-const label: React.CSSProperties = {
+const labelStyle: React.CSSProperties = {
   display: 'block',
   fontSize: 12,
   letterSpacing: 0.4,
@@ -49,6 +54,7 @@ const PROVIDER_LABEL: Record<ProviderId, string> = {
   anthropic: 'Anthropic',
   google: 'Google Gemini',
   ollama: 'Ollama',
+  azure: 'Azure OpenAI',
 };
 
 export function AiSection(): JSX.Element {
@@ -56,6 +62,14 @@ export function AiSection(): JSX.Element {
   const [keyInput, setKeyInput] = useState('');
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<{ ok: boolean; text: string } | null>(null);
+
+  // Azure form state
+  const [showAzure, setShowAzure] = useState(false);
+  const [azureResource, setAzureResource] = useState('');
+  const [azureDeployment, setAzureDeployment] = useState('');
+  const [azureKey, setAzureKey] = useState('');
+  const [azureBusy, setAzureBusy] = useState(false);
+  const [azureMessage, setAzureMessage] = useState<{ ok: boolean; text: string } | null>(null);
 
   useEffect(() => {
     void window.mochi.llm.status().then(setStatus);
@@ -73,7 +87,6 @@ export function AiSection(): JSX.Element {
           ok: true,
           text: `${PROVIDER_LABEL[result.provider]} connected — ${result.modelCount} models available.`,
         });
-        // Clear immediately: no reason for the key to sit in a DOM node.
         setKeyInput('');
       } else {
         setMessage({ ok: false, text: result.error ?? 'That key did not work.' });
@@ -83,6 +96,32 @@ export function AiSection(): JSX.Element {
     }
   }, [keyInput]);
 
+  const saveAzure = useCallback(async () => {
+    const resource = azureResource.trim().replace(/\.openai\.azure\.com\/?$/, '');
+    const deployment = azureDeployment.trim();
+    const key = azureKey.trim();
+    if (!resource || !deployment || !key) {
+      setAzureMessage({ ok: false, text: 'All three fields are required.' });
+      return;
+    }
+    setAzureBusy(true);
+    setAzureMessage(null);
+    try {
+      const result = await window.mochi.llm.saveAzureKey(resource, deployment, key);
+      if (result.ok) {
+        setAzureMessage({
+          ok: true,
+          text: `Azure OpenAI connected — deployment "${deployment}" ready.`,
+        });
+        setAzureKey('');
+      } else {
+        setAzureMessage({ ok: false, text: result.error ?? 'Azure credentials did not work.' });
+      }
+    } finally {
+      setAzureBusy(false);
+    }
+  }, [azureResource, azureDeployment, azureKey]);
+
   const runTest = useCallback(async () => {
     setBusy(true);
     setMessage(null);
@@ -90,7 +129,7 @@ export function AiSection(): JSX.Element {
       const r = await window.mochi.llm.test();
       setMessage(
         r.ok
-          ? { ok: true, text: `${r.model}: “${r.text}” (${r.tokens} tokens)` }
+          ? { ok: true, text: `${r.model}: "${r.text}" (${r.tokens} tokens)` }
           : { ok: false, text: r.text },
       );
     } finally {
@@ -126,7 +165,6 @@ export function AiSection(): JSX.Element {
             href="https://ollama.com"
             style={{ color: '#f2a6b3' }}
             onClick={(e) => {
-              // Opened in the real browser by the main process handler.
               e.preventDefault();
             }}
           >
@@ -166,11 +204,12 @@ export function AiSection(): JSX.Element {
         </div>
       )}
 
+      {/* Standard key paste — OpenAI / Anthropic / Google */}
       <div>
-        <span style={label}>Add an API key</span>
+        <span style={labelStyle}>Add an API key (OpenAI / Anthropic / Google)</span>
         <div style={{ display: 'flex', gap: 8 }}>
           <input
-            style={input}
+            style={monoInputStyle}
             type="password"
             placeholder="sk-… / AIza…"
             value={keyInput}
@@ -201,15 +240,126 @@ export function AiSection(): JSX.Element {
           </button>
         </div>
         {message !== null && (
-          <p
-            style={{
-              margin: '8px 0 0',
-              fontSize: 12,
-              color: message.ok ? '#a8e6b8' : '#ffb3c1',
-            }}
-          >
+          <p style={{ margin: '8px 0 0', fontSize: 12, color: message.ok ? '#a8e6b8' : '#ffb3c1' }}>
             {message.text}
           </p>
+        )}
+      </div>
+
+      {/* Azure OpenAI — expandable section */}
+      <div style={{ borderTop: '1px solid #2c2634', paddingTop: 14 }}>
+        <button
+          id="azure-toggle-btn"
+          onClick={() => setShowAzure((v) => !v)}
+          style={{
+            background: 'transparent',
+            border: 'none',
+            color: '#f2a6b3',
+            fontSize: 13,
+            fontWeight: 600,
+            cursor: 'pointer',
+            padding: 0,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 6,
+          }}
+        >
+          <span style={{ fontSize: 11 }}>{showAzure ? '▾' : '▸'}</span>
+          Azure OpenAI
+        </button>
+
+        {showAzure && (
+          <div style={{ marginTop: 14, display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <div style={{ fontSize: 12, opacity: 0.7, lineHeight: 1.6 }}>
+              Enter your Azure OpenAI resource name, deployment name, and API key. Find these in{' '}
+              <strong style={{ color: '#f4eef6' }}>
+                Azure Portal → Azure OpenAI → Keys and Endpoint
+              </strong>
+              .
+            </div>
+
+            <div>
+              <span style={labelStyle}>Resource Name</span>
+              <input
+                id="azure-resource-input"
+                type="text"
+                placeholder="my-resource  (not the full URL)"
+                value={azureResource}
+                onChange={(e) => setAzureResource(e.target.value)}
+                style={inputStyle}
+                autoComplete="off"
+                spellCheck={false}
+              />
+              <p style={{ margin: '4px 0 0', fontSize: 11, opacity: 0.5 }}>
+                e.g. if your endpoint is <em>my-resource.openai.azure.com</em>, enter{' '}
+                <strong>my-resource</strong>
+              </p>
+            </div>
+
+            <div>
+              <span style={labelStyle}>Deployment Name</span>
+              <input
+                id="azure-deployment-input"
+                type="text"
+                placeholder="gpt-4o"
+                value={azureDeployment}
+                onChange={(e) => setAzureDeployment(e.target.value)}
+                style={inputStyle}
+                autoComplete="off"
+                spellCheck={false}
+              />
+            </div>
+
+            <div>
+              <span style={labelStyle}>API Key</span>
+              <input
+                id="azure-key-input"
+                type="password"
+                placeholder="32-char hex key from Azure Portal"
+                value={azureKey}
+                onChange={(e) => setAzureKey(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') void saveAzure();
+                }}
+                style={monoInputStyle}
+                autoComplete="off"
+                spellCheck={false}
+              />
+            </div>
+
+            {azureMessage !== null && (
+              <p
+                style={{
+                  margin: 0,
+                  fontSize: 12,
+                  color: azureMessage.ok ? '#a8e6b8' : '#ffb3c1',
+                }}
+              >
+                {azureMessage.text}
+              </p>
+            )}
+
+            <button
+              id="azure-connect-btn"
+              onClick={() => void saveAzure()}
+              disabled={azureBusy || !azureResource || !azureDeployment || !azureKey}
+              style={{
+                alignSelf: 'flex-start',
+                padding: '9px 20px',
+                borderRadius: 10,
+                border: 'none',
+                background: '#f2a6b3',
+                color: '#241f2b',
+                fontWeight: 600,
+                fontSize: 13,
+                cursor: azureBusy ? 'default' : 'pointer',
+                opacity:
+                  azureBusy || !azureResource || !azureDeployment || !azureKey ? 0.5 : 1,
+              }}
+            >
+              {azureBusy ? 'Validating…' : 'Connect Azure OpenAI'}
+            </button>
+          </div>
         )}
       </div>
 
@@ -234,7 +384,7 @@ export function AiSection(): JSX.Element {
 
       {status.ready && (
         <div>
-          <span style={label}>Today&apos;s usage</span>
+          <span style={labelStyle}>Today&apos;s usage</span>
           <div
             style={{ height: 6, borderRadius: 3, background: '#332c3d', overflow: 'hidden' }}
             title={`${status.spentToday.toLocaleString()} of ${status.dailyTokenCap.toLocaleString()} tokens`}

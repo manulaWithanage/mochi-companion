@@ -76,6 +76,8 @@ function authHeaders(provider: ProviderId, key: string): Record<string, string> 
       return { 'x-goog-api-key': key };
     case 'openai':
       return { Authorization: `Bearer ${key}` };
+    case 'azure':
+      return { 'api-key': key };
     case 'ollama':
       return {};
   }
@@ -108,7 +110,18 @@ export async function validateKey(rawKey: string): Promise<KeyValidation> {
       provider,
       redacted,
       models: [],
-      error: "That doesn't look like an OpenAI, Anthropic or Google key.",
+      error: "That doesn't look like an OpenAI, Anthropic, Google or Azure OpenAI key.",
+    };
+  }
+
+  // Azure needs resource + deployment context — validated separately via validateAzureKey
+  if (provider === 'azure') {
+    return {
+      ok: false,
+      provider: 'azure',
+      redacted,
+      models: [],
+      error: 'Azure OpenAI keys must be added via the Azure section with resource name and deployment.',
     };
   }
 
@@ -136,9 +149,55 @@ export async function validateKey(rawKey: string): Promise<KeyValidation> {
       provider,
       redacted,
       models: [],
-      // Never echo the key back, even in an error.
       error: message.includes('401') || message.includes('403') ? 'Key rejected.' : message,
     };
+  }
+}
+
+/**
+ * Validate Azure OpenAI credentials by making a real call.
+ * Returns the synthetic model entry on success.
+ */
+export async function validateAzureKey(opts: {
+  resourceName: string;
+  deploymentName: string;
+  apiKey: string;
+  apiVersion?: string;
+}): Promise<KeyValidation> {
+  const { resourceName, deploymentName, apiKey, apiVersion = '2024-02-01' } = opts;
+  const resource = resourceName.replace(/\.openai\.azure\.com\/?$/, '').trim();
+  const redacted = redactKey(apiKey);
+
+  if (!resource || !deploymentName || !apiKey) {
+    return { ok: false, provider: 'azure', redacted, models: [], error: 'Resource name, deployment name and API key are all required.' };
+  }
+
+  // Azure deployments endpoint: list deployed models
+  const url = `https://${resource}.openai.azure.com/openai/deployments?api-version=${apiVersion}`;
+  try {
+    const payload = await fetchJson(url, { headers: { 'api-key': apiKey } }, REMOTE_TIMEOUT_MS);
+    const obj = payload as Record<string, unknown>;
+    // Parse Azure deployments list: { data: [{ id, model }] }
+    const data = Array.isArray(obj['data']) ? (obj['data'] as Record<string, unknown>[]) : [];
+    // Always include the user's named deployment even if listing fails
+    const deployments: import('@mochi/core').DiscoveredModel[] = data
+      .map((d) => ({ id: String(d['id'] ?? d['model'] ?? ''), provider: 'azure' as const, capabilities: ['text', 'tools'] as import('@mochi/core').Capability[] }))
+      .filter((d) => d.id.length > 0);
+
+    if (!deployments.find((d) => d.id === deploymentName)) {
+      deployments.unshift({ id: deploymentName, provider: 'azure', capabilities: ['text', 'tools'] });
+    }
+
+    return { ok: true, provider: 'azure', redacted, models: deployments };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    // Fall back: if listing fails but key is valid for the named deployment, still allow it
+    if (message.includes('401') || message.includes('403')) {
+      return { ok: false, provider: 'azure', redacted, models: [], error: 'Azure API key rejected. Check your key and resource name.' };
+    }
+    // Accept with just the named deployment — some endpoints block listing
+    const model: import('@mochi/core').DiscoveredModel = { id: deploymentName, provider: 'azure', capabilities: ['text', 'tools'] };
+    return { ok: true, provider: 'azure', redacted, models: [model] };
   }
 }
 

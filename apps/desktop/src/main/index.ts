@@ -143,6 +143,8 @@ async function bootstrap(): Promise<void> {
     llm: {
       status: () => llm.status(),
       saveKey: (rawKey) => llm.saveKey(rawKey),
+      saveAzureKey: (resourceName, deploymentName, apiKey) =>
+        llm.saveKey(`azure::${resourceName}::${deploymentName}::${apiKey}`),
       forgetKey: (provider) => llm.forgetKey(provider),
       setDailyTokenCap: (cap) => llm.setDailyTokenCap(cap),
       refresh: () => llm.refresh(),

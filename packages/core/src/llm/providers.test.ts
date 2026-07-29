@@ -199,9 +199,15 @@ describe('parseModelList', () => {
 });
 
 describe('PROVIDERS', () => {
-  it('gives every provider a live discovery endpoint', () => {
+  it('gives every non-Azure provider a live discovery endpoint', () => {
     for (const p of Object.values(PROVIDERS)) {
-      expect(p.modelsUrl).toMatch(/^https?:\/\//);
+      // Azure's modelsUrl is intentionally empty — it's built dynamically
+      // from the user's resource name at runtime, not hardcoded here.
+      if (p.id === 'azure') {
+        expect(p.modelsUrl).toBe('');
+      } else {
+        expect(p.modelsUrl).toMatch(/^https?:\/\//);
+      }
     }
   });
 

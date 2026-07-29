@@ -138,6 +138,11 @@ export interface MochiBridge {
      * back — the result carries only a redacted form (RULE 1).
      */
     saveKey(rawKey: string): Promise<KeyResult>;
+    /**
+     * Validate and store Azure OpenAI credentials.
+     * Resource name, deployment name, and API key are combined and encrypted.
+     */
+    saveAzureKey(resourceName: string, deploymentName: string, apiKey: string): Promise<KeyResult>;
     forgetKey(provider: ProviderId): Promise<LlmStatus>;
     setDailyTokenCap(cap: number): Promise<LlmStatus>;
     /** Re-probe Ollama, e.g. after the user starts it. */
