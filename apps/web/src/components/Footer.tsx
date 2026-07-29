@@ -13,12 +13,13 @@ export const Footer: React.FC = () => {
       background: '#ffffff',
       color: '#0f172a',
       overflow: 'hidden',
-      borderTop: '1px solid #e2e8f0',
+      border: 'none',
+      outline: 'none',
       paddingTop: '64px'
     }}>
       
-      {/* 📄 TOP SECTION: CLEAN DAYTIME NAVIGATION COLUMNS (Exact Donely Style) */}
-      <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 32px 50px 32px', position: 'relative', zIndex: 10 }}>
+      {/* 📄 TOP SECTION: CLEAN NAVIGATION COLUMNS (No Outer Borders or Outlines) */}
+      <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 32px 48px 32px', position: 'relative', zIndex: 10 }}>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '32px' }}>
           
           {/* Col 1: Brand & Mission */}
@@ -33,10 +34,10 @@ export const Footer: React.FC = () => {
               Your cozy desktop AI companion & 1-click time tracker. Built for focus, calm, and simple daily rhythm.
             </p>
             <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-              <span style={{ fontSize: '11px', fontWeight: '700', padding: '4px 12px', borderRadius: '14px', background: '#f1f5f9', color: '#4f46e5', border: '1px solid #e2e8f0' }}>
+              <span style={{ fontSize: '11px', fontWeight: '700', padding: '4px 12px', borderRadius: '14px', background: '#f1f5f9', color: '#4f46e5', border: 'none' }}>
                 MIT Licensed
               </span>
-              <span style={{ fontSize: '11px', fontWeight: '700', padding: '4px 12px', borderRadius: '14px', background: '#f0fdf4', color: '#16a34a', border: '1px solid #dcfce7' }}>
+              <span style={{ fontSize: '11px', fontWeight: '700', padding: '4px 12px', borderRadius: '14px', background: '#f0fdf4', color: '#16a34a', border: 'none' }}>
                 100% Private
               </span>
             </div>
@@ -78,13 +79,13 @@ export const Footer: React.FC = () => {
         </div>
       </div>
 
-      {/* 🌸 BOTTOM SECTION: DAYTIME 3D PAPERCRAFT ORIGAMI JAPANESE SCENERY BANNER */}
-      <div style={{ position: 'relative', width: '100%', height: '340px', overflow: 'hidden' }}>
+      {/* 🌸 BOTTOM SECTION: ULTRA-DETAILED 3D PAPERCRAFT ORIGAMI JAPANESE SCENERY (Seamless Whole, No Outlines) */}
+      <div style={{ position: 'relative', width: '100%', height: '360px', overflow: 'hidden' }}>
         
-        {/* Full Bleed Daytime Scenery Image */}
+        {/* Full Bleed Ultra Detail Daytime Scenery Image */}
         <img
-          src="/japan_daytime_papercraft_footer.jpg"
-          alt="Mochi 3D Papercraft Origami Japanese Scenery"
+          src="/japan_papercraft_ultra_detail.jpg"
+          alt="Mochi 8K Ultra Detail 3D Papercraft Origami Japanese Scenery"
           style={{
             width: '100%',
             height: '100%',
@@ -94,18 +95,7 @@ export const Footer: React.FC = () => {
           }}
         />
 
-        {/* Seamless Blend into White Top Section */}
-        <div style={{
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          right: 0,
-          height: '60px',
-          background: 'linear-gradient(to bottom, #ffffff 0%, transparent 100%)',
-          pointerEvents: 'none'
-        }}></div>
-
-        {/* 🍡 INTERACTIVE MOCHI MASCOT STAGE (Centered in the Daytime Scenery) */}
+        {/* 🍡 INTERACTIVE MOCHI MASCOT STAGE (Centered in the Ultra Detail Scenery) */}
         <div style={{
           position: 'absolute',
           bottom: '36px',
@@ -124,11 +114,11 @@ export const Footer: React.FC = () => {
             borderRadius: '16px',
             fontSize: '13px',
             fontWeight: '600',
-            boxShadow: '0 10px 30px rgba(0, 0, 0, 0.15)',
+            boxShadow: '0 10px 30px rgba(0, 0, 0, 0.12)',
             marginBottom: '8px',
             whiteSpace: 'nowrap',
             position: 'relative',
-            border: '1px solid #e2e8f0'
+            border: 'none'
           }}>
             {speechBubble}
             {/* Bubble Tail */}
@@ -148,13 +138,13 @@ export const Footer: React.FC = () => {
           {/* Interactive Mascot Canvas */}
           <div
             onClick={() => setMascotState(mascotState === 'idle' ? 'resting' : mascotState === 'resting' ? 'coffee' : 'idle')}
-            style={{ cursor: 'pointer', filter: 'drop-shadow(0 10px 20px rgba(0,0,0,0.15))' }}
+            style={{ cursor: 'pointer', filter: 'drop-shadow(0 10px 20px rgba(0,0,0,0.12))' }}
           >
             <LandingMascotCanvas state={mascotState} size={140} />
           </div>
         </div>
 
-        {/* Copyright overlay bar across the bottom of the daytime papercraft scenery */}
+        {/* Copyright bar cleanly integrated into the bottom of the papercraft scenery */}
         <div style={{
           position: 'absolute',
           bottom: '12px',
