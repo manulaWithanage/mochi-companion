@@ -94,7 +94,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGoToDashboard }) => 
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '28px' }}>
-          <a href="#how-it-works" style={{ color: 'var(--text-muted)', textDecoration: 'none', fontSize: '14px', fontWeight: '600' }}>How It Works</a>
+          <a href="#capabilities" style={{ color: 'var(--text-muted)', textDecoration: 'none', fontSize: '14px', fontWeight: '600' }}>Capabilities</a>
           <a href="#routine" style={{ color: 'var(--text-muted)', textDecoration: 'none', fontSize: '14px', fontWeight: '600' }}>Daily Habits</a>
           <a href="#privacy" style={{ color: 'var(--text-muted)', textDecoration: 'none', fontSize: '14px', fontWeight: '600' }}>100% Private</a>
           
@@ -217,7 +217,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGoToDashboard }) => 
             maxWidth: '760px',
             margin: '0 auto 32px auto'
           }}>
-            Mochi lives right on your computer screen. It logs your work hours with 1 click, reminds you to drink water and enjoy breakfast, and keeps your workday calm, focused, and on schedule.
+            Mochi lives right on your computer screen. It manages your daily tasks, nudges you for unread emails and client follow-ups, tracks your work hours, and keeps your workday calm, focused, and organized.
           </p>
 
           {/* CTA Button Row */}
@@ -369,7 +369,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGoToDashboard }) => 
                   cursor: 'pointer',
                   background: mascotState === 'coffee' ? 'var(--primary-gradient)' : 'rgba(255, 255, 255, 0.85)',
                   color: mascotState === 'coffee' ? '#ffffff' : '#334155',
-                  boxShadow: mascotState === 'coffee' ? '0 4px 16px rgba(79, 70, 229, 0.35)' : '0 2px 8px rgba(0,0,0,0.06)'
+                  boxShadow: mascotState === 'coffee' ? '0 4px 14px rgba(79, 70, 229, 0.35)' : '0 2px 8px rgba(0,0,0,0.06)'
                 }}
               >
                 9 AM Coffee & Habit
@@ -380,43 +380,181 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGoToDashboard }) => 
         </div>
       </section>
 
-      {/* 🎯 Simple Feature Showcase Grid */}
-      <section id="how-it-works" style={{ maxWidth: '1100px', margin: '0 auto', padding: '60px 24px' }}>
-        <div style={{ textAlign: 'center', marginBottom: '48px' }}>
-          <h2 style={{ fontSize: '36px', fontWeight: '800', marginBottom: '12px', color: '#0f172a' }}>
-            3 Simple Ways Mochi Makes Your Workday Better
+      {/* 🚀 CAPABILITIES SECTION: WHAT MOCHI CAN DO */}
+      <section id="capabilities" style={{ maxWidth: '1140px', margin: '0 auto', padding: '80px 24px 40px 24px' }}>
+        <div style={{ textAlign: 'center', marginBottom: '56px' }}>
+          <div style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '8px',
+            padding: '6px 16px',
+            borderRadius: '20px',
+            background: 'rgba(79, 70, 229, 0.08)',
+            border: '1px solid rgba(79, 70, 229, 0.18)',
+            fontSize: '12.5px',
+            fontWeight: '700',
+            color: '#4f46e5',
+            marginBottom: '16px'
+          }}>
+            Everyday Productivity Capabilities
+          </div>
+          <h2 style={{ fontSize: '40px', fontWeight: '800', marginBottom: '14px', color: '#0f172a', letterSpacing: '-0.02em' }}>
+            What Mochi Does for Your Workday
           </h2>
-          <p style={{ color: 'var(--text-muted)', fontSize: '16px' }}>
-            No complicated settings or setup. Just a simple companion that helps you stay on track.
+          <p style={{ color: 'var(--text-muted)', fontSize: '17px', maxWidth: '680px', margin: '0 auto', lineHeight: '1.6' }}>
+            Mochi handles your daily tasks, emails, schedule reminders, and focus time so you can spend your energy doing your best work.
           </p>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '24px' }}>
-          {/* Card 1 */}
-          <div className="glass-card" style={{ padding: '32px' }}>
-            <div style={{ fontSize: '36px', marginBottom: '16px' }}>⏱️</div>
-            <h3 style={{ fontSize: '20px', fontWeight: '700', marginBottom: '8px', color: '#0f172a' }}>1-Click Work Time Tracker</h3>
-            <p style={{ color: 'var(--text-muted)', fontSize: '14px', lineHeight: '1.6' }}>
-              Stop filling out annoying timesheets. Click Mochi once when you start working, and Mochi types alongside you on a mini laptop to log your hours automatically.
+        {/* 4 Feature Cards Grid */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '24px' }}>
+          
+          {/* Capability 1: Daily Tasks */}
+          <div className="glass-card" style={{ padding: '32px', borderRadius: '24px' }}>
+            <div style={{
+              width: '48px',
+              height: '48px',
+              borderRadius: '16px',
+              background: 'rgba(79, 70, 229, 0.1)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: '22px',
+              marginBottom: '20px',
+              color: '#4f46e5'
+            }}>
+              ✅
+            </div>
+            <h3 style={{ fontSize: '20px', fontWeight: '700', marginBottom: '10px', color: '#0f172a' }}>Daily Tasks & To-Do Lists</h3>
+            <p style={{ color: 'var(--text-muted)', fontSize: '14.5px', lineHeight: '1.6' }}>
+              Organize your priorities for the day. Mochi keeps track of your open tasks, lets you check them off with 1 click, and auto-saves your progress.
             </p>
           </div>
 
-          {/* Card 2 */}
-          <div className="glass-card" style={{ padding: '32px' }}>
-            <div style={{ fontSize: '36px', marginBottom: '16px' }}>🌅</div>
-            <h3 style={{ fontSize: '20px', fontWeight: '700', marginBottom: '8px', color: '#0f172a' }}>Daily Lifestyle & Health Nudges</h3>
-            <p style={{ color: 'var(--text-muted)', fontSize: '14px', lineHeight: '1.6' }}>
-              Stay energized with gentle reminders for your 9:00 AM breakfast, hourly water checks, posture reminders, and evening wind-down summaries so you never burn out.
+          {/* Capability 2: Email & Follow-up Nudges */}
+          <div className="glass-card" style={{ padding: '32px', borderRadius: '24px' }}>
+            <div style={{
+              width: '48px',
+              height: '48px',
+              borderRadius: '16px',
+              background: 'rgba(16, 185, 129, 0.1)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: '22px',
+              marginBottom: '20px',
+              color: '#10b981'
+            }}>
+              ✉️
+            </div>
+            <h3 style={{ fontSize: '20px', fontWeight: '700', marginBottom: '10px', color: '#0f172a' }}>Email & Follow-Up Reminders</h3>
+            <p style={{ color: 'var(--text-muted)', fontSize: '14.5px', lineHeight: '1.6' }}>
+              Never forget an important client response. Mochi gives gentle desktop nudges when it’s time to check unread emails and send follow-ups.
             </p>
           </div>
 
-          {/* Card 3 */}
-          <div id="privacy" className="glass-card" style={{ padding: '32px' }}>
-            <div style={{ fontSize: '36px', marginBottom: '16px' }}>🔒</div>
-            <h3 style={{ fontSize: '20px', fontWeight: '700', marginBottom: '8px', color: '#0f172a' }}>100% Private & Stays on Your Machine</h3>
-            <p style={{ color: 'var(--text-muted)', fontSize: '14px', lineHeight: '1.6' }}>
-              Your personal tasks, schedules, and work hours stay safely on your computer. Nothing is ever sold, tracked, or shared with external servers.
+          {/* Capability 3: Smart Lifestyle Nudges */}
+          <div className="glass-card" style={{ padding: '32px', borderRadius: '24px' }}>
+            <div style={{
+              width: '48px',
+              height: '48px',
+              borderRadius: '16px',
+              background: 'rgba(245, 158, 11, 0.1)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: '22px',
+              marginBottom: '20px',
+              color: '#f59e0b'
+            }}>
+              ☕
+            </div>
+            <h3 style={{ fontSize: '20px', fontWeight: '700', marginBottom: '10px', color: '#0f172a' }}>Routine & Health Nudges</h3>
+            <p style={{ color: 'var(--text-muted)', fontSize: '14.5px', lineHeight: '1.6' }}>
+              Stay energized all day with 9:00 AM coffee/breakfast check-ins, hourly water reminders, shoulder stretches, and evening wind-downs.
             </p>
+          </div>
+
+          {/* Capability 4: 1-Click Time Tracking */}
+          <div className="glass-card" style={{ padding: '32px', borderRadius: '24px' }}>
+            <div style={{
+              width: '48px',
+              height: '48px',
+              borderRadius: '16px',
+              background: 'rgba(236, 72, 153, 0.1)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: '22px',
+              marginBottom: '20px',
+              color: '#ec4899'
+            }}>
+              ⏱️
+            </div>
+            <h3 style={{ fontSize: '20px', fontWeight: '700', marginBottom: '10px', color: '#0f172a' }}>1-Click Work Time Logging</h3>
+            <p style={{ color: 'var(--text-muted)', fontSize: '14.5px', lineHeight: '1.6' }}>
+              Forget manual timesheets. Click Mochi when you start a task, and Mochi types alongside you on its laptop to automatically log your hours.
+            </p>
+          </div>
+
+        </div>
+      </section>
+
+      {/* 🌅 DAILY WORKDAY ROUTINE TIMELINE */}
+      <section id="routine" style={{ maxWidth: '1000px', margin: '0 auto', padding: '40px 24px 80px 24px' }}>
+        <div style={{
+          background: 'rgba(255, 255, 255, 0.75)',
+          backdropFilter: 'blur(20px)',
+          borderRadius: '32px',
+          padding: '48px',
+          border: '1px solid rgba(0, 0, 0, 0.08)',
+          boxShadow: '0 20px 50px rgba(0, 0, 0, 0.04)'
+        }}>
+          <div style={{ textAlign: 'center', marginBottom: '40px' }}>
+            <h3 style={{ fontSize: '28px', fontWeight: '800', color: '#0f172a', marginBottom: '10px' }}>
+              A Peaceful Workday Routine with Mochi
+            </h3>
+            <p style={{ color: 'var(--text-muted)', fontSize: '15.5px' }}>
+              Here is how Mochi guides your morning, focus hours, and evening wrap-up.
+            </p>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '24px' }}>
+            {/* Step 1 */}
+            <div style={{ background: '#ffffff', padding: '24px', borderRadius: '20px', border: '1px solid #f1f5f9' }}>
+              <div style={{ fontSize: '13px', fontWeight: '700', color: '#4f46e5', marginBottom: '8px' }}>9:00 AM</div>
+              <h4 style={{ fontSize: '16px', fontWeight: '700', color: '#0f172a', marginBottom: '6px' }}>Morning Kickoff</h4>
+              <p style={{ fontSize: '13.5px', color: '#64748b', lineHeight: '1.5', margin: 0 }}>
+                Coffee check-in & picking your top 3 tasks for the day.
+              </p>
+            </div>
+
+            {/* Step 2 */}
+            <div style={{ background: '#ffffff', padding: '24px', borderRadius: '20px', border: '1px solid #f1f5f9' }}>
+              <div style={{ fontSize: '13px', fontWeight: '700', color: '#10b981', marginBottom: '8px' }}>11:30 AM</div>
+              <h4 style={{ fontSize: '16px', fontWeight: '700', color: '#0f172a', marginBottom: '6px' }}>Email & Inquiries</h4>
+              <p style={{ fontSize: '13.5px', color: '#64748b', lineHeight: '1.5', margin: 0 }}>
+                Gentle nudge to reply to client emails before deep focus time.
+              </p>
+            </div>
+
+            {/* Step 3 */}
+            <div style={{ background: '#ffffff', padding: '24px', borderRadius: '20px', border: '1px solid #f1f5f9' }}>
+              <div style={{ fontSize: '13px', fontWeight: '700', color: '#f59e0b', marginBottom: '8px' }}>2:00 PM</div>
+              <h4 style={{ fontSize: '16px', fontWeight: '700', color: '#0f172a', marginBottom: '6px' }}>Deep Work & Stopwatch</h4>
+              <p style={{ fontSize: '13.5px', color: '#64748b', lineHeight: '1.5', margin: 0 }}>
+                1-click stopwatch timer logs your project hours automatically.
+              </p>
+            </div>
+
+            {/* Step 4 */}
+            <div style={{ background: '#ffffff', padding: '24px', borderRadius: '20px', border: '1px solid #f1f5f9' }}>
+              <div style={{ fontSize: '13px', fontWeight: '700', color: '#ec4899', marginBottom: '8px' }}>5:30 PM</div>
+              <h4 style={{ fontSize: '16px', fontWeight: '700', color: '#0f172a', marginBottom: '6px' }}>Evening Summary</h4>
+              <p style={{ fontSize: '13.5px', color: '#64748b', lineHeight: '1.5', margin: 0 }}>
+                Generates a clean breakdown of completed tasks & hours logged.
+              </p>
+            </div>
           </div>
         </div>
       </section>
