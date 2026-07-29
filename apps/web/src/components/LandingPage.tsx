@@ -112,7 +112,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGoToDashboard }) => 
             Explore Dashboard
           </button>
           
-          <a href="https://github.com/manulaWithanage/mochi-companion" target="_blank" rel="noreferrer" style={{
+          <a href="/Mochi-Setup.exe" download style={{
             fontSize: '13.5px',
             fontWeight: '700',
             padding: '9px 22px',
@@ -222,7 +222,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGoToDashboard }) => 
 
           {/* CTA Button Row */}
           <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap', justifyContent: 'center', marginBottom: '40px' }}>
-            <a href="https://github.com/manulaWithanage/mochi-companion" target="_blank" rel="noreferrer" style={{
+            <a href="/Mochi-Setup.exe" download style={{
               padding: '14px 32px',
               fontSize: '15px',
               fontWeight: '700',
@@ -380,7 +380,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGoToDashboard }) => 
         </div>
       </section>
 
-      {/* 🚀 CAPABILITIES SECTION: WHAT MOCHI CAN DO */}
+      {/* 🚀 CAPABILITIES SECTION: WHAT MOCHI CAN DO (6 FEATURES GRID) */}
       <section id="capabilities" style={{ maxWidth: '1140px', margin: '0 auto', padding: '80px 24px 40px 24px' }}>
         <div style={{ textAlign: 'center', marginBottom: '56px' }}>
           <div style={{
@@ -402,14 +402,14 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGoToDashboard }) => 
             What Mochi Does for Your Workday
           </h2>
           <p style={{ color: 'var(--text-muted)', fontSize: '17px', maxWidth: '680px', margin: '0 auto', lineHeight: '1.6' }}>
-            Mochi handles your daily tasks, emails, schedule reminders, and focus time so you can spend your energy doing your best work.
+            Mochi handles your daily tasks, emails, schedule reminders, focus time, and personal skins so you can spend your energy doing your best work.
           </p>
         </div>
 
-        {/* 4 Feature Cards Grid */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '24px' }}>
+        {/* 6 Feature Cards Grid (3 Columns x 2 Rows) */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '24px' }}>
           
-          {/* Capability 1: Daily Tasks */}
+          {/* Feature 1: Daily Tasks */}
           <div className="glass-card" style={{ padding: '32px', borderRadius: '24px' }}>
             <div style={{
               width: '48px',
@@ -431,7 +431,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGoToDashboard }) => 
             </p>
           </div>
 
-          {/* Capability 2: Email & Follow-up Nudges */}
+          {/* Feature 2: Email & Follow-Up Reminders */}
           <div className="glass-card" style={{ padding: '32px', borderRadius: '24px' }}>
             <div style={{
               width: '48px',
@@ -453,7 +453,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGoToDashboard }) => 
             </p>
           </div>
 
-          {/* Capability 3: Smart Lifestyle Nudges */}
+          {/* Feature 3: Smart Routine & Health Nudges */}
           <div className="glass-card" style={{ padding: '32px', borderRadius: '24px' }}>
             <div style={{
               width: '48px',
@@ -475,7 +475,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGoToDashboard }) => 
             </p>
           </div>
 
-          {/* Capability 4: 1-Click Time Tracking */}
+          {/* Feature 4: 1-Click Work Time Logging */}
           <div className="glass-card" style={{ padding: '32px', borderRadius: '24px' }}>
             <div style={{
               width: '48px',
@@ -494,6 +494,50 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGoToDashboard }) => 
             <h3 style={{ fontSize: '20px', fontWeight: '700', marginBottom: '10px', color: '#0f172a' }}>1-Click Work Time Logging</h3>
             <p style={{ color: 'var(--text-muted)', fontSize: '14.5px', lineHeight: '1.6' }}>
               Forget manual timesheets. Click Mochi when you start a task, and Mochi types alongside you on its laptop to automatically log your hours.
+            </p>
+          </div>
+
+          {/* Feature 5: Customizable Mascot Skins */}
+          <div className="glass-card" style={{ padding: '32px', borderRadius: '24px' }}>
+            <div style={{
+              width: '48px',
+              height: '48px',
+              borderRadius: '16px',
+              background: 'rgba(139, 92, 246, 0.1)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: '22px',
+              marginBottom: '20px',
+              color: '#8b5cf6'
+            }}>
+              🎨
+            </div>
+            <h3 style={{ fontSize: '20px', fontWeight: '700', marginBottom: '10px', color: '#0f172a' }}>Customizable Avatar Skins</h3>
+            <p style={{ color: 'var(--text-muted)', fontSize: '14.5px', lineHeight: '1.6' }}>
+              Personalize your desktop companion! Switch between classic Mochi, Dango, Matcha, Boba, and seasonal skins to match your workspace vibe.
+            </p>
+          </div>
+
+          {/* Feature 6: 100% Offline & Private Security */}
+          <div className="glass-card" style={{ padding: '32px', borderRadius: '24px' }}>
+            <div style={{
+              width: '48px',
+              height: '48px',
+              borderRadius: '16px',
+              background: 'rgba(14, 165, 233, 0.1)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: '22px',
+              marginBottom: '20px',
+              color: '#0ea5e9'
+            }}>
+              🔒
+            </div>
+            <h3 style={{ fontSize: '20px', fontWeight: '700', marginBottom: '10px', color: '#0f172a' }}>100% Private & Offline Security</h3>
+            <p style={{ color: 'var(--text-muted)', fontSize: '14.5px', lineHeight: '1.6' }}>
+              All your task lists, work logs, and personal routines stay safely encrypted on your machine. Zero tracking, zero external data sharing.
             </p>
           </div>
 
