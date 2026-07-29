@@ -7,16 +7,16 @@ interface LandingPageProps {
 
 export const LandingPage: React.FC<LandingPageProps> = ({ onGoToDashboard }) => {
   const [mascotState, setMascotState] = useState<'idle' | 'working' | 'resting' | 'coffee'>('idle');
-  const [speechMessage, setSpeechMessage] = useState("Hi! I'm Mochi 🍡. I live on your desktop and track your work time!");
+  const [speechMessage, setSpeechMessage] = useState("Hi! I'm Mochi 🍡. I'm your desktop workflow companion ready to help with tasks & time tracking!");
   const [clickCount, setClickCount] = useState(0);
 
   const handleMascotClick = () => {
     const messages = [
-      "I'm keeping your desktop cozy & productive! 🍡",
-      "Ready to start a 1-click stopwatch timer? ⏱️",
-      "Did you take a sip of water today? 💧",
-      "Mochi loves sitting on your screen! ⭐",
-      "You've been focused today! Keep it up! 🚀"
+      "I'm keeping your workflow organized & focused! 🍡",
+      "Ready to start a 1-click project stopwatch timer? ⏱️",
+      "Did you take a sip of water & check your 9 AM routine? 💧",
+      "Mochi is active and monitoring your workflow schedule! ⭐",
+      "You've been focused today! Keep up the great work! 🚀"
     ];
     setClickCount((prev) => prev + 1);
     setSpeechMessage(messages[clickCount % messages.length]);
@@ -25,13 +25,13 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGoToDashboard }) => 
   const handleStateChange = (newState: 'idle' | 'working' | 'resting' | 'coffee') => {
     setMascotState(newState);
     if (newState === 'working') {
-      setSpeechMessage("Timer active! Wearing my glasses & typing on my mini laptop... 👓💻");
+      setSpeechMessage("Stopwatch active! Tracking project work time on mini laptop... 👓💻");
     } else if (newState === 'resting') {
-      setSpeechMessage("z Z z... Resting peacefully until you need me! 💤");
+      setSpeechMessage("z Z z... Pausing background rendering to conserve 0% CPU! 💤");
     } else if (newState === 'coffee') {
-      setSpeechMessage("9:00 AM Coffee & Breakfast check-in! Stay energized! ☕");
+      setSpeechMessage("9:00 AM Lifestyle check-in: Breakfast, coffee & schedule briefing! ☕");
     } else {
-      setSpeechMessage("Hi! I'm Mochi 🍡. Ready to help you stay focused!");
+      setSpeechMessage("Hi! I'm Mochi 🍡. Standing by to assist your daily workflow!");
     }
   };
 
@@ -62,7 +62,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGoToDashboard }) => 
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '24px' }}>
-          <a href="#features" style={{ color: 'var(--text-muted)', textDecoration: 'none', fontSize: '14px', fontWeight: '500' }}>Features</a>
+          <a href="#features" style={{ color: 'var(--text-muted)', textDecoration: 'none', fontSize: '14px', fontWeight: '500' }}>Workflow Features</a>
           <a href="#security" style={{ color: 'var(--text-muted)', textDecoration: 'none', fontSize: '14px', fontWeight: '500' }}>BYOK Security</a>
           <a href="#github" style={{ color: 'var(--text-muted)', textDecoration: 'none', fontSize: '14px', fontWeight: '500' }}>GitHub ⭐</a>
           
@@ -100,7 +100,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGoToDashboard }) => 
           color: '#818cf8',
           marginBottom: '24px'
         }}>
-          ✨ Open-Source • BYOK • Desktop Companion & Time Tracker
+          ✨ Open-Source • BYOK • Super-Intelligent Desktop Workflow Companion
         </div>
 
         {/* Hero Title */}
@@ -108,20 +108,20 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGoToDashboard }) => 
           fontSize: '58px',
           fontWeight: '800',
           lineHeight: '1.15',
-          maxWidth: '920px',
+          maxWidth: '960px',
           marginBottom: '24px'
         }}>
-          Meet <span className="gradient-text">Mochi</span>. Your Cozy Desktop AI Pet & 1-Click Time Tracker.
+          Meet <span className="gradient-text">Mochi</span>. Your Super Intelligent Desktop Companion for Daily Tasks & Focus.
         </h1>
 
         <p style={{
           fontSize: '18px',
           color: 'var(--text-muted)',
-          maxWidth: '720px',
+          maxWidth: '760px',
           lineHeight: '1.6',
           marginBottom: '40px'
         }}>
-          Mochi floats on your screen as an adorable animated pet. It tracks your project work time, handles your 9:00 AM breakfast and hydration routine, and keeps your schedule organized with zero telemetry.
+          An animated desktop companion that integrates directly into your daily workflow. Mochi tracks your project work time, manages your 9:00 AM breakfast and hydration rhythm, triages your schedule, and connects multi-provider LLMs right to your desktop.
         </p>
 
         {/* CTA Button Row */}
@@ -160,7 +160,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGoToDashboard }) => 
               <div style={{ width: '12px', height: '12px', borderRadius: '50%', background: '#10b981' }}></div>
             </div>
             <div style={{ fontSize: '12px', color: 'var(--text-subtle)', fontWeight: '600' }}>
-              Mochi Desktop Overlay Demo (Click Mochi below to interact!)
+              Mochi Desktop Overlay Companion Demo (Click Mochi to test workflow states)
             </div>
             <div style={{ fontSize: '12px', color: '#10b981', fontWeight: '600' }}>
               ● Live 8 FPS Canvas
@@ -185,7 +185,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGoToDashboard }) => 
               borderRadius: '16px',
               fontSize: '14px',
               fontWeight: '600',
-              maxWidth: '360px',
+              maxWidth: '380px',
               textAlign: 'center',
               boxShadow: '0 10px 25px rgba(0, 0, 0, 0.3)',
               marginBottom: '16px',
@@ -229,28 +229,28 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGoToDashboard }) => 
               className={mascotState === 'idle' ? 'btn-primary' : 'btn-secondary'}
               style={{ fontSize: '13px', padding: '8px 16px' }}
             >
-              🍡 Idle State
+              🍡 Standing By
             </button>
             <button
               onClick={() => handleStateChange('working')}
               className={mascotState === 'working' ? 'btn-primary' : 'btn-secondary'}
               style={{ fontSize: '13px', padding: '8px 16px' }}
             >
-              👓 Working (Stopwatch)
+              👓 Project Stopwatch
             </button>
             <button
               onClick={() => handleStateChange('resting')}
               className={mascotState === 'resting' ? 'btn-primary' : 'btn-secondary'}
               style={{ fontSize: '13px', padding: '8px 16px' }}
             >
-              💤 Resting (Sleep)
+              💤 Rest Mode
             </button>
             <button
               onClick={() => handleStateChange('coffee')}
               className={mascotState === 'coffee' ? 'btn-primary' : 'btn-secondary'}
               style={{ fontSize: '13px', padding: '8px 16px' }}
             >
-              ☕ Breakfast & Coffee
+              ☕ 9 AM Lifestyle Nudge
             </button>
           </div>
         </div>
@@ -260,10 +260,10 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGoToDashboard }) => 
       <section id="features" style={{ maxWidth: '1100px', margin: '0 auto', padding: '60px 24px' }}>
         <div style={{ textAlign: 'center', marginBottom: '48px' }}>
           <h2 style={{ fontSize: '36px', fontWeight: '800', marginBottom: '12px' }}>
-            Built for Work-Life Balance & Effortless Focus
+            Built for Daily Productivity & Workflow Ease
           </h2>
           <p style={{ color: 'var(--text-muted)', fontSize: '16px' }}>
-            Make your desktop worth keeping open with zero distraction and zero friction.
+            A intelligent companion designed to simplify tasks and streamline your time.
           </p>
         </div>
 
@@ -272,13 +272,13 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGoToDashboard }) => 
             <div style={{ fontSize: '36px', marginBottom: '16px' }}>⏱️</div>
             <h3 style={{ fontSize: '20px', fontWeight: '700', marginBottom: '8px' }}>1-Click Project Stopwatch</h3>
             <p style={{ color: 'var(--text-muted)', fontSize: '14px', lineHeight: '1.6' }}>
-              Click Mochi once to start tracking work on any project. Mochi dons glasses and types on a mini laptop alongside you, saving logs locally to <code style={{ color: '#818cf8' }}>better-sqlite3</code>.
+              Click Mochi once to start tracking work on any task. Mochi dons glasses and types on a mini laptop alongside you, logging time to <code style={{ color: '#818cf8' }}>better-sqlite3</code> and your cloud dashboard.
             </p>
           </div>
 
           <div className="glass-card" style={{ padding: '32px' }}>
             <div style={{ fontSize: '36px', marginBottom: '16px' }}>🌅</div>
-            <h3 style={{ fontSize: '20px', fontWeight: '700', marginBottom: '8px' }}>Daily Lifestyle Rhythm</h3>
+            <h3 style={{ fontSize: '20px', fontWeight: '700', marginBottom: '8px' }}>Daily Lifestyle & Routine Manager</h3>
             <p style={{ color: 'var(--text-muted)', fontSize: '14px', lineHeight: '1.6' }}>
               9:00 AM breakfast reminders, gentle hourly hydration prompts, posture checks, and evening work-wind-down summaries so you never burn out.
             </p>
