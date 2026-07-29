@@ -10,25 +10,28 @@
 
 ## 🎯 Project Objectives & Core Features
 
-- 🎭 **Animated Desktop Pet**: Floating, transparent, click-through desktop companion with dynamic state animations (`idle`, `thinking`, `speaking`, `alert`, `working`, `resting`).
-- ⏱️ **Lifestyle & Work Time Tracker**: 1-click project stopwatch, time distribution logging, and smart efficiency insights.
+- 🎭 **Animated Desktop Pet**: Floating, transparent, click-through desktop companion powered by a Canvas 2D sprite engine (8–12 FPS idle, 0 FPS when hidden for 0% CPU drain).
+- ⏱️ **Lifestyle & Work Time Tracker**: 1-click project stopwatch, local `better-sqlite3` time logging, and smart efficiency insights.
 - 🌅 **Daily Lifestyle Routine & Wellness Nudges**: 9:00 AM breakfast reminders, hydration checks, posture alerts, and evening wind-down summaries.
-- 🔑 **Bring Your Own Key (BYOK)**: Supports **OpenAI (GPT-4o)**, **Anthropic (Claude 3.5)**, **Google Gemini**, and **Ollama / LM Studio** for local LLMs.
-- 📧 **Zero-Audit Gmail & Calendar Integration**: Local OAuth 2.0 PKCE & IMAP support ($0 Google audit fees, 100% private).
-- 🔒 **Privacy-First Architecture**: Your API keys, time logs, and data are stored 100% locally in your system keychain & SQLite database.
-- 🔌 **Extensible MCP Plugins**: Easily add community plugins for custom tools, home automation, and desktop actions.
+- 🔑 **Bring Your Own Key (BYOK)**: Powered by Vercel AI SDK (`ai`). Supports **OpenAI (GPT-4o)**, **Anthropic (Claude 3.5)**, **Google Gemini**, and **Ollama / LM Studio**.
+- 📧 **Zero-Audit Gmail & Calendar Integration**: `google-auth-library` (OAuth 2.0 PKCE) & `ImapFlow` ($0 Google audit fees, 100% private).
+- 🔒 **Privacy-First Vault**: API keys and refresh tokens stored using Electron native `safeStorage` (Windows DPAPI / Mac Keychain).
+- 🔌 **Extensible MCP Plugins**: Powered by `@modelcontextprotocol/sdk` for custom community tools & home automation.
 - 🏷️ **Custom Assistant Naming**: Users can rename their in-app assistant avatar anytime (e.g., Navi, Barkley, Jarvis, Mochi).
 
 ---
 
-## 🛠️ Recommended Tech Stack
+## 🛠️ Refined Production Tech Stack
 
-- **Desktop Shell**: Electron + Vite
-- **Frontend Framework**: React + TypeScript
-- **Styling Engine**: Glassmorphic Vanilla CSS
-- **Animation Engine**: Rive / Lottie / WebGL Canvas State Machine
-- **Integrations**: `googleapis` (OAuth 2.0 PKCE) & `node-imap`
-- **Local Vault**: Native System Keychain (`keytar`) & SQLite
+- **Desktop Shell**: `electron-vite` (Main, Renderer, Preload HMR)
+- **Frontend Framework**: React + TypeScript + CSS Modules
+- **Mascot Animation**: Canvas 2D Sprite Sheets (Open PNG/SVG format, 8–12 FPS)
+- **LLM Unified SDK**: Vercel AI SDK (`ai`)
+- **MCP Client**: `@modelcontextprotocol/sdk`
+- **Email & Auth**: `google-auth-library` + `ImapFlow`
+- **Local Vault**: Electron Native `safeStorage` (Zero C++ build friction)
+- **Local Database**: `better-sqlite3` + `electron-store`
+- **Packaging & Testing**: `electron-builder` + `Vitest` + `Playwright`
 
 ---
 
