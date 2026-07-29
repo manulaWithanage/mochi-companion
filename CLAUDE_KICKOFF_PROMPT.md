@@ -151,11 +151,15 @@ RULE 6 — SPLIT LICENSING
   "AGPL-3.0-or-later"). Add any new top-level package to the table in
   LICENSING.md. Do not copy AGPL code into an MIT package or vice versa.
 
-RULE 7 — NATIVE MODULES
-  better-sqlite3 is a native module and lives in apps/desktop only. Wire
-  @electron/rebuild into a postinstall script or the first install will fail
-  with a NODE_MODULE_VERSION mismatch. Verify a clean `pnpm install` works
-  before moving on.
+RULE 7 — NO NATIVE MODULES
+  Use `node:sqlite` (SQLite is in Node core; Electron 43 bundles Node 24).
+  Do NOT add better-sqlite3 — it has no Node 24 prebuild and falls back to a
+  node-gyp build that requires MSVC on Windows and Xcode on macOS, which
+  breaks a clean `pnpm install` for contributors and CI.
+
+  Keep the project free of native modules entirely. If a dependency needs
+  node-gyp, find another way or raise it. A clean `pnpm install` on a machine
+  with no build toolchain must succeed.
 
 ======================================================================
 PHASE 1 EXECUTION STEPS

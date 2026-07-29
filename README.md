@@ -40,7 +40,7 @@
 - **MCP Client**: `@modelcontextprotocol/sdk` (HTTP + OAuth transport)
 - **Email & Auth**: `google-auth-library` + `ImapFlow` (Local desktop execution only)
 - **Local Vault**: Electron Native `safeStorage` (Zero C++ build friction)
-- **Local Database**: `better-sqlite3` + `electron-store`
+- **Local Database**: `node:sqlite` — SQLite from Node core, so there are **no native modules anywhere in the project**. No node-gyp, no rebuild step, no Visual Studio or Xcode needed to contribute; `pnpm install` just works.
 - **Packaging & Testing**: `electron-builder` + `Vitest` + `Playwright`
 
 ---

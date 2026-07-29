@@ -74,7 +74,7 @@ Mochi sidesteps all of it: **the user is their own developer.** They create thei
 | **LLM Unified SDK** | **Vercel AI SDK (`ai`)** | Uniform streaming, model routing, and tool calling across OpenAI, Anthropic, Gemini, and Ollama/LM Studio. |
 | **MCP Integration** | `@modelcontextprotocol/sdk` | Official Model Context Protocol client using HTTP transport + OAuth for community tools. |
 | **Email & Calendar** | `google-auth-library` + `ImapFlow` | Lightweight targeted Google OAuth library + modern promise-based `ImapFlow`. |
-| **Local Storage** | `better-sqlite3` + `electron-store` | Fast local SQLite database for event logs & time tracking; `electron-store` for app preferences. |
+| **Local Storage** | **`node:sqlite`** (Node core) + JSON settings file | Electron 43 bundles Node 24, which ships SQLite in core. **No native addon, no node-gyp, no `@electron/rebuild`, and no MSVC/Xcode requirement for contributors or CI** — `pnpm install` works on a clean machine. Settings are a small JSON file written via write-then-rename; `normalizeSettings` already treats the contents as untrusted, so no dependency is needed. |
 | **Security Vault** | **Electron Native `safeStorage`** | Encrypted DPAPI (Windows) and Keychain (macOS) storage with **zero native C++ build friction**. |
 
 ---
@@ -148,3 +148,8 @@ Decisions already made and re-litigated more than once. Do not reintroduce:
 | LangChain.js | Vercel AI SDK | Heavy abstraction for what is ~4 functions |
 | `ipcRenderer` in renderer | `contextBridge` surface | Requires disabling context isolation |
 | Cloud-side email summaries | Desktop-originated LLM calls | Incompatible with local `safeStorage` + BYOK; triggers CASA |
+| `better-sqlite3` | `node:sqlite` | No Node 24 prebuild; forced a node-gyp build needing MSVC. Electron 43 ships SQLite in core |
+| `electron-store` | JSON file + `normalizeSettings` | ESM-only, and a sandboxed CJS preload cannot import it. Not worth a dependency |
+| ESM preload output | CJS (`index.cjs`) | Sandboxed preloads cannot use ESM imports, and `sandbox: true` is non-negotiable |
+| Bundling `electron` | Mark it external | Bundling inlines the installer shim; app dies with "Electron failed to install correctly" |
+| Continuous `requestAnimationFrame` | Timer-scheduled frames + one rAF | rAF fires at refresh rate and discards all but 8 callbacks — measured 7.9% of a core, now 1.8% |
