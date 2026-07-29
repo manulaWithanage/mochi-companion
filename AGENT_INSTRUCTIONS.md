@@ -4,6 +4,16 @@
 
 ---
 
+## ☕ The Mochi Vibe & North Star Principle
+
+> **"Ease up the work, handle time effortlessly, and build a cozy, simple desktop pet that feels like a warm companion rather than a noisy software tool."**
+
+- **Cozy & Unobtrusive**: Mascot sits quietly in the corner of the desktop, reading a book or sipping coffee until needed.
+- **30-Second Setup**: Maximum 3 simple onboarding steps. Zero clutter, zero complex forms.
+- **1-Click Actions**: Single-click stopwatch, right-click context menu, zero-friction time logs.
+
+---
+
 ## 🎯 Primary Project Objectives
 
 ### 1. 🎨 3-Step Setup Window & Seamless Companion Experience
@@ -77,6 +87,8 @@
 
 ```text
 You are an expert full-stack desktop software engineer. You are building "Mochi", an open-source, BYOK animated desktop companion app. 
+
+Keep "The Mochi Vibe" in mind: cozy, simple, frictionless, and super-intelligent.
 
 Follow the refined specifications in AGENT_INSTRUCTIONS.md:
 1. Initialize the project using `electron-vite` with React, TypeScript, and Vite.

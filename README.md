@@ -1,23 +1,32 @@
 # 🍡 Mochi — The Super Assistant (mochi-ai)
-> **Your Open-Source Animated Desktop AI Companion, Lifestyle Manager & Work Tracker**
+> **Your Cozy, Open-Source Animated Desktop AI Companion & Effortless Lifestyle Assistant**
 
 ![Mochi Banner](https://img.shields.io/badge/License-MIT-blue.svg)
 ![Status](https://img.shields.io/badge/Status-In_Development-orange.svg)
 
-**Mochi** is a cute, animated desktop companion that stays on your screen, tracks your work time, manages your daily lifestyle routine (breakfast, hydration, breaks), monitors your email & calendar, and brings intelligent multi-model AI right to your desktop.
+**Mochi** is designed with one single core mission: **to ease up your work, manage your time effortlessly, and bring a cozy, intelligent companion to your desktop.**
 
 ---
 
-## 🎯 Project Objectives & Core Features
+## ✨ The Mochi Vibe & Philosophy
 
-- 🎭 **Animated Desktop Pet**: Floating, transparent, click-through desktop companion powered by a Canvas 2D sprite engine (8–12 FPS idle, 0 FPS when hidden for 0% CPU drain).
-- ⏱️ **Lifestyle & Work Time Tracker**: 1-click project stopwatch, local `better-sqlite3` time logging, and smart efficiency insights.
-- 🌅 **Daily Lifestyle Routine & Wellness Nudges**: 9:00 AM breakfast reminders, hydration checks, posture alerts, and evening wind-down summaries.
-- 🔑 **Bring Your Own Key (BYOK)**: Powered by Vercel AI SDK (`ai`). Supports **OpenAI (GPT-4o)**, **Anthropic (Claude 3.5)**, **Google Gemini**, and **Ollama / LM Studio**.
+- ☕ **Cozy & Unobtrusive**: Sits quietly in the corner of your screen sipping coffee or reading a book until you need help or an important alert arrives.
+- ⚡ **30-Second Setup**: Simple, frictionless onboarding. Just name your companion, paste your API key, and set your work hours.
+- ⏱️ **Effortless Time Tracking**: 1-click stopwatch for projects without cumbersome timesheets. Mochi types alongside you on a mini laptop!
+- 🌅 **Daily Lifestyle Rhythm**: 9:00 AM breakfast reminders, gentle hydration checks, and evening wind-down recaps so you never burn out.
+- 🤖 **Super-Intelligent Assistant**: 24/7 Gmail & Calendar triage powered by BYOK LLMs (OpenAI, Gemini, Claude, Ollama).
+
+---
+
+## 🎯 Core Objectives & Features
+
+- 🎭 **Animated Desktop Pet**: Floating, transparent, click-through desktop companion with Canvas 2D sprite states (`idle`, `thinking`, `speaking`, `alert`, `working`, `resting`).
+- ⏱️ **1-Click Project Stopwatch**: Track active work time per task with zero friction.
+- 🌅 **Lifestyle & Wellness Nudges**: Breakfast reminders, posture checks, hydration prompts, and evening recap briefings.
+- 🔑 **Bring Your Own Key (BYOK)**: Supports **OpenAI (GPT-4o)**, **Anthropic (Claude 3.5)**, **Google Gemini**, and **Ollama / LM Studio**.
 - 📧 **Zero-Audit Gmail & Calendar Integration**: `google-auth-library` (OAuth 2.0 PKCE) & `ImapFlow` ($0 Google audit fees, 100% private).
-- 🔒 **Privacy-First Vault**: API keys and refresh tokens stored using Electron native `safeStorage` (Windows DPAPI / Mac Keychain).
-- 🔌 **Extensible MCP Plugins**: Powered by `@modelcontextprotocol/sdk` for custom community tools & home automation.
-- 🏷️ **Custom Assistant Naming**: Users can rename their in-app assistant avatar anytime (e.g., Navi, Barkley, Jarvis, Mochi).
+- 🔒 **Privacy-First Vault**: API keys stored encrypted locally using Electron native `safeStorage` (Windows DPAPI / Mac Keychain).
+- 🏷️ **Custom Avatar Naming**: Rename your in-app mascot anytime (e.g. Navi, Barkley, Jarvis, Mochi).
 
 ---
 
