@@ -311,7 +311,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGoToDashboard }) => 
         </div>
       </section>
 
-      {/* 🔮 SECTION 1: WHY MOCHI EXISTS — 3D PAPERCRAFT LAYERED CARDS WITH ARTWORK EMBEDS */}
+      {/* 🔮 SECTION 1: WHY MOCHI EXISTS — SYMMETRICAL 3D PAPERCRAFT CARDS WITH MATCHING ARTWORK BANNERS */}
       <section style={{ maxWidth: '1140px', margin: '0 auto', padding: '80px 24px 40px 24px', position: 'relative' }}>
         
         {/* Background Paper Origami Accent Ornaments */}
@@ -362,10 +362,10 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGoToDashboard }) => 
           </p>
         </div>
 
-        {/* Comparison Split Cards with 3D Paper Cut-Out Layered Shadows & Artwork Embeds */}
+        {/* Comparison Split Cards with 100% Symmetrical 110px Papercraft Artwork Banners */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', gap: '28px' }}>
           
-          {/* Card 1: Traditional Apps (with Papercut Warning Artwork Accent) */}
+          {/* Card 1: Traditional Apps (with Red-Tinted Papercraft Artwork Banner) */}
           <div style={{
             background: 'linear-gradient(145deg, #ffffff 0%, #fffbfb 100%)',
             borderRadius: '28px',
@@ -375,33 +375,50 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGoToDashboard }) => 
             position: 'relative',
             overflow: 'hidden'
           }}>
-            {/* Top Red Papercut Header Illustration Banner */}
+            {/* Top Red-Tinted Papercraft Artwork Banner (110px Symmetrical Height) */}
             <div style={{
-              background: 'linear-gradient(135deg, #fef2f2 0%, #ffe4e4 100%)',
+              position: 'relative',
               borderRadius: '20px',
-              padding: '20px',
-              border: '1px solid #fca5a5',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '16px',
-              marginBottom: '24px'
+              overflow: 'hidden',
+              height: '110px',
+              marginBottom: '24px',
+              border: '1px solid rgba(239, 68, 68, 0.25)',
+              boxShadow: '0 6px 18px rgba(239, 68, 68, 0.08)'
             }}>
+              <img
+                src="/hero_papercraft_art.jpg"
+                alt="Traditional Apps Timesheet Burnout & Noise Papercraft Artwork"
+                style={{
+                  width: '100%',
+                  height: '100%',
+                  objectFit: 'cover',
+                  objectPosition: 'center center',
+                  filter: 'grayscale(0.6) sepia(0.3) hue-rotate(-50deg) contrast(1.1)'
+                }}
+              />
               <div style={{
-                fontSize: '32px',
-                width: '54px',
-                height: '54px',
-                borderRadius: '16px',
-                background: '#ffffff',
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                background: 'linear-gradient(to right, rgba(239, 68, 68, 0.55) 0%, rgba(15, 23, 42, 0.65) 100%)',
                 display: 'flex',
                 alignItems: 'center',
-                justifyContent: 'center',
-                boxShadow: '0 4px 12px rgba(239, 68, 68, 0.15)'
+                paddingLeft: '20px'
               }}>
-                ⏳
-              </div>
-              <div>
-                <div style={{ fontSize: '12px', fontWeight: '800', color: '#dc2626', letterSpacing: '0.05em' }}>TRADITIONAL TRACKING</div>
-                <div style={{ fontSize: '15px', fontWeight: '700', color: '#991b1b' }}>Timesheet Burnout & Noise</div>
+                <div style={{
+                  background: 'rgba(255, 255, 255, 0.92)',
+                  backdropFilter: 'blur(8px)',
+                  padding: '6px 14px',
+                  borderRadius: '16px',
+                  fontSize: '12px',
+                  fontWeight: '800',
+                  color: '#dc2626',
+                  boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+                }}>
+                  🚫 TRADITIONAL TRACKING APPS
+                </div>
               </div>
             </div>
 
@@ -431,7 +448,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGoToDashboard }) => 
             position: 'relative',
             overflow: 'hidden'
           }}>
-            {/* Top Papercraft Zen Artwork Frame */}
+            {/* Top Papercraft Zen Artwork Frame (110px Symmetrical Height) */}
             <div style={{
               position: 'relative',
               borderRadius: '20px',
