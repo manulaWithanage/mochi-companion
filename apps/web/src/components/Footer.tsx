@@ -4,6 +4,7 @@ import { LandingMascotCanvas } from './LandingMascotCanvas';
 
 export const Footer: React.FC = () => {
   const [mascotState, setMascotState] = useState<'idle' | 'working' | 'resting' | 'coffee'>('idle');
+  const [speechBubble, setSpeechBubble] = useState("Mochi is ready to sit on your desktop! 🍡");
 
   return (
     <footer style={{
@@ -16,11 +17,11 @@ export const Footer: React.FC = () => {
       paddingTop: '64px'
     }}>
       
-      {/* 📄 TOP NAVIGATION SECTION (Clean, Unboxed, 100% Readable) */}
-      <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 32px 48px 32px', position: 'relative', zIndex: 10 }}>
+      {/* 📄 TOP NAVIGATION SECTION (Clean & Unboxed) */}
+      <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 32px 40px 32px', position: 'relative', zIndex: 10 }}>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '32px' }}>
           
-          {/* Col 1: Brand & Mission with Mascot */}
+          {/* Col 1: Brand & Mission */}
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '14px' }}>
               <MochiIcon size={36} glow={false} />
@@ -31,22 +32,13 @@ export const Footer: React.FC = () => {
             <p style={{ fontSize: '14px', color: '#475569', lineHeight: '1.6', marginBottom: '16px', maxWidth: '280px', fontWeight: '500' }}>
               Your cozy desktop AI companion & 1-click time tracker. Built for focus, calm, and simple daily rhythm.
             </p>
-            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '16px' }}>
+            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
               <span style={{ fontSize: '11px', fontWeight: '700', padding: '4px 12px', borderRadius: '14px', background: '#f1f5f9', color: '#4f46e5', border: '1px solid #cbd5e1' }}>
                 MIT Licensed
               </span>
               <span style={{ fontSize: '11px', fontWeight: '700', padding: '4px 12px', borderRadius: '14px', background: '#f0fdf4', color: '#16a34a', border: '1px solid #bbf7d0' }}>
                 100% Private
               </span>
-            </div>
-
-            {/* Interactive Mascot Sitting in Brand Area */}
-            <div
-              onClick={() => setMascotState(mascotState === 'idle' ? 'resting' : mascotState === 'resting' ? 'coffee' : 'idle')}
-              style={{ cursor: 'pointer', display: 'inline-block', transform: 'scale(0.85)', transformOrigin: 'left center' }}
-              title="Click Mochi to switch states!"
-            >
-              <LandingMascotCanvas state={mascotState} size={110} />
             </div>
           </div>
 
@@ -107,8 +99,10 @@ export const Footer: React.FC = () => {
         </div>
       </div>
 
-      {/* 🌸 BOTTOM SECTION: 3D PAPERCRAFT ORIGAMI JAPANESE SCENERY BANNER */}
-      <div style={{ position: 'relative', width: '100%', height: '280px', overflow: 'hidden' }}>
+      {/* 🌸 BOTTOM SECTION: EXPANDED 420px TALL 3D PAPERCRAFT ORIGAMI SCENERY WITH MOCHI */}
+      <div style={{ position: 'relative', width: '100%', height: '420px', overflow: 'hidden' }}>
+        
+        {/* Full Bleed Scenery Image (Expanded Height & Top Visibility) */}
         <img
           src="/japan_papercraft_ultra_detail.jpg"
           alt="Mochi 3D Papercraft Origami Japanese Scenery"
@@ -116,10 +110,11 @@ export const Footer: React.FC = () => {
             width: '100%',
             height: '100%',
             objectFit: 'cover',
-            objectPosition: 'center bottom',
+            objectPosition: 'center 35%',
             display: 'block'
           }}
         />
+
         {/* Soft top gradient blend into white section */}
         <div style={{
           position: 'absolute',
@@ -130,6 +125,55 @@ export const Footer: React.FC = () => {
           background: 'linear-gradient(to bottom, #ffffff 0%, transparent 100%)',
           pointerEvents: 'none'
         }}></div>
+
+        {/* 🍡 INTERACTIVE MOCHI MASCOT SITTING ON TOP OF THE PAPERCRAFT SCENERY */}
+        <div style={{
+          position: 'absolute',
+          top: '40px',
+          left: '50%',
+          transform: 'translateX(-50%)',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          zIndex: 10
+        }}>
+          {/* Speech Bubble */}
+          <div style={{
+            background: '#ffffff',
+            color: '#0f172a',
+            padding: '8px 18px',
+            borderRadius: '16px',
+            fontSize: '13px',
+            fontWeight: '600',
+            boxShadow: '0 10px 30px rgba(0, 0, 0, 0.15)',
+            marginBottom: '8px',
+            whiteSpace: 'nowrap',
+            position: 'relative',
+            border: '1px solid #cbd5e1'
+          }}>
+            {speechBubble}
+            {/* Bubble Tail */}
+            <div style={{
+              position: 'absolute',
+              bottom: '-6px',
+              left: '50%',
+              transform: 'translateX(-50%)',
+              width: 0,
+              height: 0,
+              borderLeft: '6px solid transparent',
+              borderRight: '6px solid transparent',
+              borderTop: '6px solid #ffffff'
+            }}></div>
+          </div>
+
+          {/* Interactive Mascot Canvas */}
+          <div
+            onClick={() => setMascotState(mascotState === 'idle' ? 'resting' : mascotState === 'resting' ? 'coffee' : 'idle')}
+            style={{ cursor: 'pointer', filter: 'drop-shadow(0 10px 20px rgba(0,0,0,0.15))' }}
+          >
+            <LandingMascotCanvas state={mascotState} size={150} />
+          </div>
+        </div>
       </div>
 
     </footer>
