@@ -155,6 +155,19 @@ export async function validateKey(rawKey: string): Promise<KeyValidation> {
 }
 
 /**
+ * Extract just the resource name even if the user pasted a full URL or hostname.
+ * e.g. "https://jobpromax.openai.azure.com/..." -> "jobpromax"
+ */
+export function cleanAzureResourceName(input: string): string {
+  let s = input.trim().replace(/^https?:\/\//i, '');
+  const match = /^([^./]+)\.openai\.azure\.com/i.exec(s);
+  if (match) {
+    return match[1];
+  }
+  return s.split('/')[0].split('.')[0].trim();
+}
+
+/**
  * Validate Azure OpenAI credentials by making a real call.
  * Returns the synthetic model entry on success.
  */
@@ -165,7 +178,7 @@ export async function validateAzureKey(opts: {
   apiVersion?: string;
 }): Promise<KeyValidation> {
   const { resourceName, deploymentName, apiKey, apiVersion = '2024-02-01' } = opts;
-  const resource = resourceName.replace(/\.openai\.azure\.com\/?$/, '').trim();
+  const resource = cleanAzureResourceName(resourceName);
   const redacted = redactKey(apiKey);
 
   if (!resource || !deploymentName || !apiKey) {
@@ -191,13 +204,16 @@ export async function validateAzureKey(opts: {
     return { ok: true, provider: 'azure', redacted, models: deployments };
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
-    // Fall back: if listing fails but key is valid for the named deployment, still allow it
     if (message.includes('401') || message.includes('403')) {
       return { ok: false, provider: 'azure', redacted, models: [], error: 'Azure API key rejected. Check your key and resource name.' };
     }
-    // Accept with just the named deployment — some endpoints block listing
-    const model: import('@mochi/core').DiscoveredModel = { id: deploymentName, provider: 'azure', capabilities: ['text', 'tools'] };
-    return { ok: true, provider: 'azure', redacted, models: [model] };
+    if (message.includes('404')) {
+      return { ok: false, provider: 'azure', redacted, models: [], error: `Azure resource "${resource}" or deployment not found (404).` };
+    }
+    if (message.includes('ENOTFOUND') || message.includes('getaddrinfo') || message.includes('fetch failed')) {
+      return { ok: false, provider: 'azure', redacted, models: [], error: `Could not reach "${resource}.openai.azure.com". Check your resource name.` };
+    }
+    return { ok: false, provider: 'azure', redacted, models: [], error: `Azure connection failed: ${message}` };
   }
 }
 

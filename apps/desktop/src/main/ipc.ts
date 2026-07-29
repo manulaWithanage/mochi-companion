@@ -24,7 +24,7 @@ import type { OverlayWindow } from './windows/overlay.js';
 import type { SetupWindow } from './windows/setup.js';
 import { listSkins, loadSkin } from './services/skin-loader.js';
 import type { GmailManager } from './services/gmail-manager.js';
-import { validateAzureKey } from './services/provider-service.js';
+import { validateAzureKey, cleanAzureResourceName } from './services/provider-service.js';
 
 export interface IpcContext {
   timer: TimerService;
@@ -189,7 +189,7 @@ export function registerIpc(ctx: IpcContext): void {
   ipcMain.handle('llm:test', () => ctx.llm.test());
 
   ipcMain.handle('llm:saveAzureKey', async (_e, resourceName: unknown, deploymentName: unknown, apiKey: unknown) => {
-    const resource = asString(resourceName, '');
+    const resource = cleanAzureResourceName(asString(resourceName, ''));
     const deployment = asString(deploymentName, '');
     const key = asString(apiKey, '');
     const validation = await validateAzureKey({ resourceName: resource, deploymentName: deployment, apiKey: key });

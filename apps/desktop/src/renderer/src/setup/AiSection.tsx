@@ -96,14 +96,22 @@ export function AiSection(): JSX.Element {
     }
   }, [keyInput]);
 
+function cleanAzureResource(input: string): string {
+  let s = input.trim().replace(/^https?:\/\//i, '');
+  const match = /^([^./]+)\.openai\.azure\.com/i.exec(s);
+  if (match) return match[1];
+  return s.split('/')[0].split('.')[0].trim();
+}
+
   const saveAzure = useCallback(async () => {
-    const resource = azureResource.trim().replace(/\.openai\.azure\.com\/?$/, '');
+    const resource = cleanAzureResource(azureResource);
     const deployment = azureDeployment.trim();
     const key = azureKey.trim();
     if (!resource || !deployment || !key) {
       setAzureMessage({ ok: false, text: 'All three fields are required.' });
       return;
     }
+    setAzureResource(resource);
     setAzureBusy(true);
     setAzureMessage(null);
     try {
