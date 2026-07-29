@@ -9,10 +9,10 @@ export const Footer: React.FC = () => {
   return (
     <footer style={{ position: 'relative', background: '#080c14', color: 'var(--text-main)', overflow: 'hidden' }}>
       
-      {/* 🌲 3D Papercraft Origami Scenery Banner Container */}
-      <div style={{ position: 'relative', width: '100%', height: '240px', overflow: 'hidden' }}>
+      {/* 🌲 3D Papercraft Origami Scenery Banner (Full Bleed, High Visibility) */}
+      <div style={{ position: 'relative', width: '100%', height: '340px', overflow: 'hidden' }}>
         
-        {/* Papercraft Landscape Image */}
+        {/* Full Bleed Papercraft Landscape Image */}
         <img
           src="/papercraft_footer.jpg"
           alt="Mochi 3D Papercraft Origami Scenery"
@@ -20,37 +20,36 @@ export const Footer: React.FC = () => {
             width: '100%',
             height: '100%',
             objectFit: 'cover',
-            objectPosition: 'center bottom',
-            filter: 'brightness(0.95) contract(1.05)'
+            objectPosition: 'center center',
+            display: 'block'
           }}
         />
 
-        {/* Top Fade Blend into Page Background */}
+        {/* Soft Smooth Gradient Overlays (Subtle, No Dark Letterboxing) */}
         <div style={{
           position: 'absolute',
           top: 0,
           left: 0,
           right: 0,
-          height: '90px',
+          height: '60px',
           background: 'linear-gradient(to bottom, #080c14 0%, transparent 100%)',
           pointerEvents: 'none'
         }}></div>
 
-        {/* Bottom Fade Blend into Footer Navigation */}
         <div style={{
           position: 'absolute',
           bottom: 0,
           left: 0,
           right: 0,
-          height: '100px',
+          height: '80px',
           background: 'linear-gradient(to top, #080c14 0%, transparent 100%)',
           pointerEvents: 'none'
         }}></div>
 
-        {/* 🍡 Interactive Mochi Mascot sitting right in the Papercraft Landscape */}
+        {/* 🍡 Mochi Mascot Anchored Beautifully in the Center of the Landscape */}
         <div style={{
           position: 'absolute',
-          bottom: '20px',
+          bottom: '24px',
           left: '50%',
           transform: 'translateX(-50%)',
           display: 'flex',
@@ -62,21 +61,36 @@ export const Footer: React.FC = () => {
           <div style={{
             background: 'rgba(255, 255, 255, 0.95)',
             color: '#0f172a',
-            padding: '8px 16px',
-            borderRadius: '14px',
+            padding: '8px 18px',
+            borderRadius: '16px',
             fontSize: '13px',
             fontWeight: '600',
-            boxShadow: '0 8px 20px rgba(0,0,0,0.3)',
-            marginBottom: '8px',
+            boxShadow: '0 10px 30px rgba(0, 0, 0, 0.4)',
+            marginBottom: '12px',
             whiteSpace: 'nowrap',
-            animation: 'pop 0.3s ease'
+            position: 'relative'
           }}>
             {speechBubble}
+            {/* Tail */}
+            <div style={{
+              position: 'absolute',
+              bottom: '-6px',
+              left: '50%',
+              transform: 'translateX(-50%)',
+              width: 0,
+              height: 0,
+              borderLeft: '6px solid transparent',
+              borderRight: '6px solid transparent',
+              borderTop: '6px solid rgba(255, 255, 255, 0.95)'
+            }}></div>
           </div>
 
-          {/* Canvas Mascot */}
-          <div onClick={() => setMascotState(mascotState === 'idle' ? 'resting' : mascotState === 'resting' ? 'coffee' : 'idle')}>
-            <LandingMascotCanvas state={mascotState} size={140} />
+          {/* Interactive Mascot Canvas */}
+          <div
+            onClick={() => setMascotState(mascotState === 'idle' ? 'resting' : mascotState === 'resting' ? 'coffee' : 'idle')}
+            style={{ cursor: 'pointer', filter: 'drop-shadow(0 12px 24px rgba(0,0,0,0.5))' }}
+          >
+            <LandingMascotCanvas state={mascotState} size={150} />
           </div>
         </div>
       </div>
