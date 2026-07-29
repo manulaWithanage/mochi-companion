@@ -35,6 +35,7 @@ import { MochiTray } from './tray.js';
 import { RoutineService } from './services/routine-service.js';
 import { LlmService } from './services/llm-service.js';
 import { LlmClient } from './services/llm-client.js';
+import { GoogleService } from './services/google-service.js';
 import { registerIpc } from './ipc.js';
 
 interface SayOptions {
@@ -107,6 +108,7 @@ async function bootstrap(): Promise<void> {
     listTasks: () => storage.listTasks(),
   });
 
+  const google = new GoogleService(join(app.getPath('userData'), 'google.enc.json'));
   const llm = new LlmService();
   const llmClient = new LlmClient(llm);
 
@@ -119,7 +121,15 @@ async function bootstrap(): Promise<void> {
     return tasks;
   };
 
+  google.onChange((status) => setup.send('google:changed', status));
+
   registerIpc({
+    google: {
+      status: () => google.status(),
+      openStep: (url) => google.openStep(url),
+      connect: (clientId) => google.connect(clientId),
+      disconnect: () => google.disconnect(),
+    },
     notifyTasks,
     timer,
     mascot,

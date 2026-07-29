@@ -16,6 +16,7 @@
 import { contextBridge, ipcRenderer, type IpcRendererEvent } from 'electron';
 import type {
   BubbleMessage,
+  GoogleStatus,
   KeyResult,
   LlmStatus,
   LoadedSkin,
@@ -96,6 +97,15 @@ const bridge: MochiBridge = {
         tokens?: number;
       }>,
     onChange: (listener) => subscribe<LlmStatus>('llm:changed', listener),
+  },
+
+  google: {
+    status: () => ipcRenderer.invoke('google:status') as Promise<GoogleStatus>,
+    openStep: (url) => ipcRenderer.send('google:openStep', url),
+    connect: (clientId) =>
+      ipcRenderer.invoke('google:connect', clientId) as Promise<{ ok: boolean; error?: string }>,
+    disconnect: () => ipcRenderer.invoke('google:disconnect') as Promise<GoogleStatus>,
+    onChange: (listener) => subscribe<GoogleStatus>('google:changed', listener),
   },
 
   skin: {

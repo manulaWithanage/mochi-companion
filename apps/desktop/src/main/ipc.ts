@@ -32,6 +32,12 @@ export interface IpcContext {
   overlay: OverlayWindow;
   setup: SetupWindow;
   governor: InterruptionGovernor;
+  google: {
+    status(): import('@mochi/core').GoogleStatus;
+    openStep(url: string): void;
+    connect(clientId: string): Promise<{ ok: boolean; error?: string }>;
+    disconnect(): import('@mochi/core').GoogleStatus;
+  };
   /** Push the current task list to open windows and return it. */
   notifyTasks(): Promise<readonly import('@mochi/core').Task[]>;
   llm: {
@@ -177,6 +183,16 @@ export function registerIpc(ctx: IpcContext): void {
   ipcMain.handle('llm:refresh', () => ctx.llm.refresh());
 
   ipcMain.handle('llm:test', () => ctx.llm.test());
+
+  // ---- google ------------------------------------------------------------
+  ipcMain.handle('google:status', () => ctx.google.status());
+  ipcMain.on('google:openStep', (_e, url: unknown) => {
+    if (typeof url === 'string') ctx.google.openStep(url);
+  });
+  ipcMain.handle('google:connect', (_e, clientId: unknown) =>
+    ctx.google.connect(asString(clientId, '')),
+  );
+  ipcMain.handle('google:disconnect', () => ctx.google.disconnect());
 
   // ---- skins -------------------------------------------------------------
   ipcMain.handle('skin:list', () => listSkins());

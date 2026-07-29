@@ -16,6 +16,15 @@ import type { Project } from '../storage/adapter.js';
 import type { Task } from '../tasks/tasks.js';
 import type { WorkSession } from '../timer/session.js';
 
+export interface GoogleStatus {
+  readonly connected: boolean;
+  /** Which account, so the user can tell which one is linked. */
+  readonly account: string | null;
+  readonly scopes: readonly string[];
+  /** True once a Client ID has been stored, even if not yet authorised. */
+  readonly hasClientId: boolean;
+}
+
 export interface LlmStatus {
   /** Ollama answered on localhost — the zero-key path is live. */
   readonly ollamaAvailable: boolean;
@@ -139,6 +148,19 @@ export interface MochiBridge {
      */
     test(): Promise<{ ok: boolean; text: string; model?: string; tokens?: number }>;
     onChange(listener: (status: LlmStatus) => void): () => void;
+  };
+
+  readonly google: {
+    status(): Promise<GoogleStatus>;
+    /** Opens the exact console page in the real browser. */
+    openStep(url: string): void;
+    /**
+     * Store the Client ID and run the consent flow. The refresh token is
+     * captured in main and never crosses back (RULE 1).
+     */
+    connect(clientId: string): Promise<{ ok: boolean; error?: string }>;
+    disconnect(): Promise<GoogleStatus>;
+    onChange(listener: (status: GoogleStatus) => void): () => void;
   };
 
   readonly skin: {

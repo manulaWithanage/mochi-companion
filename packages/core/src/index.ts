@@ -15,4 +15,5 @@ export * from './routines/routines.js';
 export * from './llm/providers.js';
 export * from './llm/router.js';
 export * from './tasks/tasks.js';
+export * from './google/oauth.js';
 export type * from './types/bridge.js';
