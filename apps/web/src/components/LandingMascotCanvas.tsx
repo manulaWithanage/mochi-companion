@@ -36,10 +36,10 @@ export const LandingMascotCanvas: React.FC<LandingMascotCanvasProps> = ({
       ctx.save();
       ctx.translate(centerX, centerY + floatOffsetY);
 
-      // 1. Ground Shadow
+      // 1. Ground Shadow (Soft & Subtle)
       ctx.beginPath();
-      ctx.ellipse(0, 45, 42 + squishX * 10, 8, 0, 0, Math.PI * 2);
-      ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
+      ctx.ellipse(0, 45, 40 + squishX * 10, 6, 0, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.08)';
       ctx.fill();
 
       // 2. Mochi Body Base (Soft rounded dumpling shape)
