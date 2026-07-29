@@ -90,7 +90,7 @@ export const Footer: React.FC = () => {
           border: 'none'
         }}>
           <div>
-            © 2026 <strong>Mochi Companion</strong>. Crafted with peaceful focus by <strong>Manula Withanage</strong> & open-source contributors.
+            © 2026 <strong>Mochi Companion</strong>. Developed by <strong>Manula Withanage</strong>.
           </div>
           <div>
             Released under the <strong>MIT License</strong>
