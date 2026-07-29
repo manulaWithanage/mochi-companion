@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { LandingMascotCanvas } from './LandingMascotCanvas';
 import { MochiIcon } from './MochiIcon';
+import { Footer } from './Footer';
 
 interface LandingPageProps {
   onGoToDashboard: () => void;
@@ -68,7 +69,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGoToDashboard }) => 
           <a href="#privacy" style={{ color: 'var(--text-muted)', textDecoration: 'none', fontSize: '14px', fontWeight: '500' }}>100% Private</a>
           
           <button onClick={onGoToDashboard} className="btn-secondary" style={{ fontSize: '13px', padding: '9px 18px' }}>
-            📊 Open Web Dashboard
+            📊 Open Cloud Dashboard
           </button>
           
           <a href="https://github.com/manulaWithanage/mochi-companion" target="_blank" rel="noreferrer" className="btn-primary" style={{ fontSize: '13px', padding: '9px 20px', textDecoration: 'none' }}>
@@ -298,23 +299,9 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGoToDashboard }) => 
         </div>
       </section>
 
-      {/* 📄 Footer */}
-      <footer style={{
-        borderTop: '1px solid var(--glass-border)',
-        padding: '40px 24px',
-        textAlign: 'center',
-        color: 'var(--text-subtle)',
-        fontSize: '13px',
-        background: 'rgba(8, 12, 20, 0.95)'
-      }}>
-        <div style={{ marginBottom: '12px' }}>
-          <MochiIcon size={28} />
-        </div>
-        <p style={{ marginBottom: '8px' }}>
-          Mochi is 100% free and open-source software built for everyone.
-        </p>
-        <p>Copyright © 2026 manulaWithanage & Mochi contributors.</p>
-      </footer>
+      {/* 🌲 3D Papercraft Origami Footer Component */}
+      <Footer />
+
     </div>
   );
 };
