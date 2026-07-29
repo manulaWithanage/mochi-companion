@@ -1,4 +1,5 @@
 import React from 'react';
+import { MochiIcon } from './MochiIcon';
 
 interface SidebarProps {
   activeTab: string;
@@ -31,7 +32,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, onOpe
     }}>
       {/* Brand Header */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '0 8px 24px 8px', borderBottom: '1px solid var(--glass-border)' }}>
-        <div style={{ fontSize: '32px', filter: 'drop-shadow(0 0 10px rgba(99, 102, 241, 0.5))' }}>🍡</div>
+        <MochiIcon size={34} />
         <div>
           <h1 style={{ fontSize: '20px', fontWeight: '700', background: 'var(--primary-gradient)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
             Mochi Cloud

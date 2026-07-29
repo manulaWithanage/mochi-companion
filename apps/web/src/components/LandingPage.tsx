@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { LandingMascotCanvas } from './LandingMascotCanvas';
+import { MochiIcon } from './MochiIcon';
 
 interface LandingPageProps {
   onGoToDashboard: () => void;
@@ -7,12 +8,12 @@ interface LandingPageProps {
 
 export const LandingPage: React.FC<LandingPageProps> = ({ onGoToDashboard }) => {
   const [mascotState, setMascotState] = useState<'idle' | 'working' | 'resting' | 'coffee'>('idle');
-  const [speechMessage, setSpeechMessage] = useState("Hi! I'm Mochi 🍡. I'm your desktop workflow companion ready to help with tasks & time tracking!");
+  const [speechMessage, setSpeechMessage] = useState("Hi! I'm Mochi. I'm your desktop workflow companion ready to help with tasks & time tracking!");
   const [clickCount, setClickCount] = useState(0);
 
   const handleMascotClick = () => {
     const messages = [
-      "I'm keeping your workflow organized & focused! 🍡",
+      "I'm keeping your workflow organized & focused! ⭐",
       "Ready to start a 1-click project stopwatch timer? ⏱️",
       "Did you take a sip of water & check your 9 AM routine? 💧",
       "Mochi is active and monitoring your workflow schedule! ⭐",
@@ -31,7 +32,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGoToDashboard }) => 
     } else if (newState === 'coffee') {
       setSpeechMessage("9:00 AM Lifestyle check-in: Breakfast, coffee & schedule briefing! ☕");
     } else {
-      setSpeechMessage("Hi! I'm Mochi 🍡. Standing by to assist your daily workflow!");
+      setSpeechMessage("Hi! I'm Mochi. Standing by to assist your daily workflow!");
     }
   };
 
@@ -52,7 +53,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGoToDashboard }) => 
         zIndex: 100
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <span style={{ fontSize: '32px', filter: 'drop-shadow(0 0 12px rgba(99, 102, 241, 0.6))' }}>🍡</span>
+          <MochiIcon size={34} />
           <div>
             <span style={{ fontSize: '20px', fontWeight: '800', background: 'var(--primary-gradient)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
               Mochi
@@ -100,7 +101,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGoToDashboard }) => 
           color: '#818cf8',
           marginBottom: '24px'
         }}>
-          ✨ Open-Source • BYOK • Super-Intelligent Desktop Workflow Companion
+          <MochiIcon size={18} glow={false} /> Open-Source • BYOK • Super-Intelligent Desktop Workflow Companion
         </div>
 
         {/* Hero Title */}
@@ -229,7 +230,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGoToDashboard }) => 
               className={mascotState === 'idle' ? 'btn-primary' : 'btn-secondary'}
               style={{ fontSize: '13px', padding: '8px 16px' }}
             >
-              🍡 Standing By
+              Standing By
             </button>
             <button
               onClick={() => handleStateChange('working')}
@@ -263,7 +264,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGoToDashboard }) => 
             Built for Daily Productivity & Workflow Ease
           </h2>
           <p style={{ color: 'var(--text-muted)', fontSize: '16px' }}>
-            A intelligent companion designed to simplify tasks and streamline your time.
+            An intelligent companion designed to simplify tasks and streamline your time.
           </p>
         </div>
 
@@ -303,7 +304,9 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGoToDashboard }) => 
         fontSize: '13px',
         background: 'rgba(8, 12, 20, 0.95)'
       }}>
-        <div style={{ marginBottom: '12px', fontSize: '24px' }}>🍡</div>
+        <div style={{ marginBottom: '12px' }}>
+          <MochiIcon size={28} />
+        </div>
         <p style={{ marginBottom: '8px' }}>
           Mochi is released under the <strong>MIT License</strong>. Free and open-source forever.
         </p>

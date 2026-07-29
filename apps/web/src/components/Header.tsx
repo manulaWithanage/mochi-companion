@@ -1,4 +1,5 @@
 import React from 'react';
+import { MochiIcon } from './MochiIcon';
 
 interface HeaderProps {
   onOpenPairing: () => void;
@@ -12,7 +13,7 @@ export const Header: React.FC<HeaderProps> = ({ onOpenPairing }) => {
       justifyContent: 'space-between',
       padding: '24px 32px',
       borderBottom: '1px solid var(--glass-border)',
-      background: 'rgba(11, 15, 25, 0.6)',
+      background: 'rgba(8, 12, 20, 0.6)',
       backdropFilter: 'blur(12px)'
     }}>
       {/* Title & Welcome */}
@@ -41,7 +42,7 @@ export const Header: React.FC<HeaderProps> = ({ onOpenPairing }) => {
           color: '#10b981'
         }}>
           <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#10b981', boxShadow: '0 0 10px #10b981' }}></span>
-          Mochi: Working 👨‍💻 (8 FPS)
+          <MochiIcon size={18} glow={false} /> Mochi: Working 👨‍💻 (8 FPS)
         </div>
 
         {/* Founding Pioneer Badge */}
