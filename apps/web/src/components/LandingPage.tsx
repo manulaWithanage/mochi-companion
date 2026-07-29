@@ -311,8 +311,33 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGoToDashboard }) => 
         </div>
       </section>
 
-      {/* 🔮 SECTION 1: WHY MOCHI EXISTS — 3D PAPERCRAFT LAYERED CARDS */}
+      {/* 🔮 SECTION 1: WHY MOCHI EXISTS — 3D PAPERCRAFT LAYERED CARDS WITH ARTWORK EMBEDS */}
       <section style={{ maxWidth: '1140px', margin: '0 auto', padding: '80px 24px 40px 24px', position: 'relative' }}>
+        
+        {/* Background Paper Origami Accent Ornaments */}
+        <div style={{
+          position: 'absolute',
+          top: '20px',
+          left: '0',
+          fontSize: '48px',
+          opacity: 0.15,
+          pointerEvents: 'none',
+          userSelect: 'none'
+        }}>
+          🌸
+        </div>
+        <div style={{
+          position: 'absolute',
+          top: '40px',
+          right: '0',
+          fontSize: '48px',
+          opacity: 0.15,
+          pointerEvents: 'none',
+          userSelect: 'none'
+        }}>
+          ⛩️
+        </div>
+
         <div style={{ textAlign: 'center', marginBottom: '56px' }}>
           <div style={{
             display: 'inline-flex',
@@ -337,31 +362,49 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGoToDashboard }) => 
           </p>
         </div>
 
-        {/* Comparison Split Cards with 3D Paper Cut-Out Layered Shadows */}
+        {/* Comparison Split Cards with 3D Paper Cut-Out Layered Shadows & Artwork Embeds */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', gap: '28px' }}>
           
-          {/* Card 1: Traditional Apps */}
+          {/* Card 1: Traditional Apps (with Papercut Warning Artwork Accent) */}
           <div style={{
             background: 'linear-gradient(145deg, #ffffff 0%, #fffbfb 100%)',
             borderRadius: '28px',
             padding: '36px',
             border: '1px solid #fee2e2',
             boxShadow: '0 16px 36px rgba(239, 68, 68, 0.06), inset 0 2px 0 rgba(255, 255, 255, 0.9)',
-            position: 'relative'
+            position: 'relative',
+            overflow: 'hidden'
           }}>
+            {/* Top Red Papercut Header Illustration Banner */}
             <div style={{
-              display: 'inline-flex',
-              padding: '6px 14px',
-              borderRadius: '16px',
-              background: '#fef2f2',
-              color: '#dc2626',
-              fontSize: '12px',
-              fontWeight: '800',
-              marginBottom: '20px',
-              border: '1px solid #fca5a5'
+              background: 'linear-gradient(135deg, #fef2f2 0%, #ffe4e4 100%)',
+              borderRadius: '20px',
+              padding: '20px',
+              border: '1px solid #fca5a5',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '16px',
+              marginBottom: '24px'
             }}>
-              TRADITIONAL TRACKING APPS
+              <div style={{
+                fontSize: '32px',
+                width: '54px',
+                height: '54px',
+                borderRadius: '16px',
+                background: '#ffffff',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                boxShadow: '0 4px 12px rgba(239, 68, 68, 0.15)'
+              }}>
+                ⏳
+              </div>
+              <div>
+                <div style={{ fontSize: '12px', fontWeight: '800', color: '#dc2626', letterSpacing: '0.05em' }}>TRADITIONAL TRACKING</div>
+                <div style={{ fontSize: '15px', fontWeight: '700', color: '#991b1b' }}>Timesheet Burnout & Noise</div>
+              </div>
             </div>
+
             <h3 style={{ fontSize: '22px', fontWeight: '700', color: '#0f172a', marginBottom: '14px' }}>
               Tedious, Intrusive & Stressful
             </h3>
@@ -378,30 +421,62 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGoToDashboard }) => 
             </ul>
           </div>
 
-          {/* Card 2: The Mochi Way (Papercraft Zen Garden Card) */}
+          {/* Card 2: The Mochi Way (with Live 3D Papercraft Zen Garden Artwork Frame) */}
           <div style={{
             background: 'linear-gradient(145deg, #ffffff 0%, #f5f3ff 100%)',
             borderRadius: '28px',
             padding: '36px',
             border: '1px solid rgba(79, 70, 229, 0.25)',
             boxShadow: '0 16px 36px rgba(79, 70, 229, 0.1), inset 0 2px 0 rgba(255, 255, 255, 0.9)',
-            position: 'relative'
+            position: 'relative',
+            overflow: 'hidden'
           }}>
+            {/* Top Papercraft Zen Artwork Frame */}
             <div style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '6px',
-              padding: '6px 14px',
-              borderRadius: '16px',
-              background: 'rgba(79, 70, 229, 0.12)',
-              color: '#4f46e5',
-              fontSize: '12px',
-              fontWeight: '800',
-              marginBottom: '20px',
-              border: '1px solid rgba(79, 70, 229, 0.25)'
+              position: 'relative',
+              borderRadius: '20px',
+              overflow: 'hidden',
+              height: '110px',
+              marginBottom: '24px',
+              border: '1px solid rgba(79, 70, 229, 0.2)',
+              boxShadow: '0 6px 18px rgba(79, 70, 229, 0.08)'
             }}>
-              🌸 THE MOCHI COMPANION EXPERIENCE
+              <img
+                src="/perfect_footer_banner.jpg"
+                alt="Mochi 3D Papercraft Origami Garden Artwork"
+                style={{
+                  width: '100%',
+                  height: '100%',
+                  objectFit: 'cover',
+                  objectPosition: 'center 45%'
+                }}
+              />
+              <div style={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                background: 'linear-gradient(to right, rgba(79, 70, 229, 0.3) 0%, transparent 60%)',
+                display: 'flex',
+                alignItems: 'center',
+                paddingLeft: '20px'
+              }}>
+                <div style={{
+                  background: 'rgba(255, 255, 255, 0.9)',
+                  backdropFilter: 'blur(8px)',
+                  padding: '6px 14px',
+                  borderRadius: '16px',
+                  fontSize: '12px',
+                  fontWeight: '800',
+                  color: '#4f46e5',
+                  boxShadow: '0 4px 12px rgba(0,0,0,0.08)'
+                }}>
+                  🌸 THE MOCHI EXPERIENCE
+                </div>
+              </div>
             </div>
+
             <h3 style={{ fontSize: '22px', fontWeight: '700', color: '#0f172a', marginBottom: '14px' }}>
               Calm, 1-Click & 100% Private
             </h3>
