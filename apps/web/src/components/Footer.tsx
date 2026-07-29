@@ -17,7 +17,7 @@ export const Footer: React.FC = () => {
       paddingTop: '64px'
     }}>
       
-      {/* 📄 TOP NAVIGATION SECTION (Clean & Unboxed) */}
+      {/* 📄 TOP NAVIGATION SECTION (Clean, Unboxed, 100% Readable) */}
       <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 32px 40px 32px', position: 'relative', zIndex: 10 }}>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '32px' }}>
           
@@ -99,39 +99,28 @@ export const Footer: React.FC = () => {
         </div>
       </div>
 
-      {/* 🌸 BOTTOM SECTION: EXPANDED 420px TALL 3D PAPERCRAFT ORIGAMI SCENERY WITH MOCHI */}
-      <div style={{ position: 'relative', width: '100%', height: '420px', overflow: 'hidden' }}>
+      {/* 🌸 BOTTOM SECTION: CUSTOM PANORAMIC 3D PAPERCRAFT BANNER (100% Full Visibility, No Cutoffs!) */}
+      <div style={{ position: 'relative', width: '100%', minHeight: '520px', overflow: 'hidden' }}>
         
-        {/* Full Bleed Scenery Image (Expanded Height & Top Visibility) */}
+        {/* Full Bleed Panoramic Scenery Image (Fitted Perfectly Without Cutoffs!) */}
         <img
-          src="/japan_papercraft_ultra_detail.jpg"
-          alt="Mochi 3D Papercraft Origami Japanese Scenery"
+          src="/perfect_footer_banner.jpg"
+          alt="Mochi Perfect Panoramic 3D Papercraft Origami Japanese Scenery"
           style={{
             width: '100%',
             height: '100%',
             objectFit: 'cover',
-            objectPosition: 'center 35%',
+            objectPosition: 'center center',
             display: 'block'
           }}
         />
 
-        {/* Soft top gradient blend into white section */}
+        {/* 🍡 INTERACTIVE MOCHI MASCOT SITTING BEAUTIFULLY IN THE CENTER OF THE SCENERY */}
         <div style={{
           position: 'absolute',
-          top: 0,
-          left: 0,
-          right: 0,
-          height: '60px',
-          background: 'linear-gradient(to bottom, #ffffff 0%, transparent 100%)',
-          pointerEvents: 'none'
-        }}></div>
-
-        {/* 🍡 INTERACTIVE MOCHI MASCOT SITTING ON TOP OF THE PAPERCRAFT SCENERY */}
-        <div style={{
-          position: 'absolute',
-          top: '40px',
+          top: '30%',
           left: '50%',
-          transform: 'translateX(-50%)',
+          transform: 'translate(-50%, -50%)',
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
