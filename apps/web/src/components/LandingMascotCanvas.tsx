@@ -42,17 +42,16 @@ export const LandingMascotCanvas: React.FC<LandingMascotCanvasProps> = ({
       ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
       ctx.fill();
 
-      // 2. Mochi Body Base (Squishy soft white/cream mochi dough)
+      // 2. Mochi Body Base (Soft rounded dumpling shape)
       ctx.beginPath();
-      const radius = 46;
-      ctx.roundRect(-radius - squishX * 10, -radius, (radius * 2) + squishX * 20, radius * 2, 28);
+      ctx.ellipse(0, 0, 46 + squishX * 10, 40, 0, 0, Math.PI * 2);
       
       // Mochi Gradient Fill (Soft warm white to subtle indigo cream)
-      const bodyGrad = ctx.createLinearGradient(0, -radius, 0, radius);
+      const bodyGrad = ctx.createLinearGradient(0, -40, 0, 40);
       bodyGrad.addColorStop(0, '#ffffff');
       bodyGrad.addColorStop(1, '#f1f5f9');
       ctx.fillStyle = bodyGrad;
-      ctx.shadowColor = 'rgba(99, 102, 241, 0.25)';
+      ctx.shadowColor = 'rgba(99, 102, 241, 0.2)';
       ctx.shadowBlur = 20;
       ctx.fill();
 
@@ -68,14 +67,14 @@ export const LandingMascotCanvas: React.FC<LandingMascotCanvasProps> = ({
 
       // 4. Soft Peach/Warm Amber Rosy Cheeks (NO PINK)
       ctx.fillStyle = '#fb923c';
-      ctx.globalAlpha = 0.5;
+      ctx.globalAlpha = 0.6;
       ctx.beginPath();
-      ctx.ellipse(-26, 6, 8, 5, 0, 0, Math.PI * 2); // Left cheek
-      ctx.ellipse(26, 6, 8, 5, 0, 0, Math.PI * 2);  // Right cheek
+      ctx.ellipse(-26, 6, 7.5, 4.5, 0, 0, Math.PI * 2); // Left cheek
+      ctx.ellipse(26, 6, 7.5, 4.5, 0, 0, Math.PI * 2);  // Right cheek
       ctx.fill();
       ctx.globalAlpha = 1.0;
 
-      // 5. State Specific Features (Eyes, Mouth, Accessories)
+      // 5. State Specific Features
       if (state === 'resting') {
         // Closed Sleeping Eyes ^_^
         ctx.strokeStyle = '#334155';
@@ -103,38 +102,59 @@ export const LandingMascotCanvas: React.FC<LandingMascotCanvasProps> = ({
         ctx.fillText('z Z', 24, -24 - zOffsetY);
       } 
       else if (state === 'working') {
-        // Working Eyes (Focused) & Glasses 👓
-        ctx.strokeStyle = '#1e293b';
-        ctx.lineWidth = 3;
+        // CLEAN WORKING EYES (Determined & Cute ^_^)
+        ctx.strokeStyle = '#0f172a';
+        ctx.lineWidth = 3.5;
+        ctx.lineCap = 'round';
 
-        // Glasses frames (Electric Indigo tint)
+        // Cute determined eyes
         ctx.beginPath();
-        ctx.arc(-16, 0, 10, 0, Math.PI * 2);
-        ctx.arc(16, 0, 10, 0, Math.PI * 2);
-        ctx.fillStyle = 'rgba(99, 102, 241, 0.15)';
+        ctx.arc(-16, -2, 6, 0.2, Math.PI - 0.2);
+        ctx.stroke();
+
+        ctx.beginPath();
+        ctx.arc(16, -2, 6, 0.2, Math.PI - 0.2);
+        ctx.stroke();
+
+        // Cute smile
+        ctx.beginPath();
+        ctx.arc(0, 8, 4, 0, Math.PI);
+        ctx.stroke();
+
+        // SLEEK MINI LAPTOP & DESK UNDERNEATH (Clean & Cute)
+        const tapOffsetY = Math.sin(tick * 0.2) * 2;
+
+        // Desk surface
+        ctx.fillStyle = '#334155';
+        ctx.roundRect(-36, 26, 72, 6, 3);
         ctx.fill();
-        ctx.strokeStyle = '#4f46e5';
+
+        // Laptop base
+        ctx.fillStyle = '#64748b';
+        ctx.roundRect(-24, 22, 48, 5, 2);
+        ctx.fill();
+
+        // Laptop Screen Lid (Glowing Blue Screen)
+        ctx.fillStyle = '#0284c7';
+        ctx.roundRect(-20, 8, 40, 14, 3);
+        ctx.fill();
+        ctx.strokeStyle = '#38bdf8';
+        ctx.lineWidth = 1.5;
         ctx.stroke();
 
-        // Bridge
-        ctx.beginPath();
-        ctx.moveTo(-6, 0);
-        ctx.lineTo(6, 0);
-        ctx.stroke();
+        // Code lines on laptop screen
+        ctx.fillStyle = '#e0f2fe';
+        ctx.fillRect(-16, 12, 14, 2);
+        ctx.fillRect(-16, 16, 22, 2);
 
-        // Mini Laptop underneath
-        ctx.fillStyle = '#1e293b';
-        ctx.fillRect(-28, 28, 56, 6);
-        ctx.fillStyle = '#38bdf8';
-        ctx.fillRect(-24, 20, 48, 8); // Screen
-
-        // Typing spark hands
-        const handAnim = Math.sin(tick * 0.3) * 3;
+        // Cute little typing paws
         ctx.fillStyle = '#ffffff';
         ctx.strokeStyle = '#475569';
+        ctx.lineWidth = 2;
+
         ctx.beginPath();
-        ctx.arc(-12, 24 + handAnim, 5, 0, Math.PI * 2);
-        ctx.arc(12, 24 - handAnim, 5, 0, Math.PI * 2);
+        ctx.arc(-10, 20 + tapOffsetY, 4.5, 0, Math.PI * 2);
+        ctx.arc(10, 20 - tapOffsetY, 4.5, 0, Math.PI * 2);
         ctx.fill();
         ctx.stroke();
       } 
@@ -147,9 +167,11 @@ export const LandingMascotCanvas: React.FC<LandingMascotCanvasProps> = ({
         ctx.arc(14, 0, 6, Math.PI, 0);
         ctx.stroke();
 
-        // Steamy Mug (Amber / Indigo)
+        // Steamy Mug
         ctx.fillStyle = '#6366f1';
-        ctx.fillRect(-8, 12, 16, 18);
+        ctx.roundRect(-8, 12, 16, 18, 4);
+        ctx.fill();
+
         ctx.fillStyle = '#fbbf24';
         ctx.fillRect(-6, 10, 12, 4);
 
