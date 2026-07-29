@@ -10,42 +10,42 @@ export const Footer: React.FC = () => {
     <footer style={{
       position: 'relative',
       width: '100%',
-      background: '#080c14',
-      color: 'var(--text-main)',
+      background: '#ffffff',
+      color: '#0f172a',
       overflow: 'hidden',
-      borderTop: '1px solid var(--glass-border)',
-      paddingTop: '60px'
+      borderTop: '1px solid #e2e8f0',
+      paddingTop: '64px'
     }}>
       
-      {/* 📄 TOP SECTION: 4 NAVIGATION COLUMNS (Clean Dark Background for 100% Readability) */}
-      <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 32px 40px 32px', position: 'relative', zIndex: 10 }}>
+      {/* 📄 TOP SECTION: CLEAN DAYTIME NAVIGATION COLUMNS (Exact Donely Style) */}
+      <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 32px 50px 32px', position: 'relative', zIndex: 10 }}>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '32px' }}>
           
           {/* Col 1: Brand & Mission */}
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '14px' }}>
-              <MochiIcon size={32} />
-              <span style={{ fontSize: '20px', fontWeight: '800', background: 'var(--primary-gradient)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+              <MochiIcon size={34} glow={false} />
+              <span style={{ fontSize: '22px', fontWeight: '800', color: '#0f172a' }}>
                 Mochi
               </span>
             </div>
-            <p style={{ fontSize: '13px', color: 'var(--text-muted)', lineHeight: '1.6', marginBottom: '16px' }}>
-              Your cozy desktop AI companion & 1-click time tracker. Inspired by 3D Japanese Origami Zen simplicity.
+            <p style={{ fontSize: '14px', color: '#475569', lineHeight: '1.6', marginBottom: '16px', maxWidth: '280px' }}>
+              Your cozy desktop AI companion & 1-click time tracker. Built for focus, calm, and simple daily rhythm.
             </p>
             <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-              <span style={{ fontSize: '11px', fontWeight: '700', padding: '3px 10px', borderRadius: '12px', background: 'rgba(99,102,241,0.15)', color: '#818cf8', border: '1px solid rgba(99,102,241,0.3)' }}>
+              <span style={{ fontSize: '11px', fontWeight: '700', padding: '4px 12px', borderRadius: '14px', background: '#f1f5f9', color: '#4f46e5', border: '1px solid #e2e8f0' }}>
                 MIT Licensed
               </span>
-              <span style={{ fontSize: '11px', fontWeight: '700', padding: '3px 10px', borderRadius: '12px', background: 'rgba(16,185,129,0.15)', color: '#10b981', border: '1px solid rgba(16,185,129,0.3)' }}>
+              <span style={{ fontSize: '11px', fontWeight: '700', padding: '4px 12px', borderRadius: '14px', background: '#f0fdf4', color: '#16a34a', border: '1px solid #dcfce7' }}>
                 100% Private
               </span>
             </div>
           </div>
 
-          {/* Col 2: Product & Tools */}
+          {/* Col 2: Product */}
           <div>
-            <h4 style={{ fontSize: '15px', fontWeight: '700', color: 'var(--text-main)', marginBottom: '14px' }}>PRODUCT</h4>
-            <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '13px', color: 'var(--text-muted)' }}>
+            <h4 style={{ fontSize: '13px', fontWeight: '800', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '16px' }}>PRODUCT</h4>
+            <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '10px', fontSize: '14px', color: '#334155' }}>
               <li><a href="https://github.com/manulaWithanage/mochi-companion" target="_blank" rel="noreferrer" style={{ color: 'inherit', textDecoration: 'none' }}>Windows Desktop App (.exe)</a></li>
               <li><a href="#stopwatch" style={{ color: 'inherit', textDecoration: 'none' }}>1-Click Project Stopwatch</a></li>
               <li><a href="#lifestyle" style={{ color: 'inherit', textDecoration: 'none' }}>9 AM Lifestyle Rhythm</a></li>
@@ -54,10 +54,10 @@ export const Footer: React.FC = () => {
             </ul>
           </div>
 
-          {/* Col 3: Open Source & Trust */}
+          {/* Col 3: Open Source */}
           <div>
-            <h4 style={{ fontSize: '15px', fontWeight: '700', color: 'var(--text-main)', marginBottom: '14px' }}>OPEN SOURCE</h4>
-            <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '13px', color: 'var(--text-muted)' }}>
+            <h4 style={{ fontSize: '13px', fontWeight: '800', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '16px' }}>OPEN SOURCE</h4>
+            <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '10px', fontSize: '14px', color: '#334155' }}>
               <li><a href="https://github.com/manulaWithanage/mochi-companion/blob/main/LICENSE" target="_blank" rel="noreferrer" style={{ color: 'inherit', textDecoration: 'none' }}>MIT Open Source License</a></li>
               <li><a href="https://github.com/manulaWithanage/mochi-companion/blob/main/LLM_ROUTER_SECURITY.md" target="_blank" rel="noreferrer" style={{ color: 'inherit', textDecoration: 'none' }}>Native safeStorage Vault</a></li>
               <li><a href="https://github.com/manulaWithanage/mochi-companion/blob/main/SYSTEM_ARCHITECTURE.md" target="_blank" rel="noreferrer" style={{ color: 'inherit', textDecoration: 'none' }}>System Architecture Specs</a></li>
@@ -65,10 +65,10 @@ export const Footer: React.FC = () => {
             </ul>
           </div>
 
-          {/* Col 4: Community & Links */}
+          {/* Col 4: Community */}
           <div>
-            <h4 style={{ fontSize: '15px', fontWeight: '700', color: 'var(--text-main)', marginBottom: '14px' }}>COMMUNITY</h4>
-            <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '13px', color: 'var(--text-muted)' }}>
+            <h4 style={{ fontSize: '13px', fontWeight: '800', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '16px' }}>COMMUNITY</h4>
+            <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '10px', fontSize: '14px', color: '#334155' }}>
               <li><a href="https://github.com/manulaWithanage/mochi-companion" target="_blank" rel="noreferrer" style={{ color: 'inherit', textDecoration: 'none' }}>GitHub Repository ⭐</a></li>
               <li><a href="https://github.com/manulaWithanage/mochi-companion/issues" target="_blank" rel="noreferrer" style={{ color: 'inherit', textDecoration: 'none' }}>Report an Issue / Bug</a></li>
               <li><a href="https://github.com/manulaWithanage/mochi-companion/discussions" target="_blank" rel="noreferrer" style={{ color: 'inherit', textDecoration: 'none' }}>Community Discussions</a></li>
@@ -78,12 +78,12 @@ export const Footer: React.FC = () => {
         </div>
       </div>
 
-      {/* 🌸 BOTTOM SECTION: 3D PAPERCRAFT ORIGAMI JAPANESE SCENERY BANNER WITH MOCHI */}
-      <div style={{ position: 'relative', width: '100%', height: '320px', overflow: 'hidden' }}>
+      {/* 🌸 BOTTOM SECTION: DAYTIME 3D PAPERCRAFT ORIGAMI JAPANESE SCENERY BANNER */}
+      <div style={{ position: 'relative', width: '100%', height: '340px', overflow: 'hidden' }}>
         
-        {/* Full Bleed Calm Scenery Image */}
+        {/* Full Bleed Daytime Scenery Image */}
         <img
-          src="/japan_zen_bottom_artwork.jpg"
+          src="/japan_daytime_papercraft_footer.jpg"
           alt="Mochi 3D Papercraft Origami Japanese Scenery"
           style={{
             width: '100%',
@@ -94,21 +94,21 @@ export const Footer: React.FC = () => {
           }}
         />
 
-        {/* Seamless Blend into Top Navigation */}
+        {/* Seamless Blend into White Top Section */}
         <div style={{
           position: 'absolute',
           top: 0,
           left: 0,
           right: 0,
-          height: '90px',
-          background: 'linear-gradient(to bottom, #080c14 0%, transparent 100%)',
+          height: '60px',
+          background: 'linear-gradient(to bottom, #ffffff 0%, transparent 100%)',
           pointerEvents: 'none'
         }}></div>
 
-        {/* 🍡 INTERACTIVE MOCHI MASCOT STAGE (Centered in the Scenery) */}
+        {/* 🍡 INTERACTIVE MOCHI MASCOT STAGE (Centered in the Daytime Scenery) */}
         <div style={{
           position: 'absolute',
-          bottom: '24px',
+          bottom: '36px',
           left: '50%',
           transform: 'translateX(-50%)',
           display: 'flex',
@@ -118,16 +118,17 @@ export const Footer: React.FC = () => {
         }}>
           {/* Speech Bubble */}
           <div style={{
-            background: 'rgba(255, 255, 255, 0.95)',
+            background: '#ffffff',
             color: '#0f172a',
             padding: '8px 18px',
             borderRadius: '16px',
             fontSize: '13px',
             fontWeight: '600',
-            boxShadow: '0 10px 30px rgba(0, 0, 0, 0.4)',
+            boxShadow: '0 10px 30px rgba(0, 0, 0, 0.15)',
             marginBottom: '8px',
             whiteSpace: 'nowrap',
-            position: 'relative'
+            position: 'relative',
+            border: '1px solid #e2e8f0'
           }}>
             {speechBubble}
             {/* Bubble Tail */}
@@ -140,20 +141,20 @@ export const Footer: React.FC = () => {
               height: 0,
               borderLeft: '6px solid transparent',
               borderRight: '6px solid transparent',
-              borderTop: '6px solid rgba(255, 255, 255, 0.95)'
+              borderTop: '6px solid #ffffff'
             }}></div>
           </div>
 
           {/* Interactive Mascot Canvas */}
           <div
             onClick={() => setMascotState(mascotState === 'idle' ? 'resting' : mascotState === 'resting' ? 'coffee' : 'idle')}
-            style={{ cursor: 'pointer', filter: 'drop-shadow(0 12px 24px rgba(0,0,0,0.5))' }}
+            style={{ cursor: 'pointer', filter: 'drop-shadow(0 10px 20px rgba(0,0,0,0.15))' }}
           >
             <LandingMascotCanvas state={mascotState} size={140} />
           </div>
         </div>
 
-        {/* Copyright overlay bar across the bottom of the papercraft scenery */}
+        {/* Copyright overlay bar across the bottom of the daytime papercraft scenery */}
         <div style={{
           position: 'absolute',
           bottom: '12px',
@@ -163,13 +164,12 @@ export const Footer: React.FC = () => {
           justifyContent: 'space-between',
           alignItems: 'center',
           fontSize: '12px',
-          color: '#ffffff',
-          textShadow: '0 2px 8px rgba(0,0,0,0.95)',
+          color: '#334155',
           zIndex: 12,
-          fontWeight: '500'
+          fontWeight: '600'
         }}>
           <div>
-            © 2026 <strong>manulaWithanage</strong> & Mochi contributors.
+            © 2026 <strong>manulaWithanage</strong> & Mochi contributors. Built for focus.
           </div>
           <div>
             Released under the <strong>MIT License</strong>
