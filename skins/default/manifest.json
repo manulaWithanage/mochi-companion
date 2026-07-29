@@ -1,14 +1,14 @@
 {
   "name": "default",
   "version": "1.0.0",
-  "frameWidth": 128,
-  "frameHeight": 128,
+  "frameWidth": 192,
+  "frameHeight": 192,
   "defaultState": "idle",
   "author": "Mochi contributors",
   "license": "MIT",
   "states": {
-    "idle": { "file": "idle.png", "frames": 8, "fps": 8, "loop": true },
+    "idle": { "file": "idle.png", "frames": 12, "fps": 8, "loop": true },
     "working": { "file": "working.png", "frames": 12, "fps": 12, "loop": true },
-    "resting": { "file": "resting.png", "frames": 4, "fps": 4, "loop": true }
+    "resting": { "file": "resting.png", "frames": 8, "fps": 4, "loop": true }
   }
 }
