@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { LandingMascotCanvas } from './LandingMascotCanvas';
 import { MochiIcon } from './MochiIcon';
 import { Footer } from './Footer';
@@ -8,19 +8,48 @@ interface LandingPageProps {
 }
 
 export const LandingPage: React.FC<LandingPageProps> = ({ onGoToDashboard }) => {
-  const [mascotState, setMascotState] = useState<'idle' | 'working' | 'resting' | 'coffee'>('idle');
-  const [speechMessage, setSpeechMessage] = useState("Hi! I'm Mochi. I sit on your desktop to help you stay focused & calm!");
+  // Initial default state is peaceful resting/sleeping ( ^_^ ) z Z
+  const [mascotState, setMascotState] = useState<'idle' | 'working' | 'resting' | 'coffee'>('resting');
+  const [speechMessage, setSpeechMessage] = useState("z Z z... Resting quietly until you scroll or click! 💤");
   const [clickCount, setClickCount] = useState(0);
+
+  // Wakes Mochi up on page scroll, then softly drifts back to sleep after 4s idle
+  useEffect(() => {
+    let scrollTimeout: NodeJS.Timeout;
+    
+    const handleScroll = () => {
+      setMascotState((prev) => {
+        if (prev === 'resting') {
+          setSpeechMessage("Oh! You're here! Ready to focus together? 🍡");
+          return 'idle';
+        }
+        return prev;
+      });
+
+      clearTimeout(scrollTimeout);
+      scrollTimeout = setTimeout(() => {
+        setMascotState('resting');
+        setSpeechMessage("z Z z... Drifting off to sleep until you need me! 💤");
+      }, 4500);
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      clearTimeout(scrollTimeout);
+    };
+  }, []);
 
   const handleMascotClick = () => {
     const companionQuotes = [
-      "I'm keeping your workday focused, organized, and calm! 🍡",
-      "Click 'Focus Time' below to see me type alongside you! ⏱️",
+      "Oh! You clicked me! Ready to focus together? 🍡",
+      "Click 'Focus Time' below to see me type on my mini laptop! ⏱️",
       "Did you take a sip of water and stretch your shoulders today? 💧",
       "Mochi is right here on your desktop whenever you need help! ⭐",
       "Great progress today! Take a quick 5-minute break when ready! 🚀"
     ];
     setClickCount((prev) => prev + 1);
+    setMascotState('idle');
     setSpeechMessage(companionQuotes[clickCount % companionQuotes.length]);
   };
 
@@ -33,7 +62,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGoToDashboard }) => 
     } else if (newState === 'coffee') {
       setSpeechMessage("9:00 AM Check-in: Time for coffee & a healthy breakfast! ☕");
     } else {
-      setSpeechMessage("Hi! I'm Mochi. Standing by on your desktop whenever you need me!");
+      setSpeechMessage("Standing by on your desktop whenever you need me! 🍡");
     }
   };
 
@@ -47,9 +76,9 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGoToDashboard }) => 
         justifyContent: 'space-between',
         padding: '20px 48px',
         borderBottom: '1px solid rgba(0, 0, 0, 0.06)',
-        background: 'rgba(255, 255, 255, 0.65)',
-        backdropFilter: 'blur(20px)',
-        WebkitBackdropFilter: 'blur(20px)',
+        background: 'rgba(255, 255, 255, 0.45)',
+        backdropFilter: 'blur(16px)',
+        WebkitBackdropFilter: 'blur(16px)',
         position: 'sticky',
         top: 0,
         zIndex: 100
@@ -128,7 +157,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGoToDashboard }) => 
           }}
         />
 
-        {/* 📄 ONE SINGLE UNIFIED BIG FROSTED GLASS CARD HOUSING EVERYTHING */}
+        {/* 📄 ONE SINGLE UNIFIED CRYSTAL GLASS CARD (Ultra Translucent 0.15 Opacity) */}
         <div style={{
           position: 'relative',
           zIndex: 10,
@@ -138,13 +167,13 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGoToDashboard }) => 
           flexDirection: 'column',
           alignItems: 'center',
           textAlign: 'center',
-          background: 'rgba(255, 255, 255, 0.32)',
-          backdropFilter: 'blur(20px)',
-          WebkitBackdropFilter: 'blur(20px)',
+          background: 'rgba(255, 255, 255, 0.15)',
+          backdropFilter: 'blur(10px)',
+          WebkitBackdropFilter: 'blur(10px)',
           borderRadius: '36px',
-          border: '1px solid rgba(255, 255, 255, 0.18)',
+          border: '1px solid rgba(255, 255, 255, 0.35)',
           padding: '44px 48px 40px 48px',
-          boxShadow: '0 20px 60px rgba(0, 0, 0, 0.05), inset 0 1px 1px rgba(255, 255, 255, 0.6)'
+          boxShadow: '0 20px 60px rgba(0, 0, 0, 0.05), inset 0 1px 1px rgba(255, 255, 255, 0.7)'
         }}>
           
           {/* Clean Badge Pill */}
@@ -154,15 +183,15 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGoToDashboard }) => 
             gap: '8px',
             padding: '6px 18px',
             borderRadius: '20px',
-            background: 'rgba(255, 255, 255, 0.75)',
-            backdropFilter: 'blur(10px)',
-            border: '1px solid rgba(79, 70, 229, 0.18)',
+            background: 'rgba(255, 255, 255, 0.65)',
+            backdropFilter: 'blur(8px)',
+            border: '1px solid rgba(79, 70, 229, 0.25)',
             fontSize: '12.5px',
             fontWeight: '700',
             color: '#4f46e5',
             letterSpacing: '0.02em',
             marginBottom: '22px',
-            boxShadow: '0 4px 14px rgba(0, 0, 0, 0.03)'
+            boxShadow: '0 4px 14px rgba(0, 0, 0, 0.04)'
           }}>
             Super-Intelligent Desktop Workflow Companion
           </div>
@@ -181,7 +210,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGoToDashboard }) => 
 
           <p style={{
             fontSize: '18px',
-            color: '#334155',
+            color: '#0f172a',
             lineHeight: '1.6',
             marginBottom: '32px',
             fontWeight: '600',
@@ -235,9 +264,9 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGoToDashboard }) => 
           }}>
             {/* Apple Liquid Glassmorphic Speech Bubble */}
             <div style={{
-              background: 'rgba(255, 255, 255, 0.88)',
-              backdropFilter: 'blur(20px)',
-              WebkitBackdropFilter: 'blur(20px)',
+              background: 'rgba(255, 255, 255, 0.85)',
+              backdropFilter: 'blur(16px)',
+              WebkitBackdropFilter: 'blur(16px)',
               color: '#0f172a',
               padding: '10px 22px',
               borderRadius: '24px',
@@ -265,7 +294,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGoToDashboard }) => 
               }}></div>
             </div>
 
-            {/* Live Interactive Mascot Canvas */}
+            {/* Live Interactive Mascot Canvas (Starts Sleeping ( ^_^ ) z Z) */}
             <div style={{ filter: 'drop-shadow(0 12px 24px rgba(0, 0, 0, 0.12))', marginBottom: '20px' }}>
               <LandingMascotCanvas
                 state={mascotState}
@@ -327,7 +356,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGoToDashboard }) => 
                   boxShadow: mascotState === 'resting' ? '0 4px 16px rgba(79, 70, 229, 0.35)' : '0 2px 8px rgba(0,0,0,0.06)'
                 }}
               >
-                Rest Mode
+                Rest Mode (Sleeping)
               </button>
               <button
                 onClick={() => handleStateChange('coffee')}
@@ -340,7 +369,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGoToDashboard }) => 
                   cursor: 'pointer',
                   background: mascotState === 'coffee' ? 'var(--primary-gradient)' : 'rgba(255, 255, 255, 0.85)',
                   color: mascotState === 'coffee' ? '#ffffff' : '#334155',
-                  boxShadow: mascotState === 'coffee' ? '0 4px 14px rgba(79, 70, 229, 0.35)' : '0 2px 8px rgba(0,0,0,0.06)'
+                  boxShadow: mascotState === 'coffee' ? '0 4px 16px rgba(79, 70, 229, 0.35)' : '0 2px 8px rgba(0,0,0,0.06)'
                 }}
               >
                 9 AM Coffee & Habit
