@@ -25,6 +25,7 @@ import type {
   Project,
   SetupPayload,
   SkinSummary,
+  Task,
   TimerSnapshot,
   WorkSession,
 } from '@mochi/core';
@@ -56,6 +57,16 @@ const bridge: MochiBridge = {
     list: () => ipcRenderer.invoke('projects:list') as Promise<readonly Project[]>,
     create: (name, colour) =>
       ipcRenderer.invoke('projects:create', name, colour) as Promise<Project>,
+  },
+
+  tasks: {
+    list: () => ipcRenderer.invoke('tasks:list') as Promise<readonly Task[]>,
+    create: (title, dueOn, projectId) =>
+      ipcRenderer.invoke('tasks:create', title, dueOn, projectId) as Promise<Task | null>,
+    toggle: (id) => ipcRenderer.invoke('tasks:toggle', id) as Promise<readonly Task[]>,
+    remove: (id) => ipcRenderer.invoke('tasks:remove', id) as Promise<readonly Task[]>,
+    rollForward: (id) => ipcRenderer.invoke('tasks:rollForward', id) as Promise<readonly Task[]>,
+    onChange: (listener) => subscribe<readonly Task[]>('tasks:changed', listener),
   },
 
   settings: {

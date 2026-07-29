@@ -109,7 +109,14 @@ async function bootstrap(): Promise<void> {
   const llm = new LlmService();
   const llmClient = new LlmClient(llm);
 
+  const notifyTasks = async () => {
+    const tasks = await storage.listTasks();
+    setup.send('tasks:changed', tasks);
+    return tasks;
+  };
+
   registerIpc({
+    notifyTasks,
     timer,
     mascot,
     settings,

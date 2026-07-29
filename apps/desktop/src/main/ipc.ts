@@ -15,7 +15,7 @@ import type {
   SetupPayload,
   StorageAdapter,
 } from '@mochi/core';
-import { parseHhMm } from '@mochi/core';
+import { createTask, parseHhMm, rollForward, toggleDone } from '@mochi/core';
 import { DEFAULT_PROJECT } from '@mochi/db';
 import type { TimerService } from './services/timer-service.js';
 import type { MascotService } from './services/mascot-service.js';
@@ -32,6 +32,8 @@ export interface IpcContext {
   overlay: OverlayWindow;
   setup: SetupWindow;
   governor: InterruptionGovernor;
+  /** Push the current task list to open windows and return it. */
+  notifyTasks(): Promise<readonly import('@mochi/core').Task[]>;
   llm: {
     status(): LlmStatus;
     saveKey(rawKey: string): Promise<import('@mochi/core').KeyResult>;
@@ -78,6 +80,43 @@ export function registerIpc(ctx: IpcContext): void {
       colour: asString(colour, DEFAULT_PROJECT.colour),
     }),
   );
+
+  // ---- tasks -------------------------------------------------------------
+  ipcMain.handle('tasks:list', () => ctx.storage.listTasks());
+
+  ipcMain.handle('tasks:create', async (_e, title: unknown, dueOn: unknown, projectId: unknown) => {
+    const result = createTask({
+      id: randomUUID(),
+      title: asString(title, ''),
+      now: new Date(),
+      // undefined means today; explicit null means someday.
+      ...(dueOn === null || typeof dueOn === 'string' ? { dueOn } : {}),
+      ...(typeof projectId === 'string' ? { projectId } : {}),
+    });
+    if (!result.ok) return null;
+    await ctx.storage.saveTask(result.task);
+    ctx.notifyTasks();
+    return result.task;
+  });
+
+  ipcMain.handle('tasks:toggle', async (_e, id: unknown) => {
+    const tasks = await ctx.storage.listTasks();
+    const task = tasks.find((t) => t.id === id);
+    if (task !== undefined) await ctx.storage.saveTask(toggleDone(task, new Date()));
+    return ctx.notifyTasks();
+  });
+
+  ipcMain.handle('tasks:remove', async (_e, id: unknown) => {
+    if (typeof id === 'string') await ctx.storage.deleteTask(id);
+    return ctx.notifyTasks();
+  });
+
+  ipcMain.handle('tasks:rollForward', async (_e, id: unknown) => {
+    const tasks = await ctx.storage.listTasks();
+    const task = tasks.find((t) => t.id === id);
+    if (task !== undefined) await ctx.storage.saveTask(rollForward(task, new Date()));
+    return ctx.notifyTasks();
+  });
 
   // ---- settings ----------------------------------------------------------
   ipcMain.handle('settings:get', () => ctx.settings.get());

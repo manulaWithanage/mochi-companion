@@ -13,7 +13,14 @@
 import { DatabaseSync, type StatementSync } from 'node:sqlite';
 import { dirname } from 'node:path';
 import { mkdirSync } from 'node:fs';
-import type { Project, SessionQuery, SessionId, StorageAdapter, WorkSession } from '@mochi/core';
+import type {
+  Project,
+  SessionQuery,
+  SessionId,
+  StorageAdapter,
+  Task,
+  WorkSession,
+} from '@mochi/core';
 import {
   CONNECTION_PRAGMAS,
   DEFAULT_PROJECT,
@@ -28,6 +35,16 @@ interface ProjectRow {
   colour: string;
   created_at: number;
   archived_at: number | null;
+}
+
+interface TaskRow {
+  id: string;
+  title: string;
+  project_id: string | null;
+  due_on: string | null;
+  done_at: number | null;
+  created_at: number;
+  priority: number;
 }
 
 interface SessionRow {
@@ -52,6 +69,16 @@ const toProject = (row: ProjectRow): Project => ({
   archivedAt: row.archived_at,
 });
 
+const toTask = (row: TaskRow): Task => ({
+  id: row.id,
+  title: row.title,
+  projectId: row.project_id,
+  dueOn: row.due_on,
+  doneAt: row.done_at,
+  createdAt: row.created_at,
+  priority: row.priority,
+});
+
 const toSession = (row: SessionRow): WorkSession => ({
   id: row.id,
   projectId: row.project_id,
@@ -70,6 +97,9 @@ export class SqliteStorageAdapter implements StorageAdapter {
     getState: StatementSync;
     setState: StatementSync;
     clearState: StatementSync;
+    listTasks: StatementSync;
+    upsertTask: StatementSync;
+    deleteTask: StatementSync;
   };
 
   constructor(filePath: string) {
@@ -107,6 +137,20 @@ export class SqliteStorageAdapter implements StorageAdapter {
          ON CONFLICT(key) DO UPDATE SET value = excluded.value`,
       ),
       clearState: this.db.prepare(`DELETE FROM app_state WHERE key = ?`),
+      listTasks: this.db.prepare(
+        `SELECT * FROM tasks ORDER BY done_at IS NOT NULL, priority DESC, created_at ASC`,
+      ),
+      upsertTask: this.db.prepare(
+        `INSERT INTO tasks (id, title, project_id, due_on, done_at, created_at, priority)
+         VALUES (?, ?, ?, ?, ?, ?, ?)
+         ON CONFLICT(id) DO UPDATE SET
+           title      = excluded.title,
+           project_id = excluded.project_id,
+           due_on     = excluded.due_on,
+           done_at    = excluded.done_at,
+           priority   = excluded.priority`,
+      ),
+      deleteTask: this.db.prepare(`DELETE FROM tasks WHERE id = ?`),
     };
   }
 
@@ -199,6 +243,26 @@ export class SqliteStorageAdapter implements StorageAdapter {
 
   async deleteSession(id: SessionId): Promise<void> {
     this.statements.deleteSession.run(id);
+  }
+
+  async listTasks(): Promise<readonly Task[]> {
+    return asRows<TaskRow>(this.statements.listTasks.all()).map(toTask);
+  }
+
+  async saveTask(task: Task): Promise<void> {
+    this.statements.upsertTask.run(
+      task.id,
+      task.title,
+      task.projectId,
+      task.dueOn,
+      task.doneAt,
+      task.createdAt,
+      task.priority,
+    );
+  }
+
+  async deleteTask(id: string): Promise<void> {
+    this.statements.deleteTask.run(id);
   }
 
   async getRunningSession(): Promise<WorkSession | null> {

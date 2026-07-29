@@ -13,6 +13,7 @@ import type { DiscoveredModel, ProviderId } from '../llm/providers.js';
 import type { MascotState, WorkHours } from '../mascot/state.js';
 import type { MochiSettings } from '../settings/settings.js';
 import type { Project } from '../storage/adapter.js';
+import type { Task } from '../tasks/tasks.js';
 import type { WorkSession } from '../timer/session.js';
 
 export interface LlmStatus {
@@ -100,6 +101,17 @@ export interface MochiBridge {
   readonly projects: {
     list(): Promise<readonly Project[]>;
     create(name: string, colour: string): Promise<Project>;
+  };
+
+  readonly tasks: {
+    list(): Promise<readonly Task[]>;
+    /** Omit dueOn for today; pass null for someday. */
+    create(title: string, dueOn?: string | null, projectId?: string | null): Promise<Task | null>;
+    toggle(id: string): Promise<readonly Task[]>;
+    remove(id: string): Promise<readonly Task[]>;
+    /** Move an overdue task to today. */
+    rollForward(id: string): Promise<readonly Task[]>;
+    onChange(listener: (tasks: readonly Task[]) => void): () => void;
   };
 
   readonly settings: {

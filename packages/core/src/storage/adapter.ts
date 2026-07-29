@@ -7,6 +7,7 @@
  */
 
 import type { SessionId, WorkSession } from '../timer/session.js';
+import type { Task } from '../tasks/tasks.js';
 
 export interface Project {
   readonly id: string;
@@ -36,6 +37,10 @@ export interface StorageAdapter {
   listSessions(query?: SessionQuery): Promise<readonly WorkSession[]>;
   deleteSession(id: SessionId): Promise<void>;
 
+  listTasks(): Promise<readonly Task[]>;
+  saveTask(task: Task): Promise<void>;
+  deleteTask(id: string): Promise<void>;
+
   /**
    * The session currently running, persisted so an unclean shutdown does not
    * silently lose tracked time. Written on start, cleared on stop.
@@ -54,6 +59,7 @@ export interface StorageAdapter {
 export class InMemoryStorageAdapter implements StorageAdapter {
   private projects = new Map<string, Project>();
   private sessions = new Map<SessionId, WorkSession>();
+  private tasks = new Map<string, Task>();
   private running: WorkSession | null = null;
 
   async listProjects(): Promise<readonly Project[]> {
@@ -94,6 +100,18 @@ export class InMemoryStorageAdapter implements StorageAdapter {
 
   async deleteSession(id: SessionId): Promise<void> {
     this.sessions.delete(id);
+  }
+
+  async listTasks(): Promise<readonly Task[]> {
+    return [...this.tasks.values()];
+  }
+
+  async saveTask(task: Task): Promise<void> {
+    this.tasks.set(task.id, task);
+  }
+
+  async deleteTask(id: string): Promise<void> {
+    this.tasks.delete(id);
   }
 
   async getRunningSession(): Promise<WorkSession | null> {
