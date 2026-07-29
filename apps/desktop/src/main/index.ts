@@ -36,6 +36,7 @@ import { RoutineService } from './services/routine-service.js';
 import { LlmService } from './services/llm-service.js';
 import { LlmClient } from './services/llm-client.js';
 import { GoogleService } from './services/google-service.js';
+import { GmailManager } from './services/gmail-manager.js';
 import { registerIpc } from './ipc.js';
 
 interface SayOptions {
@@ -111,6 +112,7 @@ async function bootstrap(): Promise<void> {
   const google = new GoogleService(join(app.getPath('userData'), 'google.enc.json'));
   const llm = new LlmService();
   const llmClient = new LlmClient(llm);
+  const gmailManager = new GmailManager(llmClient, settings);
 
   const notifyTasks = async () => {
     const tasks = await storage.listTasks();
@@ -157,6 +159,7 @@ async function bootstrap(): Promise<void> {
           : { ok: false, text: result.reason };
       },
     },
+    gmail: gmailManager,
   });
 
   llm.onChange((status) => setup.send('llm:changed', status));

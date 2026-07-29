@@ -16,4 +16,5 @@ export * from './llm/providers.js';
 export * from './llm/router.js';
 export * from './tasks/tasks.js';
 export * from './google/oauth.js';
+export * from './google/email-prompt.js';
 export type * from './types/bridge.js';

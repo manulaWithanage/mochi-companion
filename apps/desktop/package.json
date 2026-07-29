@@ -36,7 +36,10 @@
     "@ai-sdk/openai": "^4.0.23",
     "@mochi/core": "workspace:*",
     "@mochi/db": "workspace:*",
+    "@types/mailparser": "^3.4.6",
     "ai": "^7.0.41",
+    "imapflow": "^1.6.3",
+    "mailparser": "^3.9.14",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
     "zod": "^4.4.3"

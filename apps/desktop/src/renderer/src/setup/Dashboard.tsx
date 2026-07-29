@@ -7,6 +7,7 @@ import { RoutinesTab } from './tabs/RoutinesTab.js';
 import { MochiTab } from './tabs/MochiTab.js';
 import { ConnectionsTab } from './tabs/ConnectionsTab.js';
 import { AiSection } from './AiSection.js';
+import { GmailTab } from './tabs/GmailTab.js';
 
 /**
  * The dashboard shell.
@@ -17,7 +18,7 @@ import { AiSection } from './AiSection.js';
  * Connections had not even been built yet.
  */
 
-type TabId = 'today' | 'time' | 'routines' | 'mochi' | 'ai' | 'connections';
+type TabId = 'today' | 'time' | 'routines' | 'mochi' | 'ai' | 'connections' | 'gmail';
 
 const TABS: readonly { id: TabId; label: string; icon: string }[] = [
   { id: 'today', label: 'Today', icon: '◔' },
@@ -26,6 +27,7 @@ const TABS: readonly { id: TabId; label: string; icon: string }[] = [
   { id: 'mochi', label: 'Mochi', icon: '✿' },
   { id: 'ai', label: 'AI', icon: '✦' },
   { id: 'connections', label: 'Connections', icon: '⚯' },
+  { id: 'gmail', label: 'Gmail', icon: '✉' },
 ];
 
 export function Dashboard(): JSX.Element {
@@ -156,6 +158,7 @@ export function Dashboard(): JSX.Element {
         {tab === 'routines' && <RoutinesTab />}
         {tab === 'mochi' && <MochiTab />}
         {tab === 'connections' && <ConnectionsTab />}
+        {tab === 'gmail' && <GmailTab />}
         {tab === 'ai' && (
           <div>
             <h2 style={{ margin: '0 0 2px', fontSize: 19, fontWeight: 650 }}>AI</h2>

@@ -1,0 +1,493 @@
+/**
+ * GmailTab — Gmail inbox reader & LLM draft generator.
+ *
+ * Lets the user connect their Gmail via App Password, browse unread emails,
+ * and generate + save AI-written reply drafts directly to Gmail Drafts.
+ *
+ * No Google Cloud required. Zero monthly fees.
+ */
+
+import { useState, useEffect, type JSX } from 'react';
+import type { GmailEmailSummary, GmailStatus, GmailTone } from '@mochi/core';
+import { C, card, label, input, button, h2, sub } from '../ui.js';
+
+type View = 'inbox' | 'draft';
+
+interface DraftState {
+  emailUid: number;
+  subject: string;
+  from: string;
+  draftReply: string;
+  suggestedSubject: string;
+}
+
+export function GmailTab(): JSX.Element {
+  const [status, setStatus] = useState<GmailStatus | null>(null);
+  const [emailInput, setEmailInput] = useState('');
+  const [passInput, setPassInput] = useState('');
+  const [connecting, setConnecting] = useState(false);
+  const [connectError, setConnectError] = useState<string | null>(null);
+
+  const [emails, setEmails] = useState<readonly GmailEmailSummary[]>([]);
+  const [fetching, setFetching] = useState(false);
+  const [fetchError, setFetchError] = useState<string | null>(null);
+
+  const [view, setView] = useState<View>('inbox');
+  const [draft, setDraft] = useState<DraftState | null>(null);
+  const [generating, setGenerating] = useState(false);
+  const [generateError, setGenerateError] = useState<string | null>(null);
+  const [tone, setTone] = useState<GmailTone>('professional');
+  const [savingDraft, setSavingDraft] = useState(false);
+  const [savedOk, setSavedOk] = useState(false);
+
+  useEffect(() => {
+    void window.mochi.gmail.status().then(setStatus);
+  }, []);
+
+  const handleConnect = async (): Promise<void> => {
+    setConnecting(true);
+    setConnectError(null);
+    const result = await window.mochi.gmail.connect(emailInput.trim(), passInput.trim());
+    setConnecting(false);
+    if (result.ok) {
+      const newStatus = await window.mochi.gmail.status();
+      setStatus(newStatus);
+      setPassInput('');
+    } else {
+      setConnectError(result.error ?? 'Unknown error');
+    }
+  };
+
+  const handleDisconnect = async (): Promise<void> => {
+    await window.mochi.gmail.disconnect();
+    const newStatus = await window.mochi.gmail.status();
+    setStatus(newStatus);
+    setEmails([]);
+    setDraft(null);
+    setView('inbox');
+  };
+
+  const handleFetch = async (): Promise<void> => {
+    setFetching(true);
+    setFetchError(null);
+    const result = await window.mochi.gmail.fetchUnread(10);
+    setFetching(false);
+    if (result.ok && result.emails) {
+      setEmails(result.emails);
+    } else {
+      setFetchError(result.error ?? 'Failed to fetch emails.');
+    }
+  };
+
+  const handleGenerate = async (email: GmailEmailSummary): Promise<void> => {
+    setGenerating(true);
+    setGenerateError(null);
+    setView('draft');
+    setDraft({
+      emailUid: email.uid,
+      subject: email.subject,
+      from: email.from,
+      draftReply: '',
+      suggestedSubject: `Re: ${email.subject}`,
+    });
+
+    const result = await window.mochi.gmail.generateAndSaveDraft(email.uid, tone);
+    setGenerating(false);
+    if (result.ok && result.draftReply) {
+      setDraft({
+        emailUid: email.uid,
+        subject: email.subject,
+        from: email.from,
+        draftReply: result.draftReply,
+        suggestedSubject: result.suggestedSubject ?? `Re: ${email.subject}`,
+      });
+      setSavedOk(true);
+      setTimeout(() => setSavedOk(false), 4000);
+    } else {
+      setGenerateError(result.error ?? 'Failed to generate draft.');
+    }
+  };
+
+  const handleSaveDraft = async (): Promise<void> => {
+    if (!draft) return;
+    setSavingDraft(true);
+    const result = await window.mochi.gmail.saveDraft({
+      toEmail: draft.from,
+      subject: draft.suggestedSubject,
+      body: draft.draftReply,
+    });
+    setSavingDraft(false);
+    if (result.ok) {
+      setSavedOk(true);
+      setTimeout(() => setSavedOk(false), 3000);
+    } else {
+      setGenerateError(result.error ?? 'Failed to save draft.');
+    }
+  };
+
+  // ---- Not connected ----
+  if (!status?.connected) {
+    return (
+      <div>
+        <h2 style={h2}>Gmail Inbox</h2>
+        <p style={sub}>
+          Read emails & generate AI draft replies. Uses your Gmail App Password — no Google Cloud
+          setup required.
+        </p>
+
+        <div style={{ ...card, maxWidth: 480 }}>
+          <div style={{ marginBottom: 20 }}>
+            <h3 style={{ margin: '0 0 6px', fontSize: 14, fontWeight: 650, color: C.text }}>
+              📋 Quick setup (30 seconds)
+            </h3>
+            <ol
+              style={{
+                margin: 0,
+                paddingLeft: 18,
+                fontSize: 12.5,
+                color: C.dim,
+                lineHeight: 1.8,
+              }}
+            >
+              <li>
+                Go to{' '}
+                <strong style={{ color: C.accent }}>myaccount.google.com → Security</strong>
+              </li>
+              <li>
+                Enable <strong style={{ color: C.text }}>2-Step Verification</strong>
+              </li>
+              <li>
+                Search for <strong style={{ color: C.text }}>App Passwords</strong> → Create one
+              </li>
+              <li>Copy the 16-character code and paste below</li>
+            </ol>
+          </div>
+
+          <div style={{ marginBottom: 14 }}>
+            <span style={label}>Gmail Address</span>
+            <input
+              id="gmail-email-input"
+              type="email"
+              placeholder="you@gmail.com"
+              value={emailInput}
+              onChange={(e) => setEmailInput(e.target.value)}
+              style={input}
+            />
+          </div>
+
+          <div style={{ marginBottom: 18 }}>
+            <span style={label}>App Password (16 chars)</span>
+            <input
+              id="gmail-password-input"
+              type="password"
+              placeholder="abcd efgh ijkl mnop"
+              value={passInput}
+              onChange={(e) => setPassInput(e.target.value)}
+              style={input}
+            />
+          </div>
+
+          {connectError && (
+            <div
+              style={{
+                background: 'rgba(255,100,100,0.12)',
+                border: '1px solid rgba(255,100,100,0.25)',
+                borderRadius: 9,
+                padding: '9px 12px',
+                fontSize: 12.5,
+                color: C.warn,
+                marginBottom: 14,
+              }}
+            >
+              {connectError}
+            </div>
+          )}
+
+          <button
+            id="gmail-connect-btn"
+            onClick={() => void handleConnect()}
+            disabled={connecting || emailInput.length === 0 || passInput.length === 0}
+            style={{
+              ...button('primary'),
+              width: '100%',
+              opacity: connecting ? 0.6 : 1,
+            }}
+          >
+            {connecting ? 'Testing connection…' : 'Connect Gmail'}
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // ---- Draft view ----
+  if (view === 'draft' && draft !== null) {
+    return (
+      <div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20 }}>
+          <button
+            onClick={() => {
+              setView('inbox');
+              setDraft(null);
+              setGenerateError(null);
+            }}
+            style={{ ...button('ghost'), padding: '6px 12px', fontSize: 12 }}
+          >
+            ← Back
+          </button>
+          <div>
+            <h2 style={{ ...h2, fontSize: 16 }}>Draft Reply</h2>
+            <p style={{ margin: 0, fontSize: 12, color: C.dim }}>
+              To: {draft.from} · Re: {draft.subject}
+            </p>
+          </div>
+        </div>
+
+        {generating && (
+          <div
+            style={{
+              ...card,
+              textAlign: 'center',
+              color: C.dim,
+              fontSize: 13,
+              padding: '32px 18px',
+            }}
+          >
+            <div style={{ fontSize: 28, marginBottom: 10 }}>✦</div>
+            Generating AI draft with your BYOK LLM…
+          </div>
+        )}
+
+        {!generating && generateError && (
+          <div
+            style={{
+              background: 'rgba(255,100,100,0.12)',
+              border: '1px solid rgba(255,100,100,0.25)',
+              borderRadius: 9,
+              padding: '9px 12px',
+              fontSize: 12.5,
+              color: C.warn,
+              marginBottom: 14,
+            }}
+          >
+            {generateError}
+          </div>
+        )}
+
+        {!generating && draft.draftReply.length > 0 && (
+          <div>
+            <div style={{ marginBottom: 14 }}>
+              <span style={label}>Subject</span>
+              <input
+                type="text"
+                value={draft.suggestedSubject}
+                onChange={(e) => setDraft({ ...draft, suggestedSubject: e.target.value })}
+                style={input}
+              />
+            </div>
+
+            <div style={{ marginBottom: 14 }}>
+              <span style={label}>Draft Reply</span>
+              <textarea
+                value={draft.draftReply}
+                onChange={(e) => setDraft({ ...draft, draftReply: e.target.value })}
+                rows={12}
+                style={{
+                  ...input,
+                  resize: 'vertical',
+                  fontFamily: 'inherit',
+                  lineHeight: 1.55,
+                  minHeight: 200,
+                }}
+              />
+            </div>
+
+            {savedOk && (
+              <div
+                style={{
+                  background: 'rgba(168,230,184,0.12)',
+                  border: '1px solid rgba(168,230,184,0.3)',
+                  borderRadius: 9,
+                  padding: '9px 14px',
+                  fontSize: 12.5,
+                  color: C.good,
+                  marginBottom: 12,
+                }}
+              >
+                ✓ Draft saved to your Gmail Drafts folder!
+              </div>
+            )}
+
+            <div style={{ display: 'flex', gap: 10 }}>
+              <button
+                id="gmail-save-draft-btn"
+                onClick={() => void handleSaveDraft()}
+                disabled={savingDraft}
+                style={{
+                  ...button('primary'),
+                  opacity: savingDraft ? 0.6 : 1,
+                }}
+              >
+                {savingDraft ? 'Saving…' : 'Save to Drafts'}
+              </button>
+              <button
+                onClick={() => void handleGenerate({ ...emails.find((e) => e.uid === draft.emailUid)! })}
+                style={button('ghost')}
+              >
+                Regenerate
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // ---- Connected + Inbox view ----
+  return (
+    <div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 18 }}>
+        <div>
+          <h2 style={h2}>Gmail Inbox</h2>
+          <p style={{ margin: 0, fontSize: 12.5, color: C.dim }}>
+            Connected as <strong style={{ color: C.accent }}>{status.email}</strong>
+          </p>
+        </div>
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+          <select
+            id="gmail-tone-select"
+            value={tone}
+            onChange={(e) => setTone(e.target.value as GmailTone)}
+            style={{
+              ...input,
+              width: 'auto',
+              padding: '6px 10px',
+              fontSize: 12,
+              cursor: 'pointer',
+            }}
+          >
+            <option value="professional">Professional</option>
+            <option value="friendly">Friendly</option>
+            <option value="brief">Brief</option>
+          </select>
+          <button
+            id="gmail-fetch-btn"
+            onClick={() => void handleFetch()}
+            disabled={fetching}
+            style={{ ...button('primary'), opacity: fetching ? 0.6 : 1, whiteSpace: 'nowrap' }}
+          >
+            {fetching ? 'Fetching…' : 'Fetch Unread'}
+          </button>
+          <button
+            onClick={() => void handleDisconnect()}
+            style={{ ...button('ghost'), fontSize: 11.5, padding: '6px 10px' }}
+          >
+            Disconnect
+          </button>
+        </div>
+      </div>
+
+      {fetchError && (
+        <div
+          style={{
+            background: 'rgba(255,100,100,0.12)',
+            border: '1px solid rgba(255,100,100,0.25)',
+            borderRadius: 9,
+            padding: '9px 12px',
+            fontSize: 12.5,
+            color: C.warn,
+            marginBottom: 14,
+          }}
+        >
+          {fetchError}
+        </div>
+      )}
+
+      {emails.length === 0 && !fetching && (
+        <div
+          style={{
+            ...card,
+            textAlign: 'center',
+            color: C.dim,
+            fontSize: 13,
+            padding: '40px 24px',
+          }}
+        >
+          <div style={{ fontSize: 32, marginBottom: 10 }}>📭</div>
+          <div>No unread emails yet.</div>
+          <div style={{ fontSize: 12, marginTop: 5 }}>Click "Fetch Unread" to load your inbox.</div>
+        </div>
+      )}
+
+      {emails.length > 0 && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          {emails.map((email) => (
+            <div
+              key={email.uid}
+              style={{
+                ...card,
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 6,
+              }}
+            >
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12 }}>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div
+                    style={{
+                      fontSize: 13.5,
+                      fontWeight: 650,
+                      color: C.text,
+                      marginBottom: 3,
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
+                    {email.subject || '(no subject)'}
+                  </div>
+                  <div style={{ fontSize: 12, color: C.dim }}>
+                    From: {email.from}
+                  </div>
+                  <div style={{ fontSize: 11.5, color: C.faint, marginTop: 2 }}>
+                    {new Date(email.date).toLocaleString()}
+                  </div>
+                </div>
+                <button
+                  id={`gmail-draft-btn-${email.uid}`}
+                  onClick={() => void handleGenerate(email)}
+                  style={{
+                    ...button('primary'),
+                    flexShrink: 0,
+                    fontSize: 12,
+                    padding: '7px 14px',
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  ✦ Draft Reply
+                </button>
+              </div>
+
+              {email.bodyText.length > 0 && (
+                <div
+                  style={{
+                    fontSize: 12,
+                    color: C.dim,
+                    borderTop: `1px solid ${C.border}`,
+                    paddingTop: 8,
+                    maxHeight: 60,
+                    overflow: 'hidden',
+                    lineHeight: 1.5,
+                  }}
+                >
+                  {email.bodyText.slice(0, 200)}
+                  {email.bodyText.length > 200 ? '…' : ''}
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}

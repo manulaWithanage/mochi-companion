@@ -23,6 +23,7 @@ import type { SettingsStore } from './storage/settings-store.js';
 import type { OverlayWindow } from './windows/overlay.js';
 import type { SetupWindow } from './windows/setup.js';
 import { listSkins, loadSkin } from './services/skin-loader.js';
+import type { GmailManager } from './services/gmail-manager.js';
 
 export interface IpcContext {
   timer: TimerService;
@@ -48,6 +49,7 @@ export interface IpcContext {
     refresh(): Promise<LlmStatus>;
     test(): Promise<{ ok: boolean; text: string; model?: string; tokens?: number }>;
   };
+  gmail: GmailManager;
 }
 
 const asString = (value: unknown, fallback: string): string =>
@@ -213,4 +215,33 @@ export function registerIpc(ctx: IpcContext): void {
   // ---- windows -----------------------------------------------------------
   ipcMain.on('window:openSettings', () => ctx.setup.open());
   ipcMain.on('window:closeSetup', () => ctx.setup.close());
+
+  // ---- gmail -------------------------------------------------------------
+  ipcMain.handle('gmail:status', () => ctx.gmail.status());
+
+  ipcMain.handle('gmail:connect', async (_e, email: unknown, appPassword: unknown) => {
+    const emailStr = typeof email === 'string' ? email : '';
+    const passStr = typeof appPassword === 'string' ? appPassword : '';
+    return ctx.gmail.connect(emailStr, passStr);
+  });
+
+  ipcMain.handle('gmail:disconnect', () => {
+    ctx.gmail.disconnect();
+  });
+
+  ipcMain.handle('gmail:fetchUnread', (_e, limit: unknown) => {
+    const n = typeof limit === 'number' && Number.isFinite(limit) ? Math.min(Math.max(1, limit), 50) : 10;
+    return ctx.gmail.fetchUnread(n);
+  });
+
+  ipcMain.handle('gmail:generateAndSaveDraft', (_e, uid: unknown, tone: unknown) => {
+    const emailUid = typeof uid === 'number' ? uid : Number(uid);
+    const validTone = tone === 'friendly' || tone === 'brief' ? tone : 'professional';
+    return ctx.gmail.generateAndSaveDraft(emailUid, validTone);
+  });
+
+  ipcMain.handle('gmail:saveDraft', (_e, request: unknown) => {
+    const req = (request ?? {}) as import('@mochi/core').GmailSaveDraftRequest;
+    return ctx.gmail.saveDraft(req);
+  });
 }

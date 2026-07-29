@@ -201,6 +201,71 @@ export interface MochiBridge {
     openSettings(): void;
     closeSetup(): void;
   };
+
+  readonly gmail: {
+    /**
+     * Save Gmail credentials (email + App Password) encrypted via safeStorage.
+     * Tests the connection before storing — returns ok:false on bad credentials.
+     */
+    connect(email: string, appPassword: string): Promise<GmailConnectResult>;
+    /** Remove stored Gmail credentials. */
+    disconnect(): Promise<void>;
+    /** Current connection status. */
+    status(): Promise<GmailStatus>;
+    /** Fetch up to `limit` unread emails from Primary inbox. */
+    fetchUnread(limit?: number): Promise<GmailFetchResult>;
+    /**
+     * Generate an LLM draft reply for the given email and save it to
+     * [Gmail]/Drafts. Returns the generated draft text on success.
+     */
+    generateAndSaveDraft(emailUid: number, tone?: GmailTone): Promise<GmailDraftResult>;
+    /** Save a custom (user-edited) draft to [Gmail]/Drafts. */
+    saveDraft(request: GmailSaveDraftRequest): Promise<{ ok: boolean; error?: string }>;
+  };
+}
+
+export type GmailTone = 'professional' | 'friendly' | 'brief';
+
+export interface GmailStatus {
+  readonly connected: boolean;
+  readonly email: string | null;
+  readonly redactedPassword: string;
+}
+
+export interface GmailConnectResult {
+  readonly ok: boolean;
+  readonly error?: string;
+}
+
+export interface GmailEmailSummary {
+  readonly uid: number;
+  readonly messageId: string;
+  readonly from: string;
+  readonly subject: string;
+  readonly date: string;
+  readonly bodyText: string;
+  readonly threadReferences: string;
+}
+
+export interface GmailFetchResult {
+  readonly ok: boolean;
+  readonly emails?: readonly GmailEmailSummary[];
+  readonly error?: string;
+}
+
+export interface GmailDraftResult {
+  readonly ok: boolean;
+  readonly draftReply?: string;
+  readonly suggestedSubject?: string;
+  readonly error?: string;
+}
+
+export interface GmailSaveDraftRequest {
+  readonly toEmail: string;
+  readonly subject: string;
+  readonly body: string;
+  readonly inReplyTo?: string;
+  readonly references?: string;
 }
 
 declare global {

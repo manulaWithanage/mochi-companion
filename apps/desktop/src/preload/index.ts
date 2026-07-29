@@ -17,6 +17,12 @@ import { contextBridge, ipcRenderer, type IpcRendererEvent } from 'electron';
 import type {
   BubbleMessage,
   GoogleStatus,
+  GmailConnectResult,
+  GmailDraftResult,
+  GmailFetchResult,
+  GmailSaveDraftRequest,
+  GmailStatus,
+  GmailTone,
   KeyResult,
   LlmStatus,
   LoadedSkin,
@@ -132,6 +138,19 @@ const bridge: MochiBridge = {
   window: {
     openSettings: () => ipcRenderer.send('window:openSettings'),
     closeSetup: () => ipcRenderer.send('window:closeSetup'),
+  },
+
+  gmail: {
+    connect: (email, appPassword) =>
+      ipcRenderer.invoke('gmail:connect', email, appPassword) as Promise<GmailConnectResult>,
+    disconnect: () => ipcRenderer.invoke('gmail:disconnect') as Promise<void>,
+    status: () => ipcRenderer.invoke('gmail:status') as Promise<GmailStatus>,
+    fetchUnread: (limit) =>
+      ipcRenderer.invoke('gmail:fetchUnread', limit) as Promise<GmailFetchResult>,
+    generateAndSaveDraft: (emailUid, tone) =>
+      ipcRenderer.invoke('gmail:generateAndSaveDraft', emailUid, tone) as Promise<GmailDraftResult>,
+    saveDraft: (request: GmailSaveDraftRequest) =>
+      ipcRenderer.invoke('gmail:saveDraft', request) as Promise<{ ok: boolean; error?: string }>,
   },
 };
 
