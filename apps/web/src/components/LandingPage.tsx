@@ -50,7 +50,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGoToDashboard }) => 
     ];
     setClickCount((prev) => prev + 1);
     setMascotState('idle');
-    setSpeechMessage(companionQuotes[clickCount % companionQuotes.length] ?? companionQuotes[0]!);
+    setSpeechMessage(companionQuotes[clickCount % companionQuotes.length]);
   };
 
   const handleStateChange = (newState: 'idle' | 'working' | 'resting' | 'coffee') => {
@@ -167,9 +167,9 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGoToDashboard }) => 
           flexDirection: 'column',
           alignItems: 'center',
           textAlign: 'center',
-          background: 'rgba(255, 255, 255, 0.24)',
-          backdropFilter: 'blur(4px)',
-          WebkitBackdropFilter: 'blur(4px)',
+          background: 'rgba(255, 255, 255, 0.15)',
+          backdropFilter: 'blur(10px)',
+          WebkitBackdropFilter: 'blur(10px)',
           borderRadius: '36px',
           border: '1px solid rgba(255, 255, 255, 0.35)',
           padding: '44px 48px 40px 48px',
@@ -193,7 +193,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGoToDashboard }) => 
             marginBottom: '22px',
             boxShadow: '0 4px 14px rgba(0, 0, 0, 0.04)'
           }}>
-            A calm desktop companion
+            Super-Intelligent Desktop Workflow Companion
           </div>
 
           {/* Hero Title */}
@@ -205,7 +205,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGoToDashboard }) => 
             color: '#0f172a',
             letterSpacing: '-0.03em'
           }}>
-            Work feels calmer with a <span className="gradient-text">companion</span> on your desktop.
+            Work feels peaceful when your <span className="gradient-text">AI companion</span> sits on your screen.
           </h1>
 
           <p style={{
@@ -217,7 +217,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGoToDashboard }) => 
             maxWidth: '760px',
             margin: '0 auto 32px auto'
           }}>
-            Start focus time in one click, build gentle routines, and keep a simple record of where your day went—without accounts, ads, or noise.
+            Mochi lives right on your computer screen. It logs your work hours with 1 click, reminds you to drink water and enjoy breakfast, and keeps your workday calm, focused, and on schedule.
           </p>
 
           {/* CTA Button Row */}
@@ -258,15 +258,15 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGoToDashboard }) => 
             justifyContent: 'center',
             gap: '10px 18px',
             marginBottom: '28px',
-            color: '#334155',
+            color: '#0f172a',
             fontSize: '13px',
             fontWeight: '700'
           }}>
             <span>Windows desktop app</span>
-            <span aria-hidden="true" style={{ color: '#94a3b8' }}>•</span>
-            <span>No account required</span>
-            <span aria-hidden="true" style={{ color: '#94a3b8' }}>•</span>
-            <span>Your data stays local</span>
+            <span aria-hidden="true" style={{ color: '#64748b' }}>•</span>
+            <span>100% Free & Open-Source</span>
+            <span aria-hidden="true" style={{ color: '#64748b' }}>•</span>
+            <span>Your data stays 100% local</span>
           </div>
 
           {/* 🍡 INTERACTIVE MOCHI MASCOT & PLAYGROUND INSIDE THE BIG GLASS CARD */}
@@ -276,7 +276,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGoToDashboard }) => 
             alignItems: 'center',
             justifyContent: 'center',
             width: '100%',
-          paddingTop: '24px',
+            paddingTop: '24px',
             borderTop: '1px solid rgba(0, 0, 0, 0.06)'
           }}>
             {/* Apple Liquid Glassmorphic Speech Bubble */}
@@ -397,8 +397,8 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGoToDashboard }) => 
         </div>
       </section>
 
-      {/* 🚀 CAPABILITIES SECTION: WHAT MOCHI CAN DO (6 FEATURES GRID) */}
-      <section id="capabilities" style={{ maxWidth: '1140px', margin: '0 auto', padding: '80px 24px 40px 24px' }}>
+      {/* 🔮 SECTION 1: WHY MOCHI EXISTS — THE CORE PHILOSOPHY */}
+      <section style={{ maxWidth: '1140px', margin: '0 auto', padding: '80px 24px 40px 24px' }}>
         <div style={{ textAlign: 'center', marginBottom: '56px' }}>
           <div style={{
             display: 'inline-flex',
@@ -413,208 +413,310 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGoToDashboard }) => 
             color: '#4f46e5',
             marginBottom: '16px'
           }}>
-            Built for today, growing thoughtfully
+            Reimagining Your Desktop Workday
           </div>
-          <h2 style={{ fontSize: '40px', fontWeight: '800', marginBottom: '14px', color: '#0f172a', letterSpacing: '-0.02em' }}>
-            What Mochi Helps You Do
+          <h2 style={{ fontSize: '42px', fontWeight: '800', marginBottom: '16px', color: '#0f172a', letterSpacing: '-0.02em' }}>
+            Why We Built Mochi
           </h2>
-          <p style={{ color: 'var(--text-muted)', fontSize: '17px', maxWidth: '680px', margin: '0 auto', lineHeight: '1.6' }}>
-            Mochi starts with a quiet desktop companion and one-click focus tracking. Optional routines and integrations are added only when you choose them.
+          <p style={{ color: 'var(--text-muted)', fontSize: '17.5px', maxWidth: '680px', margin: '0 auto', lineHeight: '1.6' }}>
+            Productivity tools shouldn’t feel like annoying managers. Mochi is designed as a calm, floating companion that makes working on your PC enjoyable.
           </p>
         </div>
 
-        {/* 6 Feature Cards Grid (3 Columns x 2 Rows) */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '24px' }}>
+        {/* Comparison Split Cards */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', gap: '28px' }}>
           
-          {/* Feature 1: Desktop companion */}
-          <div className="glass-card" style={{ padding: '32px', borderRadius: '24px' }}>
+          {/* Card 1: Traditional Apps */}
+          <div style={{
+            background: '#ffffff',
+            borderRadius: '28px',
+            padding: '36px',
+            border: '1px solid #fee2e2',
+            boxShadow: '0 10px 30px rgba(239, 68, 68, 0.04)'
+          }}>
             <div style={{
-              width: '48px',
-              height: '48px',
+              display: 'inline-flex',
+              padding: '6px 14px',
               borderRadius: '16px',
+              background: '#fef2f2',
+              color: '#dc2626',
+              fontSize: '12px',
+              fontWeight: '800',
+              marginBottom: '20px'
+            }}>
+              TRADITIONAL TRACKING APPS
+            </div>
+            <h3 style={{ fontSize: '22px', fontWeight: '700', color: '#0f172a', marginBottom: '14px' }}>
+              Tedious, Intrusive & Stressful
+            </h3>
+            <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '14px', fontSize: '14.5px', color: '#64748b' }}>
+              <li style={{ display: 'flex', gap: '10px', alignItems: 'flex-start' }}>
+                <span style={{ color: '#ef4444', fontWeight: 'bold' }}>✕</span> Complex, bloated dashboards that take minutes just to start a timer
+              </li>
+              <li style={{ display: 'flex', gap: '10px', alignItems: 'flex-start' }}>
+                <span style={{ color: '#ef4444', fontWeight: 'bold' }}>✕</span> Forgetting to take breaks, drink water, or eat breakfast while coding
+              </li>
+              <li style={{ display: 'flex', gap: '10px', alignItems: 'flex-start' }}>
+                <span style={{ color: '#ef4444', fontWeight: 'bold' }}>✕</span> Cloud tools tracking your activity and storing private data on remote servers
+              </li>
+            </ul>
+          </div>
+
+          {/* Card 2: The Mochi Way */}
+          <div style={{
+            background: 'linear-gradient(135deg, rgba(240, 245, 255, 0.9) 0%, rgba(245, 240, 255, 0.9) 100%)',
+            borderRadius: '28px',
+            padding: '36px',
+            border: '1px solid rgba(79, 70, 229, 0.25)',
+            boxShadow: '0 12px 36px rgba(79, 70, 229, 0.08)'
+          }}>
+            <div style={{
+              display: 'inline-flex',
+              padding: '6px 14px',
+              borderRadius: '16px',
+              background: 'rgba(79, 70, 229, 0.12)',
+              color: '#4f46e5',
+              fontSize: '12px',
+              fontWeight: '800',
+              marginBottom: '20px'
+            }}>
+              THE MOCHI COMPANION EXPERIENCE
+            </div>
+            <h3 style={{ fontSize: '22px', fontWeight: '700', color: '#0f172a', marginBottom: '14px' }}>
+              Calm, 1-Click & 100% Private
+            </h3>
+            <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '14px', fontSize: '14.5px', color: '#334155', fontWeight: '500' }}>
+              <li style={{ display: 'flex', gap: '10px', alignItems: 'flex-start' }}>
+                <span style={{ color: '#10b981', fontWeight: 'bold' }}>✓</span> 1-Click floating stopwatch—Mochi dons glasses & types alongside you
+              </li>
+              <li style={{ display: 'flex', gap: '10px', alignItems: 'flex-start' }}>
+                <span style={{ color: '#10b981', fontWeight: 'bold' }}>✓</span> 9 AM coffee/breakfast check-ins, hydration prompts & posture resets
+              </li>
+              <li style={{ display: 'flex', gap: '10px', alignItems: 'flex-start' }}>
+                <span style={{ color: '#10b981', fontWeight: 'bold' }}>✓</span> Bring Your Own Key (BYOK) with 100% local encrypted OS safeStorage
+              </li>
+            </ul>
+          </div>
+
+        </div>
+      </section>
+
+      {/* 🚀 SECTION 2: 4 CORE SUPERPOWERS GRID */}
+      <section id="capabilities" style={{ maxWidth: '1140px', margin: '0 auto', padding: '60px 24px 40px 24px' }}>
+        <div style={{ textAlign: 'center', marginBottom: '56px' }}>
+          <div style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '8px',
+            padding: '6px 16px',
+            borderRadius: '20px',
+            background: 'rgba(79, 70, 229, 0.08)',
+            border: '1px solid rgba(79, 70, 229, 0.18)',
+            fontSize: '12.5px',
+            fontWeight: '700',
+            color: '#4f46e5',
+            marginBottom: '16px'
+          }}>
+            Everyday Desktop Capabilities
+          </div>
+          <h2 style={{ fontSize: '40px', fontWeight: '800', marginBottom: '14px', color: '#0f172a', letterSpacing: '-0.02em' }}>
+            What Mochi Does for Your Workday
+          </h2>
+          <p style={{ color: 'var(--text-muted)', fontSize: '17px', maxWidth: '680px', margin: '0 auto', lineHeight: '1.6' }}>
+            Four essential workflow superpowers integrated into one delightful desktop companion.
+          </p>
+        </div>
+
+        {/* 4 Feature Cards Grid */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '24px' }}>
+          
+          {/* Superpower 1: 1-Click Work Stopwatch */}
+          <div className="glass-card" style={{ padding: '36px', borderRadius: '28px' }}>
+            <div style={{
+              width: '52px',
+              height: '52px',
+              borderRadius: '18px',
               background: 'rgba(79, 70, 229, 0.1)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              fontSize: '22px',
-              marginBottom: '20px',
+              fontSize: '24px',
+              marginBottom: '22px',
               color: '#4f46e5'
-            }}>
-              🍡
-            </div>
-            <h3 style={{ fontSize: '20px', fontWeight: '700', marginBottom: '10px', color: '#0f172a' }}>A Quiet Desktop Companion</h3>
-            <p style={{ color: 'var(--text-muted)', fontSize: '14.5px', lineHeight: '1.6' }}>
-              Mochi lives quietly on your desktop, ready when you want a little encouragement or a simple action.
-            </p>
-          </div>
-
-          {/* Feature 2: One-click focus tracking */}
-          <div className="glass-card" style={{ padding: '32px', borderRadius: '24px' }}>
-            <div style={{
-              width: '48px',
-              height: '48px',
-              borderRadius: '16px',
-              background: 'rgba(16, 185, 129, 0.1)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontSize: '22px',
-              marginBottom: '20px',
-              color: '#10b981'
             }}>
               ⏱️
             </div>
-            <h3 style={{ fontSize: '20px', fontWeight: '700', marginBottom: '10px', color: '#0f172a' }}>One-Click Focus Time</h3>
-            <p style={{ color: 'var(--text-muted)', fontSize: '14.5px', lineHeight: '1.6' }}>
-              Start and stop a project timer with one click, so your work hours are captured without a bulky timesheet.
+            <h3 style={{ fontSize: '20px', fontWeight: '700', marginBottom: '10px', color: '#0f172a' }}>1-Click Work Stopwatch</h3>
+            <p style={{ color: 'var(--text-muted)', fontSize: '14.5px', lineHeight: '1.65' }}>
+              No timesheets required. Click Mochi once when you start working, and Mochi dons mini glasses and types alongside you on its laptop to auto-log your work hours.
             </p>
           </div>
 
-          {/* Feature 3: Smart Routine & Health Nudges */}
-          <div className="glass-card" style={{ padding: '32px', borderRadius: '24px' }}>
+          {/* Superpower 2: 9 AM Lifestyle & Wellness Nudges */}
+          <div className="glass-card" style={{ padding: '36px', borderRadius: '28px' }}>
             <div style={{
-              width: '48px',
-              height: '48px',
-              borderRadius: '16px',
+              width: '52px',
+              height: '52px',
+              borderRadius: '18px',
               background: 'rgba(245, 158, 11, 0.1)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              fontSize: '22px',
-              marginBottom: '20px',
+              fontSize: '24px',
+              marginBottom: '22px',
               color: '#f59e0b'
             }}>
               ☕
             </div>
-            <h3 style={{ fontSize: '20px', fontWeight: '700', marginBottom: '10px', color: '#0f172a' }}>Gentle, Optional Routines</h3>
-            <p style={{ color: 'var(--text-muted)', fontSize: '14.5px', lineHeight: '1.6' }}>
-              Set the moments that help you feel good: a morning check-in, a break, hydration, or a gentle wind-down.
+            <h3 style={{ fontSize: '20px', fontWeight: '700', marginBottom: '10px', color: '#0f172a' }}>Lifestyle & Health Nudges</h3>
+            <p style={{ color: 'var(--text-muted)', fontSize: '14.5px', lineHeight: '1.65' }}>
+              Stay energized all day with 9:00 AM coffee/breakfast check-ins, hourly water prompts, shoulder stretch reminders, and evening wind-down summaries.
             </p>
           </div>
 
-          {/* Feature 4: Customizable appearance */}
-          <div className="glass-card" style={{ padding: '32px', borderRadius: '24px' }}>
+          {/* Superpower 3: BYOK AI Intelligence */}
+          <div className="glass-card" style={{ padding: '36px', borderRadius: '28px' }}>
             <div style={{
-              width: '48px',
-              height: '48px',
-              borderRadius: '16px',
-              background: 'rgba(236, 72, 153, 0.1)',
+              width: '52px',
+              height: '52px',
+              borderRadius: '18px',
+              background: 'rgba(16, 185, 129, 0.1)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              fontSize: '22px',
-              marginBottom: '20px',
-              color: '#ec4899'
+              fontSize: '24px',
+              marginBottom: '22px',
+              color: '#10b981'
             }}>
-              🎨
+              🤖
             </div>
-            <h3 style={{ fontSize: '20px', fontWeight: '700', marginBottom: '10px', color: '#0f172a' }}>Make Mochi Yours</h3>
-            <p style={{ color: 'var(--text-muted)', fontSize: '14.5px', lineHeight: '1.6' }}>
-              Pick a look and personality that belongs in your workspace—Mochi should feel like your companion, not another tool.
+            <h3 style={{ fontSize: '20px', fontWeight: '700', marginBottom: '10px', color: '#0f172a' }}>BYOK AI Multi-Model</h3>
+            <p style={{ color: 'var(--text-muted)', fontSize: '14.5px', lineHeight: '1.65' }}>
+              Connect OpenAI GPT-4o, Anthropic Claude 3.5, Google Gemini, or local Ollama with your own API key. Pay pennies directly to model providers with zero markup.
             </p>
           </div>
 
-          {/* Feature 5: Private by default */}
-          <div className="glass-card" style={{ padding: '32px', borderRadius: '24px' }}>
+          {/* Superpower 4: 100% Local safeStorage Vault */}
+          <div className="glass-card" style={{ padding: '36px', borderRadius: '28px' }}>
             <div style={{
-              width: '48px',
-              height: '48px',
-              borderRadius: '16px',
-              background: 'rgba(139, 92, 246, 0.1)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontSize: '22px',
-              marginBottom: '20px',
-              color: '#8b5cf6'
-            }}>
-              🔒
-            </div>
-            <h3 style={{ fontSize: '20px', fontWeight: '700', marginBottom: '10px', color: '#0f172a' }}>Private by Default</h3>
-            <p style={{ color: 'var(--text-muted)', fontSize: '14.5px', lineHeight: '1.6' }}>
-              Your focus sessions, settings, and routines stay on your computer. No account is required to get started.
-            </p>
-          </div>
-
-          {/* Feature 6: Optional integrations */}
-          <div className="glass-card" style={{ padding: '32px', borderRadius: '24px' }}>
-            <div style={{
-              width: '48px',
-              height: '48px',
-              borderRadius: '16px',
+              width: '52px',
+              height: '52px',
+              borderRadius: '18px',
               background: 'rgba(14, 165, 233, 0.1)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              fontSize: '22px',
-              marginBottom: '20px',
+              fontSize: '24px',
+              marginBottom: '22px',
               color: '#0ea5e9'
             }}>
-              ✨
+              🔒
             </div>
-            <h3 style={{ fontSize: '20px', fontWeight: '700', marginBottom: '10px', color: '#0f172a' }}>Optional, Thoughtful Growth</h3>
-            <p style={{ color: 'var(--text-muted)', fontSize: '14.5px', lineHeight: '1.6' }}>
-              Future connections and AI features will be opt-in, so Mochi stays useful without becoming noisy or invasive.
+            <h3 style={{ fontSize: '20px', fontWeight: '700', marginBottom: '10px', color: '#0f172a' }}>100% Local Encrypted Vault</h3>
+            <p style={{ color: 'var(--text-muted)', fontSize: '14.5px', lineHeight: '1.65' }}>
+              Your task lists, work logs, and API keys stay encrypted locally using Windows native `safeStorage`. Zero telemetry, zero external server tracking.
             </p>
           </div>
 
         </div>
       </section>
 
-      {/* 🌅 DAILY WORKDAY ROUTINE TIMELINE */}
-      <section id="routine" style={{ maxWidth: '1000px', margin: '0 auto', padding: '40px 24px 80px 24px' }}>
+      {/* 🌅 SECTION 3: A DAY IN MOCHI'S WORLD (WORKDAY TIMELINE) */}
+      <section id="routine" style={{ maxWidth: '1060px', margin: '0 auto', padding: '40px 24px 80px 24px' }}>
         <div style={{
-          background: 'rgba(255, 255, 255, 0.75)',
+          background: 'rgba(255, 255, 255, 0.85)',
           backdropFilter: 'blur(20px)',
           borderRadius: '32px',
           padding: '48px',
           border: '1px solid rgba(0, 0, 0, 0.08)',
           boxShadow: '0 20px 50px rgba(0, 0, 0, 0.04)'
         }}>
-          <div style={{ textAlign: 'center', marginBottom: '40px' }}>
-            <h3 style={{ fontSize: '28px', fontWeight: '800', color: '#0f172a', marginBottom: '10px' }}>
-              Your Rhythm, Not a Fixed Schedule
+          <div style={{ textAlign: 'center', marginBottom: '44px' }}>
+            <h3 style={{ fontSize: '32px', fontWeight: '800', color: '#0f172a', marginBottom: '10px' }}>
+              A Peaceful Workday Timeline
             </h3>
-            <p style={{ color: 'var(--text-muted)', fontSize: '15.5px' }}>
-              These are examples—choose the moments that make your workday feel more manageable.
+            <p style={{ color: 'var(--text-muted)', fontSize: '16px' }}>
+              Here is how Mochi accompanies you from morning coffee to evening wind-down.
             </p>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '18px' }}>
-            {/* Step 1 */}
-            <div style={{ background: '#ffffff', padding: '22px', borderRadius: '20px', border: '1px solid #f1f5f9' }}>
-              <div style={{ fontSize: '13px', fontWeight: '700', color: '#4f46e5', marginBottom: '8px' }}>MORNING</div>
-              <h4 style={{ fontSize: '16px', fontWeight: '700', color: '#0f172a', marginBottom: '6px' }}>Morning Kickoff</h4>
-              <p style={{ fontSize: '13.5px', color: '#64748b', lineHeight: '1.5', margin: 0 }}>
-                Start gently with a coffee check-in and the one thing you want to move forward.
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))', gap: '24px' }}>
+            
+            {/* Timeline Step 1 */}
+            <div style={{ background: '#ffffff', padding: '24px', borderRadius: '22px', border: '1px solid #f1f5f9' }}>
+              <div style={{ fontSize: '12.5px', fontWeight: '800', color: '#4f46e5', marginBottom: '8px' }}>9:00 AM</div>
+              <h4 style={{ fontSize: '16px', fontWeight: '700', color: '#0f172a', marginBottom: '8px' }}>Morning Kickoff ☕</h4>
+              <p style={{ fontSize: '13.5px', color: '#64748b', lineHeight: '1.55', margin: 0 }}>
+                Coffee check-in & picking your top 3 priority goals for the day.
               </p>
             </div>
 
-            {/* Step 2 */}
-            <div style={{ background: '#ffffff', padding: '22px', borderRadius: '20px', border: '1px solid #f1f5f9' }}>
-              <div style={{ fontSize: '13px', fontWeight: '700', color: '#10b981', marginBottom: '8px' }}>BEFORE DEEP WORK</div>
-              <h4 style={{ fontSize: '16px', fontWeight: '700', color: '#0f172a', marginBottom: '6px' }}>Clear the Small Things</h4>
-              <p style={{ fontSize: '13.5px', color: '#64748b', lineHeight: '1.5', margin: 0 }}>
-                Make space for focus by handling the little tasks you decide deserve attention.
+            {/* Timeline Step 2 */}
+            <div style={{ background: '#ffffff', padding: '24px', borderRadius: '22px', border: '1px solid #f1f5f9' }}>
+              <div style={{ fontSize: '12.5px', fontWeight: '800', color: '#10b981', marginBottom: '8px' }}>11:30 AM</div>
+              <h4 style={{ fontSize: '16px', fontWeight: '700', color: '#0f172a', marginBottom: '8px' }}>Email & Follow-Ups ✉️</h4>
+              <p style={{ fontSize: '13.5px', color: '#64748b', lineHeight: '1.55', margin: 0 }}>
+                Gentle nudge to reply to client emails before deep focus time.
               </p>
             </div>
 
-            {/* Step 3 */}
-            <div style={{ background: '#ffffff', padding: '22px', borderRadius: '20px', border: '1px solid #f1f5f9' }}>
-              <div style={{ fontSize: '13px', fontWeight: '700', color: '#f59e0b', marginBottom: '8px' }}>FOCUS SESSION</div>
-              <h4 style={{ fontSize: '16px', fontWeight: '700', color: '#0f172a', marginBottom: '6px' }}>Start the Stopwatch</h4>
-              <p style={{ fontSize: '13.5px', color: '#64748b', lineHeight: '1.5', margin: 0 }}>
-                Start a simple timer and let Mochi keep an honest record of your time.
+            {/* Timeline Step 3 */}
+            <div style={{ background: '#ffffff', padding: '24px', borderRadius: '22px', border: '1px solid #f1f5f9' }}>
+              <div style={{ fontSize: '12.5px', fontWeight: '800', color: '#f59e0b', marginBottom: '8px' }}>2:00 PM</div>
+              <h4 style={{ fontSize: '16px', fontWeight: '700', color: '#0f172a', marginBottom: '8px' }}>Deep Focus Session 💻</h4>
+              <p style={{ fontSize: '13.5px', color: '#64748b', lineHeight: '1.55', margin: 0 }}>
+                1-click stopwatch logs your project hours while Mochi types alongside you.
               </p>
             </div>
 
-            {/* Step 4 */}
-            <div style={{ background: '#ffffff', padding: '22px', borderRadius: '20px', border: '1px solid #f1f5f9' }}>
-              <div style={{ fontSize: '13px', fontWeight: '700', color: '#ec4899', marginBottom: '8px' }}>WIND-DOWN</div>
-              <h4 style={{ fontSize: '16px', fontWeight: '700', color: '#0f172a', marginBottom: '6px' }}>Close the Day Gently</h4>
-              <p style={{ fontSize: '13.5px', color: '#64748b', lineHeight: '1.5', margin: 0 }}>
-                Take a pause, see where your time went, and leave work with a clearer head.
+            {/* Timeline Step 4 */}
+            <div style={{ background: '#ffffff', padding: '24px', borderRadius: '22px', border: '1px solid #f1f5f9' }}>
+              <div style={{ fontSize: '12.5px', fontWeight: '800', color: '#ec4899', marginBottom: '8px' }}>5:30 PM</div>
+              <h4 style={{ fontSize: '16px', fontWeight: '700', color: '#0f172a', marginBottom: '8px' }}>Evening Summary 📊</h4>
+              <p style={{ fontSize: '13.5px', color: '#64748b', lineHeight: '1.55', margin: 0 }}>
+                Generates a clean breakdown of completed tasks & hours logged.
               </p>
+            </div>
+
+          </div>
+        </div>
+      </section>
+
+      {/* ⚙️ SECTION 4: BUILT FOR POWER USERS & PRIVACY */}
+      <section id="privacy" style={{ maxWidth: '1060px', margin: '0 auto', padding: '0 24px 80px 24px' }}>
+        <div style={{
+          background: 'linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%)',
+          color: '#ffffff',
+          borderRadius: '32px',
+          padding: '48px 56px',
+          boxShadow: '0 20px 50px rgba(15, 23, 42, 0.15)'
+        }}>
+          <div style={{ maxWidth: '680px', marginBottom: '32px' }}>
+            <span style={{ fontSize: '12px', fontWeight: '800', color: '#818cf8', letterSpacing: '0.08em', textTransform: 'uppercase', display: 'block', marginBottom: '12px' }}>
+              BUILT FOR DEVELOPERS & DESIGNERS
+            </span>
+            <h3 style={{ fontSize: '32px', fontWeight: '800', color: '#ffffff', marginBottom: '14px', lineHeight: '1.2' }}>
+              Lightweight, Private & Open-Source Forever
+            </h3>
+            <p style={{ color: '#94a3b8', fontSize: '16px', lineHeight: '1.6' }}>
+              Under 1% CPU usage. Mochi floats gently on top of VS Code, Figma, or your browser without slowing down your system.
+            </p>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '20px' }}>
+            <div style={{ background: 'rgba(255, 255, 255, 0.06)', borderRadius: '18px', padding: '20px', border: '1px solid rgba(255, 255, 255, 0.1)' }}>
+              <div style={{ fontSize: '16px', fontWeight: '700', color: '#ffffff', marginBottom: '6px' }}>⚡ Less than 1% CPU</div>
+              <p style={{ fontSize: '13.5px', color: '#cbd5e1', margin: 0, lineHeight: '1.5' }}>Optimized Canvas 2D engine built with electron-vite.</p>
+            </div>
+
+            <div style={{ background: 'rgba(255, 255, 255, 0.06)', borderRadius: '18px', padding: '20px', border: '1px solid rgba(255, 255, 255, 0.1)' }}>
+              <div style={{ fontSize: '16px', fontWeight: '700', color: '#ffffff', marginBottom: '6px' }}>🔑 Zero Monthly Subscriptions</div>
+              <p style={{ fontSize: '13.5px', color: '#cbd5e1', margin: 0, lineHeight: '1.5' }}>BYOK model lets you pay pennies directly to AI providers.</p>
+            </div>
+
+            <div style={{ background: 'rgba(255, 255, 255, 0.06)', borderRadius: '18px', padding: '20px', border: '1px solid rgba(255, 255, 255, 0.1)' }}>
+              <div style={{ fontSize: '16px', fontWeight: '700', color: '#ffffff', marginBottom: '6px' }}>🎨 Custom Avatar Skins</div>
+              <p style={{ fontSize: '13.5px', color: '#cbd5e1', margin: 0, lineHeight: '1.5' }}>Personalize mascot names and swap skins anytime.</p>
             </div>
           </div>
         </div>
