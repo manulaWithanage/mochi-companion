@@ -250,6 +250,15 @@ export class OverlayWindow {
     }
   }
 
+  /**
+   * Whether the overlay is currently on screen. Used as the governor's
+   * best-effort occlusion signal — hidden, minimised, suspended or locked all
+   * mean the user is not looking.
+   */
+  get isVisible(): boolean {
+    return this.visible && this.win !== null && !this.win.isDestroyed();
+  }
+
   get browserWindow(): BrowserWindow | null {
     return this.win;
   }

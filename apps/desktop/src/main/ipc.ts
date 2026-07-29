@@ -8,7 +8,7 @@
 
 import { ipcMain } from 'electron';
 import { randomUUID } from 'node:crypto';
-import type { SetupPayload, StorageAdapter } from '@mochi/core';
+import type { InterruptionGovernor, SetupPayload, StorageAdapter } from '@mochi/core';
 import { parseHhMm } from '@mochi/core';
 import { DEFAULT_PROJECT } from '@mochi/db';
 import type { TimerService } from './services/timer-service.js';
@@ -25,6 +25,7 @@ export interface IpcContext {
   storage: StorageAdapter;
   overlay: OverlayWindow;
   setup: SetupWindow;
+  governor: InterruptionGovernor;
 }
 
 const asString = (value: unknown, fallback: string): string =>
@@ -84,6 +85,18 @@ export function registerIpc(ctx: IpcContext): void {
     });
     ctx.mascot.evaluate();
     return updated;
+  });
+
+  ipcMain.handle('settings:setDoNotDisturb', (_e, dnd: unknown) => {
+    const next = ctx.settings.update({ doNotDisturb: dnd === true });
+    ctx.governor.configure({ doNotDisturb: next.doNotDisturb });
+    return next;
+  });
+
+  // Dismissing a bubble dismisses the subject, not just the message, so a
+  // re-poll producing a fresh event id cannot resurrect it.
+  ipcMain.on('bubble:dismiss', (_e, subject: unknown) => {
+    if (typeof subject === 'string' && subject.length > 0) ctx.governor.dismiss(subject);
   });
 
   ipcMain.handle('settings:setPaused', (_e, paused: unknown) => {

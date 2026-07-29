@@ -62,6 +62,8 @@ const bridge: MochiBridge = {
       ipcRenderer.invoke('settings:completeSetup', payload) as Promise<MochiSettings>,
     setPaused: (paused) =>
       ipcRenderer.invoke('settings:setPaused', paused) as Promise<MochiSettings>,
+    setDoNotDisturb: (dnd) =>
+      ipcRenderer.invoke('settings:setDoNotDisturb', dnd) as Promise<MochiSettings>,
     onChange: (listener) => subscribe<MochiSettings>('settings:changed', listener),
   },
 
@@ -76,6 +78,7 @@ const bridge: MochiBridge = {
   },
 
   bubble: {
+    dismiss: (subject) => ipcRenderer.send('bubble:dismiss', subject),
     onShow: (listener) => subscribe<BubbleMessage>('bubble:show', listener),
   },
 

@@ -35,6 +35,7 @@ function placeholderIcon(): Electron.NativeImage {
 export interface TrayCallbacks {
   onOpenSettings(): void;
   onTogglePaused(paused: boolean): void;
+  onToggleDoNotDisturb(dnd: boolean): void;
   onStopTimer(): void;
 }
 
@@ -62,6 +63,7 @@ export class MochiTray {
   rebuild(): void {
     if (this.tray === null) return;
     const paused = this.settings.get().paused;
+    const dnd = this.settings.get().doNotDisturb;
     const name = this.settings.get().assistantName;
     const snapshot = this.timer.snapshot();
 
@@ -79,7 +81,15 @@ export class MochiTray {
         { type: 'separator' as const },
         { label: 'Open Settings…', click: () => this.callbacks.onOpenSettings() },
         {
-          label: paused ? `Resume ${name}` : `Pause ${name}`,
+          // Distinct from Pause: Mochi stays on screen and keeps tracking
+          // time, it just stops speaking unprompted.
+          label: 'Do not disturb',
+          type: 'checkbox' as const,
+          checked: dnd,
+          click: () => this.callbacks.onToggleDoNotDisturb(!dnd),
+        },
+        {
+          label: paused ? `Resume ${name}` : `Hide ${name}`,
           click: () => this.callbacks.onTogglePaused(!paused),
         },
         { type: 'separator' as const },

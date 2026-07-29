@@ -21,7 +21,13 @@ export interface MochiSettings {
   readonly overlayPosition: OverlayPosition | null;
   /** False until the 3-step window is finished; drives first-run detection. */
   readonly setupCompleted: boolean;
+  /** Mochi is hidden entirely. */
   readonly paused: boolean;
+  /**
+   * Mochi is visible but silent. Distinct from `paused`: the mascot still
+   * animates and the stopwatch still works, it just never speaks unprompted.
+   */
+  readonly doNotDisturb: boolean;
 }
 
 export const DEFAULT_SETTINGS: MochiSettings = {
@@ -31,6 +37,7 @@ export const DEFAULT_SETTINGS: MochiSettings = {
   overlayPosition: null,
   setupCompleted: false,
   paused: false,
+  doNotDisturb: false,
 };
 
 export const MAX_NAME_LENGTH = 24;
@@ -110,6 +117,7 @@ export function normalizeSettings(raw: unknown): {
       overlayPosition,
       setupCompleted: input.setupCompleted === true,
       paused: input.paused === true,
+      doNotDisturb: input.doNotDisturb === true,
     },
     issues,
   };

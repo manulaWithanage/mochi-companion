@@ -18,6 +18,11 @@ export interface BubbleMessage {
   readonly text: string;
   /** Auto-dismiss after this long. */
   readonly ttlMs: number;
+  /**
+   * The thing being talked about. Dismissing a bubble dismisses the subject
+   * in the governor, so a re-poll cannot resurrect what the user waved away.
+   */
+  readonly subject: string;
 }
 
 export interface TimerSnapshot {
@@ -80,6 +85,7 @@ export interface MochiBridge {
     get(): Promise<MochiSettings>;
     completeSetup(payload: SetupPayload): Promise<MochiSettings>;
     setPaused(paused: boolean): Promise<MochiSettings>;
+    setDoNotDisturb(dnd: boolean): Promise<MochiSettings>;
     onChange(listener: (settings: MochiSettings) => void): () => void;
   };
 
@@ -95,6 +101,8 @@ export interface MochiBridge {
   };
 
   readonly bubble: {
+    /** The user waved this away — the governor must not raise it again. */
+    dismiss(subject: string): void;
     /**
      * Main pushes what Mochi should say. V1 only ever sends this in response
      * to something the user did — unprompted messages must pass the

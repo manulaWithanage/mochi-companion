@@ -24,6 +24,7 @@ export function Overlay(): JSX.Element {
   const [timer, setTimer] = useState<TimerSnapshot | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [bubble, setBubble] = useState<string | null>(null);
+  const bubbleSubject = useRef<string | null>(null);
   const bubbleTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   const interactiveRef = useRef(false);
@@ -56,13 +57,25 @@ export function Overlay(): JSX.Element {
     if (bubbleTimer.current !== undefined) clearTimeout(bubbleTimer.current);
     bubbleTimer.current = undefined;
     setBubble(null);
+    // Tell the governor the user waved this subject away, so a re-poll
+    // cannot raise it again.
+    if (bubbleSubject.current !== null) {
+      window.mochi.bubble.dismiss(bubbleSubject.current);
+      bubbleSubject.current = null;
+    }
   }, []);
 
   useEffect(() => {
     const off = window.mochi.bubble.onShow((message: BubbleMessage) => {
       if (bubbleTimer.current !== undefined) clearTimeout(bubbleTimer.current);
+      bubbleSubject.current = message.subject;
       setBubble(message.text);
-      bubbleTimer.current = setTimeout(dismissBubble, message.ttlMs);
+      // Auto-expiry is not a dismissal: letting a bubble fade is not the same
+      // as waving it away, so it must not suppress the subject forever.
+      bubbleTimer.current = setTimeout(() => {
+        bubbleSubject.current = null;
+        setBubble(null);
+      }, message.ttlMs);
     });
     return () => {
       off();

@@ -9,13 +9,21 @@ import { app, BrowserWindow, shell } from 'electron';
 import { join } from 'node:path';
 import {
   BRIEF_SESSION_MS,
+  BUBBLE_TTL_LONG_MS,
+  BUBBLE_TTL_MS,
   composeMessage,
+  DEFAULT_GOVERNOR_CONFIG,
   elapsedMs,
+  EventBus,
   InMemoryStorageAdapter,
-  ttlFor,
+  InterruptionGovernor,
+  makeEvent,
+  type EventPriority,
+  type EventSource,
   type MessageKind,
   type StorageAdapter,
 } from '@mochi/core';
+
 import { SqliteStorageAdapter } from './storage/sqlite-adapter.js';
 import { SettingsStore } from './storage/settings-store.js';
 import { TimerService } from './services/timer-service.js';
@@ -24,6 +32,15 @@ import { OverlayWindow } from './windows/overlay.js';
 import { SetupWindow } from './windows/setup.js';
 import { MochiTray } from './tray.js';
 import { registerIpc } from './ipc.js';
+
+interface SayOptions {
+  readonly durationMs?: number;
+  readonly subject?: string;
+  readonly source?: EventSource;
+  readonly priority?: EventPriority;
+  /** The user asked for this directly — a click, a hotkey, launching the app. */
+  readonly userInitiated?: boolean;
+}
 
 // Single instance: two mascots writing the same database would corrupt
 // session state, and two overlays is nonsense anyway.
@@ -63,30 +80,76 @@ async function bootstrap(): Promise<void> {
       overlay.setPaused(paused);
       tray.rebuild();
     },
+    onToggleDoNotDisturb: (dnd) => {
+      settings.update({ doNotDisturb: dnd });
+      tray.rebuild();
+    },
     onStopTimer: () => {
       void timer.stop().then(() => mascot.evaluate());
     },
   });
 
-  registerIpc({ timer, mascot, settings, storage, overlay, setup });
+  const governor = new InterruptionGovernor({
+    ...DEFAULT_GOVERNOR_CONFIG,
+    doNotDisturb: settings.get().doNotDisturb,
+  });
+  const bus = new EventBus();
+
+  registerIpc({ timer, mascot, settings, storage, overlay, setup, governor });
 
   /**
-   * Everything Mochi says goes through here.
+   * The only path to the user's attention.
    *
-   * V1 only calls this in response to a user action — launching the app or
-   * clicking the mascot. Unprompted messages (briefings, meeting alerts) must
-   * pass the interruption governor first, which is Phase 1.5. Do not add a
-   * caller here that fires on a timer.
+   * Everything — including user-initiated messages — goes through the
+   * governor. User-initiated events carry the flag and are allowed
+   * unconditionally, but they still pass through here so there is exactly
+   * one door rather than a governed path and an ungoverned one.
    */
-  const say = (kind: MessageKind, durationMs?: number): void => {
-    overlay.send('bubble:show', {
-      text: composeMessage(kind, {
-        assistantName: settings.get().assistantName,
-        now: new Date(),
-        ...(durationMs !== undefined ? { durationMs } : {}),
-      }),
-      ttlMs: ttlFor(kind),
+  bus.subscribe((event) => {
+    const decision = governor.admit(event, {
+      now: Date.now(),
+      // Best-effort. Reliable cross-platform fullscreen detection needs a
+      // native module, and this project deliberately has none. The overlay's
+      // own visibility is the closest honest proxy: hidden, minimised,
+      // suspended or screen-locked all mean nothing should be said.
+      fullscreenActive: !overlay.isVisible,
     });
+
+    if (decision.kind === 'allow') {
+      overlay.send('bubble:show', {
+        text: event.text,
+        ttlMs: event.userInitiated === true ? BUBBLE_TTL_LONG_MS : BUBBLE_TTL_MS,
+        subject: event.subject,
+      });
+      return;
+    }
+
+    if (decision.kind === 'defer') {
+      // Re-offer once. It goes through the governor again on arrival, so the
+      // spacing rules still apply and deferred events cannot burst.
+      const wait = Math.max(0, decision.until - Date.now());
+      const retry = setTimeout(() => bus.emit(event), wait);
+      retry.unref?.();
+    }
+  });
+
+  /** Compose a templated message and put it on the bus. */
+  const say = (kind: MessageKind, opts: SayOptions = {}): void => {
+    bus.emit(
+      makeEvent({
+        source: opts.source ?? 'system',
+        kind,
+        at: Date.now(),
+        subject: opts.subject ?? kind,
+        priority: opts.priority ?? 'normal',
+        text: composeMessage(kind, {
+          assistantName: settings.get().assistantName,
+          now: new Date(),
+          ...(opts.durationMs !== undefined ? { durationMs: opts.durationMs } : {}),
+        }),
+        ...(opts.userInitiated === true ? { userInitiated: true } : {}),
+      }),
+    );
   };
 
   // Push state changes to whichever windows are open.
@@ -97,20 +160,26 @@ async function bootstrap(): Promise<void> {
     tray.rebuild();
 
     if (snapshot.running && !wasRunning) {
-      say('timer-started');
+      say('timer-started', { source: 'timer', subject: 'timer', userInitiated: true });
     } else if (!snapshot.running && wasRunning) {
       // The session just closed; report what it was worth. A misclick gets a
       // plain acknowledgement instead of hollow congratulation.
       void storage.listSessions({ limit: 1 }).then((recent) => {
         const last = recent[0];
         const ms = last === undefined ? 0 : elapsedMs(last, Date.now());
-        say(ms < BRIEF_SESSION_MS ? 'timer-stopped-brief' : 'timer-stopped', ms);
+        say(ms < BRIEF_SESSION_MS ? 'timer-stopped-brief' : 'timer-stopped', {
+          durationMs: ms,
+          source: 'timer',
+          subject: 'timer',
+          userInitiated: true,
+        });
       });
     }
     wasRunning = snapshot.running;
   });
   mascot.onChange((state) => overlay.send('mascot:state', state));
   settings.onChange((next) => {
+    governor.configure({ doNotDisturb: next.doNotDisturb });
     setup.send('settings:changed', next);
     overlay.send('settings:changed', next);
   });
@@ -132,7 +201,8 @@ async function bootstrap(): Promise<void> {
   // user action, so this does not need the governor.
   overlay.whenReady(() => {
     if (settings.get().paused) return;
-    say(firstRun ? 'welcome' : 'greeting');
+    // Launching the app is a user action, so the greeting is user-initiated.
+    say(firstRun ? 'welcome' : 'greeting', { subject: 'greeting', userInitiated: true });
   });
 
   app.on('second-instance', () => setup.open());
