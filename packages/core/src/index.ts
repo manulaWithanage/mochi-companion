@@ -7,4 +7,5 @@ export * from './mascot/manifest.js';
 export * from './storage/adapter.js';
 export * from './geometry/clamp.js';
 export * from './settings/settings.js';
+export * from './messages/messages.js';
 export type * from './types/bridge.js';

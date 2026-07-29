@@ -28,6 +28,18 @@ export interface DisplayInfo {
 export const DEFAULT_EDGE_MARGIN = 24;
 
 /**
+ * The overlay is mascot-sized by default (RULE 3) and grows only while a
+ * speech bubble is on screen, then shrinks back.
+ *
+ * In both sizes the mascot occupies the bottom-right 200x200, so expanding
+ * keeps the character visually still and the bubble appears up and to the
+ * left. Shared here because main resizes the window and the renderer lays
+ * out against the same box.
+ */
+export const OVERLAY_COLLAPSED: Size = { width: 200, height: 200 };
+export const OVERLAY_EXPANDED: Size = { width: 340, height: 300 };
+
+/**
  * Keep a window fully inside a work area.
  *
  * If the window is larger than the work area, the top-left corner wins — a

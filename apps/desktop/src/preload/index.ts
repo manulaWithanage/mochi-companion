@@ -15,6 +15,7 @@
 
 import { contextBridge, ipcRenderer, type IpcRendererEvent } from 'electron';
 import type {
+  BubbleMessage,
   LoadedSkin,
   MascotState,
   MochiBridge,
@@ -73,8 +74,13 @@ const bridge: MochiBridge = {
     onStateChange: (listener) => subscribe<MascotState>('mascot:state', listener),
   },
 
+  bubble: {
+    onShow: (listener) => subscribe<BubbleMessage>('bubble:show', listener),
+  },
+
   overlay: {
     setInteractive: (interactive) => ipcRenderer.send('overlay:setInteractive', interactive),
+    setExpanded: (expanded) => ipcRenderer.send('overlay:setExpanded', expanded),
     dragBy: (dx, dy) => ipcRenderer.send('overlay:dragBy', dx, dy),
     onVisibilityChange: (listener) => subscribe<boolean>('overlay:visibility', listener),
   },

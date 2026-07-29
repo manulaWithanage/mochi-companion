@@ -11,13 +11,16 @@ import { BrowserWindow, screen, powerMonitor, type Display } from 'electron';
 import { join } from 'node:path';
 import {
   displayContaining,
+  OVERLAY_COLLAPSED,
+  OVERLAY_EXPANDED,
   resolvePlacement,
   type DisplayInfo,
   type OverlayPosition,
   type Point,
+  type Size,
 } from '@mochi/core';
 
-export const OVERLAY_SIZE = { width: 200, height: 200 } as const;
+export const OVERLAY_SIZE = OVERLAY_COLLAPSED;
 
 /** Debounce for persisting position while the user drags. */
 const SAVE_DEBOUNCE_MS = 400;
@@ -140,13 +143,15 @@ export class OverlayWindow {
     const win = this.win;
     if (win === null || win.isDestroyed()) return;
 
-    const [x = 0, y = 0] = win.getPosition();
+    // Use live bounds, not OVERLAY_COLLAPSED — the window may be expanded
+    // around a speech bubble right now.
+    const { x, y, width, height } = win.getBounds();
     const displays = screen.getAllDisplays().map(toDisplayInfo);
     const current = displayContaining({ x, y }, displays);
 
     const placement = resolvePlacement(
       { x, y, displayId: current?.id ?? screen.getPrimaryDisplay().id },
-      OVERLAY_SIZE,
+      { width, height },
       displays,
       screen.getPrimaryDisplay().id,
     );
@@ -165,7 +170,7 @@ export class OverlayWindow {
     const win = this.win;
     if (win === null || win.isDestroyed()) return;
 
-    const [x = 0, y = 0] = win.getPosition();
+    const { x, y, width, height } = win.getBounds();
     const target: Point = { x: x + Math.round(dx), y: y + Math.round(dy) };
 
     const displays = screen.getAllDisplays().map(toDisplayInfo);
@@ -173,13 +178,56 @@ export class OverlayWindow {
 
     const placement = resolvePlacement(
       { ...target, displayId: host?.id ?? screen.getPrimaryDisplay().id },
-      OVERLAY_SIZE,
+      { width, height },
       displays,
       screen.getPrimaryDisplay().id,
     );
 
     win.setPosition(placement.position.x, placement.position.y);
     this.schedulePersist();
+  }
+
+  /**
+   * Grow the window to make room for a speech bubble, or shrink back.
+   *
+   * The mascot occupies the bottom-right 200x200 of the window in both
+   * sizes, so holding the bottom-right corner fixed keeps the character
+   * visually still while the bubble opens up and to the left. Near a screen
+   * edge the clamp may shift things slightly — keeping the bubble on screen
+   * matters more than the mascot not moving a few pixels.
+   */
+  setExpanded(expanded: boolean): void {
+    const win = this.win;
+    if (win === null || win.isDestroyed()) return;
+
+    const target: Size = expanded ? OVERLAY_EXPANDED : OVERLAY_COLLAPSED;
+    const bounds = win.getBounds();
+    if (bounds.width === target.width && bounds.height === target.height) return;
+
+    // Anchor the bottom-right corner.
+    const desired: Point = {
+      x: bounds.x + bounds.width - target.width,
+      y: bounds.y + bounds.height - target.height,
+    };
+
+    const displays = screen.getAllDisplays().map(toDisplayInfo);
+    const host =
+      displayContaining({ x: bounds.x, y: bounds.y }, displays) ??
+      displayContaining(desired, displays);
+
+    const placement = resolvePlacement(
+      { ...desired, displayId: host?.id ?? screen.getPrimaryDisplay().id },
+      target,
+      displays,
+      screen.getPrimaryDisplay().id,
+    );
+
+    win.setBounds({
+      x: placement.position.x,
+      y: placement.position.y,
+      width: target.width,
+      height: target.height,
+    });
   }
 
   /**
@@ -200,10 +248,22 @@ export class OverlayWindow {
     }, SAVE_DEBOUNCE_MS);
   }
 
+  /**
+   * Record where the *mascot* sits, not where the window box sits.
+   *
+   * The mascot is anchored to the bottom-right corner, so deriving the
+   * position from that corner gives the same answer whether or not a bubble
+   * is currently expanding the window. Without this, saving while expanded
+   * would drift the mascot up and left a little on every restart.
+   */
   private persistPosition(): void {
     const win = this.win;
     if (win === null || win.isDestroyed()) return;
-    const [x = 0, y = 0] = win.getPosition();
+
+    const bounds = win.getBounds();
+    const x = bounds.x + bounds.width - OVERLAY_COLLAPSED.width;
+    const y = bounds.y + bounds.height - OVERLAY_COLLAPSED.height;
+
     const displays = screen.getAllDisplays().map(toDisplayInfo);
     const host = displayContaining({ x, y }, displays);
     this.callbacks.onPositionChanged({
@@ -216,6 +276,29 @@ export class OverlayWindow {
   send(channel: string, payload: unknown): void {
     if (this.win === null || this.win.isDestroyed()) return;
     this.win.webContents.send(channel, payload);
+  }
+
+  /**
+   * Run `callback` once the renderer has loaded.
+   *
+   * Anything pushed before this is dropped on the floor — the renderer has
+   * not subscribed yet — which would silently lose the greeting. The small
+   * extra delay covers React mounting and attaching its listeners.
+   */
+  whenReady(callback: () => void, settleMs = 350): void {
+    const win = this.win;
+    if (win === null || win.isDestroyed()) return;
+
+    const fire = (): void => {
+      const t = setTimeout(callback, settleMs);
+      t.unref?.();
+    };
+
+    if (win.webContents.isLoading()) {
+      win.webContents.once('did-finish-load', fire);
+    } else {
+      fire();
+    }
   }
 
   get browserWindow(): BrowserWindow | null {

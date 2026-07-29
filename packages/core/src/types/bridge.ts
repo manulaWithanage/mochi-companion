@@ -14,6 +14,12 @@ import type { MochiSettings } from '../settings/settings.js';
 import type { Project } from '../storage/adapter.js';
 import type { WorkSession } from '../timer/session.js';
 
+export interface BubbleMessage {
+  readonly text: string;
+  /** Auto-dismiss after this long. */
+  readonly ttlMs: number;
+}
+
 export interface TimerSnapshot {
   readonly running: boolean;
   readonly session: WorkSession | null;
@@ -88,12 +94,26 @@ export interface MochiBridge {
     current(): Promise<MascotState>;
   };
 
+  readonly bubble: {
+    /**
+     * Main pushes what Mochi should say. V1 only ever sends this in response
+     * to something the user did — unprompted messages must pass the
+     * interruption governor first (Phase 1.5).
+     */
+    onShow(listener: (message: BubbleMessage) => void): () => void;
+  };
+
   readonly overlay: {
     /**
      * Toggle click-through. Called on pointer enter/leave over the mascot's
      * drawn pixels; the window itself stays mascot-sized (RULE 3).
      */
     setInteractive(interactive: boolean): void;
+    /**
+     * Grow the window while a bubble is visible, shrink when it clears. The
+     * mascot stays put; the bubble appears up and to the left.
+     */
+    setExpanded(expanded: boolean): void;
     /** Drag delta in CSS pixels; main converts to screen coords and clamps. */
     dragBy(dx: number, dy: number): void;
     /** True while the window is hidden/occluded so the renderer stops drawing. */

@@ -7,7 +7,15 @@
 
 import { app, BrowserWindow, shell } from 'electron';
 import { join } from 'node:path';
-import { InMemoryStorageAdapter, type StorageAdapter } from '@mochi/core';
+import {
+  BRIEF_SESSION_MS,
+  composeMessage,
+  elapsedMs,
+  InMemoryStorageAdapter,
+  ttlFor,
+  type MessageKind,
+  type StorageAdapter,
+} from '@mochi/core';
 import { SqliteStorageAdapter } from './storage/sqlite-adapter.js';
 import { SettingsStore } from './storage/settings-store.js';
 import { TimerService } from './services/timer-service.js';
@@ -62,11 +70,44 @@ async function bootstrap(): Promise<void> {
 
   registerIpc({ timer, mascot, settings, storage, overlay, setup });
 
+  /**
+   * Everything Mochi says goes through here.
+   *
+   * V1 only calls this in response to a user action — launching the app or
+   * clicking the mascot. Unprompted messages (briefings, meeting alerts) must
+   * pass the interruption governor first, which is Phase 1.5. Do not add a
+   * caller here that fires on a timer.
+   */
+  const say = (kind: MessageKind, durationMs?: number): void => {
+    overlay.send('bubble:show', {
+      text: composeMessage(kind, {
+        assistantName: settings.get().assistantName,
+        now: new Date(),
+        ...(durationMs !== undefined ? { durationMs } : {}),
+      }),
+      ttlMs: ttlFor(kind),
+    });
+  };
+
   // Push state changes to whichever windows are open.
+  let wasRunning = false;
   timer.onChange((snapshot) => {
     overlay.send('timer:changed', snapshot);
     setup.send('timer:changed', snapshot);
     tray.rebuild();
+
+    if (snapshot.running && !wasRunning) {
+      say('timer-started');
+    } else if (!snapshot.running && wasRunning) {
+      // The session just closed; report what it was worth. A misclick gets a
+      // plain acknowledgement instead of hollow congratulation.
+      void storage.listSessions({ limit: 1 }).then((recent) => {
+        const last = recent[0];
+        const ms = last === undefined ? 0 : elapsedMs(last, Date.now());
+        say(ms < BRIEF_SESSION_MS ? 'timer-stopped-brief' : 'timer-stopped', ms);
+      });
+    }
+    wasRunning = snapshot.running;
   });
   mascot.onChange((state) => overlay.send('mascot:state', state));
   settings.onChange((next) => {
@@ -82,9 +123,17 @@ async function bootstrap(): Promise<void> {
   tray.create();
 
   // First run opens the 3-step setup window; afterwards Mochi just appears.
-  if (!settings.get().setupCompleted) {
+  const firstRun = !settings.get().setupCompleted;
+  if (firstRun) {
     setup.open();
   }
+
+  // Say hello once the renderer is actually listening. Launching the app is a
+  // user action, so this does not need the governor.
+  overlay.whenReady(() => {
+    if (settings.get().paused) return;
+    say(firstRun ? 'welcome' : 'greeting');
+  });
 
   app.on('second-instance', () => setup.open());
 

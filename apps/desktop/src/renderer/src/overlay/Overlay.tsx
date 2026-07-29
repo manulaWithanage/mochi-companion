@@ -1,6 +1,14 @@
 import { useCallback, useEffect, useRef, useState, type JSX } from 'react';
-import { formatDuration, type LoadedSkin, type MascotState, type TimerSnapshot } from '@mochi/core';
+import {
+  formatDuration,
+  OVERLAY_COLLAPSED,
+  type BubbleMessage,
+  type LoadedSkin,
+  type MascotState,
+  type TimerSnapshot,
+} from '@mochi/core';
 import { useSpriteAnimation } from './useSpriteAnimation.js';
+import { SpeechBubble } from './SpeechBubble.js';
 
 /** Pointer travel beyond this counts as a drag, not a click. */
 const DRAG_THRESHOLD_PX = 4;
@@ -15,6 +23,8 @@ export function Overlay(): JSX.Element {
   const [visible, setVisible] = useState(true);
   const [timer, setTimer] = useState<TimerSnapshot | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [bubble, setBubble] = useState<string | null>(null);
+  const bubbleTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   const interactiveRef = useRef(false);
   const lastHoverCheck = useRef(0);
@@ -40,6 +50,28 @@ export function Overlay(): JSX.Element {
       }
     })();
   }, []);
+
+  // ---- speech bubble -----------------------------------------------------
+  const dismissBubble = useCallback(() => {
+    if (bubbleTimer.current !== undefined) clearTimeout(bubbleTimer.current);
+    bubbleTimer.current = undefined;
+    setBubble(null);
+    window.mochi.overlay.setExpanded(false);
+  }, []);
+
+  useEffect(() => {
+    const off = window.mochi.bubble.onShow((message: BubbleMessage) => {
+      if (bubbleTimer.current !== undefined) clearTimeout(bubbleTimer.current);
+      // Grow the window before painting, or the bubble is clipped on frame one.
+      window.mochi.overlay.setExpanded(true);
+      setBubble(message.text);
+      bubbleTimer.current = setTimeout(dismissBubble, message.ttlMs);
+    });
+    return () => {
+      off();
+      if (bubbleTimer.current !== undefined) clearTimeout(bubbleTimer.current);
+    };
+  }, [dismissBubble]);
 
   // ---- subscriptions -----------------------------------------------------
   useEffect(() => {
@@ -147,67 +179,80 @@ export function Overlay(): JSX.Element {
   const running = timer?.running === true;
 
   return (
-    <div
-      style={{
-        width: '100%',
-        height: '100%',
-        position: 'relative',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-      }}
-    >
-      {error !== null && (
-        <div
-          style={{
-            color: '#ffb3c1',
-            font: '11px system-ui, sans-serif',
-            textAlign: 'center',
-            padding: 8,
-          }}
-        >
-          {/* textContent via React children — never innerHTML (RULE 1). */}
-          {error}
-        </div>
-      )}
+    // Nothing here captures pointer events by default — the window is
+    // click-through and only the mascot's own pixels re-enable input.
+    <div style={{ width: '100%', height: '100%', position: 'relative', pointerEvents: 'none' }}>
+      <SpeechBubble text={bubble} onDismiss={dismissBubble} />
 
-      <canvas
-        ref={(node) => {
-          canvasRef.current = node;
-          setCanvas(node);
+      {/*
+        The mascot is anchored to the bottom-right in a fixed 200x200 box.
+        When main grows the window for a bubble it holds that same corner, so
+        the character does not appear to jump.
+      */}
+      <div
+        style={{
+          position: 'absolute',
+          right: 0,
+          bottom: 0,
+          width: OVERLAY_COLLAPSED.width,
+          height: OVERLAY_COLLAPSED.height,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
         }}
-        width={200}
-        height={200}
-        style={{ width: '160px', height: '160px', display: 'block' }}
-        onPointerMove={handlePointerMove}
-        onPointerDown={handlePointerDown}
-        onPointerUp={handlePointerUp}
-        onPointerLeave={() => setInteractive(false)}
-        onContextMenu={(e) => {
-          e.preventDefault();
-          window.mochi.window.openSettings();
-        }}
-      />
+      >
+        {error !== null && (
+          <div
+            style={{
+              color: '#ffb3c1',
+              font: '11px system-ui, sans-serif',
+              textAlign: 'center',
+              padding: 8,
+            }}
+          >
+            {/* textContent via React children — never innerHTML (RULE 1). */}
+            {error}
+          </div>
+        )}
 
-      {running && timer !== null && (
-        <div
-          style={{
-            position: 'absolute',
-            bottom: 2,
-            left: '50%',
-            transform: 'translateX(-50%)',
-            padding: '2px 8px',
-            borderRadius: 999,
-            background: 'rgba(27, 23, 32, 0.82)',
-            color: '#f4eef6',
-            font: '600 11px system-ui, sans-serif',
-            pointerEvents: 'none',
-            whiteSpace: 'nowrap',
+        <canvas
+          ref={(node) => {
+            canvasRef.current = node;
+            setCanvas(node);
           }}
-        >
-          {formatDuration(timer.elapsedMs)}
-        </div>
-      )}
+          width={200}
+          height={200}
+          style={{ width: '170px', height: '170px', display: 'block', pointerEvents: 'auto' }}
+          onPointerMove={handlePointerMove}
+          onPointerDown={handlePointerDown}
+          onPointerUp={handlePointerUp}
+          onPointerLeave={() => setInteractive(false)}
+          onContextMenu={(e) => {
+            e.preventDefault();
+            window.mochi.window.openSettings();
+          }}
+        />
+
+        {running && timer !== null && (
+          <div
+            style={{
+              position: 'absolute',
+              bottom: 6,
+              left: '50%',
+              transform: 'translateX(-50%)',
+              padding: '2px 9px',
+              borderRadius: 999,
+              background: 'rgba(27, 23, 32, 0.82)',
+              color: '#f4eef6',
+              font: '600 11px system-ui, sans-serif',
+              pointerEvents: 'none',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            {formatDuration(timer.elapsedMs)}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
