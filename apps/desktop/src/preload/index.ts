@@ -80,7 +80,6 @@ const bridge: MochiBridge = {
 
   overlay: {
     setInteractive: (interactive) => ipcRenderer.send('overlay:setInteractive', interactive),
-    setExpanded: (expanded) => ipcRenderer.send('overlay:setExpanded', expanded),
     dragBy: (dx, dy) => ipcRenderer.send('overlay:dragBy', dx, dy),
     onVisibilityChange: (listener) => subscribe<boolean>('overlay:visibility', listener),
   },

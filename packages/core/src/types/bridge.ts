@@ -109,11 +109,6 @@ export interface MochiBridge {
      * drawn pixels; the window itself stays mascot-sized (RULE 3).
      */
     setInteractive(interactive: boolean): void;
-    /**
-     * Grow the window while a bubble is visible, shrink when it clears. The
-     * mascot stays put; the bubble appears up and to the left.
-     */
-    setExpanded(expanded: boolean): void;
     /** Drag delta in CSS pixels; main converts to screen coords and clamps. */
     dragBy(dx: number, dy: number): void;
     /** True while the window is hidden/occluded so the renderer stops drawing. */

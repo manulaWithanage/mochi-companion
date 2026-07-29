@@ -1,26 +1,26 @@
 /**
  * The transparent mascot overlay.
  *
- * RULE 3: the window is exactly mascot-sized and is repositioned by moving
- * the window itself. There is no fullscreen transparent surface and no
- * per-pixel alpha hit testing — the window is almost entirely mascot, so
- * click-through is a simple boolean toggled on hover.
+ * RULE 3: the window is small and fixed, and is repositioned by moving the
+ * window itself. There is no fullscreen transparent surface. It is slightly
+ * larger than the mascot to leave room for a speech bubble; the extra area
+ * is transparent and inert, and hover is a cheap alpha sample on the canvas.
+ *
+ * The size never changes. Growing and shrinking it around a bubble made
+ * Chromium composite the old surface into the new frame, flashing a ghost
+ * mascot at the wrong offset every time a bubble cleared.
  */
 
 import { BrowserWindow, screen, powerMonitor, type Display } from 'electron';
 import { join } from 'node:path';
 import {
   displayContaining,
-  OVERLAY_COLLAPSED,
-  OVERLAY_EXPANDED,
+  OVERLAY_SIZE,
   resolvePlacement,
   type DisplayInfo,
   type OverlayPosition,
   type Point,
-  type Size,
 } from '@mochi/core';
-
-export const OVERLAY_SIZE = OVERLAY_COLLAPSED;
 
 /** Debounce for persisting position while the user drags. */
 const SAVE_DEBOUNCE_MS = 400;
@@ -143,8 +143,6 @@ export class OverlayWindow {
     const win = this.win;
     if (win === null || win.isDestroyed()) return;
 
-    // Use live bounds, not OVERLAY_COLLAPSED — the window may be expanded
-    // around a speech bubble right now.
     const { x, y, width, height } = win.getBounds();
     const displays = screen.getAllDisplays().map(toDisplayInfo);
     const current = displayContaining({ x, y }, displays);
@@ -188,49 +186,6 @@ export class OverlayWindow {
   }
 
   /**
-   * Grow the window to make room for a speech bubble, or shrink back.
-   *
-   * The mascot occupies the bottom-right 200x200 of the window in both
-   * sizes, so holding the bottom-right corner fixed keeps the character
-   * visually still while the bubble opens up and to the left. Near a screen
-   * edge the clamp may shift things slightly — keeping the bubble on screen
-   * matters more than the mascot not moving a few pixels.
-   */
-  setExpanded(expanded: boolean): void {
-    const win = this.win;
-    if (win === null || win.isDestroyed()) return;
-
-    const target: Size = expanded ? OVERLAY_EXPANDED : OVERLAY_COLLAPSED;
-    const bounds = win.getBounds();
-    if (bounds.width === target.width && bounds.height === target.height) return;
-
-    // Anchor the bottom-right corner.
-    const desired: Point = {
-      x: bounds.x + bounds.width - target.width,
-      y: bounds.y + bounds.height - target.height,
-    };
-
-    const displays = screen.getAllDisplays().map(toDisplayInfo);
-    const host =
-      displayContaining({ x: bounds.x, y: bounds.y }, displays) ??
-      displayContaining(desired, displays);
-
-    const placement = resolvePlacement(
-      { ...desired, displayId: host?.id ?? screen.getPrimaryDisplay().id },
-      target,
-      displays,
-      screen.getPrimaryDisplay().id,
-    );
-
-    win.setBounds({
-      x: placement.position.x,
-      y: placement.position.y,
-      width: target.width,
-      height: target.height,
-    });
-  }
-
-  /**
    * Toggle click-through. Called on pointer enter/leave over the mascot so
    * clicks on empty pixels still reach whatever is behind the overlay.
    */
@@ -248,22 +203,11 @@ export class OverlayWindow {
     }, SAVE_DEBOUNCE_MS);
   }
 
-  /**
-   * Record where the *mascot* sits, not where the window box sits.
-   *
-   * The mascot is anchored to the bottom-right corner, so deriving the
-   * position from that corner gives the same answer whether or not a bubble
-   * is currently expanding the window. Without this, saving while expanded
-   * would drift the mascot up and left a little on every restart.
-   */
   private persistPosition(): void {
     const win = this.win;
     if (win === null || win.isDestroyed()) return;
 
-    const bounds = win.getBounds();
-    const x = bounds.x + bounds.width - OVERLAY_COLLAPSED.width;
-    const y = bounds.y + bounds.height - OVERLAY_COLLAPSED.height;
-
+    const { x, y } = win.getBounds();
     const displays = screen.getAllDisplays().map(toDisplayInfo);
     const host = displayContaining({ x, y }, displays);
     this.callbacks.onPositionChanged({

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState, type JSX } from 'react';
 import {
   formatDuration,
-  OVERLAY_COLLAPSED,
+  MASCOT_BOX,
   type BubbleMessage,
   type LoadedSkin,
   type MascotState,
@@ -56,14 +56,11 @@ export function Overlay(): JSX.Element {
     if (bubbleTimer.current !== undefined) clearTimeout(bubbleTimer.current);
     bubbleTimer.current = undefined;
     setBubble(null);
-    window.mochi.overlay.setExpanded(false);
   }, []);
 
   useEffect(() => {
     const off = window.mochi.bubble.onShow((message: BubbleMessage) => {
       if (bubbleTimer.current !== undefined) clearTimeout(bubbleTimer.current);
-      // Grow the window before painting, or the bubble is clipped on frame one.
-      window.mochi.overlay.setExpanded(true);
       setBubble(message.text);
       bubbleTimer.current = setTimeout(dismissBubble, message.ttlMs);
     });
@@ -182,20 +179,20 @@ export function Overlay(): JSX.Element {
     // Nothing here captures pointer events by default — the window is
     // click-through and only the mascot's own pixels re-enable input.
     <div style={{ width: '100%', height: '100%', position: 'relative', pointerEvents: 'none' }}>
-      <SpeechBubble text={bubble} onDismiss={dismissBubble} />
+      <SpeechBubble text={bubble} onDismiss={dismissBubble} onHoverChange={setInteractive} />
 
       {/*
-        The mascot is anchored to the bottom-right in a fixed 200x200 box.
-        When main grows the window for a bubble it holds that same corner, so
-        the character does not appear to jump.
+        The mascot is anchored to the window's bottom-right. The window is a
+        fixed size and never resizes; the space above and to the left is
+        transparent and exists so a speech bubble has somewhere to go.
       */}
       <div
         style={{
           position: 'absolute',
           right: 0,
           bottom: 0,
-          width: OVERLAY_COLLAPSED.width,
-          height: OVERLAY_COLLAPSED.height,
+          width: MASCOT_BOX.width,
+          height: MASCOT_BOX.height,
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',

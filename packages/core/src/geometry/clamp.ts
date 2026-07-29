@@ -28,16 +28,22 @@ export interface DisplayInfo {
 export const DEFAULT_EDGE_MARGIN = 24;
 
 /**
- * The overlay is mascot-sized by default (RULE 3) and grows only while a
- * speech bubble is on screen, then shrinks back.
+ * Overlay window size — fixed, never resized.
  *
- * In both sizes the mascot occupies the bottom-right 200x200, so expanding
- * keeps the character visually still and the bubble appears up and to the
- * left. Shared here because main resizes the window and the renderer lays
- * out against the same box.
+ * It is larger than the mascot to leave room for a speech bubble up and to
+ * the left. An earlier version grew the window when Mochi spoke and shrank
+ * it afterwards, which made Chromium composite the old surface into the new
+ * frame for a frame or two — a ghost mascot flashing at the wrong offset
+ * every time a bubble cleared.
+ *
+ * Staying one fixed size removes that entirely. The extra area is fully
+ * transparent and click-through is alpha-tested, so it is inert: still far
+ * from the fullscreen-surface-plus-hit-testing approach RULE 3 rules out.
  */
-export const OVERLAY_COLLAPSED: Size = { width: 200, height: 200 };
-export const OVERLAY_EXPANDED: Size = { width: 340, height: 300 };
+export const OVERLAY_SIZE: Size = { width: 340, height: 300 };
+
+/** The mascot occupies this box, anchored to the window's bottom-right. */
+export const MASCOT_BOX: Size = { width: 200, height: 200 };
 
 /**
  * Keep a window fully inside a work area.

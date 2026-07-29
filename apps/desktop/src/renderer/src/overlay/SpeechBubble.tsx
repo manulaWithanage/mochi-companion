@@ -1,12 +1,12 @@
-import { useEffect, useState, type JSX } from 'react';
+import { useEffect, useRef, useState, type JSX } from 'react';
 
 /**
  * Mochi's speech bubble.
  *
  * Anchored to the mascot, not to the window. The mascot occupies the
- * bottom-right 200x200 of the overlay, so the bubble is positioned from the
- * bottom-right too and grows upward and leftward as the text gets longer —
- * which keeps the tail attached to Mochi's head at any message length.
+ * bottom-right of the overlay, so the bubble is positioned from the same
+ * corner and grows upward and leftward as text gets longer — which keeps the
+ * tail attached to Mochi's head at any message length.
  *
  * Text is rendered as React children — never innerHTML (RULE 1). In V2 this
  * will carry LLM output and email-derived content, both attacker-influenced,
@@ -16,35 +16,52 @@ import { useEffect, useState, type JSX } from 'react';
 interface Props {
   readonly text: string | null;
   readonly onDismiss: () => void;
+  /** The window is click-through; hovering the bubble must re-enable input. */
+  readonly onHoverChange: (hovering: boolean) => void;
 }
 
-const FADE_MS = 220;
+const FADE_MS = 200;
 
-/** Clear of the mascot's head, measured against the 300px expanded window. */
+/** Clear of the mascot's head, measured against the 300px window. */
 const BOTTOM_OFFSET = 164;
 /** Puts the tail over the mascot rather than off to one side. */
 const RIGHT_OFFSET = 58;
 const TAIL = 9;
 const BG = 'rgba(38, 30, 44, 0.95)';
 
-export function SpeechBubble({ text, onDismiss }: Props): JSX.Element | null {
+export function SpeechBubble({ text, onDismiss, onHoverChange }: Props): JSX.Element | null {
   const [visible, setVisible] = useState(false);
+  /**
+   * Held one render longer than `text` so the fade-out actually plays.
+   * Unmounting the moment text goes null made the bubble vanish instantly.
+   */
+  const [rendered, setRendered] = useState<string | null>(null);
+  const exitTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   useEffect(() => {
-    if (text === null) {
-      setVisible(false);
-      return;
+    if (exitTimer.current !== undefined) clearTimeout(exitTimer.current);
+
+    if (text !== null) {
+      setRendered(text);
+      // Next frame, so the transition runs instead of snapping in.
+      const id = requestAnimationFrame(() => setVisible(true));
+      return () => cancelAnimationFrame(id);
     }
-    // Next frame, so the transition runs instead of snapping in.
-    const id = requestAnimationFrame(() => setVisible(true));
-    return () => cancelAnimationFrame(id);
+
+    setVisible(false);
+    exitTimer.current = setTimeout(() => setRendered(null), FADE_MS);
+    return () => {
+      if (exitTimer.current !== undefined) clearTimeout(exitTimer.current);
+    };
   }, [text]);
 
-  if (text === null) return null;
+  if (rendered === null) return null;
 
   return (
     <div
       onClick={onDismiss}
+      onPointerEnter={() => onHoverChange(true)}
+      onPointerLeave={() => onHoverChange(false)}
       style={{
         position: 'absolute',
         right: RIGHT_OFFSET,
@@ -67,10 +84,10 @@ export function SpeechBubble({ text, onDismiss }: Props): JSX.Element | null {
         transformOrigin: '100% 100%',
         transform: visible ? 'translateY(0) scale(1)' : 'translateY(4px) scale(0.94)',
         transition: `opacity ${FADE_MS}ms ease, transform ${FADE_MS}ms cubic-bezier(0.2, 0.9, 0.3, 1.25)`,
-        pointerEvents: 'auto',
+        pointerEvents: visible ? 'auto' : 'none',
       }}
     >
-      {text}
+      {rendered}
 
       {/* Tail, pointing down at the mascot. */}
       <span

@@ -100,10 +100,6 @@ export function registerIpc(ctx: IpcContext): void {
   ipcMain.handle('mascot:current', () => ctx.mascot.state);
 
   // ---- overlay (fire-and-forget) ----------------------------------------
-  ipcMain.on('overlay:setExpanded', (_e, expanded: unknown) => {
-    ctx.overlay.setExpanded(expanded === true);
-  });
-
   ipcMain.on('overlay:setInteractive', (_e, interactive: unknown) => {
     ctx.overlay.setInteractive(interactive === true);
   });
