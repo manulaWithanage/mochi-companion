@@ -4,97 +4,22 @@ import { LandingMascotCanvas } from './LandingMascotCanvas';
 
 export const Footer: React.FC = () => {
   const [mascotState, setMascotState] = useState<'idle' | 'working' | 'resting' | 'coffee'>('idle');
-  const [speechBubble, setSpeechBubble] = useState("Good morning! 🌸 Mochi is ready to sit on your desktop!");
+  const [speechBubble, setSpeechBubble] = useState("Mochi is ready to sit on your desktop! 🍡");
 
   return (
     <footer style={{
       position: 'relative',
       width: '100%',
-      minHeight: '620px',
+      background: '#080c14',
+      color: 'var(--text-main)',
       overflow: 'hidden',
       borderTop: '1px solid var(--glass-border)',
-      background: '#080c14'
+      paddingTop: '60px'
     }}>
       
-      {/* 🌸 FULL-BLEED BORDERLESS WARM MORNING 3D PAPERCRAFT ORIGAMI SCENERY */}
-      <img
-        src="/japan_morning_papercraft.jpg"
-        alt="Mochi Warm Morning 3D Papercraft Origami Scenery"
-        style={{
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          width: '100%',
-          height: '100%',
-          objectFit: 'cover',
-          objectPosition: 'center center',
-          display: 'block',
-          zIndex: 1
-        }}
-      />
-
-      {/* 🍡 INTERACTIVE MOCHI MASCOT STAGE (Floating in the Warm Morning Papercraft World) */}
-      <div style={{
-        position: 'relative',
-        zIndex: 10,
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        paddingTop: '50px',
-        paddingBottom: '20px'
-      }}>
-        {/* Speech Bubble */}
-        <div style={{
-          background: 'rgba(255, 255, 255, 0.95)',
-          color: '#0f172a',
-          padding: '10px 22px',
-          borderRadius: '20px',
-          fontSize: '14px',
-          fontWeight: '600',
-          boxShadow: '0 14px 40px rgba(0, 0, 0, 0.4)',
-          marginBottom: '12px',
-          whiteSpace: 'nowrap',
-          position: 'relative'
-        }}>
-          {speechBubble}
-          {/* Bubble Tail */}
-          <div style={{
-            position: 'absolute',
-            bottom: '-7px',
-            left: '50%',
-            transform: 'translateX(-50%)',
-            width: 0,
-            height: 0,
-            borderLeft: '7px solid transparent',
-            borderRight: '7px solid transparent',
-            borderTop: '7px solid rgba(255, 255, 255, 0.95)'
-          }}></div>
-        </div>
-
-        {/* Interactive Mascot Canvas */}
-        <div
-          onClick={() => setMascotState(mascotState === 'idle' ? 'resting' : mascotState === 'resting' ? 'coffee' : 'idle')}
-          style={{ cursor: 'pointer', filter: 'drop-shadow(0 14px 28px rgba(0,0,0,0.5))' }}
-        >
-          <LandingMascotCanvas state={mascotState} size={160} />
-        </div>
-      </div>
-
-      {/* 📄 4 NAVIGATION COLUMNS FLOATING DIRECTLY ON TOP OF THE WARM MORNING SCENERY (ZERO FRAMES OR BOXES!) */}
-      <div style={{
-        position: 'relative',
-        zIndex: 10,
-        maxWidth: '1200px',
-        margin: '0 auto',
-        padding: '20px 32px 32px 32px'
-      }}>
-        {/* 4 Navigation Columns */}
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
-          gap: '32px',
-          marginBottom: '32px'
-        }}>
+      {/* 📄 TOP SECTION: 4 NAVIGATION COLUMNS (Clean Dark Background for 100% Readability) */}
+      <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 32px 40px 32px', position: 'relative', zIndex: 10 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '32px' }}>
           
           {/* Col 1: Brand & Mission */}
           <div>
@@ -104,14 +29,14 @@ export const Footer: React.FC = () => {
                 Mochi
               </span>
             </div>
-            <p style={{ fontSize: '13px', color: '#ffffff', textShadow: '0 2px 10px rgba(0,0,0,0.95), 0 0 4px rgba(0,0,0,0.8)', lineHeight: '1.6', marginBottom: '16px', fontWeight: '500' }}>
+            <p style={{ fontSize: '13px', color: 'var(--text-muted)', lineHeight: '1.6', marginBottom: '16px' }}>
               Your cozy desktop AI companion & 1-click time tracker. Inspired by 3D Japanese Origami Zen simplicity.
             </p>
             <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-              <span style={{ fontSize: '11px', fontWeight: '700', padding: '4px 12px', borderRadius: '12px', background: 'rgba(15, 23, 42, 0.75)', color: '#a5b4fc', border: '1px solid rgba(255,255,255,0.2)', backdropFilter: 'blur(8px)' }}>
+              <span style={{ fontSize: '11px', fontWeight: '700', padding: '3px 10px', borderRadius: '12px', background: 'rgba(99,102,241,0.15)', color: '#818cf8', border: '1px solid rgba(99,102,241,0.3)' }}>
                 MIT Licensed
               </span>
-              <span style={{ fontSize: '11px', fontWeight: '700', padding: '4px 12px', borderRadius: '12px', background: 'rgba(15, 23, 42, 0.75)', color: '#6ee7b7', border: '1px solid rgba(255,255,255,0.2)', backdropFilter: 'blur(8px)' }}>
+              <span style={{ fontSize: '11px', fontWeight: '700', padding: '3px 10px', borderRadius: '12px', background: 'rgba(16,185,129,0.15)', color: '#10b981', border: '1px solid rgba(16,185,129,0.3)' }}>
                 100% Private
               </span>
             </div>
@@ -119,8 +44,8 @@ export const Footer: React.FC = () => {
 
           {/* Col 2: Product & Tools */}
           <div>
-            <h4 style={{ fontSize: '15px', fontWeight: '700', color: '#ffffff', textShadow: '0 2px 10px rgba(0,0,0,0.95)', marginBottom: '14px' }}>Product & Tools</h4>
-            <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '13px', color: '#ffffff', textShadow: '0 2px 10px rgba(0,0,0,0.95)', fontWeight: '500' }}>
+            <h4 style={{ fontSize: '15px', fontWeight: '700', color: 'var(--text-main)', marginBottom: '14px' }}>PRODUCT</h4>
+            <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '13px', color: 'var(--text-muted)' }}>
               <li><a href="https://github.com/manulaWithanage/mochi-companion" target="_blank" rel="noreferrer" style={{ color: 'inherit', textDecoration: 'none' }}>Windows Desktop App (.exe)</a></li>
               <li><a href="#stopwatch" style={{ color: 'inherit', textDecoration: 'none' }}>1-Click Project Stopwatch</a></li>
               <li><a href="#lifestyle" style={{ color: 'inherit', textDecoration: 'none' }}>9 AM Lifestyle Rhythm</a></li>
@@ -129,10 +54,10 @@ export const Footer: React.FC = () => {
             </ul>
           </div>
 
-          {/* Col 3: Open Source & Security */}
+          {/* Col 3: Open Source & Trust */}
           <div>
-            <h4 style={{ fontSize: '15px', fontWeight: '700', color: '#ffffff', textShadow: '0 2px 10px rgba(0,0,0,0.95)', marginBottom: '14px' }}>Open Source & Trust</h4>
-            <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '13px', color: '#ffffff', textShadow: '0 2px 10px rgba(0,0,0,0.95)', fontWeight: '500' }}>
+            <h4 style={{ fontSize: '15px', fontWeight: '700', color: 'var(--text-main)', marginBottom: '14px' }}>OPEN SOURCE</h4>
+            <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '13px', color: 'var(--text-muted)' }}>
               <li><a href="https://github.com/manulaWithanage/mochi-companion/blob/main/LICENSE" target="_blank" rel="noreferrer" style={{ color: 'inherit', textDecoration: 'none' }}>MIT Open Source License</a></li>
               <li><a href="https://github.com/manulaWithanage/mochi-companion/blob/main/LLM_ROUTER_SECURITY.md" target="_blank" rel="noreferrer" style={{ color: 'inherit', textDecoration: 'none' }}>Native safeStorage Vault</a></li>
               <li><a href="https://github.com/manulaWithanage/mochi-companion/blob/main/SYSTEM_ARCHITECTURE.md" target="_blank" rel="noreferrer" style={{ color: 'inherit', textDecoration: 'none' }}>System Architecture Specs</a></li>
@@ -142,8 +67,8 @@ export const Footer: React.FC = () => {
 
           {/* Col 4: Community & Links */}
           <div>
-            <h4 style={{ fontSize: '15px', fontWeight: '700', color: '#ffffff', textShadow: '0 2px 10px rgba(0,0,0,0.95)', marginBottom: '14px' }}>Community</h4>
-            <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '13px', color: '#ffffff', textShadow: '0 2px 10px rgba(0,0,0,0.95)', fontWeight: '500' }}>
+            <h4 style={{ fontSize: '15px', fontWeight: '700', color: 'var(--text-main)', marginBottom: '14px' }}>COMMUNITY</h4>
+            <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '13px', color: 'var(--text-muted)' }}>
               <li><a href="https://github.com/manulaWithanage/mochi-companion" target="_blank" rel="noreferrer" style={{ color: 'inherit', textDecoration: 'none' }}>GitHub Repository ⭐</a></li>
               <li><a href="https://github.com/manulaWithanage/mochi-companion/issues" target="_blank" rel="noreferrer" style={{ color: 'inherit', textDecoration: 'none' }}>Report an Issue / Bug</a></li>
               <li><a href="https://github.com/manulaWithanage/mochi-companion/discussions" target="_blank" rel="noreferrer" style={{ color: 'inherit', textDecoration: 'none' }}>Community Discussions</a></li>
@@ -151,23 +76,100 @@ export const Footer: React.FC = () => {
             </ul>
           </div>
         </div>
+      </div>
 
-        {/* Bottom Bar */}
+      {/* 🌸 BOTTOM SECTION: 3D PAPERCRAFT ORIGAMI JAPANESE SCENERY BANNER WITH MOCHI */}
+      <div style={{ position: 'relative', width: '100%', height: '320px', overflow: 'hidden' }}>
+        
+        {/* Full Bleed Calm Scenery Image */}
+        <img
+          src="/japan_zen_bottom_artwork.jpg"
+          alt="Mochi 3D Papercraft Origami Japanese Scenery"
+          style={{
+            width: '100%',
+            height: '100%',
+            objectFit: 'cover',
+            objectPosition: 'center bottom',
+            display: 'block'
+          }}
+        />
+
+        {/* Seamless Blend into Top Navigation */}
         <div style={{
-          borderTop: '1px solid rgba(255, 255, 255, 0.25)',
-          paddingTop: '18px',
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          height: '90px',
+          background: 'linear-gradient(to bottom, #080c14 0%, transparent 100%)',
+          pointerEvents: 'none'
+        }}></div>
+
+        {/* 🍡 INTERACTIVE MOCHI MASCOT STAGE (Centered in the Scenery) */}
+        <div style={{
+          position: 'absolute',
+          bottom: '24px',
+          left: '50%',
+          transform: 'translateX(-50%)',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          zIndex: 10
+        }}>
+          {/* Speech Bubble */}
+          <div style={{
+            background: 'rgba(255, 255, 255, 0.95)',
+            color: '#0f172a',
+            padding: '8px 18px',
+            borderRadius: '16px',
+            fontSize: '13px',
+            fontWeight: '600',
+            boxShadow: '0 10px 30px rgba(0, 0, 0, 0.4)',
+            marginBottom: '8px',
+            whiteSpace: 'nowrap',
+            position: 'relative'
+          }}>
+            {speechBubble}
+            {/* Bubble Tail */}
+            <div style={{
+              position: 'absolute',
+              bottom: '-6px',
+              left: '50%',
+              transform: 'translateX(-50%)',
+              width: 0,
+              height: 0,
+              borderLeft: '6px solid transparent',
+              borderRight: '6px solid transparent',
+              borderTop: '6px solid rgba(255, 255, 255, 0.95)'
+            }}></div>
+          </div>
+
+          {/* Interactive Mascot Canvas */}
+          <div
+            onClick={() => setMascotState(mascotState === 'idle' ? 'resting' : mascotState === 'resting' ? 'coffee' : 'idle')}
+            style={{ cursor: 'pointer', filter: 'drop-shadow(0 12px 24px rgba(0,0,0,0.5))' }}
+          >
+            <LandingMascotCanvas state={mascotState} size={140} />
+          </div>
+        </div>
+
+        {/* Copyright overlay bar across the bottom of the papercraft scenery */}
+        <div style={{
+          position: 'absolute',
+          bottom: '12px',
+          left: '32px',
+          right: '32px',
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
           fontSize: '12px',
           color: '#ffffff',
-          textShadow: '0 2px 10px rgba(0,0,0,0.95)',
-          flexWrap: 'wrap',
-          gap: '12px',
+          textShadow: '0 2px 8px rgba(0,0,0,0.95)',
+          zIndex: 12,
           fontWeight: '500'
         }}>
           <div>
-            Copyright © 2026 <strong>manulaWithanage</strong> & Mochi contributors. Built with ❤️ for developers.
+            © 2026 <strong>manulaWithanage</strong> & Mochi contributors.
           </div>
           <div>
             Released under the <strong>MIT License</strong>
