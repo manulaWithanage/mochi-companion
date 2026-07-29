@@ -30,16 +30,16 @@ export const StopwatchCard: React.FC = () => {
         width: '180px',
         height: '180px',
         borderRadius: '50%',
-        background: 'radial-gradient(circle, rgba(99, 102, 241, 0.15) 0%, transparent 70%)',
+        background: 'radial-gradient(circle, rgba(79, 70, 229, 0.08) 0%, transparent 70%)',
         pointerEvents: 'none'
       }}></div>
 
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
         <div>
-          <span style={{ fontSize: '12px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.05em', color: '#818cf8' }}>
+          <span style={{ fontSize: '12px', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.05em', color: '#4f46e5' }}>
             1-Click Time Tracker
           </span>
-          <h3 style={{ fontSize: '18px', fontWeight: '700', marginTop: '2px' }}>Project Stopwatch</h3>
+          <h3 style={{ fontSize: '18px', fontWeight: '800', marginTop: '2px' }}>Project Stopwatch</h3>
         </div>
 
         {/* Working State Visual Badge */}
@@ -49,10 +49,11 @@ export const StopwatchCard: React.FC = () => {
           gap: '6px',
           padding: '6px 12px',
           borderRadius: '12px',
-          background: isRunning ? 'rgba(99, 102, 241, 0.15)' : 'rgba(255, 255, 255, 0.05)',
-          border: '1px solid rgba(99, 102, 241, 0.3)',
+          background: isRunning ? 'rgba(79, 70, 229, 0.08)' : '#f1f5f9',
+          border: '1px solid rgba(79, 70, 229, 0.2)',
           fontSize: '12px',
-          color: isRunning ? '#818cf8' : 'var(--text-muted)'
+          fontWeight: '700',
+          color: isRunning ? '#4f46e5' : 'var(--text-muted)'
         }}>
           {isRunning ? '👓 Mochi is typing on mini laptop...' : '💤 Stopwatch Idle'}
         </div>
@@ -60,7 +61,7 @@ export const StopwatchCard: React.FC = () => {
 
       {/* Project Selector */}
       <div style={{ marginBottom: '20px' }}>
-        <label style={{ fontSize: '12px', color: 'var(--text-muted)', display: 'block', marginBottom: '6px' }}>
+        <label style={{ fontSize: '12px', color: 'var(--text-muted)', display: 'block', marginBottom: '6px', fontWeight: '600' }}>
           Select Active Project
         </label>
         <select
@@ -70,11 +71,12 @@ export const StopwatchCard: React.FC = () => {
             width: '100%',
             padding: '10px 14px',
             borderRadius: '10px',
-            background: 'rgba(255, 255, 255, 0.05)',
+            background: '#ffffff',
             border: '1px solid var(--glass-border)',
             color: 'var(--text-main)',
             fontSize: '14px',
-            outline: 'none'
+            outline: 'none',
+            fontWeight: '600'
           }}
         >
           <option value="Project 3: Mochi Cloud Dashboard">Project 3: Mochi Cloud Dashboard</option>
@@ -87,9 +89,10 @@ export const StopwatchCard: React.FC = () => {
       <div style={{
         textAlign: 'center',
         padding: '24px 0',
-        background: 'rgba(0, 0, 0, 0.25)',
+        background: '#ffffff',
         borderRadius: '16px',
-        border: '1px solid rgba(255, 255, 255, 0.05)',
+        border: '1px solid rgba(0, 0, 0, 0.06)',
+        boxShadow: '0 4px 12px rgba(0, 0, 0, 0.02)',
         marginBottom: '20px'
       }}>
         <div style={{
@@ -103,7 +106,7 @@ export const StopwatchCard: React.FC = () => {
         }}>
           {formatTime(seconds)}
         </div>
-        <div style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: '4px' }}>
+        <div style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: '4px', fontWeight: '600' }}>
           Active Session • {activeProject}
         </div>
       </div>

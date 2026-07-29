@@ -13,12 +13,12 @@ export const Header: React.FC<HeaderProps> = ({ onOpenPairing }) => {
       justifyContent: 'space-between',
       padding: '24px 32px',
       borderBottom: '1px solid var(--glass-border)',
-      background: 'rgba(8, 12, 20, 0.6)',
+      background: 'rgba(255, 255, 255, 0.8)',
       backdropFilter: 'blur(12px)'
     }}>
       {/* Title & Welcome */}
       <div>
-        <h2 style={{ fontSize: '24px', fontWeight: '700', color: 'var(--text-main)' }}>
+        <h2 style={{ fontSize: '24px', fontWeight: '800', color: 'var(--text-main)' }}>
           Welcome back, <span className="gradient-text">Pioneer</span>! 👋
         </h2>
         <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: '4px' }}>
@@ -35,13 +35,13 @@ export const Header: React.FC<HeaderProps> = ({ onOpenPairing }) => {
           gap: '8px',
           padding: '8px 14px',
           borderRadius: '20px',
-          background: 'rgba(16, 185, 129, 0.1)',
-          border: '1px solid rgba(16, 185, 129, 0.3)',
+          background: 'rgba(5, 150, 105, 0.08)',
+          border: '1px solid rgba(5, 150, 105, 0.2)',
           fontSize: '13px',
-          fontWeight: '600',
-          color: '#10b981'
+          fontWeight: '700',
+          color: '#059669'
         }}>
-          <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#10b981', boxShadow: '0 0 10px #10b981' }}></span>
+          <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#059669', boxShadow: '0 0 8px #059669' }}></span>
           <MochiIcon size={18} glow={false} /> Mochi: Working 👨‍💻 (8 FPS)
         </div>
 
@@ -52,11 +52,11 @@ export const Header: React.FC<HeaderProps> = ({ onOpenPairing }) => {
           gap: '6px',
           padding: '8px 14px',
           borderRadius: '20px',
-          background: 'rgba(245, 158, 11, 0.1)',
-          border: '1px solid rgba(245, 158, 11, 0.3)',
+          background: 'rgba(217, 119, 6, 0.08)',
+          border: '1px solid rgba(217, 119, 6, 0.2)',
           fontSize: '13px',
-          fontWeight: '600',
-          color: '#f59e0b'
+          fontWeight: '700',
+          color: '#d97706'
         }}>
           🌟 Founding Pioneer
         </div>

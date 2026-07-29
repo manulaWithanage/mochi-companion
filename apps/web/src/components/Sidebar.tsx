@@ -22,7 +22,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, onOpe
       height: '100vh',
       position: 'sticky',
       top: 0,
-      background: 'rgba(8, 12, 20, 0.95)',
+      background: '#ffffff',
       backdropFilter: 'blur(20px)',
       borderRight: '1px solid var(--glass-border)',
       display: 'flex',
@@ -32,9 +32,9 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, onOpe
     }}>
       {/* Brand Header */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '0 8px 24px 8px', borderBottom: '1px solid var(--glass-border)' }}>
-        <MochiIcon size={34} />
+        <MochiIcon size={34} glow={false} />
         <div>
-          <h1 style={{ fontSize: '20px', fontWeight: '700', background: 'var(--primary-gradient)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+          <h1 style={{ fontSize: '20px', fontWeight: '800', background: 'var(--primary-gradient)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
             Mochi Cloud
           </h1>
           <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>The Super Assistant</span>
@@ -56,14 +56,13 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, onOpe
                 padding: '12px 16px',
                 borderRadius: '12px',
                 border: 'none',
-                background: isActive ? 'rgba(99, 102, 241, 0.15)' : 'transparent',
-                color: isActive ? '#818cf8' : 'var(--text-muted)',
-                fontWeight: isActive ? '600' : '500',
+                background: isActive ? 'rgba(79, 70, 229, 0.08)' : 'transparent',
+                color: isActive ? '#4f46e5' : 'var(--text-muted)',
+                fontWeight: isActive ? '700' : '600',
                 fontSize: '14px',
                 cursor: 'pointer',
                 textAlign: 'left',
-                transition: 'all 0.2s ease',
-                boxShadow: isActive ? 'inset 0 0 0 1px rgba(99, 102, 241, 0.3)' : 'none'
+                transition: 'all 0.2s ease'
               }}
             >
               <span style={{ fontSize: '18px' }}>{item.icon}</span>
@@ -74,8 +73,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, onOpe
       </nav>
 
       {/* Pair Desktop App Button */}
-      <div className="glass-card" style={{ padding: '16px', textAlign: 'center', background: 'rgba(99, 102, 241, 0.05)' }}>
-        <div style={{ fontSize: '13px', fontWeight: '600', color: 'var(--text-main)', marginBottom: '4px' }}>
+      <div className="glass-card" style={{ padding: '16px', textAlign: 'center', background: 'rgba(79, 70, 229, 0.04)' }}>
+        <div style={{ fontSize: '13px', fontWeight: '700', color: 'var(--text-main)', marginBottom: '4px' }}>
           Desktop Companion
         </div>
         <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginBottom: '12px' }}>

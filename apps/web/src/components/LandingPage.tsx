@@ -40,21 +40,21 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGoToDashboard }) => 
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg-dark)', color: 'var(--text-main)', overflowX: 'hidden' }}>
       
-      {/* 🌐 Top Navigation Bar */}
+      {/* 🌐 Top Navigation Bar (Light Mode) */}
       <nav style={{
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
         padding: '20px 48px',
         borderBottom: '1px solid var(--glass-border)',
-        background: 'rgba(8, 12, 20, 0.85)',
+        background: 'rgba(255, 255, 255, 0.85)',
         backdropFilter: 'blur(16px)',
         position: 'sticky',
         top: 0,
         zIndex: 100
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <MochiIcon size={34} />
+          <MochiIcon size={34} glow={false} />
           <div>
             <span style={{ fontSize: '20px', fontWeight: '800', background: 'var(--primary-gradient)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
               Mochi
@@ -64,12 +64,12 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGoToDashboard }) => 
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '24px' }}>
-          <a href="#how-it-works" style={{ color: 'var(--text-muted)', textDecoration: 'none', fontSize: '14px', fontWeight: '500' }}>How It Works</a>
-          <a href="#routine" style={{ color: 'var(--text-muted)', textDecoration: 'none', fontSize: '14px', fontWeight: '500' }}>Daily Habits</a>
-          <a href="#privacy" style={{ color: 'var(--text-muted)', textDecoration: 'none', fontSize: '14px', fontWeight: '500' }}>100% Private</a>
+          <a href="#how-it-works" style={{ color: 'var(--text-muted)', textDecoration: 'none', fontSize: '14px', fontWeight: '600' }}>How It Works</a>
+          <a href="#routine" style={{ color: 'var(--text-muted)', textDecoration: 'none', fontSize: '14px', fontWeight: '600' }}>Daily Habits</a>
+          <a href="#privacy" style={{ color: 'var(--text-muted)', textDecoration: 'none', fontSize: '14px', fontWeight: '600' }}>100% Private</a>
           
           <button onClick={onGoToDashboard} className="btn-secondary" style={{ fontSize: '13px', padding: '9px 18px' }}>
-            📊 Open Cloud Dashboard
+            📊 Open Web Dashboard
           </button>
           
           <a href="https://github.com/manulaWithanage/mochi-companion" target="_blank" rel="noreferrer" className="btn-primary" style={{ fontSize: '13px', padding: '9px 20px', textDecoration: 'none' }}>
@@ -95,11 +95,11 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGoToDashboard }) => 
           gap: '8px',
           padding: '6px 18px',
           borderRadius: '20px',
-          background: 'rgba(99, 102, 241, 0.12)',
-          border: '1px solid rgba(99, 102, 241, 0.3)',
+          background: 'rgba(79, 70, 229, 0.08)',
+          border: '1px solid rgba(79, 70, 229, 0.2)',
           fontSize: '13px',
-          fontWeight: '600',
-          color: '#818cf8',
+          fontWeight: '700',
+          color: '#4f46e5',
           marginBottom: '24px'
         }}>
           <MochiIcon size={18} glow={false} /> Meet Your New Friendly Desktop Companion
@@ -143,9 +143,9 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGoToDashboard }) => 
           padding: '32px',
           borderRadius: '24px',
           position: 'relative',
-          background: 'rgba(15, 23, 42, 0.8)',
-          border: '1px solid rgba(99, 102, 241, 0.25)',
-          boxShadow: '0 20px 60px rgba(0, 0, 0, 0.5), 0 0 50px rgba(99, 102, 241, 0.15)'
+          background: 'rgba(255, 255, 255, 0.9)',
+          border: '1px solid rgba(0, 0, 0, 0.08)',
+          boxShadow: '0 20px 60px rgba(0, 0, 0, 0.06)'
         }}>
           {/* Simulated Desktop Bar */}
           <div style={{
@@ -164,7 +164,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGoToDashboard }) => 
             <div style={{ fontSize: '12px', color: 'var(--text-subtle)', fontWeight: '600' }}>
               Live Interactive Demo — Click Mochi on screen to test how it helps you!
             </div>
-            <div style={{ fontSize: '12px', color: '#10b981', fontWeight: '600' }}>
+            <div style={{ fontSize: '12px', color: '#059669', fontWeight: '700' }}>
               ● Active on Desktop
             </div>
           </div>
@@ -177,11 +177,11 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGoToDashboard }) => 
             justifyContent: 'center',
             minHeight: '260px',
             position: 'relative',
-            background: 'radial-gradient(circle at center, rgba(99, 102, 241, 0.08) 0%, transparent 70%)'
+            background: 'radial-gradient(circle at center, rgba(79, 70, 229, 0.05) 0%, transparent 70%)'
           }}>
             {/* Speech Bubble */}
             <div style={{
-              background: 'rgba(255, 255, 255, 0.95)',
+              background: '#ffffff',
               color: '#0f172a',
               padding: '12px 20px',
               borderRadius: '16px',
@@ -189,22 +189,23 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGoToDashboard }) => 
               fontWeight: '600',
               maxWidth: '380px',
               textAlign: 'center',
-              boxShadow: '0 10px 25px rgba(0, 0, 0, 0.3)',
+              boxShadow: '0 10px 25px rgba(0, 0, 0, 0.08)',
               marginBottom: '16px',
-              position: 'relative'
+              position: 'relative',
+              border: '1px solid #e2e8f0'
             }}>
               {speechMessage}
               {/* Bubble Tail */}
               <div style={{
                 position: 'absolute',
-                bottom: '-8px',
+                bottom: '-6px',
                 left: '50%',
                 transform: 'translateX(-50%)',
                 width: 0,
                 height: 0,
-                borderLeft: '8px solid transparent',
-                borderRight: '8px solid transparent',
-                borderTop: '8px solid rgba(255, 255, 255, 0.95)'
+                borderLeft: '6px solid transparent',
+                borderRight: '6px solid transparent',
+                borderTop: '6px solid #ffffff'
               }}></div>
             </div>
 
@@ -299,7 +300,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGoToDashboard }) => 
         </div>
       </section>
 
-      {/* 🌲 3D Papercraft Origami Footer Component */}
+      {/* 🌸 3D Papercraft Origami Footer Component */}
       <Footer />
 
     </div>

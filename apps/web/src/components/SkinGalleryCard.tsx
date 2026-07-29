@@ -14,12 +14,12 @@ export const SkinGalleryCard: React.FC = () => {
     <div className="glass-card" style={{ padding: '24px', width: '100%' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
         <div>
-          <span style={{ fontSize: '12px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.05em', color: '#f59e0b' }}>
+          <span style={{ fontSize: '12px', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.05em', color: '#d97706' }}>
             Mascot Skin Gallery
           </span>
-          <h3 style={{ fontSize: '18px', fontWeight: '700', marginTop: '2px' }}>Custom Avatar Skins</h3>
+          <h3 style={{ fontSize: '18px', fontWeight: '800', marginTop: '2px' }}>Custom Avatar Skins</h3>
         </div>
-        <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
+        <div style={{ fontSize: '12px', color: 'var(--text-muted)', fontWeight: '600' }}>
           Community Canvas 2D Sprites
         </div>
       </div>
@@ -34,8 +34,9 @@ export const SkinGalleryCard: React.FC = () => {
               style={{
                 padding: '20px',
                 borderRadius: '14px',
-                background: isSelected ? 'rgba(99, 102, 241, 0.12)' : 'rgba(255, 255, 255, 0.03)',
-                border: isSelected ? '1px solid #6366f1' : '1px solid var(--glass-border)',
+                background: isSelected ? 'rgba(79, 70, 229, 0.06)' : '#ffffff',
+                border: isSelected ? '2px solid #4f46e5' : '1px solid var(--glass-border)',
+                boxShadow: isSelected ? '0 10px 25px rgba(79, 70, 229, 0.15)' : '0 2px 8px rgba(0,0,0,0.03)',
                 cursor: 'pointer',
                 transition: 'all 0.2s ease',
                 display: 'flex',
@@ -51,11 +52,11 @@ export const SkinGalleryCard: React.FC = () => {
                 top: '12px',
                 right: '12px',
                 fontSize: '10px',
-                fontWeight: '700',
+                fontWeight: '800',
                 padding: '2px 8px',
                 borderRadius: '10px',
-                background: isSelected ? '#6366f1' : 'rgba(255, 255, 255, 0.08)',
-                color: 'white'
+                background: isSelected ? '#4f46e5' : '#f1f5f9',
+                color: isSelected ? 'white' : '#64748b'
               }}>
                 {isSelected ? 'Active Skin' : skin.tag}
               </span>
@@ -64,18 +65,18 @@ export const SkinGalleryCard: React.FC = () => {
               <div style={{
                 fontSize: '48px',
                 margin: '12px 0',
-                filter: isSelected ? 'drop-shadow(0 0 12px rgba(99, 102, 241, 0.6))' : 'none',
+                filter: isSelected ? 'drop-shadow(0 0 10px rgba(79, 70, 229, 0.4))' : 'none',
                 transition: 'transform 0.2s ease',
                 transform: isSelected ? 'scale(1.1)' : 'scale(1)'
               }}>
                 {skin.icon}
               </div>
 
-              <div style={{ fontSize: '15px', fontWeight: '700', color: 'var(--text-main)', marginBottom: '4px' }}>
+              <div style={{ fontSize: '15px', fontWeight: '800', color: 'var(--text-main)', marginBottom: '4px' }}>
                 {skin.name}
               </div>
 
-              <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
+              <div style={{ fontSize: '12px', color: 'var(--text-muted)', fontWeight: '500' }}>
                 {skin.desc}
               </div>
             </div>
