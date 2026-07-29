@@ -311,8 +311,8 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGoToDashboard }) => 
         </div>
       </section>
 
-      {/* 🔮 SECTION 1: WHY MOCHI EXISTS — THE CORE PHILOSOPHY */}
-      <section style={{ maxWidth: '1140px', margin: '0 auto', padding: '80px 24px 40px 24px' }}>
+      {/* 🔮 SECTION 1: WHY MOCHI EXISTS — 3D PAPERCRAFT LAYERED CARDS */}
+      <section style={{ maxWidth: '1140px', margin: '0 auto', padding: '80px 24px 40px 24px', position: 'relative' }}>
         <div style={{ textAlign: 'center', marginBottom: '56px' }}>
           <div style={{
             display: 'inline-flex',
@@ -327,7 +327,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGoToDashboard }) => 
             color: '#4f46e5',
             marginBottom: '16px'
           }}>
-            Reimagining Your Desktop Workday
+            🌸 3D Papercraft Origami Theme
           </div>
           <h2 style={{ fontSize: '42px', fontWeight: '800', marginBottom: '16px', color: '#0f172a', letterSpacing: '-0.02em' }}>
             Why We Built Mochi
@@ -337,16 +337,17 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGoToDashboard }) => 
           </p>
         </div>
 
-        {/* Comparison Split Cards */}
+        {/* Comparison Split Cards with 3D Paper Cut-Out Layered Shadows */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', gap: '28px' }}>
           
           {/* Card 1: Traditional Apps */}
           <div style={{
-            background: '#ffffff',
+            background: 'linear-gradient(145deg, #ffffff 0%, #fffbfb 100%)',
             borderRadius: '28px',
             padding: '36px',
             border: '1px solid #fee2e2',
-            boxShadow: '0 10px 30px rgba(239, 68, 68, 0.04)'
+            boxShadow: '0 16px 36px rgba(239, 68, 68, 0.06), inset 0 2px 0 rgba(255, 255, 255, 0.9)',
+            position: 'relative'
           }}>
             <div style={{
               display: 'inline-flex',
@@ -356,7 +357,8 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGoToDashboard }) => 
               color: '#dc2626',
               fontSize: '12px',
               fontWeight: '800',
-              marginBottom: '20px'
+              marginBottom: '20px',
+              border: '1px solid #fca5a5'
             }}>
               TRADITIONAL TRACKING APPS
             </div>
@@ -376,25 +378,29 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGoToDashboard }) => 
             </ul>
           </div>
 
-          {/* Card 2: The Mochi Way */}
+          {/* Card 2: The Mochi Way (Papercraft Zen Garden Card) */}
           <div style={{
-            background: 'linear-gradient(135deg, rgba(240, 245, 255, 0.9) 0%, rgba(245, 240, 255, 0.9) 100%)',
+            background: 'linear-gradient(145deg, #ffffff 0%, #f5f3ff 100%)',
             borderRadius: '28px',
             padding: '36px',
             border: '1px solid rgba(79, 70, 229, 0.25)',
-            boxShadow: '0 12px 36px rgba(79, 70, 229, 0.08)'
+            boxShadow: '0 16px 36px rgba(79, 70, 229, 0.1), inset 0 2px 0 rgba(255, 255, 255, 0.9)',
+            position: 'relative'
           }}>
             <div style={{
               display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px',
               padding: '6px 14px',
               borderRadius: '16px',
               background: 'rgba(79, 70, 229, 0.12)',
               color: '#4f46e5',
               fontSize: '12px',
               fontWeight: '800',
-              marginBottom: '20px'
+              marginBottom: '20px',
+              border: '1px solid rgba(79, 70, 229, 0.25)'
             }}>
-              THE MOCHI COMPANION EXPERIENCE
+              🌸 THE MOCHI COMPANION EXPERIENCE
             </div>
             <h3 style={{ fontSize: '22px', fontWeight: '700', color: '#0f172a', marginBottom: '14px' }}>
               Calm, 1-Click & 100% Private
@@ -415,7 +421,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGoToDashboard }) => 
         </div>
       </section>
 
-      {/* 🚀 SECTION 2: 4 CORE SUPERPOWERS GRID */}
+      {/* 🚀 SECTION 2: 4 CORE SUPERPOWERS — 3D PAPERCRAFT ORIGAMI GRID */}
       <section id="capabilities" style={{ maxWidth: '1140px', margin: '0 auto', padding: '60px 24px 40px 24px' }}>
         <div style={{ textAlign: 'center', marginBottom: '56px' }}>
           <div style={{
@@ -431,32 +437,39 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGoToDashboard }) => 
             color: '#4f46e5',
             marginBottom: '16px'
           }}>
-            Everyday Desktop Capabilities
+            🗻 Japanese Origami Design System
           </div>
           <h2 style={{ fontSize: '40px', fontWeight: '800', marginBottom: '14px', color: '#0f172a', letterSpacing: '-0.02em' }}>
             What Mochi Does for Your Workday
           </h2>
           <p style={{ color: 'var(--text-muted)', fontSize: '17px', maxWidth: '680px', margin: '0 auto', lineHeight: '1.6' }}>
-            Four essential workflow superpowers integrated into one delightful desktop companion.
+            Four essential workflow superpowers integrated into one delightful 3D papercraft desktop companion.
           </p>
         </div>
 
-        {/* 4 Feature Cards Grid */}
+        {/* 4 Feature Cards Grid with 3D Paper Cut-Out Layered Styling */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '24px' }}>
           
           {/* Superpower 1: 1-Click Work Stopwatch */}
-          <div className="glass-card" style={{ padding: '36px', borderRadius: '28px' }}>
+          <div style={{
+            background: 'linear-gradient(145deg, #ffffff 0%, #faf8ff 100%)',
+            borderRadius: '28px',
+            padding: '36px',
+            border: '1px solid rgba(79, 70, 229, 0.18)',
+            boxShadow: '0 12px 30px rgba(0, 0, 0, 0.04), inset 0 2px 0 rgba(255, 255, 255, 0.9)'
+          }}>
             <div style={{
-              width: '52px',
-              height: '52px',
-              borderRadius: '18px',
-              background: 'rgba(79, 70, 229, 0.1)',
+              width: '56px',
+              height: '56px',
+              borderRadius: '20px',
+              background: 'linear-gradient(135deg, rgba(79, 70, 229, 0.15) 0%, rgba(99, 102, 241, 0.08) 100%)',
+              border: '1px solid rgba(79, 70, 229, 0.25)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              fontSize: '24px',
+              fontSize: '26px',
               marginBottom: '22px',
-              color: '#4f46e5'
+              boxShadow: '0 6px 16px rgba(79, 70, 229, 0.12)'
             }}>
               ⏱️
             </div>
@@ -467,18 +480,25 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGoToDashboard }) => 
           </div>
 
           {/* Superpower 2: 9 AM Lifestyle & Wellness Nudges */}
-          <div className="glass-card" style={{ padding: '36px', borderRadius: '28px' }}>
+          <div style={{
+            background: 'linear-gradient(145deg, #ffffff 0%, #fffdf8 100%)',
+            borderRadius: '28px',
+            padding: '36px',
+            border: '1px solid rgba(245, 158, 11, 0.2)',
+            boxShadow: '0 12px 30px rgba(0, 0, 0, 0.04), inset 0 2px 0 rgba(255, 255, 255, 0.9)'
+          }}>
             <div style={{
-              width: '52px',
-              height: '52px',
-              borderRadius: '18px',
-              background: 'rgba(245, 158, 11, 0.1)',
+              width: '56px',
+              height: '56px',
+              borderRadius: '20px',
+              background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.15) 0%, rgba(251, 191, 36, 0.08) 100%)',
+              border: '1px solid rgba(245, 158, 11, 0.25)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              fontSize: '24px',
+              fontSize: '26px',
               marginBottom: '22px',
-              color: '#f59e0b'
+              boxShadow: '0 6px 16px rgba(245, 158, 11, 0.12)'
             }}>
               ☕
             </div>
@@ -489,18 +509,25 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGoToDashboard }) => 
           </div>
 
           {/* Superpower 3: BYOK AI Intelligence */}
-          <div className="glass-card" style={{ padding: '36px', borderRadius: '28px' }}>
+          <div style={{
+            background: 'linear-gradient(145deg, #ffffff 0%, #f6fbf8 100%)',
+            borderRadius: '28px',
+            padding: '36px',
+            border: '1px solid rgba(16, 185, 129, 0.2)',
+            boxShadow: '0 12px 30px rgba(0, 0, 0, 0.04), inset 0 2px 0 rgba(255, 255, 255, 0.9)'
+          }}>
             <div style={{
-              width: '52px',
-              height: '52px',
-              borderRadius: '18px',
-              background: 'rgba(16, 185, 129, 0.1)',
+              width: '56px',
+              height: '56px',
+              borderRadius: '20px',
+              background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, rgba(52, 211, 153, 0.08) 100%)',
+              border: '1px solid rgba(16, 185, 129, 0.25)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              fontSize: '24px',
+              fontSize: '26px',
               marginBottom: '22px',
-              color: '#10b981'
+              boxShadow: '0 6px 16px rgba(16, 185, 129, 0.12)'
             }}>
               🤖
             </div>
@@ -511,18 +538,25 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGoToDashboard }) => 
           </div>
 
           {/* Superpower 4: 100% Local safeStorage Vault */}
-          <div className="glass-card" style={{ padding: '36px', borderRadius: '28px' }}>
+          <div style={{
+            background: 'linear-gradient(145deg, #ffffff 0%, #f6fafe 100%)',
+            borderRadius: '28px',
+            padding: '36px',
+            border: '1px solid rgba(14, 165, 233, 0.2)',
+            boxShadow: '0 12px 30px rgba(0, 0, 0, 0.04), inset 0 2px 0 rgba(255, 255, 255, 0.9)'
+          }}>
             <div style={{
-              width: '52px',
-              height: '52px',
-              borderRadius: '18px',
-              background: 'rgba(14, 165, 233, 0.1)',
+              width: '56px',
+              height: '56px',
+              borderRadius: '20px',
+              background: 'linear-gradient(135deg, rgba(14, 165, 233, 0.15) 0%, rgba(56, 189, 248, 0.08) 100%)',
+              border: '1px solid rgba(14, 165, 233, 0.25)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              fontSize: '24px',
+              fontSize: '26px',
               marginBottom: '22px',
-              color: '#0ea5e9'
+              boxShadow: '0 6px 16px rgba(14, 165, 233, 0.12)'
             }}>
               🔒
             </div>
@@ -535,17 +569,20 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGoToDashboard }) => 
         </div>
       </section>
 
-      {/* 🌅 SECTION 3: A DAY IN MOCHI'S WORLD (WORKDAY TIMELINE) */}
+      {/* 🌅 SECTION 3: A DAY IN MOCHI'S WORLD (WORKDAY TIMELINE IN PAPERCRAFT ZEN GARDEN CARD) */}
       <section id="routine" style={{ maxWidth: '1060px', margin: '0 auto', padding: '40px 24px 80px 24px' }}>
         <div style={{
-          background: 'rgba(255, 255, 255, 0.85)',
+          background: 'linear-gradient(145deg, rgba(255, 255, 255, 0.92) 0%, rgba(248, 250, 252, 0.92) 100%)',
           backdropFilter: 'blur(20px)',
           borderRadius: '32px',
           padding: '48px',
-          border: '1px solid rgba(0, 0, 0, 0.08)',
-          boxShadow: '0 20px 50px rgba(0, 0, 0, 0.04)'
+          border: '1px solid rgba(226, 232, 240, 0.9)',
+          boxShadow: '0 20px 50px rgba(0, 0, 0, 0.04), inset 0 2px 0 rgba(255, 255, 255, 0.9)'
         }}>
           <div style={{ textAlign: 'center', marginBottom: '44px' }}>
+            <span style={{ fontSize: '12px', fontWeight: '800', color: '#4f46e5', letterSpacing: '0.08em', textTransform: 'uppercase', display: 'block', marginBottom: '10px' }}>
+              🌸 PAPERCRAFT ZEN GARDEN ROUTINE
+            </span>
             <h3 style={{ fontSize: '32px', fontWeight: '800', color: '#0f172a', marginBottom: '10px' }}>
               A Peaceful Workday Timeline
             </h3>
@@ -557,7 +594,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGoToDashboard }) => 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))', gap: '24px' }}>
             
             {/* Timeline Step 1 */}
-            <div style={{ background: '#ffffff', padding: '24px', borderRadius: '22px', border: '1px solid #f1f5f9' }}>
+            <div style={{ background: '#ffffff', padding: '24px', borderRadius: '22px', border: '1px solid #f1f5f9', boxShadow: '0 6px 18px rgba(0,0,0,0.03)' }}>
               <div style={{ fontSize: '12.5px', fontWeight: '800', color: '#4f46e5', marginBottom: '8px' }}>9:00 AM</div>
               <h4 style={{ fontSize: '16px', fontWeight: '700', color: '#0f172a', marginBottom: '8px' }}>Morning Kickoff ☕</h4>
               <p style={{ fontSize: '13.5px', color: '#64748b', lineHeight: '1.55', margin: 0 }}>
@@ -566,7 +603,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGoToDashboard }) => 
             </div>
 
             {/* Timeline Step 2 */}
-            <div style={{ background: '#ffffff', padding: '24px', borderRadius: '22px', border: '1px solid #f1f5f9' }}>
+            <div style={{ background: '#ffffff', padding: '24px', borderRadius: '22px', border: '1px solid #f1f5f9', boxShadow: '0 6px 18px rgba(0,0,0,0.03)' }}>
               <div style={{ fontSize: '12.5px', fontWeight: '800', color: '#10b981', marginBottom: '8px' }}>11:30 AM</div>
               <h4 style={{ fontSize: '16px', fontWeight: '700', color: '#0f172a', marginBottom: '8px' }}>Email & Follow-Ups ✉️</h4>
               <p style={{ fontSize: '13.5px', color: '#64748b', lineHeight: '1.55', margin: 0 }}>
@@ -575,7 +612,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGoToDashboard }) => 
             </div>
 
             {/* Timeline Step 3 */}
-            <div style={{ background: '#ffffff', padding: '24px', borderRadius: '22px', border: '1px solid #f1f5f9' }}>
+            <div style={{ background: '#ffffff', padding: '24px', borderRadius: '22px', border: '1px solid #f1f5f9', boxShadow: '0 6px 18px rgba(0,0,0,0.03)' }}>
               <div style={{ fontSize: '12.5px', fontWeight: '800', color: '#f59e0b', marginBottom: '8px' }}>2:00 PM</div>
               <h4 style={{ fontSize: '16px', fontWeight: '700', color: '#0f172a', marginBottom: '8px' }}>Deep Focus Session 💻</h4>
               <p style={{ fontSize: '13.5px', color: '#64748b', lineHeight: '1.55', margin: 0 }}>
@@ -584,7 +621,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGoToDashboard }) => 
             </div>
 
             {/* Timeline Step 4 */}
-            <div style={{ background: '#ffffff', padding: '24px', borderRadius: '22px', border: '1px solid #f1f5f9' }}>
+            <div style={{ background: '#ffffff', padding: '24px', borderRadius: '22px', border: '1px solid #f1f5f9', boxShadow: '0 6px 18px rgba(0,0,0,0.03)' }}>
               <div style={{ fontSize: '12.5px', fontWeight: '800', color: '#ec4899', marginBottom: '8px' }}>5:30 PM</div>
               <h4 style={{ fontSize: '16px', fontWeight: '700', color: '#0f172a', marginBottom: '8px' }}>Evening Summary 📊</h4>
               <p style={{ fontSize: '13.5px', color: '#64748b', lineHeight: '1.55', margin: 0 }}>
@@ -603,7 +640,8 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGoToDashboard }) => 
           color: '#ffffff',
           borderRadius: '32px',
           padding: '48px 56px',
-          boxShadow: '0 20px 50px rgba(15, 23, 42, 0.15)'
+          boxShadow: '0 20px 50px rgba(15, 23, 42, 0.15)',
+          border: '1px solid rgba(255, 255, 255, 0.1)'
         }}>
           <div style={{ maxWidth: '680px', marginBottom: '32px' }}>
             <span style={{ fontSize: '12px', fontWeight: '800', color: '#818cf8', letterSpacing: '0.08em', textTransform: 'uppercase', display: 'block', marginBottom: '12px' }}>
