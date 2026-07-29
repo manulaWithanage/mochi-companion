@@ -142,7 +142,16 @@ RULE 5 — MONOREPO STRUCTURE (pnpm workspaces)
   apps/web gets a package.json with a name and nothing else. Do NOT scaffold
   Next.js. Do NOT build a dashboard.
 
-RULE 6 — NATIVE MODULES
+RULE 6 — SPLIT LICENSING
+  This repository is split-licensed. See LICENSING.md, which is authoritative.
+      apps/desktop, packages/**, skins/**, docs   → MIT
+      apps/web, services/**                       → AGPL-3.0-or-later
+  When you scaffold a package, place the correct LICENSE file at its root and
+  set the matching "license" field in its package.json ("MIT" or
+  "AGPL-3.0-or-later"). Add any new top-level package to the table in
+  LICENSING.md. Do not copy AGPL code into an MIT package or vice versa.
+
+RULE 7 — NATIVE MODULES
   better-sqlite3 is a native module and lives in apps/desktop only. Wire
   @electron/rebuild into a postinstall script or the first install will fail
   with a NODE_MODULE_VERSION mismatch. Verify a clean `pnpm install` works
