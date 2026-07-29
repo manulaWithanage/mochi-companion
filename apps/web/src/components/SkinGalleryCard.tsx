@@ -34,8 +34,8 @@ export const SkinGalleryCard: React.FC = () => {
               style={{
                 padding: '20px',
                 borderRadius: '14px',
-                background: isSelected ? 'rgba(236, 72, 153, 0.12)' : 'rgba(255, 255, 255, 0.03)',
-                border: isSelected ? '1px solid #ec4899' : '1px solid var(--glass-border)',
+                background: isSelected ? 'rgba(99, 102, 241, 0.12)' : 'rgba(255, 255, 255, 0.03)',
+                border: isSelected ? '1px solid #6366f1' : '1px solid var(--glass-border)',
                 cursor: 'pointer',
                 transition: 'all 0.2s ease',
                 display: 'flex',
@@ -54,7 +54,7 @@ export const SkinGalleryCard: React.FC = () => {
                 fontWeight: '700',
                 padding: '2px 8px',
                 borderRadius: '10px',
-                background: isSelected ? '#ec4899' : 'rgba(255, 255, 255, 0.08)',
+                background: isSelected ? '#6366f1' : 'rgba(255, 255, 255, 0.08)',
                 color: 'white'
               }}>
                 {isSelected ? 'Active Skin' : skin.tag}
@@ -64,7 +64,7 @@ export const SkinGalleryCard: React.FC = () => {
               <div style={{
                 fontSize: '48px',
                 margin: '12px 0',
-                filter: isSelected ? 'drop-shadow(0 0 12px rgba(236, 72, 153, 0.6))' : 'none',
+                filter: isSelected ? 'drop-shadow(0 0 12px rgba(99, 102, 241, 0.6))' : 'none',
                 transition: 'transform 0.2s ease',
                 transform: isSelected ? 'scale(1.1)' : 'scale(1)'
               }}>

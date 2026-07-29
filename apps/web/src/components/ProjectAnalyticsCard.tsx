@@ -2,16 +2,16 @@ import React from 'react';
 
 export const ProjectAnalyticsCard: React.FC = () => {
   const projects = [
-    { name: 'Project 3: Cloud Dashboard', hours: '4.2 hrs', percentage: 55, color: '#ec4899' },
-    { name: 'Project 1: Electron Overlay', hours: '2.1 hrs', percentage: 28, color: '#8b5cf6' },
-    { name: 'Project 2: BYOK Router', hours: '1.2 hrs', percentage: 17, color: '#3b82f6' }
+    { name: 'Project 3: Cloud Dashboard', hours: '4.2 hrs', percentage: 55, color: '#6366f1' },
+    { name: 'Project 1: Electron Overlay', hours: '2.1 hrs', percentage: 28, color: '#a855f7' },
+    { name: 'Project 2: BYOK Router', hours: '1.2 hrs', percentage: 17, color: '#10b981' }
   ];
 
   return (
     <div className="glass-card" style={{ padding: '24px', flex: 1 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
         <div>
-          <span style={{ fontSize: '12px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.05em', color: '#8b5cf6' }}>
+          <span style={{ fontSize: '12px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.05em', color: '#a855f7' }}>
             Time Analytics
           </span>
           <h3 style={{ fontSize: '18px', fontWeight: '700', marginTop: '2px' }}>Today's Time Distribution</h3>

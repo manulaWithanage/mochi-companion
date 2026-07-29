@@ -39,36 +39,36 @@ export const LandingMascotCanvas: React.FC<LandingMascotCanvasProps> = ({
       // 1. Ground Shadow
       ctx.beginPath();
       ctx.ellipse(0, 45, 42 + squishX * 10, 8, 0, 0, Math.PI * 2);
-      ctx.fillStyle = 'rgba(0, 0, 0, 0.25)';
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
       ctx.fill();
 
-      // 2. Mochi Body Base (Squishy rounded rect/blob)
+      // 2. Mochi Body Base (Squishy soft white/cream mochi dough)
       ctx.beginPath();
       const radius = 46;
       ctx.roundRect(-radius - squishX * 10, -radius, (radius * 2) + squishX * 20, radius * 2, 28);
       
-      // Mochi Gradient Fill (Soft white/pinkish mochi dough)
+      // Mochi Gradient Fill (Soft warm white to subtle indigo cream)
       const bodyGrad = ctx.createLinearGradient(0, -radius, 0, radius);
       bodyGrad.addColorStop(0, '#ffffff');
-      bodyGrad.addColorStop(1, '#fce7f3');
+      bodyGrad.addColorStop(1, '#f1f5f9');
       ctx.fillStyle = bodyGrad;
-      ctx.shadowColor = 'rgba(236, 72, 153, 0.25)';
+      ctx.shadowColor = 'rgba(99, 102, 241, 0.25)';
       ctx.shadowBlur = 20;
       ctx.fill();
 
-      ctx.lineWidth = 3;
-      ctx.strokeStyle = '#6b7280';
+      ctx.lineWidth = 3.5;
+      ctx.strokeStyle = '#475569';
       ctx.stroke();
 
       // 3. Top Highlight Sheen
       ctx.beginPath();
       ctx.ellipse(-14, -20, 10, 5, -Math.PI / 6, 0, Math.PI * 2);
-      ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.85)';
       ctx.fill();
 
-      // 4. Rosy Cheeks
-      ctx.fillStyle = '#f472b6';
-      ctx.globalAlpha = 0.6;
+      // 4. Soft Peach/Warm Amber Rosy Cheeks (NO PINK)
+      ctx.fillStyle = '#fb923c';
+      ctx.globalAlpha = 0.5;
       ctx.beginPath();
       ctx.ellipse(-26, 6, 8, 5, 0, 0, Math.PI * 2); // Left cheek
       ctx.ellipse(26, 6, 8, 5, 0, 0, Math.PI * 2);  // Right cheek
@@ -78,7 +78,7 @@ export const LandingMascotCanvas: React.FC<LandingMascotCanvasProps> = ({
       // 5. State Specific Features (Eyes, Mouth, Accessories)
       if (state === 'resting') {
         // Closed Sleeping Eyes ^_^
-        ctx.strokeStyle = '#4b5563';
+        ctx.strokeStyle = '#334155';
         ctx.lineWidth = 3.5;
         ctx.lineCap = 'round';
         
@@ -95,7 +95,7 @@ export const LandingMascotCanvas: React.FC<LandingMascotCanvasProps> = ({
         ctx.arc(0, 10, 4, 0, Math.PI);
         ctx.stroke();
 
-        // Floating 'z Z' Sleeping Particle
+        // Floating 'z Z' Sleeping Particle (Electric Purple)
         const zOffsetY = (tick % 60) * 0.4;
         const zAlpha = 1 - (zOffsetY / 24);
         ctx.fillStyle = `rgba(168, 85, 247, ${zAlpha > 0 ? zAlpha : 0})`;
@@ -107,12 +107,13 @@ export const LandingMascotCanvas: React.FC<LandingMascotCanvasProps> = ({
         ctx.strokeStyle = '#1e293b';
         ctx.lineWidth = 3;
 
-        // Glasses frames
+        // Glasses frames (Electric Indigo tint)
         ctx.beginPath();
         ctx.arc(-16, 0, 10, 0, Math.PI * 2);
         ctx.arc(16, 0, 10, 0, Math.PI * 2);
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
+        ctx.fillStyle = 'rgba(99, 102, 241, 0.15)';
         ctx.fill();
+        ctx.strokeStyle = '#4f46e5';
         ctx.stroke();
 
         // Bridge
@@ -122,14 +123,15 @@ export const LandingMascotCanvas: React.FC<LandingMascotCanvasProps> = ({
         ctx.stroke();
 
         // Mini Laptop underneath
-        ctx.fillStyle = '#334155';
+        ctx.fillStyle = '#1e293b';
         ctx.fillRect(-28, 28, 56, 6);
-        ctx.fillStyle = '#94a3b8';
+        ctx.fillStyle = '#38bdf8';
         ctx.fillRect(-24, 20, 48, 8); // Screen
 
         // Typing spark hands
         const handAnim = Math.sin(tick * 0.3) * 3;
-        ctx.fillStyle = '#fce7f3';
+        ctx.fillStyle = '#ffffff';
+        ctx.strokeStyle = '#475569';
         ctx.beginPath();
         ctx.arc(-12, 24 + handAnim, 5, 0, Math.PI * 2);
         ctx.arc(12, 24 - handAnim, 5, 0, Math.PI * 2);
@@ -138,22 +140,22 @@ export const LandingMascotCanvas: React.FC<LandingMascotCanvasProps> = ({
       } 
       else if (state === 'coffee') {
         // Coffee sipping ^_^
-        ctx.strokeStyle = '#4b5563';
+        ctx.strokeStyle = '#334155';
         ctx.lineWidth = 3;
         ctx.beginPath();
         ctx.arc(-14, 0, 6, Math.PI, 0);
         ctx.arc(14, 0, 6, Math.PI, 0);
         ctx.stroke();
 
-        // Steamy Mug
-        ctx.fillStyle = '#ec4899';
+        // Steamy Mug (Amber / Indigo)
+        ctx.fillStyle = '#6366f1';
         ctx.fillRect(-8, 12, 16, 18);
-        ctx.fillStyle = '#fbcfe8';
+        ctx.fillStyle = '#fbbf24';
         ctx.fillRect(-6, 10, 12, 4);
 
         // Steam particle
         const steamY = (tick % 40) * 0.3;
-        ctx.strokeStyle = 'rgba(255,255,255,0.5)';
+        ctx.strokeStyle = 'rgba(255,255,255,0.6)';
         ctx.lineWidth = 2;
         ctx.beginPath();
         ctx.moveTo(0, 8 - steamY);
@@ -162,7 +164,7 @@ export const LandingMascotCanvas: React.FC<LandingMascotCanvasProps> = ({
       } 
       else { // Idle
         // Open Happy Eyes
-        ctx.fillStyle = '#1e293b';
+        ctx.fillStyle = '#0f172a';
         ctx.beginPath();
         ctx.arc(-16, 0, 4, 0, Math.PI * 2);
         ctx.arc(16, 0, 4, 0, Math.PI * 2);
@@ -176,7 +178,7 @@ export const LandingMascotCanvas: React.FC<LandingMascotCanvasProps> = ({
         ctx.fill();
 
         // Happy mouth
-        ctx.strokeStyle = '#1e293b';
+        ctx.strokeStyle = '#0f172a';
         ctx.lineWidth = 2.5;
         ctx.beginPath();
         ctx.arc(0, 6, 5, 0, Math.PI);

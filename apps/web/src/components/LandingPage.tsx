@@ -15,7 +15,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGoToDashboard }) => 
       "I'm keeping your desktop cozy & productive! 🍡",
       "Ready to start a 1-click stopwatch timer? ⏱️",
       "Did you take a sip of water today? 💧",
-      "Mochi loves sitting on your screen! ♥️",
+      "Mochi loves sitting on your screen! ⭐",
       "You've been focused today! Keep it up! 🚀"
     ];
     setClickCount((prev) => prev + 1);
@@ -45,14 +45,14 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGoToDashboard }) => 
         justifyContent: 'space-between',
         padding: '20px 48px',
         borderBottom: '1px solid var(--glass-border)',
-        background: 'rgba(7, 9, 14, 0.8)',
+        background: 'rgba(8, 12, 20, 0.85)',
         backdropFilter: 'blur(16px)',
         position: 'sticky',
         top: 0,
         zIndex: 100
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <span style={{ fontSize: '32px', filter: 'drop-shadow(0 0 12px rgba(236, 72, 153, 0.6))' }}>🍡</span>
+          <span style={{ fontSize: '32px', filter: 'drop-shadow(0 0 12px rgba(99, 102, 241, 0.6))' }}>🍡</span>
           <div>
             <span style={{ fontSize: '20px', fontWeight: '800', background: 'var(--primary-gradient)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
               Mochi
@@ -66,11 +66,11 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGoToDashboard }) => 
           <a href="#security" style={{ color: 'var(--text-muted)', textDecoration: 'none', fontSize: '14px', fontWeight: '500' }}>BYOK Security</a>
           <a href="#github" style={{ color: 'var(--text-muted)', textDecoration: 'none', fontSize: '14px', fontWeight: '500' }}>GitHub ⭐</a>
           
-          <button onClick={onGoToDashboard} className="btn-secondary" style={{ fontSize: '13px', padding: '8px 16px' }}>
+          <button onClick={onGoToDashboard} className="btn-secondary" style={{ fontSize: '13px', padding: '9px 18px' }}>
             📊 Open Cloud Dashboard
           </button>
           
-          <a href="https://github.com/manulaWithanage/mochi-companion" target="_blank" rel="noreferrer" className="btn-primary" style={{ fontSize: '13px', padding: '8px 18px', textDecoration: 'none' }}>
+          <a href="https://github.com/manulaWithanage/mochi-companion" target="_blank" rel="noreferrer" className="btn-primary" style={{ fontSize: '13px', padding: '9px 20px', textDecoration: 'none' }}>
             ⬇️ Download for Windows
           </a>
         </div>
@@ -91,24 +91,24 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGoToDashboard }) => 
           display: 'inline-flex',
           alignItems: 'center',
           gap: '8px',
-          padding: '6px 16px',
+          padding: '6px 18px',
           borderRadius: '20px',
-          background: 'rgba(236, 72, 153, 0.12)',
-          border: '1px solid rgba(236, 72, 153, 0.3)',
+          background: 'rgba(99, 102, 241, 0.12)',
+          border: '1px solid rgba(99, 102, 241, 0.3)',
           fontSize: '13px',
           fontWeight: '600',
-          color: '#ec4899',
+          color: '#818cf8',
           marginBottom: '24px'
         }}>
-          ✨ Open-Source • BYOK • Cozy Desktop Companion & Time Tracker
+          ✨ Open-Source • BYOK • Desktop Companion & Time Tracker
         </div>
 
         {/* Hero Title */}
         <h1 style={{
-          fontSize: '56px',
+          fontSize: '58px',
           fontWeight: '800',
           lineHeight: '1.15',
-          maxWidth: '900px',
+          maxWidth: '920px',
           marginBottom: '24px'
         }}>
           Meet <span className="gradient-text">Mochi</span>. Your Cozy Desktop AI Pet & 1-Click Time Tracker.
@@ -141,9 +141,9 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGoToDashboard }) => 
           padding: '32px',
           borderRadius: '24px',
           position: 'relative',
-          background: 'rgba(15, 23, 42, 0.75)',
-          border: '1px solid rgba(236, 72, 153, 0.25)',
-          boxShadow: '0 20px 60px rgba(0, 0, 0, 0.5), 0 0 40px rgba(236, 72, 153, 0.15)'
+          background: 'rgba(15, 23, 42, 0.8)',
+          border: '1px solid rgba(99, 102, 241, 0.25)',
+          boxShadow: '0 20px 60px rgba(0, 0, 0, 0.5), 0 0 50px rgba(99, 102, 241, 0.15)'
         }}>
           {/* Simulated Desktop Bar */}
           <div style={{
@@ -175,7 +175,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGoToDashboard }) => 
             justifyContent: 'center',
             minHeight: '260px',
             position: 'relative',
-            background: 'radial-gradient(circle at center, rgba(236, 72, 153, 0.08) 0%, transparent 70%)'
+            background: 'radial-gradient(circle at center, rgba(99, 102, 241, 0.08) 0%, transparent 70%)'
           }}>
             {/* Speech Bubble */}
             <div style={{
@@ -185,12 +185,11 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGoToDashboard }) => 
               borderRadius: '16px',
               fontSize: '14px',
               fontWeight: '600',
-              maxWidth: '340px',
+              maxWidth: '360px',
               textAlign: 'center',
-              boxShadow: '0 10px 25px rgba(0, 0, 0, 0.2)',
+              boxShadow: '0 10px 25px rgba(0, 0, 0, 0.3)',
               marginBottom: '16px',
-              position: 'relative',
-              animation: 'pop 0.3s ease'
+              position: 'relative'
             }}>
               {speechMessage}
               {/* Bubble Tail */}
@@ -273,7 +272,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGoToDashboard }) => 
             <div style={{ fontSize: '36px', marginBottom: '16px' }}>⏱️</div>
             <h3 style={{ fontSize: '20px', fontWeight: '700', marginBottom: '8px' }}>1-Click Project Stopwatch</h3>
             <p style={{ color: 'var(--text-muted)', fontSize: '14px', lineHeight: '1.6' }}>
-              Click Mochi once to start tracking work on any project. Mochi dons glasses and types on a mini laptop alongside you, saving logs locally to <code style={{ color: '#ec4899' }}>better-sqlite3</code>.
+              Click Mochi once to start tracking work on any project. Mochi dons glasses and types on a mini laptop alongside you, saving logs locally to <code style={{ color: '#818cf8' }}>better-sqlite3</code>.
             </p>
           </div>
 
@@ -289,7 +288,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGoToDashboard }) => 
             <div style={{ fontSize: '36px', marginBottom: '16px' }}>🔑</div>
             <h3 style={{ fontSize: '20px', fontWeight: '700', marginBottom: '8px' }}>100% BYOK & Local Security</h3>
             <p style={{ color: 'var(--text-muted)', fontSize: '14px', lineHeight: '1.6' }}>
-              Bring your own keys for OpenAI, Gemini, Claude, or local Ollama. All credentials are encrypted locally in Windows DPAPI / Mac Keychain using Electron's native <code style={{ color: '#8b5cf6' }}>safeStorage</code>.
+              Bring your own keys for OpenAI, Gemini, Claude, or local Ollama. All credentials are encrypted locally in Windows DPAPI / Mac Keychain using Electron's native <code style={{ color: '#a855f7' }}>safeStorage</code>.
             </p>
           </div>
         </div>
@@ -302,7 +301,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGoToDashboard }) => 
         textAlign: 'center',
         color: 'var(--text-subtle)',
         fontSize: '13px',
-        background: 'rgba(7, 9, 14, 0.95)'
+        background: 'rgba(8, 12, 20, 0.95)'
       }}>
         <div style={{ marginBottom: '12px', fontSize: '24px' }}>🍡</div>
         <p style={{ marginBottom: '8px' }}>

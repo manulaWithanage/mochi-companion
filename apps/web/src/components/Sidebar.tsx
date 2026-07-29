@@ -21,7 +21,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, onOpe
       height: '100vh',
       position: 'sticky',
       top: 0,
-      background: 'rgba(11, 15, 25, 0.95)',
+      background: 'rgba(8, 12, 20, 0.95)',
       backdropFilter: 'blur(20px)',
       borderRight: '1px solid var(--glass-border)',
       display: 'flex',
@@ -31,7 +31,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, onOpe
     }}>
       {/* Brand Header */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '0 8px 24px 8px', borderBottom: '1px solid var(--glass-border)' }}>
-        <div style={{ fontSize: '32px', filter: 'drop-shadow(0 0 10px rgba(236,72,153,0.5))' }}>🍡</div>
+        <div style={{ fontSize: '32px', filter: 'drop-shadow(0 0 10px rgba(99, 102, 241, 0.5))' }}>🍡</div>
         <div>
           <h1 style={{ fontSize: '20px', fontWeight: '700', background: 'var(--primary-gradient)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
             Mochi Cloud
@@ -55,14 +55,14 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, onOpe
                 padding: '12px 16px',
                 borderRadius: '12px',
                 border: 'none',
-                background: isActive ? 'rgba(236, 72, 153, 0.15)' : 'transparent',
-                color: isActive ? '#ec4899' : 'var(--text-muted)',
+                background: isActive ? 'rgba(99, 102, 241, 0.15)' : 'transparent',
+                color: isActive ? '#818cf8' : 'var(--text-muted)',
                 fontWeight: isActive ? '600' : '500',
                 fontSize: '14px',
                 cursor: 'pointer',
                 textAlign: 'left',
                 transition: 'all 0.2s ease',
-                boxShadow: isActive ? 'inset 0 0 0 1px rgba(236, 72, 153, 0.3)' : 'none'
+                boxShadow: isActive ? 'inset 0 0 0 1px rgba(99, 102, 241, 0.3)' : 'none'
               }}
             >
               <span style={{ fontSize: '18px' }}>{item.icon}</span>
@@ -73,7 +73,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, onOpe
       </nav>
 
       {/* Pair Desktop App Button */}
-      <div className="glass-card" style={{ padding: '16px', textAlign: 'center', background: 'rgba(236, 72, 153, 0.05)' }}>
+      <div className="glass-card" style={{ padding: '16px', textAlign: 'center', background: 'rgba(99, 102, 241, 0.05)' }}>
         <div style={{ fontSize: '13px', fontWeight: '600', color: 'var(--text-main)', marginBottom: '4px' }}>
           Desktop Companion
         </div>

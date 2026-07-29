@@ -30,13 +30,13 @@ export const StopwatchCard: React.FC = () => {
         width: '180px',
         height: '180px',
         borderRadius: '50%',
-        background: 'radial-gradient(circle, rgba(236,72,153,0.15) 0%, transparent 70%)',
+        background: 'radial-gradient(circle, rgba(99, 102, 241, 0.15) 0%, transparent 70%)',
         pointerEvents: 'none'
       }}></div>
 
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
         <div>
-          <span style={{ fontSize: '12px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.05em', color: '#ec4899' }}>
+          <span style={{ fontSize: '12px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.05em', color: '#818cf8' }}>
             1-Click Time Tracker
           </span>
           <h3 style={{ fontSize: '18px', fontWeight: '700', marginTop: '2px' }}>Project Stopwatch</h3>
@@ -49,10 +49,10 @@ export const StopwatchCard: React.FC = () => {
           gap: '6px',
           padding: '6px 12px',
           borderRadius: '12px',
-          background: isRunning ? 'rgba(236, 72, 153, 0.15)' : 'rgba(255, 255, 255, 0.05)',
-          border: '1px solid rgba(236, 72, 153, 0.3)',
+          background: isRunning ? 'rgba(99, 102, 241, 0.15)' : 'rgba(255, 255, 255, 0.05)',
+          border: '1px solid rgba(99, 102, 241, 0.3)',
           fontSize: '12px',
-          color: isRunning ? '#ec4899' : 'var(--text-muted)'
+          color: isRunning ? '#818cf8' : 'var(--text-muted)'
         }}>
           {isRunning ? '👓 Mochi is typing on mini laptop...' : '💤 Stopwatch Idle'}
         </div>
@@ -87,7 +87,7 @@ export const StopwatchCard: React.FC = () => {
       <div style={{
         textAlign: 'center',
         padding: '24px 0',
-        background: 'rgba(0, 0, 0, 0.2)',
+        background: 'rgba(0, 0, 0, 0.25)',
         borderRadius: '16px',
         border: '1px solid rgba(255, 255, 255, 0.05)',
         marginBottom: '20px'
