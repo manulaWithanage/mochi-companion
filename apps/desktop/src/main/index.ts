@@ -1,8 +1,9 @@
 /**
  * Mochi main process entry.
  *
- * V1 contains no AI: no LLM router, no BYOK vault, no Google integration,
- * no MCP. See CLAUDE_KICKOFF_PROMPT.md.
+ * No Google integration and no MCP yet. The LLM layer is being added now
+ * (M2) — starting with Ollama detection, which gives every AI feature a
+ * zero-key path. See ROADMAP.md.
  */
 
 import { app, BrowserWindow, shell } from 'electron';
@@ -32,6 +33,7 @@ import { OverlayWindow } from './windows/overlay.js';
 import { SetupWindow } from './windows/setup.js';
 import { MochiTray } from './tray.js';
 import { RoutineService } from './services/routine-service.js';
+import { ProviderService } from './services/provider-service.js';
 import { registerIpc } from './ipc.js';
 
 interface SayOptions {
@@ -198,6 +200,12 @@ async function bootstrap(): Promise<void> {
   await timer.restore();
   mascot.start();
   routines.start();
+
+  // Zero-key onboarding: if Ollama is running, every AI feature works with
+  // nothing pasted and no account. Fire-and-forget with a short timeout —
+  // the mascot must never wait on a network call to appear.
+  const providers = new ProviderService();
+  void providers.probe();
 
   overlay.create(settings.get().overlayPosition);
   if (settings.get().paused) overlay.setPaused(true);

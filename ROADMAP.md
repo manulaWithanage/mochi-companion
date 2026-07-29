@@ -35,9 +35,9 @@ The only thing this gives up is viewing your time logs from another device. That
 
 ---
 
-## M0 · Prove it — 1 week, no code ← **you are here**
+## M0 · Prove it — 1 week, no code · **running now, in parallel**
 
-**Use Mochi every day for a week.** Nothing else.
+**Use Mochi every day for a week.** No code in this one — it is wall-clock time, so build work continues alongside it.
 
 This could not run before M1: with no unprompted behaviour, a week of use could only tell you about the stopwatch. Now that Mochi speaks on its own, the week tests the thing that actually matters.
 
@@ -46,6 +46,19 @@ The governor's defaults — 3 interruptions/hour, 90-second gap, 20:00–08:00 q
 Every one of those is a guess that a week of real use converts into evidence. Building M1–M3 on top of wrong guesses means rebuilding them.
 
 **Done when:** you can say which defaults are wrong, and whether you actually click the mascot or forget it exists.
+
+What to watch, all of it currently a guess:
+
+| Setting              | Now         | Question                       |
+| :------------------- | :---------- | :----------------------------- |
+| Interruptions / hour | 3           | Too many, or never noticed?    |
+| Break interval       | 90 min      | Useful or nagging?             |
+| Minimum gap          | 90 s        | Do two ever feel like a burst? |
+| Long session         | 100 min     | Right threshold?               |
+| Bubble duration      | 4–6 s       | Long enough to read?           |
+| Quiet hours          | 20:00–08:00 | Matches your actual life?      |
+
+The signal that matters most: **do you reach for Do Not Disturb?** If so the interruption model is wrong, and M3's briefing would amplify it rather than fix it.
 
 > ⚠️ If you forget it exists, **stop and fix that** before building anything else. A companion nobody looks at cannot be rescued by features.
 
@@ -65,7 +78,7 @@ The scheduler, plus Mochi's first unprompted behaviour.
 
 ---
 
-## M2 · Zero-key AI — ~1 week
+## M2 · Zero-key AI — ~1 week ← **building now**
 
 - **Ollama auto-detect** — probe `127.0.0.1:11434` on launch. If it answers, every AI feature works with no key and no account.
 - LLM router on the Vercel AI SDK; adapters for OpenAI, Anthropic, Gemini, Ollama.
@@ -105,6 +118,7 @@ The demo the whole project has been building toward.
 ## M4 · Ship it publicly — ~2 weeks
 
 - **Code signing** — Windows OV/EV certificate, Apple Developer Program. Until then every user sees a SmartScreen warning.
+- **Distribute via GitHub Releases, never the repo.** Installers are 96–216MB; git cannot compress them, keeps every build forever, and GitHub hard-rejects anything over 100MB. `*.exe`, `*.dmg` and `*.AppImage` are gitignored so this cannot happen by accident. Releases also carry download counts, which is the only install telemetry a no-servers product can have.
 - Auto-update via `electron-updater`.
 - macOS and Linux builds in CI (cross-building from Windows is impossible; CI runners solve it).
 - Landing page, README with the GIF, install instructions.
@@ -203,6 +217,7 @@ Small, worth clearing between milestones:
 - **Three acceptance items need a human**: click-through on transparent corners, staying above a fullscreen app, physical monitor unplug.
 - **Fullscreen detection is a proxy** — the overlay's own visibility. Real detection needs a native module the project deliberately avoids.
 - **Node 20 deprecation warnings** in CI actions. Cosmetic until they are not.
+- **The website download button points at a file that no longer exists** (`apps/web/public/Mochi-Setup.exe`, removed from git). It will 404 when deployed. Fix at M4 by pointing it at a Release asset — there is no one to hand a download to before then.
 
 ---
 
