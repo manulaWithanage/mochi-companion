@@ -1,65 +1,47 @@
-# 📈 Mochi — Scaling Strategy & Hybrid Cloud Architecture
+# 📈 Mochi — Scaling Strategy & 24/7 Cloud Brain Architecture
 
-> **Executive Summary**: Mochi is designed with an **Adapter Pattern Architecture** that seamlessly supports both **100% Local BYOK Execution** and a future **Mochi Cloud Web App SaaS**. This allows zero-cost open-source deployment today while enabling effortless cloud data sync, cross-device access, and cloud hosting tomorrow.
+> **Executive Summary**: By implementing **Option 2 (Heavy Cloud Brain + Thin Desktop Avatar)**, Mochi runs **24/7 in the cloud**. Even when the user's computer is closed or turned off, the cloud brain continues triaging emails, monitoring calendar changes, and organizing tasks. Upon booting their PC, the desktop avatar receives a 24/7 catch-up briefing over WebSockets.
 
 ---
 
-## 🏗️ 1. Hybrid Storage & Cloud Architecture
-
-By using an **Adapter Pattern** for Authentication and Data Storage, the React UI codebase compiles cleanly for both the **Desktop App** and the **Cloud Web App (`https://app.mochi.ai`)**:
+## ⚡ 1. The 24/7 Cloud Brain Architecture (Option 2)
 
 ```
-                       ┌──────────────────────────────────────────────┐
-                       │          Mochi Core React UI                 │
-                       └──────────────────────┬───────────────────────┘
-                                              │
-                                   ┌──────────┴──────────┐
-                                   │  Storage Interface  │
-                                   └──────────┬──────────┘
-                                              │
-                     ┌────────────────────────┴────────────────────────┐
-                     ▼                                                 ▼
-     ┌───────────────────────────────┐                 ┌───────────────────────────────┐
-     │ Local Storage Adapter (Free)  │                 │  Cloud Storage Adapter (SaaS) │
-     │ • Local SQLite (better-sqlite)│                 │  • Cloud PostgreSQL / Supabase│
-     │ • Native safeStorage Vault    │                 │  • Multi-Device Cloud Sync    │
-     │ • Direct LLM API Calls (BYOK) │                 │  • Cloud Managed Proxy        │
-     └───────────────────────────────┘                 └───────────────────────────────┘
+   24/7 Cloud Background Service                         User Desktop PC
+ ┌──────────────────────────────────────┐             ┌─────────────────────────────┐
+ │           MOCHI CLOUD BRAIN          │             │     THIN DESKTOP AVATAR     │
+ │  (Serverless / Worker Microservices) │  WebSockets │ (Electron + Canvas Engine)  │
+ │                                      │ ──────────> │                             │
+ │ • 24/7 Gmail & Outlook Webhooks      │   (Push    │ • Animated Avatar Mascot    │
+ │ • 24/7 Calendar Meeting Monitor      │ Notifications│ • Speech Bubbles & Sounds  │
+ │ • Daily Schedule & Lifestyle Worker  │  & Briefings│ • 1-Click Project Stopwatch │
+ └──────────────────────────────────────┘             └─────────────────────────────┘
 ```
 
 ---
 
-## ☁️ 2. Cloud Web App Capabilities (Mochi Cloud SaaS)
+## 🌟 Why Option 2 is a Game-Changer for Users & SaaS Monetization
 
-When you launch the **Mochi Cloud Web App** tier:
+### 1. 📬 "While You Were Away" Intelligent Catch-Up
+- When the user turns on their PC or wakes up their laptop, the thin desktop avatar immediately connects to `wss://api.mochi.ai`.
+- Mochi animates cheerfully and delivers an instant briefing:
+  > *"Good morning! While you were offline, I processed 5 emails, drafted 2 replies, and your first meeting is in 30 minutes. Let's grab breakfast!"*
 
-1. **Cross-Device Cloud Synchronization**:
-   - Time tracking logs, project stopwatch histories, and custom routine schedules sync automatically across Windows PCs, Macs, and Web Browsers.
-2. **Zero-Setup Managed AI & OAuth**:
-   - Non-technical users sign up with Google/Apple login without needing to generate Google Cloud keys or manage OpenAI API keys.
-3. **Web Browser & PWA Access**:
-   - Access the Mochi dashboard from any mobile or web browser (`app.mochi.ai`) to check daily productivity analytics and manage tasks on the go.
+### 2. ⚡ Ultra-Low Desktop Resource Footprint
+- All heavy email parsing, vector searching, and background calendar polling happen on cloud servers.
+- The desktop avatar runs with **near 0% CPU and low memory**, ensuring laptop battery lasts all day and fans stay silent.
+
+### 3. 💰 Perfect SaaS Business Model ($5 - $12/month)
+- Running 24/7 cloud workers per user provides **massive tangible value**, making users happy to pay a monthly subscription.
+- **Freemium Strategy**:
+  - **Free Tier**: Local Desktop companion (runs background polling only while PC is awake).
+  - **Pro Tier ($7/mo)**: 24/7 Cloud Brain with 24/7 email webhooks, instant WebSocket push alerts, and cross-device cloud sync.
 
 ---
 
-## 💼 3. Monetization Tier Evolution
+## 🛠️ 24/7 Cloud Brain Tech Stack
 
-```
- ┌─────────────────────────────────────────────────────────────────┐
- │ TIER 3: Mochi Enterprise / Teams ($15 - $25/user/mo)            │
- │ • Shared team workspace status, Slack bots, Enterprise SSO,     │
- │   Centralized compliance logs & organization dashboards         │
- ├─────────────────────────────────────────────────────────────────┤
- │ TIER 2: Mochi Cloud Web App & Sync ($5 - $9/mo)                 │
- │ • Managed cloud database, cross-device sync (Windows/Mac/Web),  │
- │   1-click OAuth, and Avatar Marketplace access                  │
- ├─────────────────────────────────────────────────────────────────┤
- │ TIER 1: Free Open-Source Core (100% Free Forever)               │
- │ • BYOK desktop client, local safeStorage vault, local SQLite    │
- └─────────────────────────────────────────────────────────────────┘
-```
-
-### Transition Steps for Developers
-- Use `StorageAdapter` interface for all database operations (`getTasks()`, `saveTimeLog()`).
-- Use `AuthAdapter` for user sessions (`LocalSession` vs `CloudSupabaseSession`).
-- This guarantees zero code rewrites when launching the Cloud Web App tier!
+- **Cloud Workers**: Cloudflare Workers / Node.js Serverless Microservices
+- **Real-Time Push**: WebSockets (`wss://`) & Server-Sent Events (SSE)
+- **Email Webhooks**: Gmail Pub/Sub & Microsoft Graph Webhooks
+- **Database & Queue**: PostgreSQL (Supabase) + Redis BullMQ queue for 24/7 background jobs
