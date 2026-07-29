@@ -315,21 +315,6 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGoToDashboard }) => 
       <section style={{ maxWidth: '1140px', margin: '0 auto', padding: '80px 24px 40px 24px', position: 'relative' }}>
         
         <div style={{ textAlign: 'center', marginBottom: '56px' }}>
-          <div style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: '8px',
-            padding: '6px 16px',
-            borderRadius: '20px',
-            background: 'rgba(79, 70, 229, 0.08)',
-            border: '1px solid rgba(79, 70, 229, 0.18)',
-            fontSize: '12.5px',
-            fontWeight: '700',
-            color: '#4f46e5',
-            marginBottom: '16px'
-          }}>
-            🌸 3D Papercraft Origami Theme
-          </div>
           <h2 style={{ fontSize: '42px', fontWeight: '800', marginBottom: '16px', color: '#0f172a', letterSpacing: '-0.02em' }}>
             Why We Built Mochi
           </h2>
@@ -492,21 +477,6 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGoToDashboard }) => 
       {/* 🚀 SECTION 2: 4 CORE SUPERPOWERS — 3D PAPERCRAFT ORIGAMI GRID */}
       <section id="capabilities" style={{ maxWidth: '1140px', margin: '0 auto', padding: '60px 24px 40px 24px' }}>
         <div style={{ textAlign: 'center', marginBottom: '56px' }}>
-          <div style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: '8px',
-            padding: '6px 16px',
-            borderRadius: '20px',
-            background: 'rgba(79, 70, 229, 0.08)',
-            border: '1px solid rgba(79, 70, 229, 0.18)',
-            fontSize: '12.5px',
-            fontWeight: '700',
-            color: '#4f46e5',
-            marginBottom: '16px'
-          }}>
-            🗻 Japanese Origami Design System
-          </div>
           <h2 style={{ fontSize: '40px', fontWeight: '800', marginBottom: '14px', color: '#0f172a', letterSpacing: '-0.02em' }}>
             What Mochi Does for Your Workday
           </h2>
@@ -648,9 +618,6 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGoToDashboard }) => 
           boxShadow: '0 20px 50px rgba(0, 0, 0, 0.04), inset 0 2px 0 rgba(255, 255, 255, 0.9)'
         }}>
           <div style={{ textAlign: 'center', marginBottom: '44px' }}>
-            <span style={{ fontSize: '12px', fontWeight: '800', color: '#4f46e5', letterSpacing: '0.08em', textTransform: 'uppercase', display: 'block', marginBottom: '10px' }}>
-              🌸 PAPERCRAFT ZEN GARDEN ROUTINE
-            </span>
             <h3 style={{ fontSize: '32px', fontWeight: '800', color: '#0f172a', marginBottom: '10px' }}>
               A Peaceful Workday Timeline
             </h3>
