@@ -7,8 +7,9 @@
  * No Google Cloud required. Zero monthly fees.
  */
 
-import { useState, useEffect, type JSX } from 'react';
-import type { GmailEmailSummary, GmailStatus, GmailTone } from '@mochi/core';
+import { useState, useEffect, useCallback, type JSX } from 'react';
+import type { EmailCategory, GmailEmailSummary, GmailStatus, GmailTone } from '@mochi/core';
+import { CATEGORIES } from '@mochi/core';
 import { C, card, label, input, button, h2, sub } from '../ui.js';
 
 type View = 'inbox' | 'draft';
@@ -31,6 +32,12 @@ export function GmailTab(): JSX.Element {
   const [emails, setEmails] = useState<readonly GmailEmailSummary[]>([]);
   const [fetching, setFetching] = useState(false);
   const [fetchError, setFetchError] = useState<string | null>(null);
+
+  // Primary only by default. Most unread mail is promotions, and every message
+  // shown costs a full body download, so the default both looks better and is
+  // several times faster.
+  const [active, setActive] = useState<EmailCategory>('primary');
+  const [counts, setCounts] = useState<ReadonlyMap<EmailCategory, number>>(new Map());
 
   const [view, setView] = useState<View>('inbox');
   const [draft, setDraft] = useState<DraftState | null>(null);
@@ -67,16 +74,30 @@ export function GmailTab(): JSX.Element {
     setView('inbox');
   };
 
-  const handleFetch = async (): Promise<void> => {
-    setFetching(true);
-    setFetchError(null);
-    const result = await window.mochi.gmail.fetchUnread(10);
-    setFetching(false);
-    if (result.ok && result.emails) {
-      setEmails(result.emails);
-    } else {
-      setFetchError(result.error ?? 'Failed to fetch emails.');
-    }
+  const handleFetch = useCallback(
+    async (category: EmailCategory = active): Promise<void> => {
+      setFetching(true);
+      setFetchError(null);
+      const result = await window.mochi.gmail.fetchUnread(10, [category]);
+      setFetching(false);
+      if (result.ok && result.emails) {
+        setEmails(result.emails);
+        // Counts cover every tab even though only one was downloaded, so the
+        // chips stay accurate without a second round trip.
+        if (result.counts !== undefined) {
+          setCounts(new Map(result.counts.map((c) => [c.category, c.count])));
+        }
+      } else {
+        setFetchError(result.error ?? 'Failed to fetch emails.');
+      }
+    },
+    [active],
+  );
+
+  const selectCategory = (category: EmailCategory): void => {
+    setActive(category);
+    setEmails([]);
+    void handleFetch(category);
   };
 
   const handleGenerate = async (email: GmailEmailSummary): Promise<void> => {
@@ -387,6 +408,46 @@ export function GmailTab(): JSX.Element {
         </div>
       </div>
 
+      {/*
+       * Category chips. These are Gmail's own inbox tabs, read over IMAP via
+       * the X-GM-RAW search extension — the same classification the user sees
+       * in Gmail, not a guess of our own.
+       *
+       * Counts render even at zero so the row keeps a fixed width; a set of
+       * controls that reflows while being clicked is worse than a "0".
+       */}
+      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 14 }}>
+        {CATEGORIES.map((c) => {
+          const selected = c.id === active;
+          const count = counts.get(c.id);
+          return (
+            <button
+              key={c.id}
+              onClick={() => selectCategory(c.id)}
+              disabled={fetching}
+              style={{
+                ...button(selected ? 'primary' : 'ghost'),
+                fontSize: 12,
+                padding: '6px 11px',
+                cursor: fetching ? 'default' : 'pointer',
+                opacity: fetching && !selected ? 0.5 : 1,
+              }}
+            >
+              {c.label}
+              {count !== undefined && (
+                <span style={{ opacity: 0.65, marginLeft: 6 }}>{count}</span>
+              )}
+            </button>
+          );
+        })}
+      </div>
+
+      {!CATEGORIES.find((c) => c.id === active)?.worthInterrupting && (
+        <div style={{ ...sub, fontSize: 12, marginBottom: 14, color: C.dim }}>
+          Mochi never interrupts you about this tab — you'll only see it here.
+        </div>
+      )}
+
       {fetchError && (
         <div
           style={{
@@ -414,8 +475,12 @@ export function GmailTab(): JSX.Element {
           }}
         >
           <div style={{ fontSize: 32, marginBottom: 10 }}>📭</div>
-          <div>No unread emails yet.</div>
-          <div style={{ fontSize: 12, marginTop: 5 }}>Click "Fetch Unread" to load your inbox.</div>
+          <div>
+            Nothing unread in {CATEGORIES.find((c) => c.id === active)?.label ?? 'this tab'}.
+          </div>
+          <div style={{ fontSize: 12, marginTop: 5 }}>
+            Pick another tab above, or click "Fetch Unread" to reload.
+          </div>
         </div>
       )}
 

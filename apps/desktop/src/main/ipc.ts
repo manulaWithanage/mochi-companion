@@ -9,13 +9,14 @@
 import { ipcMain } from 'electron';
 import { randomUUID } from 'node:crypto';
 import type {
+  EmailCategory,
   InterruptionGovernor,
   LlmStatus,
   ProviderId,
   SetupPayload,
   StorageAdapter,
 } from '@mochi/core';
-import { createTask, parseHhMm, rollForward, toggleDone } from '@mochi/core';
+import { createTask, parseCategory, parseHhMm, rollForward, toggleDone } from '@mochi/core';
 import { DEFAULT_PROJECT } from '@mochi/db';
 import type { TimerService } from './services/timer-service.js';
 import type { MascotService } from './services/mascot-service.js';
@@ -242,9 +243,20 @@ export function registerIpc(ctx: IpcContext): void {
     ctx.gmail.disconnect();
   });
 
-  ipcMain.handle('gmail:fetchUnread', (_e, limit: unknown) => {
-    const n = typeof limit === 'number' && Number.isFinite(limit) ? Math.min(Math.max(1, limit), 50) : 10;
-    return ctx.gmail.fetchUnread(n);
+  ipcMain.handle('gmail:fetchUnread', (_e, limit: unknown, only: unknown) => {
+    const n =
+      typeof limit === 'number' && Number.isFinite(limit)
+        ? Math.min(Math.max(1, limit), 50)
+        : 10;
+
+    // Category ids become part of an X-GM-RAW query, so they are whitelisted
+    // against the union rather than passed through. An empty result after
+    // filtering falls back to Primary instead of searching every tab.
+    const requested = Array.isArray(only)
+      ? only.map(parseCategory).filter((c): c is EmailCategory => c !== null)
+      : [];
+
+    return ctx.gmail.fetchUnread(n, requested.length > 0 ? requested : ['primary']);
   });
 
   ipcMain.handle('gmail:generateAndSaveDraft', (_e, uid: unknown, tone: unknown) => {

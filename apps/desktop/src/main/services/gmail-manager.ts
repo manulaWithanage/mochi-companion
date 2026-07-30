@@ -6,6 +6,7 @@
  */
 
 import type {
+  EmailCategory,
   GmailConnectResult,
   GmailDraftResult,
   GmailFetchResult,
@@ -76,13 +77,16 @@ export class GmailManager {
     this.emailCache = [];
   }
 
-  async fetchUnread(limit = 10): Promise<GmailFetchResult> {
+  async fetchUnread(
+    limit = 10,
+    only: readonly EmailCategory[] = ['primary'],
+  ): Promise<GmailFetchResult> {
     const credentials = this.vault.reveal();
     if (!credentials) {
       return { ok: false, error: 'No Gmail account connected. Please add your credentials first.' };
     }
 
-    const result = await this.imap.fetchUnread(credentials, limit);
+    const result = await this.imap.fetchUnread(credentials, limit, only);
     if (result.ok && result.emails) {
       // Cache emails so generateAndSaveDraft can look them up by uid
       this.emailCache = [...result.emails];

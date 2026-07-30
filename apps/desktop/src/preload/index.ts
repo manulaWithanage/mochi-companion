@@ -146,8 +146,8 @@ const bridge: MochiBridge = {
       ipcRenderer.invoke('gmail:connect', email, appPassword) as Promise<GmailConnectResult>,
     disconnect: () => ipcRenderer.invoke('gmail:disconnect') as Promise<void>,
     status: () => ipcRenderer.invoke('gmail:status') as Promise<GmailStatus>,
-    fetchUnread: (limit) =>
-      ipcRenderer.invoke('gmail:fetchUnread', limit) as Promise<GmailFetchResult>,
+    fetchUnread: (limit, only) =>
+      ipcRenderer.invoke('gmail:fetchUnread', limit, only) as Promise<GmailFetchResult>,
     generateAndSaveDraft: (emailUid, tone) =>
       ipcRenderer.invoke('gmail:generateAndSaveDraft', emailUid, tone) as Promise<GmailDraftResult>,
     saveDraft: (request: GmailSaveDraftRequest) =>

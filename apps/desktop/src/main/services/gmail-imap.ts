@@ -8,6 +8,12 @@
  * Main process only — never imported by the renderer.
  */
 
+import {
+  assignCategories,
+  CATEGORY_IDS,
+  unreadInCategory,
+  type EmailCategory,
+} from '@mochi/core';
 import type { GmailCredentials } from '../storage/gmail-vault.js';
 
 export interface EmailSummary {
@@ -18,12 +24,20 @@ export interface EmailSummary {
   readonly date: string;
   readonly bodyText: string;
   readonly threadReferences: string;
+  /** Which inbox tab Gmail filed this under. */
+  readonly category: EmailCategory;
 }
 
 export interface GmailFetchResult {
   readonly ok: boolean;
   readonly emails?: readonly EmailSummary[];
   readonly error?: string;
+  /**
+   * Unread counts per category across the whole inbox, not just the messages
+   * returned. The filter chips need to show "Promotions 34" while only a
+   * handful of bodies were downloaded.
+   */
+  readonly counts?: readonly { readonly category: EmailCategory; readonly count: number }[];
 }
 
 export interface GmailDraftResult {
@@ -91,12 +105,20 @@ function buildRawEmail(opts: {
 
 export class GmailImapService {
   /**
-   * Connect to Gmail and fetch up to `limit` unread emails from Primary inbox.
+   * Connect to Gmail and fetch up to `limit` unread emails.
+   *
+   * `only` restricts which inbox tabs are downloaded, defaulting to Primary.
+   * That default is a performance decision as much as a product one: every
+   * message costs a full RFC822 download plus a MIME parse, and on a normal
+   * account most unread mail is promotions. Categorising first turns a
+   * fourteen-body fetch into a three-body fetch.
+   *
    * Dynamically imports ImapFlow to keep the module tree clean.
    */
   async fetchUnread(
     credentials: GmailCredentials,
     limit = 10,
+    only: readonly EmailCategory[] = ['primary'],
   ): Promise<GmailFetchResult> {
     let client: import('imapflow').ImapFlow | null = null;
     try {
@@ -120,13 +142,31 @@ export class GmailImapService {
 
       await client.mailboxOpen('INBOX');
 
-      // Search for unseen messages in Primary (Gmail's Primary tab).
-      // ImapFlow returns `false` rather than throwing when the search itself
-      // fails, which is indistinguishable from an empty inbox here.
-      const uids = await client.search({ seen: false }, { uid: true });
+      // One UID search per category, via the X-GM-RAW extension. UID lists are
+      // cheap; message bodies are not, which is why this happens before any
+      // fetch. ImapFlow returns `false` rather than throwing when a search
+      // fails, and that is indistinguishable from an empty result here.
+      const perCategory: { category: EmailCategory; ids: readonly number[] }[] = [];
+      for (const category of CATEGORY_IDS) {
+        const found = await client.search(
+          { gmraw: unreadInCategory(category) },
+          { uid: true },
+        );
+        perCategory.push({ category, ids: found === false ? [] : found });
+      }
 
-      // Take the most recent `limit` messages
-      const toFetch = (uids === false ? [] : uids).slice(-limit).reverse();
+      const categoryOf = assignCategories(perCategory);
+      const counts = perCategory.map((r) => ({ category: r.category, count: r.ids.length }));
+
+      // Newest first, restricted to the requested tabs, then capped. Capping
+      // last means `limit` counts messages the user will actually see rather
+      // than being spent on promotions that get filtered out.
+      const wanted = new Set(only);
+      const toFetch = perCategory
+        .filter((r) => wanted.has(r.category))
+        .flatMap((r) => r.ids)
+        .sort((a, b) => b - a)
+        .slice(0, limit);
 
       for (const uid of toFetch) {
         const msg = await client.fetchOne(String(uid), { source: true }, { uid: true });
@@ -158,11 +198,16 @@ export class GmailImapService {
           date,
           bodyText,
           threadReferences: `${references} ${messageId}`.trim(),
+          // Every fetched uid came out of a category search, so the lookup
+          // hits; primary is the safe fallback because it is the only tab
+          // Mochi will interrupt about, and guessing it wrong would either
+          // silence a real email or promote a newsletter.
+          category: categoryOf.get(uid) ?? 'primary',
         });
       }
 
       await client.logout();
-      return { ok: true, emails };
+      return { ok: true, emails, counts };
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       console.error('[gmail-imap] fetch failed:', message);
@@ -172,7 +217,11 @@ export class GmailImapService {
         ? 'Authentication failed. Check your Gmail App Password.'
         : /ENOTFOUND|ECONNREFUSED/i.test(message)
           ? 'Could not reach Gmail. Check your internet connection.'
-          : `Gmail connection error: ${message}`;
+          : // Category filtering is built on X-GM-RAW, a Gmail-only extension.
+            // Anything else answering on this host is not Gmail.
+            /X-GM-EXT-1|MissingServerExtension/i.test(message)
+            ? 'This server is not Gmail — inbox categories need Gmail’s IMAP extensions.'
+            : `Gmail connection error: ${message}`;
 
       if (client) {
         try {

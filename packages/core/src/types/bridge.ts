@@ -9,6 +9,7 @@
  * is a compile error rather than a runtime `undefined is not a function`.
  */
 
+import type { EmailCategory } from '../google/categories.js';
 import type { DiscoveredModel, ProviderId } from '../llm/providers.js';
 import type { MascotState, WorkHours } from '../mascot/state.js';
 import type { MochiSettings } from '../settings/settings.js';
@@ -217,8 +218,14 @@ export interface MochiBridge {
     disconnect(): Promise<void>;
     /** Current connection status. */
     status(): Promise<GmailStatus>;
-    /** Fetch up to `limit` unread emails from Primary inbox. */
-    fetchUnread(limit?: number): Promise<GmailFetchResult>;
+    /**
+     * Fetch up to `limit` unread emails.
+     *
+     * `only` restricts which inbox tabs are downloaded and defaults to
+     * Primary. `counts` in the result covers every category regardless, so
+     * the filter chips can show totals without paying for the bodies.
+     */
+    fetchUnread(limit?: number, only?: readonly EmailCategory[]): Promise<GmailFetchResult>;
     /**
      * Generate an LLM draft reply for the given email and save it to
      * [Gmail]/Drafts. Returns the generated draft text on success.
@@ -250,12 +257,16 @@ export interface GmailEmailSummary {
   readonly date: string;
   readonly bodyText: string;
   readonly threadReferences: string;
+  /** Which inbox tab Gmail filed this under. */
+  readonly category: EmailCategory;
 }
 
 export interface GmailFetchResult {
   readonly ok: boolean;
   readonly emails?: readonly GmailEmailSummary[];
   readonly error?: string;
+  /** Unread totals per category across the inbox, not just `emails`. */
+  readonly counts?: readonly { readonly category: EmailCategory; readonly count: number }[];
 }
 
 export interface GmailDraftResult {
