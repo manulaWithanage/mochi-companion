@@ -85,9 +85,14 @@ export class GmailManager {
     );
     this.syncService = new GmailSyncService(() => this.vault.reveal(), this.imap, emailStore, {
       onInboxChanged: async (account, newEmails) => {
+        // Publish the durable metadata snapshot immediately. LLM triage can be
+        // slower or unavailable and must never delay a newly arrived message
+        // from appearing in the Gmail tab.
+        this.notifyInbox(account, newEmails);
         await this.triage.classifyInbox(account);
         await this.reminders.reconcile(account);
         this.drafts.enqueueEligible(account);
+        // Publish again once priority, reminder, and draft state is enriched.
         this.notifyInbox(account, newEmails);
       },
       onStatus: (status) => {
