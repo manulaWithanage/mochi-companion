@@ -43,24 +43,24 @@ export function timeOfDay(now: Date): TimeOfDay {
 }
 
 const GREETINGS: Record<TimeOfDay, readonly string[]> = {
-  morning: ['Good morning!', 'Morning! Ready when you are.', "Morning — let's have a good one."],
-  afternoon: ['Afternoon!', 'Hey there.', 'Afternoon — how’s it going?'],
-  evening: ['Evening!', 'Evening — still going?', 'Hey, good evening.'],
-  night: ['Still up?', 'Late one tonight?', 'Working late — I’ll keep you company.'],
+  morning: ['Good morning!', 'Morning! Ready when you are', "Morning, let's have a good one"],
+  afternoon: ['Afternoon!', 'Hey there', "Afternoon, how's it going?"],
+  evening: ['Evening!', 'Evening, still going strong?', 'Hey, good evening!'],
+  night: ['Still up?', 'Late focus session tonight?', "Working late, I'll keep you company"],
 };
 
 const STARTED: readonly string[] = [
-  'Timer running — off we go!',
-  'On it. Tracking now.',
-  'Let’s get into it.',
-  'Clock’s running. Focus mode!',
+  'Timer running, off we go!',
+  'On it, tracking now',
+  "Let's get into focus mode!",
+  "Clock is running, let's focus",
 ];
 
 const STOPPED_SUFFIX: readonly string[] = [
-  'Nice work.',
+  'Nice work!',
   'Well done!',
-  'That counts.',
-  'Good session.',
+  'That session counts!',
+  'Great focus session!',
 ];
 
 /** Deterministic pick when `random` is supplied; otherwise Math.random. */
@@ -74,7 +74,7 @@ function pick(options: readonly string[], random?: () => number): string {
 export function composeMessage(kind: MessageKind, ctx: MessageContext): string {
   switch (kind) {
     case 'welcome':
-      return `Hi! I’m ${ctx.assistantName}. Click me to start tracking.`;
+      return `Hi! I'm ${ctx.assistantName}, click me to start tracking`;
 
     case 'greeting':
       return pick(GREETINGS[timeOfDay(ctx.now)], ctx.random);
@@ -84,11 +84,11 @@ export function composeMessage(kind: MessageKind, ctx: MessageContext): string {
 
     case 'timer-stopped-brief':
       // Too short to congratulate — acknowledging it would feel hollow.
-      return 'Stopped.';
+      return 'Stopped';
 
     case 'timer-stopped': {
       const duration = formatDuration(ctx.durationMs ?? 0);
-      return `${duration} tracked. ${pick(STOPPED_SUFFIX, ctx.random)}`;
+      return `${duration} tracked! ${pick(STOPPED_SUFFIX, ctx.random)}`;
     }
   }
 }

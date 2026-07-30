@@ -421,7 +421,7 @@ export function TimeTab(): JSX.Element {
                   </span>
                 </div>
                 <div style={{ fontSize: 12, color: C.dim, marginTop: 3 }}>
-                  Assigned quick-tracker categories floating on Mochi's overlay. Use ◀ ▶ to reorder positions!
+                  Assigned quick-tracker categories floating on Mochi's overlay, use ◀ ▶ to reorder positions
                 </div>
               </div>
             </div>
@@ -1022,8 +1022,8 @@ export function TimeTab(): JSX.Element {
                     </div>
                     <div style={{ fontSize: 12, color: C.text, lineHeight: 1.45 }}>
                       {performanceStats.topCategory
-                        ? `You perform strongest in "${performanceStats.topCategory.project.name}". Your average session length is ${humanDuration(performanceStats.avgSessionMs)}, keeping you in a prime focus flow!`
-                        : 'Track a session to unlock personalized Mochi focus recommendations!'}
+                        ? `You perform strongest in "${performanceStats.topCategory.project.name}", your average session length is ${humanDuration(performanceStats.avgSessionMs)}, keeping you in a prime focus flow`
+                        : 'Track a session to unlock personalized Mochi focus recommendations'}
                     </div>
                   </div>
                 </div>

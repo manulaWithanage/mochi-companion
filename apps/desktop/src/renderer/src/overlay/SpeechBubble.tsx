@@ -29,6 +29,17 @@ const RIGHT_OFFSET = 58;
 const TAIL = 9;
 const BG = 'rgba(38, 30, 44, 0.95)';
 
+function formatConversationalText(raw: string | null): string | null {
+  if (raw === null) return null;
+  // Replace em dashes and en dashes with simple conversational punctuation
+  let text = raw.replace(/[—–]/g, ',');
+  // Remove trailing full stop at the end of Mochi's dialogue (keep ? and !)
+  if (text.endsWith('.')) {
+    text = text.slice(0, -1);
+  }
+  return text;
+}
+
 export function SpeechBubble({ text, onDismiss, onHoverChange }: Props): JSX.Element | null {
   const [visible, setVisible] = useState(false);
   /**
@@ -42,7 +53,7 @@ export function SpeechBubble({ text, onDismiss, onHoverChange }: Props): JSX.Ele
     if (exitTimer.current !== undefined) clearTimeout(exitTimer.current);
 
     if (text !== null) {
-      setRendered(text);
+      setRendered(formatConversationalText(text));
       // Next frame, so the transition runs instead of snapping in.
       const id = requestAnimationFrame(() => setVisible(true));
       return () => cancelAnimationFrame(id);
