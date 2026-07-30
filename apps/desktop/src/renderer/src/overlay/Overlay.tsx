@@ -188,15 +188,21 @@ export function Overlay(): JSX.Element {
     [setInteractive],
   );
 
+  const [clickScale, setClickScale] = useState(1);
+
   const handlePointerDown = useCallback((event: React.PointerEvent<HTMLCanvasElement>) => {
     drag.current = { active: true, moved: false, x: event.screenX, y: event.screenY };
     event.currentTarget.setPointerCapture(event.pointerId);
+    setClickScale(0.90);
   }, []);
 
   const handlePointerUp = useCallback((event: React.PointerEvent<HTMLCanvasElement>) => {
     const wasDrag = drag.current.moved;
     drag.current.active = false;
     event.currentTarget.releasePointerCapture(event.pointerId);
+
+    setClickScale(1.14);
+    setTimeout(() => setClickScale(1), 160);
 
     if (!wasDrag) {
       void window.mochi.timer.toggle('default').then(setTimer);
@@ -244,7 +250,14 @@ export function Overlay(): JSX.Element {
           }}
           width={200}
           height={200}
-          style={{ width: '170px', height: '170px', display: 'block', pointerEvents: 'auto' }}
+          style={{
+            width: '170px',
+            height: '170px',
+            display: 'block',
+            pointerEvents: 'auto',
+            transform: `scale(${clickScale})`,
+            transition: 'transform 160ms cubic-bezier(0.34, 1.56, 0.64, 1)',
+          }}
           onPointerMove={handlePointerMove}
           onPointerDown={handlePointerDown}
           onPointerUp={handlePointerUp}
