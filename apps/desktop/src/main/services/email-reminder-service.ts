@@ -102,12 +102,47 @@ export class EmailReminderService {
     this.contexts.clear();
   }
 
+  async snooze(account: string, emailId: string, until: number): Promise<boolean> {
+    const email = await this.store.getCachedEmail(account, emailId);
+    if (email === null) return false;
+    const existing = email.reminder;
+    await this.store.saveEmailReminder({
+      account,
+      emailId,
+      threadId: email.threadId,
+      state: existing?.state === 'draft-ready' ? 'draft-ready' : 'pending',
+      nextReminderAt: until,
+      lastRemindedAt: existing?.lastRemindedAt ?? null,
+      reminderCount: existing?.reminderCount ?? 0,
+      snoozedUntil: until,
+      dismissedAt: null,
+      repliedAt: null,
+    });
+    this.scheduler.cancel(this.keyFor(email));
+    await this.reconcile(account);
+    return true;
+  }
+
+  async dismissEmail(account: string, emailId: string, at = Date.now()): Promise<boolean> {
+    const email = await this.store.getCachedEmail(account, emailId);
+    if (email === null) return false;
+    await this.dismiss(email, at);
+    return true;
+  }
+
+  async dismissThread(account: string, threadId: string, at = Date.now()): Promise<void> {
+    const inbox = await this.store.listCachedEmails(account, { limit: 100 });
+    for (const email of inbox) {
+      if (email.threadId === threadId) await this.dismiss(email, at);
+    }
+  }
+
   private scheduledItem(
     email: CachedInboxItem,
     state: EmailReminderState,
     at: number,
   ): { key: string; at: number; event: MochiEvent } {
-    const key = `${EMAIL_REMINDER_PREFIX}${email.account}:${email.emailId}`;
+    const key = this.keyFor(email);
     return {
       key,
       at,
@@ -122,6 +157,26 @@ export class EmailReminderService {
         expiresAt: at + EVENT_EXPIRY_MS,
       }),
     };
+  }
+
+  private keyFor(email: Pick<CachedInboxItem, 'account' | 'emailId'>): string {
+    return `${EMAIL_REMINDER_PREFIX}${email.account}:${email.emailId}`;
+  }
+
+  private async dismiss(email: CachedInboxItem, at: number): Promise<void> {
+    await this.store.saveEmailReminder({
+      account: email.account,
+      emailId: email.emailId,
+      threadId: email.threadId,
+      state: 'dismissed',
+      nextReminderAt: null,
+      lastRemindedAt: email.reminder?.lastRemindedAt ?? null,
+      reminderCount: email.reminder?.reminderCount ?? 0,
+      snoozedUntil: null,
+      dismissedAt: at,
+      repliedAt: null,
+    });
+    this.scheduler.cancel(this.keyFor(email));
   }
 
   private async handleFire(event: MochiEvent): Promise<void> {

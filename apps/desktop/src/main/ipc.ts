@@ -192,7 +192,12 @@ export function registerIpc(ctx: IpcContext): void {
   // Dismissing a bubble dismisses the subject, not just the message, so a
   // re-poll producing a fresh event id cannot resurrect it.
   ipcMain.on('bubble:dismiss', (_e, subject: unknown) => {
-    if (typeof subject === 'string' && subject.length > 0) ctx.governor.dismiss(subject);
+    if (typeof subject === 'string' && subject.length > 0) {
+      ctx.governor.dismiss(subject);
+      if (subject.startsWith('mail-thread:')) {
+        void ctx.gmail.dismissReminderThread(subject.slice('mail-thread:'.length));
+      }
+    }
   });
 
   ipcMain.handle('settings:setPaused', (_e, paused: unknown) => {
@@ -321,6 +326,21 @@ export function registerIpc(ctx: IpcContext): void {
   });
 
   ipcMain.handle('gmail:refresh', () => ctx.gmail.refresh());
+
+  ipcMain.handle('gmail:snoozeReminder', (_e, emailId: unknown, minutes: unknown) => {
+    const id = typeof emailId === 'string' ? emailId : '';
+    const duration =
+      typeof minutes === 'number' && Number.isFinite(minutes)
+        ? Math.min(24 * 60, Math.max(5, Math.floor(minutes)))
+        : 60;
+    if (id.length === 0) return false;
+    return ctx.gmail.snoozeReminder(id, Date.now() + duration * 60_000);
+  });
+
+  ipcMain.handle('gmail:dismissReminder', (_e, emailId: unknown) => {
+    const id = typeof emailId === 'string' ? emailId : '';
+    return id.length === 0 ? false : ctx.gmail.dismissReminder(id);
+  });
 
   ipcMain.handle('gmail:generateAndSaveDraft', (_e, uid: unknown, tone: unknown) => {
     const emailUid = typeof uid === 'number' ? uid : Number(uid);

@@ -191,6 +191,16 @@ export function GmailTab(): JSX.Element {
     }
   };
 
+  const handleSnoozeReminder = async (emailId: string): Promise<void> => {
+    await window.mochi.gmail.snoozeReminder(emailId, 60);
+    await loadCached(active, sortMode);
+  };
+
+  const handleDismissReminder = async (emailId: string): Promise<void> => {
+    await window.mochi.gmail.dismissReminder(emailId);
+    await loadCached(active, sortMode);
+  };
+
   // ---- Not connected ----
   if (!status?.connected) {
     return (
@@ -664,6 +674,32 @@ export function GmailTab(): JSX.Element {
                   {email.priority.reason}
                 </div>
               )}
+
+              {email.priority?.replyLikely === true &&
+                email.priority.confidence >= 0.75 &&
+                email.priority.tier !== 'low' &&
+                email.reminder?.state !== 'replied' &&
+                email.reminder?.state !== 'dismissed' && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <span style={{ fontSize: 11, color: C.faint }}>
+                      {email.reminder?.snoozedUntil
+                        ? `Snoozed until ${new Date(email.reminder.snoozedUntil).toLocaleTimeString()}`
+                        : 'Reply reminder active'}
+                    </span>
+                    <button
+                      onClick={() => void handleSnoozeReminder(email.emailId)}
+                      style={{ ...button('ghost'), padding: '4px 8px', fontSize: 10.5 }}
+                    >
+                      Snooze 1h
+                    </button>
+                    <button
+                      onClick={() => void handleDismissReminder(email.emailId)}
+                      style={{ ...button('ghost'), padding: '4px 8px', fontSize: 10.5 }}
+                    >
+                      Dismiss
+                    </button>
+                  </div>
+                )}
 
               {email.snippet.length > 0 && (
                 <div

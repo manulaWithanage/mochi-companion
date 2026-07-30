@@ -294,6 +294,8 @@ export interface MochiBridge {
     refresh(): Promise<GmailSyncStatus>;
     onInboxChanged(listener: (change: GmailInboxChanged) => void): () => void;
     onSyncStatus(listener: (status: GmailSyncStatus) => void): () => void;
+    snoozeReminder(emailId: string, minutes?: number): Promise<boolean>;
+    dismissReminder(emailId: string): Promise<boolean>;
     /**
      * Generate an LLM draft reply for the given email and save it to
      * [Gmail]/Drafts. Returns the generated draft text on success.

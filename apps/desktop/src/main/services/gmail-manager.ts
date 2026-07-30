@@ -66,7 +66,7 @@ export class GmailManager {
       onInboxChanged: async (account, newEmails) => {
         await this.triage.classifyInbox(account);
         await this.reminders.reconcile(account);
-        for (const listener of this.inboxListeners) listener(account, newEmails);
+        this.notifyInbox(account, newEmails);
       },
       onStatus: (status) => {
         for (const listener of this.syncStatusListeners) listener(status);
@@ -155,6 +155,33 @@ export class GmailManager {
   onSyncStatus(listener: (status: GmailSyncStatus) => void): () => void {
     this.syncStatusListeners.add(listener);
     return () => this.syncStatusListeners.delete(listener);
+  }
+
+  async snoozeReminder(emailId: string, until: number): Promise<boolean> {
+    const account = this.vault.email;
+    if (account === null) return false;
+    const changed = await this.reminders.snooze(account, emailId, until);
+    if (changed) this.notifyInbox(account, []);
+    return changed;
+  }
+
+  async dismissReminder(emailId: string): Promise<boolean> {
+    const account = this.vault.email;
+    if (account === null) return false;
+    const changed = await this.reminders.dismissEmail(account, emailId);
+    if (changed) this.notifyInbox(account, []);
+    return changed;
+  }
+
+  async dismissReminderThread(threadId: string): Promise<void> {
+    const account = this.vault.email;
+    if (account === null) return;
+    await this.reminders.dismissThread(account, threadId);
+    this.notifyInbox(account, []);
+  }
+
+  private notifyInbox(account: string, newEmails: readonly CachedEmail[]): void {
+    for (const listener of this.inboxListeners) listener(account, newEmails);
   }
 
   async fetchUnread(
