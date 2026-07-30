@@ -13,7 +13,10 @@
 import { DatabaseSync, type StatementSync } from 'node:sqlite';
 import { dirname } from 'node:path';
 import { mkdirSync } from 'node:fs';
+import { ACTIVITY_CATEGORIES, activitySpanId } from '@mochi/core';
 import type {
+  ActivityCategory,
+  ActivitySpan,
   CachedEmail,
   CachedEmailQuery,
   CachedInboxItem,
@@ -45,6 +48,18 @@ interface ProjectRow {
   created_at: number;
   archived_at: number | null;
 }
+
+interface ActivityRow {
+  id: string;
+  app: string;
+  category: string;
+  started_at: number;
+  ended_at: number;
+}
+
+/** Narrow a stored category; an unknown one falls back rather than breaking totals. */
+const isActivityCategory = (value: string): value is ActivityCategory =>
+  ACTIVITY_CATEGORIES.some((c) => c.id === value);
 
 interface TaskRow {
   id: string;
@@ -319,6 +334,9 @@ export class SqliteStorageAdapter implements StorageAdapter, EmailStore {
     clearState: StatementSync;
     listTasks: StatementSync;
     upsertTask: StatementSync;
+    insertActivity: StatementSync;
+    listActivity: StatementSync;
+    pruneActivity: StatementSync;
     deleteTask: StatementSync;
     upsertEmail: StatementSync;
     markInboxStale: StatementSync;
@@ -369,6 +387,19 @@ export class SqliteStorageAdapter implements StorageAdapter, EmailStore {
       listTasks: this.db.prepare(
         `SELECT * FROM tasks ORDER BY done_at IS NOT NULL, priority DESC, created_at ASC`,
       ),
+      insertActivity: this.db.prepare(
+        `INSERT INTO activity_spans (id, app, category, started_at, ended_at)
+         VALUES (?, ?, ?, ?, ?)
+         ON CONFLICT(id) DO UPDATE SET
+           ended_at = excluded.ended_at,
+           category = excluded.category`,
+      ),
+      listActivity: this.db.prepare(
+        `SELECT * FROM activity_spans
+          WHERE ended_at > ? AND started_at < ?
+          ORDER BY started_at ASC`,
+      ),
+      pruneActivity: this.db.prepare(`DELETE FROM activity_spans WHERE ended_at < ?`),
       upsertTask: this.db.prepare(
         `INSERT INTO tasks (id, title, project_id, due_on, done_at, created_at, priority)
          VALUES (?, ?, ?, ?, ?, ?, ?)
@@ -560,6 +591,42 @@ export class SqliteStorageAdapter implements StorageAdapter, EmailStore {
 
   async deleteSession(id: SessionId): Promise<void> {
     this.statements.deleteSession.run(id);
+  }
+
+  async saveActivitySpans(spans: readonly ActivitySpan[]): Promise<void> {
+    // One transaction: a partial flush would leave the day's timeline with a
+    // hole that looks exactly like time the user did not spend.
+    this.db.exec('BEGIN');
+    try {
+      for (const span of spans) {
+        this.statements.insertActivity.run(
+          activitySpanId(span),
+          span.app,
+          span.category,
+          span.startedAt,
+          span.endedAt,
+        );
+      }
+      this.db.exec('COMMIT');
+    } catch (error) {
+      this.db.exec('ROLLBACK');
+      throw error;
+    }
+  }
+
+  async listActivitySpans(since: number, until: number): Promise<readonly ActivitySpan[]> {
+    return asRows<ActivityRow>(this.statements.listActivity.all(since, until)).map((row) => ({
+      app: row.app,
+      // A category renamed in a later version would otherwise resurface as an
+      // unknown string and break the totals.
+      category: isActivityCategory(row.category) ? row.category : 'other',
+      startedAt: row.started_at,
+      endedAt: row.ended_at,
+    }));
+  }
+
+  async pruneActivitySpans(before: number): Promise<void> {
+    this.statements.pruneActivity.run(before);
   }
 
   async listTasks(): Promise<readonly Task[]> {

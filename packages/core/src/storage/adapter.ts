@@ -7,6 +7,7 @@
  */
 
 import type { SessionId, WorkSession } from '../timer/session.js';
+import { activitySpanId, type ActivitySpan } from '../activity/activity.js';
 import type { Task } from '../tasks/tasks.js';
 import type {
   CachedEmail,
@@ -47,6 +48,18 @@ export interface StorageAdapter extends EmailStore {
   listSessions(query?: SessionQuery): Promise<readonly WorkSession[]>;
   deleteSession(id: SessionId): Promise<void>;
 
+  /**
+   * Append activity spans.
+   *
+   * Idempotent on id, so re-flushing an unchanged buffer after a crash cannot
+   * double-count time.
+   */
+  saveActivitySpans(spans: readonly ActivitySpan[]): Promise<void>;
+  /** Spans overlapping a window, clipped by the caller if it needs exact edges. */
+  listActivitySpans(since: number, until: number): Promise<readonly ActivitySpan[]>;
+  /** Drop everything older than `before`, for the retention setting. */
+  pruneActivitySpans(before: number): Promise<void>;
+
   listTasks(): Promise<readonly Task[]>;
   saveTask(task: Task): Promise<void>;
   deleteTask(id: string): Promise<void>;
@@ -63,13 +76,14 @@ export interface StorageAdapter extends EmailStore {
 
 /**
  * Reference in-memory implementation. Used by tests and as the fallback if
- * the native SQLite module fails to load, so the app degrades to
- * this-session-only tracking rather than refusing to start.
+ * SQLite fails to open, so the app degrades to this-session-only tracking
+ * rather than refusing to start.
  */
 export class InMemoryStorageAdapter implements StorageAdapter {
   private projects = new Map<string, Project>();
   private sessions = new Map<SessionId, WorkSession>();
   private tasks = new Map<string, Task>();
+  private activity = new Map<string, ActivitySpan>();
   private emails = new Map<string, CachedEmail>();
   private emailPriorities = new Map<string, StoredEmailPriority>();
   private emailDrafts = new Map<string, StoredEmailDraft>();
@@ -123,6 +137,22 @@ export class InMemoryStorageAdapter implements StorageAdapter {
 
   async listTasks(): Promise<readonly Task[]> {
     return [...this.tasks.values()];
+  }
+
+  async saveActivitySpans(spans: readonly ActivitySpan[]): Promise<void> {
+    for (const span of spans) this.activity.set(activitySpanId(span), span);
+  }
+
+  async listActivitySpans(since: number, until: number): Promise<readonly ActivitySpan[]> {
+    return [...this.activity.values()]
+      .filter((s) => s.endedAt > since && s.startedAt < until)
+      .sort((a, b) => a.startedAt - b.startedAt);
+  }
+
+  async pruneActivitySpans(before: number): Promise<void> {
+    for (const [id, span] of this.activity) {
+      if (span.endedAt < before) this.activity.delete(id);
+    }
   }
 
   async saveTask(task: Task): Promise<void> {

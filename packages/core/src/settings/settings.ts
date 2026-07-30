@@ -52,6 +52,13 @@ export interface MochiSettings {
   readonly alwaysOnTop: boolean;
   /** When a routine reminder triggers, float to center of screen with smooth animation. */
   readonly centerScreenAlerts: boolean;
+  /**
+   * Record which application is in the foreground.
+   *
+   * Off by default. Tracking what someone uses all day is not something to
+   * switch on for them, however local it stays.
+   */
+  readonly activityTracking: boolean;
   /** IDs of up to 3 primary quick-select time tracking projects shown above Mochi. */
   readonly primaryProjectIds: readonly string[];
   /**
@@ -78,6 +85,7 @@ export const DEFAULT_SETTINGS: MochiSettings = {
   doNotDisturb: false,
   alwaysOnTop: true,
   centerScreenAlerts: true,
+  activityTracking: false,
   primaryProjectIds: [],
   localEndpoints: {},
   gmailAi: {
@@ -256,6 +264,7 @@ export function normalizeSettings(raw: unknown): {
       doNotDisturb: input.doNotDisturb === true,
       alwaysOnTop: input.alwaysOnTop !== false,
       centerScreenAlerts: input.centerScreenAlerts !== false,
+      activityTracking: input.activityTracking === true,
       primaryProjectIds,
       localEndpoints,
       gmailAi,

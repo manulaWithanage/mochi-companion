@@ -43,6 +43,7 @@ import { GoogleService } from './services/google-service.js';
 import { GmailManager } from './services/gmail-manager.js';
 import { CalendarService } from './services/calendar-service.js';
 import { BriefingService } from './services/briefing-service.js';
+import { ActivityService } from './services/activity-service.js';
 import { CalendarVault } from './storage/calendar-vault.js';
 import { registerIpc } from './ipc.js';
 
@@ -171,6 +172,11 @@ async function bootstrap(): Promise<void> {
     perform: (holdMs) => void overlay.performMagicianAlert(holdMs),
   });
   briefing.start();
+
+  // Off unless the user turned it on. Tracking what someone uses all day is not
+  // something to enable for them, however local it stays.
+  const activity = new ActivityService(storage, () => settings.get().activityTracking);
+  if (settings.get().activityTracking) activity.start();
   const gmailManager = new GmailManager(llmClient, settings, storage, bus);
   gmailManager.onInboxChanged((account, newEmails) => {
     setup.send('gmail:inboxChanged', {
@@ -237,6 +243,7 @@ async function bootstrap(): Promise<void> {
     gmail: gmailManager,
     calendar,
     briefing,
+    activity,
   });
 
   llm.onChange((status) => setup.send('llm:changed', status));

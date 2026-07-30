@@ -9,6 +9,7 @@
  * is a compile error rather than a runtime `undefined is not a function`.
  */
 
+import type { ActivitySpan } from '../activity/activity.js';
 import type { Briefing } from '../briefing/briefing.js';
 import type { CalendarEvent } from '../calendar/calendar.js';
 import type { EmailCategory } from '../google/categories.js';
@@ -175,6 +176,7 @@ export interface MochiBridge {
     setCenterScreenAlerts(enabled: boolean): Promise<MochiSettings>;
     setMascotSize(size: MascotSize): Promise<MochiSettings>;
     setPrimaryProjects(ids: readonly string[]): Promise<MochiSettings>;
+    setActivityTracking(enabled: boolean): Promise<MochiSettings>;
     setGmailAi(patch: Partial<GmailAiSettings>): Promise<MochiSettings>;
     onChange(listener: (settings: MochiSettings) => void): () => void;
   };
@@ -255,6 +257,15 @@ export interface MochiBridge {
      * really happen, including being suppressed during quiet hours.
      */
     previewBriefing(): Promise<Briefing | null>;
+  };
+
+  readonly activity: {
+    /** Spans overlapping a window, buffered ones included. */
+    list(since: number, until: number): Promise<readonly ActivitySpan[]>;
+    /** False on platforms with no foreground implementation yet. */
+    supported(): Promise<boolean>;
+    /** Delete every recorded span. Offered outright, not buried. */
+    forgetAll(): Promise<void>;
   };
 
   readonly skin: {

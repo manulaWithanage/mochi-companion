@@ -68,6 +68,7 @@ export interface IpcContext {
   gmail: GmailManager;
   calendar: import('./services/calendar-service.js').CalendarService;
   briefing: import('./services/briefing-service.js').BriefingService;
+  activity: import('./services/activity-service.js').ActivityService;
   userRoutineScheduler: import('./services/user-routine-scheduler.js').UserRoutineScheduler;
 }
 
@@ -194,6 +195,15 @@ export function registerIpc(ctx: IpcContext): void {
   ipcMain.handle('settings:setMascotSize', (_e, size: unknown) => {
     const mascotSize = size === 'small' || size === 'large' ? size : 'medium';
     return ctx.settings.update({ mascotSize });
+  });
+
+  ipcMain.handle('settings:setActivityTracking', (_e, enabled: unknown) => {
+    const next = ctx.settings.update({ activityTracking: enabled === true });
+    // Starting and stopping immediately, rather than at the next launch, is the
+    // difference between a switch and a promise.
+    if (next.activityTracking) ctx.activity.start();
+    else void ctx.activity.stop();
+    return next;
   });
 
   ipcMain.handle('settings:setPrimaryProjects', (_e, ids: unknown) => {
@@ -376,6 +386,13 @@ export function registerIpc(ctx: IpcContext): void {
   // Preview skips the once-a-day guard but still passes the governor, so it
   // demonstrates what will really happen rather than an idealised version.
   ipcMain.handle('briefing:preview', () => ctx.briefing.deliver(new Date(), true));
+
+  // ---- activity ------------------------------------------------------------
+  ipcMain.handle('activity:list', (_e, since: unknown, until: unknown) =>
+    ctx.activity.list(asFiniteNumber(since), asFiniteNumber(until)),
+  );
+  ipcMain.handle('activity:supported', () => ctx.activity.supported);
+  ipcMain.handle('activity:forgetAll', () => ctx.activity.forgetAll());
 
   ipcMain.handle('gmail:status', () => ctx.gmail.status());
 

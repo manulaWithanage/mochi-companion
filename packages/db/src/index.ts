@@ -143,6 +143,22 @@ export const MIGRATIONS: readonly Migration[] = [
       );
     `,
   },
+  {
+    version: 4,
+    name: 'activity-spans',
+    up: `
+      CREATE TABLE activity_spans (
+        id          TEXT    PRIMARY KEY,
+        app         TEXT    NOT NULL,
+        category    TEXT    NOT NULL,
+        started_at  INTEGER NOT NULL,
+        ended_at    INTEGER NOT NULL
+      );
+
+      -- Every read is "spans overlapping a window", so the range is the index.
+      CREATE INDEX idx_activity_range ON activity_spans (started_at, ended_at);
+    `,
+  },
 ];
 
 export const LATEST_VERSION: number = MIGRATIONS.reduce(

@@ -5,40 +5,105 @@ import { TodayTab } from './tabs/TodayTab.js';
 import { TimeTab } from './tabs/TimeTab.js';
 import { RoutinesTab } from './tabs/RoutinesTab.js';
 import { MochiTab } from './tabs/MochiTab.js';
-import { ConnectionsTab } from './tabs/ConnectionsTab.js';
 import { AiSection } from './AiSection.js';
 import { GmailTab } from './tabs/GmailTab.js';
 import { CalendarTab } from './tabs/CalendarTab.js';
-
-/**
- * The dashboard shell.
- *
- * Replaces a single scrolling column of form fields. Each tab fits the window
- * without scrolling, which is what stops this getting worse every time a
- * feature lands — the previous layout had already outgrown its height and
- * Connections had not even been built yet.
- */
+import { ActivityTab } from './tabs/ActivityTab.js';
 
 type TabId =
   | 'today'
   | 'calendar'
+  | 'activity'
   | 'time'
   | 'routines'
   | 'mochi'
   | 'ai'
-  | 'connections'
   | 'gmail';
 
-const TABS: readonly { id: TabId; label: string; icon: string }[] = [
-  { id: 'today', label: 'Today', icon: '◔' },
-  { id: 'calendar', label: 'Calendar', icon: '▦' },
-  { id: 'time', label: 'Time', icon: '▤' },
-  { id: 'routines', label: 'Routines', icon: '◑' },
-  { id: 'mochi', label: 'Mochi', icon: '✿' },
-  { id: 'ai', label: 'AI', icon: '✦' },
-  { id: 'connections', label: 'Connections', icon: '⚯' },
-  { id: 'gmail', label: 'Gmail', icon: '✉' },
+const TABS: readonly { id: TabId; label: string }[] = [
+  { id: 'today', label: 'Today' },
+  { id: 'calendar', label: 'Calendar' },
+  { id: 'time', label: 'Time' },
+  { id: 'activity', label: 'Activity' },
+  { id: 'routines', label: 'Routines' },
+  { id: 'mochi', label: 'Mochi' },
+  { id: 'ai', label: 'AI' },
+  { id: 'gmail', label: 'Gmail' },
 ];
+
+function renderTabIcon(id: TabId, active: boolean): JSX.Element {
+  const strokeColor = active ? C.accent : 'currentColor';
+  const strokeWidth = active ? 2.2 : 1.9;
+  const opacity = active ? 1 : 0.7;
+
+  switch (id) {
+    case 'today':
+      return (
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke={strokeColor} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" style={{ opacity }}>
+          <circle cx="12" cy="12" r="10" />
+          <polyline points="12 6 12 12 16 14" />
+        </svg>
+      );
+    case 'calendar':
+      return (
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke={strokeColor} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" style={{ opacity }}>
+          <rect width="18" height="18" x="3" y="4" rx="2" ry="2" />
+          <line x1="16" x2="16" y1="2" y2="6" />
+          <line x1="8" x2="8" y1="2" y2="6" />
+          <line x1="3" x2="21" y1="10" y2="10" />
+          <path d="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01M16 18h.01" />
+        </svg>
+      );
+    case 'time':
+      return (
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke={strokeColor} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" style={{ opacity }}>
+          <line x1="10" x2="14" y1="2" y2="2" />
+          <line x1="12" x2="12" y1="14" y2="11" />
+          <circle cx="12" cy="14" r="8" />
+        </svg>
+      );
+    case 'activity':
+      return (
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke={strokeColor} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" style={{ opacity }}>
+          <line x1="4" x2="4" y1="20" y2="13" />
+          <line x1="10" x2="10" y1="20" y2="6" />
+          <line x1="16" x2="16" y1="20" y2="10" />
+          <line x1="21" x2="21" y1="20" y2="16" />
+        </svg>
+      );
+    case 'routines':
+      return (
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke={strokeColor} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" style={{ opacity }}>
+          <path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+          <path d="M3 3v5h5" />
+          <path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16" />
+          <path d="M16 16h5v5" />
+        </svg>
+      );
+    case 'mochi':
+      return (
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke={strokeColor} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" style={{ opacity }}>
+          <circle cx="12" cy="12" r="10" />
+          <path d="M8 14s1.5 2 4 2 4-2 4-2" />
+          <line x1="9" x2="9.01" y1="9" y2="9" />
+          <line x1="15" x2="15.01" y1="9" y2="9" />
+        </svg>
+      );
+    case 'ai':
+      return (
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke={strokeColor} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" style={{ opacity }}>
+          <path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z" />
+        </svg>
+      );
+    case 'gmail':
+      return (
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke={strokeColor} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" style={{ opacity }}>
+          <rect width="20" height="16" x="2" y="4" rx="2" />
+          <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
+        </svg>
+      );
+  }
+}
 
 export function Dashboard(): JSX.Element {
   const [tab, setTab] = useState<TabId>('today');
@@ -96,18 +161,18 @@ export function Dashboard(): JSX.Element {
       {/* ---- sidebar ---- */}
       <nav
         style={{
-          width: 195,
+          width: 205,
           flexShrink: 0,
           borderRight: `1px solid ${C.border}`,
-          padding: '20px 12px',
+          padding: '20px 14px',
           display: 'flex',
           flexDirection: 'column',
-          gap: 4,
-          background: 'linear-gradient(180deg, #1e1929 0%, #14101b 100%)',
+          gap: 5,
+          background: 'linear-gradient(180deg, #1f1a2a 0%, #130f1c 100%)',
           boxSizing: 'border-box',
         }}
       >
-        <div style={{ padding: '0 6px 16px', borderBottom: `1px solid ${C.border}`, marginBottom: 10 }}>
+        <div style={{ padding: '0 4px 16px', borderBottom: `1px solid ${C.border}`, marginBottom: 12 }}>
           {/* Web App Brand Logo */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <svg width="30" height="30" viewBox="0 0 100 100" fill="none" style={{ flexShrink: 0 }}>
@@ -120,11 +185,11 @@ export function Dashboard(): JSX.Element {
             </svg>
             <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                <span style={{ fontSize: 17, fontWeight: 800, color: '#7c5cfc', letterSpacing: '-0.02em', lineHeight: 1 }}>
+                <span style={{ fontSize: 17, fontWeight: 800, color: C.accent, letterSpacing: '-0.02em', lineHeight: 1 }}>
                   {settings?.assistantName ?? 'Mochi'}
                 </span>
               </div>
-              <span style={{ fontSize: 10, fontWeight: 550, color: '#9aa5b8', marginTop: 3, letterSpacing: '0.01em' }}>
+              <span style={{ fontSize: 10.5, fontWeight: 500, color: C.dim, marginTop: 3, letterSpacing: '0.01em' }}>
                 Desktop Companion
               </span>
             </div>
@@ -133,7 +198,7 @@ export function Dashboard(): JSX.Element {
             style={{
               fontSize: 11.5,
               color: running ? C.accent : C.faint,
-              marginTop: 6,
+              marginTop: 10,
               display: 'flex',
               flexDirection: 'column',
               gap: 4,
@@ -210,17 +275,20 @@ export function Dashboard(): JSX.Element {
               style={{
                 display: 'flex',
                 alignItems: 'center',
-                gap: 10,
+                gap: 11,
                 textAlign: 'left',
                 padding: '9px 12px',
-                borderRadius: 9,
+                borderRadius: 10,
                 border: 'none',
                 borderLeft: active ? `3px solid ${C.accent}` : '3px solid transparent',
                 cursor: 'pointer',
                 fontSize: 13.5,
-                background: active ? 'rgba(242, 166, 179, 0.12)' : 'transparent',
+                background: active
+                  ? 'linear-gradient(90deg, rgba(242, 166, 179, 0.16) 0%, rgba(242, 166, 179, 0.04) 100%)'
+                  : 'transparent',
                 color: active ? C.accent : C.dim,
-                fontWeight: active ? 650 : 450,
+                fontWeight: active ? 650 : 500,
+                boxShadow: active ? '0 2px 10px rgba(0, 0, 0, 0.2)' : 'none',
                 transition: 'all 140ms ease',
               }}
               onMouseEnter={(e) => {
@@ -236,7 +304,18 @@ export function Dashboard(): JSX.Element {
                 }
               }}
             >
-              <span style={{ fontSize: 14, width: 16, textAlign: 'center', opacity: active ? 1 : 0.7 }}>{t.icon}</span>
+              <div
+                style={{
+                  width: 22,
+                  height: 22,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flexShrink: 0,
+                }}
+              >
+                {renderTabIcon(t.id, active)}
+              </div>
               <span>{t.label}</span>
             </button>
           );
@@ -246,10 +325,10 @@ export function Dashboard(): JSX.Element {
           onClick={() => window.mochi.window.closeSetup()}
           style={{
             marginTop: 'auto',
-            padding: '9px 12px',
-            borderRadius: 9,
+            padding: '9.5px 12px',
+            borderRadius: 10,
             border: `1px solid ${C.border}`,
-            background: 'rgba(255, 255, 255, 0.02)',
+            background: 'rgba(255, 255, 255, 0.03)',
             color: C.dim,
             fontSize: 12.5,
             fontWeight: 500,
@@ -258,11 +337,11 @@ export function Dashboard(): JSX.Element {
             transition: 'all 140ms ease',
           }}
           onMouseEnter={(e) => {
-            e.currentTarget.style.background = 'rgba(255, 255, 255, 0.06)';
+            e.currentTarget.style.background = 'rgba(255, 255, 255, 0.08)';
             e.currentTarget.style.color = C.text;
           }}
           onMouseLeave={(e) => {
-            e.currentTarget.style.background = 'rgba(255, 255, 255, 0.02)';
+            e.currentTarget.style.background = 'rgba(255, 255, 255, 0.03)';
             e.currentTarget.style.color = C.dim;
           }}
         >
@@ -277,8 +356,8 @@ export function Dashboard(): JSX.Element {
           {tab === 'time' && <TimeTab />}
           {tab === 'routines' && <RoutinesTab />}
           {tab === 'mochi' && <MochiTab />}
-          {tab === 'connections' && <ConnectionsTab />}
           {tab === 'calendar' && <CalendarTab />}
+          {tab === 'activity' && <ActivityTab />}
           {tab === 'gmail' && <GmailTab />}
           {tab === 'ai' && (
             <div>

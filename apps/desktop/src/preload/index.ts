@@ -15,6 +15,7 @@
 
 import { contextBridge, ipcRenderer, type IpcRendererEvent } from 'electron';
 import type {
+  ActivitySpan,
   Briefing,
   BubbleMessage,
   CalendarConnectResult,
@@ -102,6 +103,8 @@ const bridge: MochiBridge = {
       ipcRenderer.invoke('settings:setMascotSize', size) as Promise<MochiSettings>,
     setPrimaryProjects: (ids) =>
       ipcRenderer.invoke('settings:setPrimaryProjects', ids) as Promise<MochiSettings>,
+    setActivityTracking: (enabled) =>
+      ipcRenderer.invoke('settings:setActivityTracking', enabled) as Promise<MochiSettings>,
     setGmailAi: (patch) =>
       ipcRenderer.invoke('settings:setGmailAi', patch) as Promise<MochiSettings>,
     onChange: (listener) => subscribe<MochiSettings>('settings:changed', listener),
@@ -166,6 +169,13 @@ const bridge: MochiBridge = {
     events: () => ipcRenderer.invoke('calendar:events') as Promise<readonly CalendarEvent[]>,
     onChange: (listener) => subscribe<CalendarStatus>('calendar:changed', listener),
     previewBriefing: () => ipcRenderer.invoke('briefing:preview') as Promise<Briefing | null>,
+  },
+
+  activity: {
+    list: (since, until) =>
+      ipcRenderer.invoke('activity:list', since, until) as Promise<readonly ActivitySpan[]>,
+    supported: () => ipcRenderer.invoke('activity:supported') as Promise<boolean>,
+    forgetAll: () => ipcRenderer.invoke('activity:forgetAll') as Promise<void>,
   },
 
   skin: {
