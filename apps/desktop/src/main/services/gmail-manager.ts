@@ -20,7 +20,7 @@ import type {
   GmailSyncStatus,
   GmailTone,
 } from '@mochi/core';
-import { buildEmailReplyPrompt, parseEmailReplyResponse } from '@mochi/core';
+import { buildEmailReplyPrompt, makeEvent, parseEmailReplyResponse } from '@mochi/core';
 import { GmailVault } from '../storage/gmail-vault.js';
 import { GmailImapService } from './gmail-imap.js';
 import type { LlmClient } from './llm-client.js';
@@ -48,7 +48,7 @@ export class GmailManager {
     private readonly llmClient: LlmClient,
     private readonly settings: SettingsStore,
     private readonly emailStore: EmailStore,
-    bus: EventBus,
+    private readonly bus: EventBus,
     vault?: GmailVault,
     imap?: GmailImapService,
   ) {
@@ -70,7 +70,7 @@ export class GmailManager {
       (account) => this.notifyInbox(account, []),
     );
     this.reminders = new EmailReminderService(
-      bus,
+      this.bus,
       this.emailStore,
       this.imap,
       () => this.vault.reveal(),
@@ -224,6 +224,20 @@ export class GmailManager {
     await this.reminders.reconcile(account);
     this.drafts.enqueueEligible(account);
     this.notifyInbox(account, []);
+  }
+
+  previewAlert(): void {
+    this.bus.emit(
+      makeEvent({
+        source: 'mail',
+        kind: 'reply-reminder',
+        priority: 'high',
+        at: Date.now(),
+        subject: `mail-preview:${Date.now()}`,
+        text: 'A quick nudge — this is how an important email reminder will appear',
+        userInitiated: true,
+      }),
+    );
   }
 
   async generateDraft(

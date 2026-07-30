@@ -15,6 +15,7 @@ import { useSpriteAnimation } from './useSpriteAnimation.js';
 import { SpeechBubble } from './SpeechBubble.js';
 import { SmokeEffect } from './SmokeEffect.js';
 import { OverlayCategoryPills } from './OverlayCategoryPills.js';
+import { playGentleAlertTone } from './alert-tone.js';
 
 /** Pointer travel beyond this counts as a drag, not a click. */
 const DRAG_THRESHOLD_PX = 4;
@@ -38,6 +39,7 @@ export function Overlay(): JSX.Element {
   const [phase, setPhase] = useState<MagicianPhase>('none');
   const bubbleSubject = useRef<string | null>(null);
   const bubbleTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const alertToneTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   const interactiveRef = useRef(false);
   const lastHoverCheck = useRef(0);
@@ -79,8 +81,19 @@ export function Overlay(): JSX.Element {
   useEffect(() => {
     const off = window.mochi.bubble.onShow((message: BubbleMessage) => {
       if (bubbleTimer.current !== undefined) clearTimeout(bubbleTimer.current);
+      if (alertToneTimer.current !== undefined) clearTimeout(alertToneTimer.current);
       bubbleSubject.current = message.subject;
       setBubble(message.text);
+
+      if (message.alertTone === 'gentle') {
+        alertToneTimer.current = setTimeout(
+          () => {
+            alertToneTimer.current = undefined;
+            void playGentleAlertTone().catch(() => undefined);
+          },
+          Math.max(0, message.alertToneDelayMs ?? 0),
+        );
+      }
 
       bubbleTimer.current = setTimeout(() => {
         bubbleSubject.current = null;
@@ -90,6 +103,7 @@ export function Overlay(): JSX.Element {
     return () => {
       off();
       if (bubbleTimer.current !== undefined) clearTimeout(bubbleTimer.current);
+      if (alertToneTimer.current !== undefined) clearTimeout(alertToneTimer.current);
     };
   }, []);
 
@@ -227,7 +241,7 @@ export function Overlay(): JSX.Element {
     if (event.button !== 0) return;
     drag.current = { active: true, moved: false, x: event.screenX, y: event.screenY };
     event.currentTarget.setPointerCapture(event.pointerId);
-    setClickScale(0.90);
+    setClickScale(0.9);
   }, []);
 
   const handlePointerUp = useCallback(

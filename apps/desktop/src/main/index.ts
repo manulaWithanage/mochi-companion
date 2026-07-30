@@ -229,11 +229,24 @@ async function bootstrap(): Promise<void> {
     });
 
     if (decision.kind === 'allow') {
+      const isMailReminder = event.source === 'mail' && event.kind === 'reply-reminder';
+      const mailPreferences = settings.get().gmailAi;
+      const useCenterEntrance =
+        isMailReminder &&
+        settings.get().centerScreenAlerts &&
+        mailPreferences.centerScreenAlertsEnabled;
       overlay.send('bubble:show', {
         text: event.text,
         ttlMs: event.userInitiated === true ? BUBBLE_TTL_LONG_MS : BUBBLE_TTL_MS,
         subject: event.subject,
+        ...(isMailReminder && mailPreferences.alertToneEnabled
+          ? {
+              alertTone: 'gentle' as const,
+              alertToneDelayMs: useCenterEntrance ? 1_150 : 0,
+            }
+          : {}),
       });
+      if (useCenterEntrance) void overlay.performMagicianAlert(BUBBLE_TTL_MS);
       return;
     }
 

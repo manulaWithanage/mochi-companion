@@ -21,6 +21,8 @@ export interface GmailAiSettings {
   readonly defaultSort: 'priority' | 'recent';
   readonly maxBackgroundDraftsPerSync: number;
   readonly remindersEnabled: boolean;
+  readonly centerScreenAlertsEnabled: boolean;
+  readonly alertToneEnabled: boolean;
   readonly urgentReminderDelayMs: number;
   readonly reviewReminderDelayMs: number;
   /** Zero disables the second urgent reminder. */
@@ -76,6 +78,8 @@ export const DEFAULT_SETTINGS: MochiSettings = {
     defaultSort: 'priority',
     maxBackgroundDraftsPerSync: 3,
     remindersEnabled: true,
+    centerScreenAlertsEnabled: true,
+    alertToneEnabled: true,
     urgentReminderDelayMs: 10 * 60_000,
     reviewReminderDelayMs: 4 * 60 * 60_000,
     urgentFollowUpDelayMs: 90 * 60_000,
@@ -197,6 +201,8 @@ export function normalizeSettings(raw: unknown): {
           ? Math.min(10, Math.max(0, Math.floor(value.maxBackgroundDraftsPerSync)))
           : DEFAULT_SETTINGS.gmailAi.maxBackgroundDraftsPerSync,
       remindersEnabled: value.remindersEnabled !== false,
+      centerScreenAlertsEnabled: value.centerScreenAlertsEnabled !== false,
+      alertToneEnabled: value.alertToneEnabled !== false,
       urgentReminderDelayMs: normalizeGmailDuration(
         value.urgentReminderDelayMs,
         DEFAULT_SETTINGS.gmailAi.urgentReminderDelayMs,

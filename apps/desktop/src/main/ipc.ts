@@ -218,6 +218,14 @@ export function registerIpc(ctx: IpcContext): void {
           typeof input['remindersEnabled'] === 'boolean'
             ? input['remindersEnabled']
             : current.remindersEnabled,
+        centerScreenAlertsEnabled:
+          typeof input['centerScreenAlertsEnabled'] === 'boolean'
+            ? input['centerScreenAlertsEnabled']
+            : current.centerScreenAlertsEnabled,
+        alertToneEnabled:
+          typeof input['alertToneEnabled'] === 'boolean'
+            ? input['alertToneEnabled']
+            : current.alertToneEnabled,
         urgentReminderDelayMs:
           typeof input['urgentReminderDelayMs'] === 'number'
             ? input['urgentReminderDelayMs']
@@ -396,6 +404,10 @@ export function registerIpc(ctx: IpcContext): void {
   ipcMain.handle('gmail:dismissReminder', (_e, emailId: unknown) => {
     const id = typeof emailId === 'string' ? emailId : '';
     return id.length === 0 ? false : ctx.gmail.dismissReminder(id);
+  });
+
+  ipcMain.handle('gmail:previewAlert', () => {
+    ctx.gmail.previewAlert();
   });
 
   ipcMain.handle('gmail:generateDraft', (_e, emailId: unknown, tone: unknown) => {

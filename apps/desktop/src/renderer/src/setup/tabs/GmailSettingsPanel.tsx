@@ -164,6 +164,11 @@ export function GmailSettingsPanel({ value, onSave }: GmailSettingsPanelProps): 
     setVipText('');
   };
 
+  const preview = async (): Promise<void> => {
+    await save();
+    await window.mochi.gmail.previewAlert();
+  };
+
   return (
     <div>
       <div
@@ -183,6 +188,20 @@ export function GmailSettingsPanel({ value, onSave }: GmailSettingsPanelProps): 
             onChange={(remindersEnabled) => setDraft({ ...draft, remindersEnabled })}
             title="Enable reply reminders"
             description="Respect Do Not Disturb and your configured work hours."
+          />
+          <Toggle
+            checked={draft.centerScreenAlertsEnabled}
+            onChange={(centerScreenAlertsEnabled) =>
+              setDraft({ ...draft, centerScreenAlertsEnabled })
+            }
+            title="Center-screen entrance"
+            description="Mochi appears in the middle with the magician animation."
+          />
+          <Toggle
+            checked={draft.alertToneEnabled}
+            onChange={(alertToneEnabled) => setDraft({ ...draft, alertToneEnabled })}
+            title="Gentle alert tone"
+            description="Play a short, soft two-note chime when the reminder appears."
           />
           <div
             style={{
@@ -341,6 +360,14 @@ export function GmailSettingsPanel({ value, onSave }: GmailSettingsPanelProps): 
         }}
       >
         {saved && <span style={{ color: C.good, fontSize: 12.5 }}>✓ Settings applied</span>}
+        <button
+          id="gmail-preview-alert"
+          type="button"
+          onClick={() => void preview()}
+          style={button('ghost')}
+        >
+          Preview alert
+        </button>
         <button type="button" onClick={restoreDefaults} style={button('ghost')}>
           Restore defaults
         </button>

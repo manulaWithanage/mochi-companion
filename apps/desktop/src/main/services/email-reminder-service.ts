@@ -166,7 +166,7 @@ export class EmailReminderService {
         priority: 'high',
         at,
         subject: `mail-thread:${email.threadId}`,
-        text: 'An important email may be waiting for your reply',
+        text: 'A quick nudge — an important email may be waiting for your reply',
         expiresAt: at + EVENT_EXPIRY_MS,
       }),
     };

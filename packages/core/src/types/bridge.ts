@@ -82,6 +82,10 @@ export interface BubbleMessage {
   readonly text: string;
   /** Auto-dismiss after this long. */
   readonly ttlMs: number;
+  /** Optional renderer-owned sound, requested only after governor admission. */
+  readonly alertTone?: 'gentle';
+  /** Delay lets a tone land with a center-screen entrance instead of before it. */
+  readonly alertToneDelayMs?: number;
   /**
    * The thing being talked about. Dismissing a bubble dismisses the subject
    * in the governor, so a re-poll cannot resurrect what the user waved away.
@@ -296,6 +300,8 @@ export interface MochiBridge {
     refresh(): Promise<GmailSyncStatus>;
     onInboxChanged(listener: (change: GmailInboxChanged) => void): () => void;
     onSyncStatus(listener: (status: GmailSyncStatus) => void): () => void;
+    /** Preview the governed email reminder presentation without scheduling mail. */
+    previewAlert(): Promise<void>;
     snoozeReminder(emailId: string, minutes?: number): Promise<boolean>;
     dismissReminder(emailId: string): Promise<boolean>;
     /** Generate and persist a local draft without writing to Gmail. */
