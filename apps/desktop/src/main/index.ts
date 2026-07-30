@@ -21,6 +21,7 @@ import {
   makeEvent,
   type EventPriority,
   type EventSource,
+  type ActivityCategory,
   type MessageKind,
   type StorageAdapter,
 } from '@mochi/core';
@@ -175,7 +176,27 @@ async function bootstrap(): Promise<void> {
 
   // Off unless the user turned it on. Tracking what someone uses all day is not
   // something to enable for them, however local it stays.
-  const activity = new ActivityService(storage, () => settings.get().activityTracking);
+  const activity = new ActivityService(
+    storage,
+    () => settings.get().activityTracking,
+    {
+      get: () => settings.get().learnedAppCategories as Readonly<Record<string, ActivityCategory>>,
+      set: (learnedAppCategories) => {
+        settings.update({ learnedAppCategories });
+      },
+      // The Tier 1 job from MOCHI_BRAIN.md: fuzzy world knowledge, not
+      // arithmetic. Only application names are sent — less than the Activity
+      // tab already shows on screen.
+      classify: async (prompt) => {
+        const result = await llmClient.generate({
+          task: 'triage',
+          system: 'You classify desktop applications. Reply with JSON only.',
+          prompt,
+        });
+        return result.ok ? result.text : null;
+      },
+    },
+  );
   if (settings.get().activityTracking) activity.start();
   const gmailManager = new GmailManager(llmClient, settings, storage, bus);
   gmailManager.onInboxChanged((account, newEmails) => {

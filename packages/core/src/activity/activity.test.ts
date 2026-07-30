@@ -1,7 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import {
   ACTIVITY_CATEGORIES,
+  appCategoryPrompt,
+  appsNeedingCategory,
   classifyProcess,
+  MAX_APPS_PER_REQUEST,
+  parseAppCategories,
   focusedMs,
   longestStretchMs,
   samplesToSpans,
@@ -58,7 +62,7 @@ describe('classifyProcess', () => {
     // Not an allowlist: an allowlist makes the tracker useless to anyone whose
     // tools are not on someone else's list. A process name is an application,
     // not a document.
-    expect(classifyProcess('godot.exe')).toEqual({ app: 'Godot', category: 'other' });
+    expect(classifyProcess('reaper.exe')).toEqual({ app: 'Reaper', category: 'other' });
   });
 
   it('handles the suffix Windows adds to packaged apps', () => {
@@ -228,5 +232,136 @@ describe('spansWithin', () => {
 
   it('drops spans fully outside', () => {
     expect(spansWithin([span('VS Code', 0, 60)], at(120), at(300))).toHaveLength(0);
+  });
+});
+
+describe('learned categories', () => {
+  it('fills a gap the built-in table has', () => {
+    expect(classifyProcess('godot-custom.exe').category).toBe('other');
+    expect(classifyProcess('godot-custom.exe', { 'Godot custom': 'coding' }).category).toBe(
+      'coding',
+    );
+  });
+
+  it('never overrides a curated rule', () => {
+    // A model that decides Photoshop is browsing must not overwrite a fact the
+    // table already knows. The learned map fills gaps; it does not argue.
+    expect(classifyProcess('photoshop', { Photoshop: 'browsing' }).category).toBe('design');
+  });
+
+  it('applies to packaged apps resolved by their leading segment', () => {
+    expect(classifyProcess('SomeTool.Root', { Sometool: 'writing' }).category).toBe('writing');
+  });
+});
+
+describe('newly added rules', () => {
+  it('knows the editors that were showing as Other', () => {
+    expect(classifyProcess('Antigravity')).toEqual({ app: 'Antigravity', category: 'coding' });
+    expect(classifyProcess('Claude')).toEqual({ app: 'Claude', category: 'coding' });
+  });
+
+  it('pins system noise to other, so it is never sent to a model', () => {
+    for (const p of ['explorer', 'SearchHost', 'LockApp', 'ApplicationFrameHost']) {
+      expect(classifyProcess(p).category).toBe('other');
+    }
+  });
+});
+
+describe('appCategoryPrompt', () => {
+  it('sends only application names', () => {
+    // The privacy property: this request carries less than the tab already
+    // shows on screen.
+    const prompt = appCategoryPrompt(['Godot', 'Reaper']);
+    expect(prompt).toContain('Godot');
+    expect(prompt).toContain('Reaper');
+    expect(prompt).not.toMatch(/title|document|file|url/i);
+  });
+
+  it('lists the categories a model is allowed to use', () => {
+    const prompt = appCategoryPrompt(['Godot']);
+    for (const c of ACTIVITY_CATEGORIES) expect(prompt).toContain(c.id);
+  });
+});
+
+describe('parseAppCategories', () => {
+  const asked = ['Godot', 'Reaper'];
+
+  it('reads a clean reply', () => {
+    expect(parseAppCategories('{"Godot":"coding","Reaper":"design"}', asked)).toEqual({
+      Godot: 'coding',
+      Reaper: 'design',
+    });
+  });
+
+  it('survives code fences, which models add regardless', () => {
+    expect(parseAppCategories('```json\n{"Godot":"coding"}\n```', asked)).toEqual({
+      Godot: 'coding',
+    });
+  });
+
+  it('survives surrounding prose', () => {
+    expect(parseAppCategories('Sure! {"Godot":"coding"} Hope that helps.', asked)).toEqual({
+      Godot: 'coding',
+    });
+  });
+
+  it('drops a category that does not exist', () => {
+    // The schema guard: a plausible-sounding invention must not enter the graph.
+    expect(parseAppCategories('{"Godot":"gamedev"}', asked)).toEqual({});
+  });
+
+  it('drops an app that was never asked about', () => {
+    // An invented app would sit in the learned map for ever, matching nothing
+    // and never being re-asked.
+    expect(parseAppCategories('{"Photoshop":"design"}', asked)).toEqual({});
+  });
+
+  it('keeps the good entries when one is bad', () => {
+    expect(parseAppCategories('{"Godot":"coding","Reaper":"nonsense"}', asked)).toEqual({
+      Godot: 'coding',
+    });
+  });
+
+  it('returns nothing for junk rather than throwing', () => {
+    for (const junk of ['', 'no idea', '[]', '{', 'null', '{"a":']) {
+      expect(() => parseAppCategories(junk, asked)).not.toThrow();
+      expect(parseAppCategories(junk, asked)).toEqual({});
+    }
+  });
+});
+
+describe('appsNeedingCategory', () => {
+  const longSpan = (app: string, minutes: number, category: ActivityCategory = 'other') => ({
+    app,
+    category,
+    startedAt: at(0),
+    endedAt: at(minutes * 60),
+  });
+
+  it('ignores apps used only briefly', () => {
+    // Not worth a model call for a passing glance.
+    expect(appsNeedingCategory([longSpan('Blip', 1)], {})).toEqual([]);
+  });
+
+  it('picks up an app used for a meaningful stretch', () => {
+    expect(appsNeedingCategory([longSpan('Godot', 30)], {})).toEqual(['Godot']);
+  });
+
+  it('never asks twice about the same app', () => {
+    expect(appsNeedingCategory([longSpan('Godot', 30)], { Godot: 'coding' })).toEqual([]);
+  });
+
+  it('ignores apps the table already categorised', () => {
+    expect(appsNeedingCategory([longSpan('VS Code', 30, 'coding')], {})).toEqual([]);
+  });
+
+  it('asks about the most-used first, so a budget is spent well', () => {
+    const spans = [longSpan('Small', 6), longSpan('Big', 120), longSpan('Middle', 40)];
+    expect(appsNeedingCategory(spans, {})).toEqual(['Big', 'Middle', 'Small']);
+  });
+
+  it('caps how many go in one request', () => {
+    const spans = Array.from({ length: 40 }, (_, i) => longSpan(`App${i}`, 30));
+    expect(appsNeedingCategory(spans, {}).length).toBeLessThanOrEqual(MAX_APPS_PER_REQUEST);
   });
 });

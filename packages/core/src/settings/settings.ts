@@ -5,6 +5,7 @@
  * safeStorage in the main process, never here (RULE 1).
  */
 
+import { isActivityCategoryId } from '../activity/activity.js';
 import { DEFAULT_WORK_HOURS, parseHhMm, type WorkHours } from '../mascot/state.js';
 
 export interface OverlayPosition {
@@ -59,6 +60,14 @@ export interface MochiSettings {
    * switch on for them, however local it stays.
    */
   readonly activityTracking: boolean;
+  /**
+   * Categories learned for apps the built-in table does not know.
+   *
+   * In settings rather than the database because it is small, it is the user's
+   * to correct, and a wrong entry should be findable and fixable rather than
+   * buried in a table nobody opens.
+   */
+  readonly learnedAppCategories: Readonly<Record<string, string>>;
   /** IDs of up to 3 primary quick-select time tracking projects shown above Mochi. */
   readonly primaryProjectIds: readonly string[];
   /**
@@ -86,6 +95,7 @@ export const DEFAULT_SETTINGS: MochiSettings = {
   alwaysOnTop: true,
   centerScreenAlerts: true,
   activityTracking: false,
+  learnedAppCategories: {},
   primaryProjectIds: [],
   localEndpoints: {},
   gmailAi: {
@@ -182,6 +192,18 @@ export function normalizeSettings(raw: unknown): {
     }
   }
 
+  // Only known category ids survive a reload: a hand-edited settings file must
+  // not be able to inject a category the rest of the app has never heard of.
+  const learnedAppCategories: Record<string, string> = {};
+  const rawLearned = input.learnedAppCategories;
+  if (typeof rawLearned === 'object' && rawLearned !== null) {
+    for (const [app, category] of Object.entries(rawLearned as Record<string, unknown>)) {
+      if (typeof category === 'string' && isActivityCategoryId(category)) {
+        learnedAppCategories[app] = category;
+      }
+    }
+  }
+
   let primaryProjectIds: string[] = [];
   if (Array.isArray(input.primaryProjectIds)) {
     primaryProjectIds = input.primaryProjectIds
@@ -265,6 +287,7 @@ export function normalizeSettings(raw: unknown): {
       alwaysOnTop: input.alwaysOnTop !== false,
       centerScreenAlerts: input.centerScreenAlerts !== false,
       activityTracking: input.activityTracking === true,
+      learnedAppCategories: learnedAppCategories,
       primaryProjectIds,
       localEndpoints,
       gmailAi,

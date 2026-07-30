@@ -64,52 +64,119 @@ interface AppRule {
  * reading titles, not refusing to name the app.
  */
 const APP_RULES: readonly AppRule[] = [
+  // Editors and IDEs
   { process: 'code', app: 'VS Code', category: 'coding' },
   { process: 'code - insiders', app: 'VS Code', category: 'coding' },
   { process: 'cursor', app: 'Cursor', category: 'coding' },
+  { process: 'antigravity', app: 'Antigravity', category: 'coding' },
+  { process: 'claude', app: 'Claude', category: 'coding' },
+  { process: 'windsurf', app: 'Windsurf', category: 'coding' },
+  { process: 'zed', app: 'Zed', category: 'coding' },
   { process: 'devenv', app: 'Visual Studio', category: 'coding' },
   { process: 'idea64', app: 'IntelliJ', category: 'coding' },
   { process: 'pycharm64', app: 'PyCharm', category: 'coding' },
   { process: 'webstorm64', app: 'WebStorm', category: 'coding' },
-  { process: 'sublime_text', app: 'Sublime Text', category: 'coding' },
+  { process: 'goland64', app: 'GoLand', category: 'coding' },
+  { process: 'clion64', app: 'CLion', category: 'coding' },
+  { process: 'datagrip64', app: 'DataGrip', category: 'coding' },
   { process: 'rider64', app: 'Rider', category: 'coding' },
+  { process: 'sublime_text', app: 'Sublime Text', category: 'coding' },
+  { process: 'atom', app: 'Atom', category: 'coding' },
+  { process: 'neovide', app: 'Neovim', category: 'coding' },
+  { process: 'androidstudio', app: 'Android Studio', category: 'coding' },
+  { process: 'studio64', app: 'Android Studio', category: 'coding' },
+  { process: 'xcode', app: 'Xcode', category: 'coding' },
+  { process: 'unity', app: 'Unity', category: 'coding' },
+  { process: 'godot', app: 'Godot', category: 'coding' },
+  { process: 'postman', app: 'Postman', category: 'coding' },
+  { process: 'insomnia', app: 'Insomnia', category: 'coding' },
+  { process: 'docker desktop', app: 'Docker Desktop', category: 'coding' },
+  { process: 'github desktop', app: 'GitHub Desktop', category: 'coding' },
+  { process: 'sourcetree', app: 'Sourcetree', category: 'coding' },
+  { process: 'tableplus', app: 'TablePlus', category: 'coding' },
 
+  // Design
   { process: 'figma', app: 'Figma', category: 'design' },
   { process: 'photoshop', app: 'Photoshop', category: 'design' },
   { process: 'illustrator', app: 'Illustrator', category: 'design' },
+  { process: 'afterfx', app: 'After Effects', category: 'design' },
+  { process: 'adobe premiere pro', app: 'Premiere Pro', category: 'design' },
+  { process: 'indesign', app: 'InDesign', category: 'design' },
   { process: 'blender', app: 'Blender', category: 'design' },
   { process: 'affinity photo', app: 'Affinity Photo', category: 'design' },
+  { process: 'affinity designer', app: 'Affinity Designer', category: 'design' },
+  { process: 'inkscape', app: 'Inkscape', category: 'design' },
+  { process: 'gimp', app: 'GIMP', category: 'design' },
+  { process: 'krita', app: 'Krita', category: 'design' },
+  { process: 'canva', app: 'Canva', category: 'design' },
 
+  // Writing and documents
   { process: 'winword', app: 'Word', category: 'writing' },
   { process: 'notion', app: 'Notion', category: 'writing' },
   { process: 'obsidian', app: 'Obsidian', category: 'writing' },
   { process: 'notepad', app: 'Notepad', category: 'writing' },
+  { process: 'notepad++', app: 'Notepad++', category: 'writing' },
   { process: 'excel', app: 'Excel', category: 'writing' },
   { process: 'powerpnt', app: 'PowerPoint', category: 'writing' },
+  { process: 'onenote', app: 'OneNote', category: 'writing' },
+  { process: 'acrobat', app: 'Acrobat', category: 'writing' },
+  { process: 'acrord32', app: 'Acrobat Reader', category: 'writing' },
+  { process: 'typora', app: 'Typora', category: 'writing' },
+  { process: 'logseq', app: 'Logseq', category: 'writing' },
+  { process: 'evernote', app: 'Evernote', category: 'writing' },
+  { process: 'sumatrapdf', app: 'SumatraPDF', category: 'writing' },
 
+  // Terminals
   { process: 'windowsterminal', app: 'Terminal', category: 'terminal' },
   { process: 'wt', app: 'Terminal', category: 'terminal' },
   { process: 'powershell', app: 'PowerShell', category: 'terminal' },
   { process: 'pwsh', app: 'PowerShell', category: 'terminal' },
   { process: 'cmd', app: 'Command Prompt', category: 'terminal' },
+  { process: 'conhost', app: 'Console', category: 'terminal' },
   { process: 'alacritty', app: 'Alacritty', category: 'terminal' },
+  { process: 'wezterm-gui', app: 'WezTerm', category: 'terminal' },
+  { process: 'ubuntu', app: 'WSL', category: 'terminal' },
+  { process: 'putty', app: 'PuTTY', category: 'terminal' },
 
+  // Meetings
   { process: 'zoom', app: 'Zoom', category: 'meeting' },
   { process: 'teams', app: 'Teams', category: 'meeting' },
   { process: 'ms-teams', app: 'Teams', category: 'meeting' },
   { process: 'webex', app: 'Webex', category: 'meeting' },
+  { process: 'gotomeeting', app: 'GoToMeeting', category: 'meeting' },
+  { process: 'bluejeans', app: 'BlueJeans', category: 'meeting' },
 
+  // Chat and mail
   { process: 'slack', app: 'Slack', category: 'communication' },
   { process: 'discord', app: 'Discord', category: 'communication' },
   { process: 'outlook', app: 'Outlook', category: 'communication' },
   { process: 'thunderbird', app: 'Thunderbird', category: 'communication' },
   { process: 'whatsapp', app: 'WhatsApp', category: 'communication' },
+  { process: 'telegram', app: 'Telegram', category: 'communication' },
+  { process: 'signal', app: 'Signal', category: 'communication' },
+  { process: 'skype', app: 'Skype', category: 'communication' },
+  { process: 'mailbird', app: 'Mailbird', category: 'communication' },
 
+  // Browsers
   { process: 'chrome', app: 'Chrome', category: 'browsing' },
   { process: 'msedge', app: 'Edge', category: 'browsing' },
   { process: 'firefox', app: 'Firefox', category: 'browsing' },
   { process: 'brave', app: 'Brave', category: 'browsing' },
   { process: 'arc', app: 'Arc', category: 'browsing' },
+  { process: 'opera', app: 'Opera', category: 'browsing' },
+  { process: 'vivaldi', app: 'Vivaldi', category: 'browsing' },
+  { process: 'chromium', app: 'Chromium', category: 'browsing' },
+
+  // Explicitly 'other', so the LLM is never asked about them
+  { process: 'explorer', app: 'File Explorer', category: 'other' },
+  { process: 'spotify', app: 'Spotify', category: 'other' },
+  { process: 'vlc', app: 'VLC', category: 'other' },
+  { process: 'steam', app: 'Steam', category: 'other' },
+  { process: 'systemsettings', app: 'Settings', category: 'other' },
+  { process: 'lockapp', app: 'Lock screen', category: 'other' },
+  { process: 'searchhost', app: 'Search', category: 'other' },
+  { process: 'shellexperiencehost', app: 'Windows Shell', category: 'other' },
+  { process: 'applicationframehost', app: 'Windows App', category: 'other' },
 ];
 
 export interface ResolvedApp {
@@ -131,7 +198,15 @@ function prettify(process: string): string {
  * `vscode-helper`, and a substring rule for `arc` would match half the
  * executables on a machine.
  */
-export function classifyProcess(raw: string): ResolvedApp {
+/**
+ * Categories learned for apps the built-in table does not know, keyed by the
+ * resolved display name.
+ *
+ * Filled by a model, and correctable by the user.
+ */
+export type LearnedCategories = Readonly<Record<string, ActivityCategory>>;
+
+export function classifyProcess(raw: string, learned: LearnedCategories = {}): ResolvedApp {
   const name = raw
     .trim()
     .toLowerCase()
@@ -149,10 +224,22 @@ export function classifyProcess(raw: string): ResolvedApp {
   if (head.length > 0 && head !== name) {
     const byHead = APP_RULES.find((r) => r.process === head);
     if (byHead !== undefined) return { app: byHead.app, category: byHead.category };
-    return { app: prettify(head), category: 'other' };
+    return withLearned(prettify(head), learned);
   }
 
-  return { app: prettify(name), category: 'other' };
+  return withLearned(prettify(name), learned);
+}
+
+/**
+ * Apply a learned category, but only where the built-in table had nothing.
+ *
+ * A curated rule always wins. A model that decides Photoshop is "browsing"
+ * should not be able to overwrite a fact the table already knows, and the
+ * asymmetry costs nothing: the learned map exists to fill gaps, not to argue.
+ */
+function withLearned(app: string, learned: LearnedCategories): ResolvedApp {
+  const category = learned[app];
+  return { app, category: category ?? 'other' };
 }
 
 export interface ActivitySample {
@@ -332,4 +419,110 @@ export function spansWithin(
       startedAt: Math.max(span.startedAt, from),
       endedAt: Math.min(span.endedAt, to),
     }));
+}
+
+// ---------------------------------------------------------------------------
+// Learning categories for unknown apps
+// ---------------------------------------------------------------------------
+
+/**
+ * Ask a model to categorise applications it has never been told about.
+ *
+ * This is the Tier 1 job MOCHI_BRAIN.md describes: genuinely fuzzy world
+ * knowledge, not arithmetic. "Is Godot design or coding?" needs to know what
+ * Godot is; nothing in this repo does, and a rule table can never be finished.
+ *
+ * Only the application name is sent. No window titles, no file names, no
+ * counts — the request carries less than the Activity tab already shows on
+ * screen, which is what makes it safe to send to a cloud model.
+ */
+export function appCategoryPrompt(apps: readonly string[]): string {
+  const list = apps.map((a) => `- ${a}`).join('\n');
+  const allowed = ACTIVITY_CATEGORIES.map((c) => c.id).join(', ');
+
+  return [
+    'Categorise each desktop application by what a person uses it for.',
+    `Allowed categories: ${allowed}.`,
+    'Use "other" when unsure, when it is a system utility, or when it is entertainment.',
+    'Reply with JSON only: an object mapping each name exactly as given to one category.',
+    'No prose, no code fences, no extra keys.',
+    '',
+    list,
+  ].join('\n');
+}
+
+const CATEGORY_IDS: readonly string[] = ACTIVITY_CATEGORIES.map((c) => c.id);
+
+export const isActivityCategoryId = (value: unknown): value is ActivityCategory =>
+  typeof value === 'string' && CATEGORY_IDS.includes(value);
+
+/**
+ * Read a model's reply, keeping only answers that pass.
+ *
+ * The schema guard from MOCHI_BRAIN.md §8.3, applied strictly: an entry is kept
+ * only if it names an app that was actually asked about and a category that
+ * actually exists. Everything else is dropped in silence.
+ *
+ * `asked` is checked because a model will occasionally invent an entry, and an
+ * invented app would sit in the learned map for ever, matching nothing and
+ * never being re-asked.
+ */
+export function parseAppCategories(
+  text: string,
+  asked: readonly string[],
+): Readonly<Record<string, ActivityCategory>> {
+  // Models wrap JSON in fences however firmly they are told not to.
+  const cleaned = text.trim().replace(/^```(?:json)?/i, '').replace(/```$/, '').trim();
+  const start = cleaned.indexOf('{');
+  const end = cleaned.lastIndexOf('}');
+  if (start < 0 || end <= start) return {};
+
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(cleaned.slice(start, end + 1));
+  } catch {
+    return {};
+  }
+  if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) return {};
+
+  const wanted = new Set(asked);
+  const result: Record<string, ActivityCategory> = {};
+
+  for (const [app, category] of Object.entries(parsed as Record<string, unknown>)) {
+    if (!wanted.has(app)) continue;
+    if (!isActivityCategoryId(category)) continue;
+    result[app] = category;
+  }
+  return result;
+}
+
+/** Below this the app is a passing glance, not worth spending a call on. */
+export const MIN_MS_BEFORE_CLASSIFYING = 5 * 60_000;
+
+/** One request should not carry the whole Start menu. */
+export const MAX_APPS_PER_REQUEST = 12;
+
+/**
+ * Which apps are worth asking about.
+ *
+ * Uncategorised, used for a meaningful amount of time, and not already known.
+ * Ordered by time so a budget spends itself on what the user actually lives in.
+ */
+export function appsNeedingCategory(
+  spans: readonly ActivitySpan[],
+  learned: LearnedCategories,
+  minMs = MIN_MS_BEFORE_CLASSIFYING,
+): readonly string[] {
+  const totals = new Map<string, number>();
+  for (const span of spans) {
+    if (span.category !== 'other') continue;
+    if (learned[span.app] !== undefined) continue;
+    totals.set(span.app, (totals.get(span.app) ?? 0) + spanMs(span));
+  }
+
+  return [...totals.entries()]
+    .filter(([, ms]) => ms >= minMs)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, MAX_APPS_PER_REQUEST)
+    .map(([app]) => app);
 }

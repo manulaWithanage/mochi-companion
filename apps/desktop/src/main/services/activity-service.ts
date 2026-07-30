@@ -12,10 +12,15 @@
  */
 
 import {
+  appCategoryPrompt,
+  appsNeedingCategory,
   classifyProcess,
+  parseAppCategories,
   samplesToSpans,
+  type ActivityCategory,
   type ActivitySample,
   type ActivitySpan,
+  type LearnedCategories,
   type StorageAdapter,
 } from '@mochi/core';
 import { createForegroundSource, type ForegroundSource } from './activity-sampler.js';
@@ -39,16 +44,38 @@ const FLUSH_INTERVAL_MS = 2 * 60_000;
 /** Discard anything older than this. */
 export const RETENTION_DAYS = 90;
 
+/**
+ * How the service reaches a model and where learned answers are kept.
+ *
+ * Injected rather than imported so the service has no dependency on the LLM
+ * layer, and so the default is "no learning at all" — the tracker must work
+ * with no key configured.
+ */
+export interface LearningHooks {
+  get(): LearnedCategories;
+  set(next: Readonly<Record<string, ActivityCategory>>): void;
+  /** Null when no model is configured or the call failed. */
+  classify(prompt: string): Promise<string | null>;
+}
+
+const noLearning: LearningHooks = {
+  get: () => ({}),
+  set: () => undefined,
+  classify: async () => null,
+};
+
 export class ActivityService {
   private readonly source: ForegroundSource;
   private buffer: ActivitySample[] = [];
   private flushTimer: NodeJS.Timeout | null = null;
   private pruneTimer: NodeJS.Timeout | null = null;
   private running = false;
+  private classifying = false;
 
   constructor(
     private readonly storage: StorageAdapter,
     private readonly isEnabled: () => boolean,
+    private readonly learning: LearningHooks = noLearning,
     source?: ForegroundSource,
   ) {
     this.source = source ?? createForegroundSource(SAMPLE_SECONDS);
@@ -69,7 +96,7 @@ export class ActivityService {
       if (sample.idleMs >= IDLE_THRESHOLD_MS) return;
       if (sample.process.length === 0) return;
 
-      const resolved = classifyProcess(sample.process);
+      const resolved = classifyProcess(sample.process, this.learning.get());
       this.buffer.push({ at: Date.now(), app: resolved.app, category: resolved.category });
     });
 
@@ -103,10 +130,47 @@ export class ActivityService {
 
     try {
       await this.storage.saveActivitySpans(spans);
+      void this.learnCategories();
     } catch (error) {
       console.error('[activity] could not persist spans:', error);
       // Put them back: a failed write should not silently lose the day.
       this.buffer = [...pending, ...this.buffer];
+    }
+  }
+
+  /**
+   * Ask a model to categorise apps the built-in table does not know.
+   *
+   * Runs after a flush rather than on a timer of its own, so it only happens
+   * when there is new data to have changed the answer. Failure is silent: an
+   * uncategorised app shows as "Other", which is correct rather than broken.
+   */
+  private async learnCategories(): Promise<void> {
+    if (this.classifying) return;
+    const learned = this.learning.get();
+
+    // A fortnight is enough to see everything someone actually uses, and the
+    // window bounds how much is scanned on every flush.
+    const since = Date.now() - 14 * 24 * 60 * 60_000;
+    const spans = await this.storage.listActivitySpans(since, Date.now());
+    const wanted = appsNeedingCategory(spans, learned);
+    if (wanted.length === 0) return;
+
+    this.classifying = true;
+    try {
+      const reply = await this.learning.classify(appCategoryPrompt(wanted));
+      if (reply === null) return;
+
+      const answers = parseAppCategories(reply, wanted);
+      const kept = Object.keys(answers).length;
+      if (kept === 0) return;
+
+      this.learning.set({ ...learned, ...answers });
+      console.log(`[activity] learned ${kept} app categor${kept === 1 ? 'y' : 'ies'}`);
+    } catch {
+      // No model configured, or the call failed. Nothing is broken.
+    } finally {
+      this.classifying = false;
     }
   }
 
