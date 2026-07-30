@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { parseLine } from './activity-sampler.js';
+import { encodeScript, parseLine } from './activity-sampler.js';
 
 describe('parseLine', () => {
   it('reads a normal line', () => {
@@ -29,5 +29,28 @@ describe('parseLine', () => {
     for (const junk of ['', '   ', 'no separator', 'Code|notanumber', 'Code|-5']) {
       expect(parseLine(junk)).toBeNull();
     }
+  });
+});
+
+describe('encodeScript', () => {
+  it('encodes as UTF-16LE, which is what -EncodedCommand expects', () => {
+    // Getting this wrong yields a process that starts, writes a parse error to a
+    // stderr nobody reads, and exits — indistinguishable from an idle user, and
+    // exactly how this shipped broken the first time.
+    const decoded = Buffer.from(encodeScript(10), 'base64').toString('utf16le');
+    expect(decoded).toContain('GetForegroundWindow');
+    expect(decoded).toContain('Start-Sleep -Seconds 10');
+  });
+
+  it('never reads a window title', () => {
+    // The privacy guarantee, asserted rather than promised in a comment.
+    const decoded = Buffer.from(encodeScript(10), 'base64').toString('utf16le');
+    expect(decoded).not.toContain('GetWindowText');
+    expect(decoded).not.toMatch(/MainWindowTitle/i);
+  });
+
+  it('carries the interval through', () => {
+    const decoded = Buffer.from(encodeScript(30), 'base64').toString('utf16le');
+    expect(decoded).toContain('Start-Sleep -Seconds 30');
   });
 });

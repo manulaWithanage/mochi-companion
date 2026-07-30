@@ -16,7 +16,7 @@
  * application. GetWindowText is not called, so there is nothing to leak.
  */
 
-import { spawn, type ChildProcessWithoutNullStreams } from 'node:child_process';
+import { spawn, type ChildProcess } from 'node:child_process';
 
 export interface ForegroundSample {
   /** Raw process name, e.g. `Code` or `WhatsApp.Root`. Empty if unknown. */
@@ -75,11 +75,23 @@ while ($true) {
 `.trim();
 }
 
+/**
+ * PowerShell's -EncodedCommand expects base64 of UTF-16LE, not UTF-8.
+ *
+ * Exported so the encoding is covered by a test: getting it wrong produces a
+ * process that starts, prints a parse error to stderr that nothing reads, and
+ * exits — which looks exactly like an idle user.
+ */
+export function encodeScript(intervalSeconds: number): string {
+  return Buffer.from(script(intervalSeconds), 'utf16le').toString('base64');
+}
+
 /** Wait this long before restarting a helper that died, so a failing spawn cannot loop hot. */
 const RESTART_DELAY_MS = 30_000;
 
 export class WindowsForegroundSource implements ForegroundSource {
-  private child: ChildProcessWithoutNullStreams | null = null;
+  // stdin is ignored: the script arrives as an argument, not on the pipe.
+  private child: ChildProcess | null = null;
   private restartTimer: NodeJS.Timeout | null = null;
   private stopped = false;
   private buffer = '';
@@ -95,43 +107,56 @@ export class WindowsForegroundSource implements ForegroundSource {
     this.stopped = false;
 
     try {
-      // `-Command -` reads the script from stdin, which avoids both a temp file
-      // on disk and the quoting minefield of passing it as an argument.
+      // `-EncodedCommand`, not `-Command -`.
+      //
+      // Reading the script from stdin looks tidier and does not work: with
+      // `-Command -` PowerShell treats stdin as if typed at a prompt, so a
+      // multi-line here-string and a `while` block never execute. The process
+      // exits 0 having produced nothing, which is indistinguishable from "the
+      // user was idle" and is exactly how this shipped broken the first time.
+      //
+      // Encoding the whole script as one UTF-16LE argument sidesteps both the
+      // stdin parsing and the quoting minefield.
       this.child = spawn(
         'powershell.exe',
-        ['-NoProfile', '-NonInteractive', '-Command', '-'],
-        { windowsHide: true, stdio: ['pipe', 'pipe', 'pipe'] },
+        ['-NoProfile', '-NonInteractive', '-EncodedCommand', encodeScript(this.intervalSeconds)],
+        { windowsHide: true, stdio: ['ignore', 'pipe', 'pipe'] },
       );
     } catch {
       console.warn('[activity] could not start the foreground helper');
       return;
     }
 
-    this.child.stdout.setEncoding('utf8');
-    this.child.stdout.on('data', (chunk: string) => {
-      this.buffer += chunk;
-      const lines = this.buffer.split(/\r?\n/);
-      // The last element is a partial line until the next chunk arrives.
-      this.buffer = lines.pop() ?? '';
-      for (const line of lines) {
-        const parsed = parseLine(line);
-        if (parsed !== null) onSample(parsed);
-      }
-    });
+    const child = this.child;
+    if (child === null) return;
+    if (child.stdout !== null) {
+      child.stdout.setEncoding('utf8');
+      child.stdout.on('data', (chunk: string) => {
+        this.buffer += chunk;
+        const lines = this.buffer.split(/\r?\n/);
+        // The last element is a partial line until the next chunk arrives.
+        this.buffer = lines.pop() ?? '';
+        for (const line of lines) {
+          const parsed = parseLine(line);
+          if (parsed !== null) onSample(parsed);
+        }
+      });
+    }
 
-    // Never surfaced to the user: a warning about a sampler is noise, and the
-    // Activity tab already shows whether anything is being recorded.
-    this.child.stderr.on('data', () => undefined);
+    // PowerShell writes a `#< CLIXML` preamble here on every run; it is normal.
+    // Nothing from the sampler is worth surfacing, and the Activity tab already
+    // shows whether anything is being recorded.
+    if (child.stderr !== null) {
+      child.stderr.on('data', () => undefined);
+    }
 
-    this.child.on('exit', () => {
+    child.on('exit', () => {
       this.child = null;
       if (this.stopped) return;
       this.restartTimer = setTimeout(() => this.start(onSample), RESTART_DELAY_MS);
       this.restartTimer.unref?.();
     });
 
-    this.child.stdin.write(script(this.intervalSeconds));
-    this.child.stdin.end();
   }
 
   stop(): void {
