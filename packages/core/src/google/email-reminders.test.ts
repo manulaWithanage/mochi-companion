@@ -3,6 +3,7 @@ import type { CachedInboxItem, EmailPriorityTier, EmailReminderState } from './e
 import {
   afterEmailReminderFired,
   DEFAULT_EMAIL_REMINDER_TIMING,
+  emailReminderEventPriority,
   planEmailReminder,
   REVIEW_FIRST_REMINDER_MS,
   URGENT_FIRST_REMINDER_MS,
@@ -122,6 +123,13 @@ describe('planEmailReminder', () => {
   it('stops after the conservative reminder cap', () => {
     expect(planEmailReminder(email('urgent'), reminder({ reminderCount: 2 }), 2_000)).toBeNull();
     expect(planEmailReminder(email('review'), reminder({ reminderCount: 1 }), 2_000)).toBeNull();
+  });
+});
+
+describe('emailReminderEventPriority', () => {
+  it('lets truly urgent mail pass quiet-hours policy while review mail remains governed', () => {
+    expect(emailReminderEventPriority('urgent')).toBe('urgent');
+    expect(emailReminderEventPriority('review')).toBe('high');
   });
 });
 

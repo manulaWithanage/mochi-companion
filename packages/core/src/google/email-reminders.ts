@@ -1,4 +1,5 @@
 import type { CachedInboxItem, EmailReminderState } from './email-state.js';
+import type { EventPriority } from '../events/events.js';
 
 export const EMAIL_REMINDER_PREFIX = 'email:reply:';
 export const URGENT_FIRST_REMINDER_MS = 10 * 60_000;
@@ -35,6 +36,10 @@ export function needsReplyReminder(email: CachedInboxItem): boolean {
     (email.priority.tier === 'urgent' || email.priority.tier === 'review') &&
     email.inInbox
   );
+}
+
+export function emailReminderEventPriority(tier: 'urgent' | 'review' | 'low'): EventPriority {
+  return tier === 'urgent' ? 'urgent' : 'high';
 }
 
 export function planEmailReminder(

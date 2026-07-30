@@ -6,6 +6,7 @@
 import {
   afterEmailReminderFired,
   EMAIL_REMINDER_PREFIX,
+  emailReminderEventPriority,
   makeEvent,
   needsReplyReminder,
   planEmailReminder,
@@ -163,7 +164,7 @@ export class EmailReminderService {
         id: `mail:reply:${email.emailId}:${state.reminderCount}`,
         source: 'mail',
         kind: 'reply-reminder',
-        priority: 'high',
+        priority: emailReminderEventPriority(email.priority?.tier ?? 'low'),
         at,
         subject: `mail-thread:${email.threadId}`,
         text: 'A quick nudge — an important email may be waiting for your reply',

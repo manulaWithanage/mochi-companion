@@ -227,9 +227,15 @@ async function bootstrap(): Promise<void> {
       // suspended or screen-locked all mean nothing should be said.
       fullscreenActive: !overlay.isVisible,
     });
+    const isMailReminder = event.source === 'mail' && event.kind === 'reply-reminder';
+    if (isMailReminder) {
+      console.log(
+        `[mail-alert] decision=${decision.kind} priority=${event.priority}` +
+          `${decision.kind === 'allow' ? '' : ` reason=${decision.reason}`}`,
+      );
+    }
 
     if (decision.kind === 'allow') {
-      const isMailReminder = event.source === 'mail' && event.kind === 'reply-reminder';
       const mailPreferences = settings.get().gmailAi;
       const useCenterEntrance =
         isMailReminder &&
@@ -246,7 +252,10 @@ async function bootstrap(): Promise<void> {
             }
           : {}),
       });
-      if (useCenterEntrance) void overlay.performMagicianAlert(BUBBLE_TTL_MS);
+      if (useCenterEntrance) {
+        console.log('[mail-alert] presenting with routine magician entrance');
+        void overlay.performMagicianAlert(BUBBLE_TTL_MS);
+      }
       return;
     }
 
