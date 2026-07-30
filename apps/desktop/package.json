@@ -4,7 +4,7 @@
   "private": true,
   "license": "MIT",
   "description": "Mochi desktop companion — transparent overlay mascot and 1-click project stopwatch",
-  "// productName": "LOAD-BEARING — DO NOT CHANGE AFTER RELEASE. Electron derives app.getName() from this, and app.getPath('userData') derives from that. Changing it silently moves every user's database and settings to a new folder: tracked time, projects and tasks appear to vanish, with no error and no migration. Verified the hard way on 2026-07-29 — adding this field moved userData from %APPDATA%/@mochi/desktop to %APPDATA%/Mochi and split the local history in two.",
+  "// productName": "LOAD-BEARING — DO NOT CHANGE AFTER RELEASE. Electron derives app.getName() from this, and app.getPath('userData') derives from that. Changing it silently moves every user's database and settings to a new folder: tracked time, projects and tasks appear to vanish, with no error and no migration. Verified the hard way on 2026-07-29 — adding this field moved userData from %APPDATA%/@mochi/desktop to %APPDATA%/Mochi and split the local history in two. NOTE: this is deliberately NOT the same as productName in electron-builder.yml, which is build-time only and names the exe (MochiTheCompanion). Renaming the binary must never touch this line. The [paths] log at startup prints app.getName() and userData so a drift is caught on first run.",
   "productName": "Mochi",
   "// author": "Also fills the Windows CompanyName resource. Without it Electron's own metadata leaks through and the app reports its publisher as GitHub, Inc.",
   "author": {

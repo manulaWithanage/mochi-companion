@@ -168,7 +168,8 @@ export function unpackAzureKey(stored: string): AzureCredentials | null {
   if (!stored.startsWith(AZURE_KEY_PREFIX)) return null;
   const parts = stored.slice(AZURE_KEY_PREFIX.length).split('::');
   if (parts.length !== 3) return null;
-  const [resource, deployment, apiKey] = parts;
+  const [rawResource, deployment, apiKey] = parts;
+  const resource = cleanAzureResourceName(rawResource ?? '');
   if (
     resource === undefined ||
     deployment === undefined ||

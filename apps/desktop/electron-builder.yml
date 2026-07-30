@@ -1,5 +1,27 @@
+# Packaging configuration.
+#
+# ---------------------------------------------------------------------------
+# TWO NAMES, ON PURPOSE. Do not "tidy" them into one.
+# ---------------------------------------------------------------------------
+#
+#   productName here (electron-builder.yml)  -> build-time only.
+#     Names the executable, the installer, the install directory and the
+#     Windows file metadata. Safe to change: nothing the running app reads
+#     depends on it.
+#
+#   productName in package.json              -> RUNTIME. LOAD-BEARING.
+#     Electron derives app.getName() from it, and app.getPath('userData')
+#     derives from that. Changing it silently relocates the database, the
+#     settings file, and the encrypted key/Gmail/Google vaults. It has
+#     already split this app's history across two folders once, and the only
+#     symptom was a migration that looked like it had never run.
+#
+# So the shipped binary is MochiTheCompanion.exe while the data stays in
+# %APPDATA%/Mochi. That asymmetry is deliberate. The `[paths]` line logged at
+# startup prints both, so any drift shows up immediately.
+
 appId: dev.mochi.companion
-productName: Mochi
+productName: MochiTheCompanion
 copyright: Copyright (c) 2026 Manula Withanage
 
 directories:
@@ -24,11 +46,22 @@ extraResources:
       - '**/*'
       - '!**/*.md'
 
+# One naming scheme for every platform, so a releases page sorts predictably
+# and nobody has to guess which file is for which machine.
+artifactName: ${productName}-${version}-${os}-${arch}.${ext}
+
+# ---------------------------------------------------------------------------
+# Windows
+# ---------------------------------------------------------------------------
 win:
   target:
     - target: nsis
       arch: [x64]
   icon: assets/icon.png
+  # Stated explicitly rather than inherited from productName. This is the one
+  # line that decides the .exe filename; leaving it implicit is how a rename
+  # ends up quietly touching things it should not.
+  executableName: MochiTheCompanion
   # No signing configured. Windows SmartScreen will warn on first run until
   # an OV/EV certificate is purchased and wired in here.
 
@@ -40,9 +73,15 @@ nsis:
   allowToChangeInstallationDirectory: true
   createDesktopShortcut: true
   createStartMenuShortcut: true
+  # What a human sees in the Start Menu. Not a filename, so spaces are fine
+  # and the short name is friendlier.
   shortcutName: Mochi
+  uninstallDisplayName: Mochi ${version}
   artifactName: ${productName}-Setup-${version}-${arch}.${ext}
 
+# ---------------------------------------------------------------------------
+# macOS
+# ---------------------------------------------------------------------------
 mac:
   target:
     - target: dmg
@@ -50,8 +89,13 @@ mac:
   icon: assets/icon.png
   category: public.app-category.productivity
 
+# ---------------------------------------------------------------------------
+# Linux
+# ---------------------------------------------------------------------------
 linux:
   target:
     - AppImage
   icon: assets/icon.png
   category: Utility
+  # Lowercase: this becomes the binary name on PATH and in the .desktop entry.
+  executableName: mochithecompanion

@@ -54,6 +54,21 @@ if (!app.requestSingleInstanceLock()) {
   app.quit();
 }
 
+/**
+ * Log where the app's data actually lives.
+ *
+ * `app.getPath('userData')` is derived from `app.getName()`, which reads
+ * `productName` from package.json. Changing that name silently relocates the
+ * database, settings and every encrypted vault — it once split this app's
+ * history across two folders, and the only symptom was a migration that
+ * appeared not to have run.
+ *
+ * One line at startup makes that visible immediately instead of days later.
+ */
+function logDataLocation(): void {
+  console.log(`[paths] name=${app.getName()} userData=${app.getPath('userData')}`);
+}
+
 function openStorage(): StorageAdapter {
   try {
     return new SqliteStorageAdapter(join(app.getPath('userData'), 'mochi.db'));
@@ -297,6 +312,8 @@ async function bootstrap(): Promise<void> {
 }
 
 app.whenReady().then(() => {
+  logDataLocation();
+
   // Harden against a compromised renderer: block navigation to anywhere that
   // is not our own bundle, and force external links into the real browser.
   app.on('web-contents-created', (_event, contents) => {
