@@ -24,7 +24,6 @@ import type { OverlayWindow } from './windows/overlay.js';
 import type { SetupWindow } from './windows/setup.js';
 import { listSkins, loadSkin } from './services/skin-loader.js';
 import type { GmailManager } from './services/gmail-manager.js';
-import { validateAzureKey, cleanAzureResourceName } from './services/provider-service.js';
 
 export interface IpcContext {
   timer: TimerService;
@@ -188,17 +187,17 @@ export function registerIpc(ctx: IpcContext): void {
 
   ipcMain.handle('llm:test', () => ctx.llm.test());
 
-  ipcMain.handle('llm:saveAzureKey', async (_e, resourceName: unknown, deploymentName: unknown, apiKey: unknown) => {
-    const resource = cleanAzureResourceName(asString(resourceName, ''));
-    const deployment = asString(deploymentName, '');
-    const key = asString(apiKey, '');
-    const validation = await validateAzureKey({ resourceName: resource, deploymentName: deployment, apiKey: key });
-    if (!validation.ok || validation.provider === null) {
-      return { ok: false, provider: 'azure', redacted: validation.redacted, modelCount: 0, error: validation.error };
-    }
-    // Store as compound string: resourceName::deploymentName::apiKey
-    return ctx.llm.saveKey(`azure::${resource}::${deployment}::${key}`);
-  });
+  // Azure needs three values, so it gets its own channel. Validation and
+  // storage both happen in LlmService — this only coerces the arguments.
+  ipcMain.handle(
+    'llm:saveAzureKey',
+    (_e, resourceName: unknown, deploymentName: unknown, apiKey: unknown) =>
+      ctx.llm.saveAzureKey(
+        asString(resourceName, ''),
+        asString(deploymentName, ''),
+        asString(apiKey, ''),
+      ),
+  );
 
   // ---- google ------------------------------------------------------------
   ipcMain.handle('google:status', () => ctx.google.status());

@@ -120,19 +120,17 @@ export class GmailImapService {
 
       await client.mailboxOpen('INBOX');
 
-      // Search for unseen messages in Primary (Gmail's Primary tab)
+      // Search for unseen messages in Primary (Gmail's Primary tab).
+      // ImapFlow returns `false` rather than throwing when the search itself
+      // fails, which is indistinguishable from an empty inbox here.
       const uids = await client.search({ seen: false }, { uid: true });
 
       // Take the most recent `limit` messages
-      const toFetch = uids.slice(-limit).reverse();
+      const toFetch = (uids === false ? [] : uids).slice(-limit).reverse();
 
       for (const uid of toFetch) {
-        const msg = await client.fetchOne(
-          String(uid),
-          { source: true },
-          { uid: true },
-        );
-        if (!msg?.source) continue;
+        const msg = await client.fetchOne(String(uid), { source: true }, { uid: true });
+        if (msg === false || msg.source === undefined) continue;
 
         const parsed = await simpleParser(msg.source);
 
@@ -223,8 +221,11 @@ export class GmailImapService {
         to: opts.toEmail,
         subject: opts.subject.startsWith('Re:') ? opts.subject : `Re: ${opts.subject}`,
         body: opts.body,
-        inReplyTo: opts.inReplyTo,
-        references: opts.references,
+        // Spread rather than assign: exactOptionalPropertyTypes distinguishes
+        // "absent" from "present and undefined", and these headers must be
+        // omitted entirely when there is no thread to reply into.
+        ...(opts.inReplyTo !== undefined ? { inReplyTo: opts.inReplyTo } : {}),
+        ...(opts.references !== undefined ? { references: opts.references } : {}),
       });
 
       await client.append('[Gmail]/Drafts', rawEmail, ['\\Draft'], new Date());

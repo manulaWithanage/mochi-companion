@@ -1,7 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import {
+  AZURE_API_VERSION,
+  azureChatUrl,
+  cleanAzureResourceName,
   detectProvider,
   MIN_TOOL_PARAMS_B,
+  packAzureKey,
   parameterCount,
   explainMismatch,
   inferCapabilities,
@@ -10,6 +14,7 @@ import {
   PROVIDERS,
   redactKey,
   supports,
+  unpackAzureKey,
   type DiscoveredModel,
 } from './providers.js';
 
@@ -220,5 +225,78 @@ describe('PROVIDERS', () => {
     // The rule this file exists to enforce.
     const serialized = JSON.stringify(PROVIDERS);
     expect(serialized).not.toMatch(/gpt-|claude-\d|gemini-\d|llama\d/);
+  });
+});
+
+describe('cleanAzureResourceName', () => {
+  it('accepts a bare resource name unchanged', () => {
+    expect(cleanAzureResourceName('my-resource')).toBe('my-resource');
+  });
+
+  it('extracts the resource from every hostname the portal shows', () => {
+    // The portal shows different hostnames for the same resource depending on
+    // where you look, and people paste whichever one they found.
+    expect(cleanAzureResourceName('my-resource.openai.azure.com')).toBe('my-resource');
+    expect(cleanAzureResourceName('my-resource.cognitiveservices.azure.com')).toBe('my-resource');
+    expect(cleanAzureResourceName('https://my-resource.openai.azure.com/')).toBe('my-resource');
+  });
+
+  it('extracts the resource from a full deployment URL', () => {
+    expect(
+      cleanAzureResourceName(
+        'https://my-resource.openai.azure.com/openai/deployments/gpt-4o/chat/completions?api-version=2024-02-01',
+      ),
+    ).toBe('my-resource');
+  });
+
+  it('tolerates whitespace from a paste', () => {
+    expect(cleanAzureResourceName('  my-resource  ')).toBe('my-resource');
+  });
+});
+
+describe('azureChatUrl', () => {
+  it('builds the deployment-based chat-completions URL', () => {
+    // This must stay byte-identical to what
+    // createAzure({ resourceName, apiVersion, useDeploymentBasedUrls: true })
+    //   .chat(deployment)
+    // produces. When validation and generation built different URLs, a key
+    // validated successfully and then failed on every real call.
+    expect(azureChatUrl('res', 'dep')).toBe(
+      `https://res.openai.azure.com/openai/deployments/dep/chat/completions?api-version=${AZURE_API_VERSION}`,
+    );
+  });
+
+  it('pins a GA api-version rather than a preview one', () => {
+    // Azure rejects unknown api-versions outright, so this must be a value
+    // every resource accepts.
+    expect(AZURE_API_VERSION).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+  });
+});
+
+describe('packAzureKey / unpackAzureKey', () => {
+  const credentials = { resource: 'my-res', deployment: 'gpt-4o-prod', apiKey: 'a'.repeat(32) };
+
+  it('round-trips', () => {
+    expect(unpackAzureKey(packAzureKey(credentials))).toEqual(credentials);
+  });
+
+  it('keeps the parts in the documented order', () => {
+    // The prefix makes the parts 1-indexed, which is what got miscounted when
+    // each call site split the string by hand.
+    expect(packAzureKey(credentials)).toBe(`azure::my-res::gpt-4o-prod::${'a'.repeat(32)}`);
+  });
+
+  it('rejects anything that is not a packed Azure key', () => {
+    expect(unpackAzureKey('sk-proj-abcdef')).toBeNull();
+    expect(unpackAzureKey('azure::only-two::parts')).toBeNull();
+    expect(unpackAzureKey('azure::res::dep::key::extra')).toBeNull();
+  });
+
+  it('rejects a packed key with an empty part', () => {
+    // An empty resource would build https://.openai.azure.com and fail with a
+    // DNS error that says nothing about the real cause.
+    expect(unpackAzureKey('azure::::dep::key')).toBeNull();
+    expect(unpackAzureKey('azure::res::::key')).toBeNull();
+    expect(unpackAzureKey('azure::res::dep::')).toBeNull();
   });
 });

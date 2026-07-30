@@ -85,6 +85,103 @@ export function detectProvider(rawKey: string): ProviderId | null {
   return null;
 }
 
+// ---------------------------------------------------------------------------
+// Azure OpenAI
+// ---------------------------------------------------------------------------
+
+/**
+ * Azure is the one provider where the endpoint is not a constant.
+ *
+ * A call needs three things the key itself does not carry — resource name,
+ * deployment name, and an `api-version` query parameter — so everything Azure
+ * needs is derived here, in one place, and used by both the validation probe
+ * and the real generation call.
+ *
+ * That sharing is the point. When validation built its own URL and generation
+ * let the SDK build a different one, a key validated successfully and then
+ * failed on every actual call, which reads as "the app is broken" rather than
+ * "these two URLs disagree".
+ */
+
+/**
+ * Pinned deliberately. Azure rejects unknown values outright, so this is the
+ * single line to change — never a per-call default, because a default that
+ * differs between the probe and the call is the bug described above.
+ */
+export const AZURE_API_VERSION = '2024-02-01';
+
+/**
+ * The chat-completions URL for one deployment.
+ *
+ * Must stay identical to what `createAzure({ resourceName, apiVersion,
+ * useDeploymentBasedUrls: true }).chat(deployment)` produces, which is why
+ * both sides read this function rather than assembling their own.
+ */
+export function azureChatUrl(
+  resource: string,
+  deployment: string,
+  apiVersion: string = AZURE_API_VERSION,
+): string {
+  return (
+    `https://${resource}.openai.azure.com/openai/deployments/` +
+    `${deployment}/chat/completions?api-version=${apiVersion}`
+  );
+}
+
+/**
+ * The resource name, whatever the user pasted.
+ *
+ * People copy the whole endpoint out of the portal, and the portal shows
+ * several hostnames for the same resource (`openai.azure.com`,
+ * `cognitiveservices.azure.com`). The leading label is the resource name in
+ * every one of them, and a real resource name cannot contain a dot, so taking
+ * the first label is both sufficient and safe.
+ */
+export function cleanAzureResourceName(input: string): string {
+  const host = input.trim().replace(/^https?:\/\//i, '').split('/')[0] ?? '';
+  return (host.split('.')[0] ?? '').trim();
+}
+
+export interface AzureCredentials {
+  readonly resource: string;
+  readonly deployment: string;
+  readonly apiKey: string;
+}
+
+/**
+ * The vault stores one encrypted string per provider, but Azure needs three
+ * values, so they travel packed together.
+ *
+ * `pack`/`unpack` exist as a pair because hand-splitting this at each call
+ * site already produced one off-by-one bug — the prefix makes the parts
+ * 1-indexed, which is exactly the kind of detail that gets miscounted.
+ */
+export const AZURE_KEY_PREFIX = 'azure::';
+
+export function packAzureKey(credentials: AzureCredentials): string {
+  const { resource, deployment, apiKey } = credentials;
+  return `${AZURE_KEY_PREFIX}${resource}::${deployment}::${apiKey}`;
+}
+
+/** Null for anything that is not a well-formed packed Azure key. */
+export function unpackAzureKey(stored: string): AzureCredentials | null {
+  if (!stored.startsWith(AZURE_KEY_PREFIX)) return null;
+  const parts = stored.slice(AZURE_KEY_PREFIX.length).split('::');
+  if (parts.length !== 3) return null;
+  const [resource, deployment, apiKey] = parts;
+  if (
+    resource === undefined ||
+    deployment === undefined ||
+    apiKey === undefined ||
+    resource.length === 0 ||
+    deployment.length === 0 ||
+    apiKey.length === 0
+  ) {
+    return null;
+  }
+  return { resource, deployment, apiKey };
+}
+
 /** Obvious malformations, caught before a pointless network round trip. */
 export function looksLikeKey(rawKey: string): boolean {
   const key = rawKey.trim();

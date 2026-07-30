@@ -15,9 +15,11 @@ import { createAnthropic } from '@ai-sdk/anthropic';
 import { createGoogleGenerativeAI } from '@ai-sdk/google';
 import { createAzure } from '@ai-sdk/azure';
 import {
+  AZURE_API_VERSION,
   OLLAMA_DEFAULT_HOST,
   route,
   TASKS,
+  unpackAzureKey,
   type DiscoveredModel,
   type ProviderId,
   type TaskId,
@@ -43,8 +45,13 @@ export type GenerateResult =
  * instead targets OpenAI's Responses API and fails against every local
  * runtime. That distinction is invisible until it breaks at runtime.
  *
- * Azure keys are stored as `RESOURCE::DEPLOYMENT::apikey` in the vault.
- * The resource and deployment are extracted here and never logged.
+ * Azure has the same trap, one layer deeper. `createAzure(...)(id)` resolves to
+ * `provider.languageModel`, which in @ai-sdk/azure v4 is the **Responses**
+ * model — it posts to `/openai/v1/responses?api-version=v1` and ignores the
+ * deployment name entirely. Most resources answer that with a 404, so a key
+ * that validated fine failed on every real call. `.chat()` plus
+ * `useDeploymentBasedUrls` is what produces the deployment URL the key was
+ * actually validated against.
  */
 function buildModel(model: DiscoveredModel, key: string | null) {
   switch (model.provider) {
@@ -62,12 +69,16 @@ function buildModel(model: DiscoveredModel, key: string | null) {
     case 'google':
       return createGoogleGenerativeAI({ apiKey: key ?? '' })(model.id);
     case 'azure': {
-      // key is stored as `azure::resourceName::deploymentName::rawApiKey`
-      const parts = (key ?? '').split('::');
-      const resourceName = parts[1] ?? ''; // parts[0] is the literal 'azure' prefix
-      const apiKey = parts[3] ?? '';
-      const azure = createAzure({ resourceName, apiKey });
-      return azure(model.id);
+      const credentials = unpackAzureKey(key ?? '');
+      if (credentials === null) throw new Error('Stored Azure credentials are malformed.');
+      const azure = createAzure({
+        resourceName: credentials.resource,
+        apiKey: credentials.apiKey,
+        apiVersion: AZURE_API_VERSION,
+        useDeploymentBasedUrls: true,
+      });
+      // model.id is the deployment name, which is what Azure routes on.
+      return azure.chat(credentials.deployment);
     }
   }
 }

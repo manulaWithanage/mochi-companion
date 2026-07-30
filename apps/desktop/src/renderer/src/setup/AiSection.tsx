@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState, type JSX } from 'react';
-import type { LlmStatus, ProviderId } from '@mochi/core';
+import { cleanAzureResourceName, type LlmStatus, type ProviderId } from '@mochi/core';
 
 /**
  * The AI panel in Settings.
@@ -96,17 +96,8 @@ export function AiSection(): JSX.Element {
     }
   }, [keyInput]);
 
-function cleanAzureResource(input: string): string {
-  let s = input.trim().replace(/^https?:\/\//i, '');
-  const match = /^([^./]+)\.(openai|cognitiveservices|api\.cognitive)\.(azure|microsoft)\.com/i.exec(s);
-  if (match) return match[1];
-  const dotMatch = /^([^./]+)\.openai\.azure\.com/i.exec(s);
-  if (dotMatch) return dotMatch[1];
-  return s.split('/')[0].split('.')[0].trim();
-}
-
   const saveAzure = useCallback(async () => {
-    const resource = cleanAzureResource(azureResource);
+    const resource = cleanAzureResourceName(azureResource);
     const deployment = azureDeployment.trim();
     const key = azureKey.trim();
     if (!resource || !deployment || !key) {

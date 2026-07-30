@@ -12,8 +12,11 @@
  */
 
 import {
+  AZURE_API_VERSION,
   OLLAMA_DEFAULT_HOST,
   PROVIDERS,
+  azureChatUrl,
+  cleanAzureResourceName,
   detectProvider,
   looksLikeKey,
   parseModelList,
@@ -155,25 +158,12 @@ export async function validateKey(rawKey: string): Promise<KeyValidation> {
 }
 
 /**
- * Extract just the resource name even if the user pasted a full URL or hostname.
- * e.g. "https://jobpromax.openai.azure.com/..." -> "jobpromax"
- */
-export function cleanAzureResourceName(input: string): string {
-  let s = input.trim().replace(/^https?:\/\//i, '');
-  const match = /^([^./]+)\.(openai|cognitiveservices|api\.cognitive)\.(azure|microsoft)\.com/i.exec(s);
-  if (match) {
-    return match[1];
-  }
-  const dotMatch = /^([^./]+)\.openai\.azure\.com/i.exec(s);
-  if (dotMatch) {
-    return dotMatch[1];
-  }
-  return s.split('/')[0].split('.')[0].trim();
-}
-
-/**
  * Validate Azure OpenAI credentials by making a real call.
- * Returns the synthetic model entry on success.
+ *
+ * Azure exposes no usable model-list endpoint — listing deployments needs ARM
+ * management credentials, not the data-plane key — so the deployment itself is
+ * the probe. The URL comes from `azureChatUrl` rather than being assembled
+ * here, so that this proves the exact endpoint generation will later use.
  */
 export async function validateAzureKey(opts: {
   resourceName: string;
@@ -181,57 +171,97 @@ export async function validateAzureKey(opts: {
   apiKey: string;
   apiVersion?: string;
 }): Promise<KeyValidation> {
-  const { resourceName, deploymentName, apiKey, apiVersion = '2024-02-01' } = opts;
+  const { resourceName, deploymentName, apiKey, apiVersion = AZURE_API_VERSION } = opts;
   const resource = cleanAzureResourceName(resourceName);
+  const deployment = deploymentName.trim();
   const redacted = redactKey(apiKey);
 
-  if (!resource || !deploymentName || !apiKey) {
-    return { ok: false, provider: 'azure', redacted, models: [], error: 'Resource name, deployment name and API key are all required.' };
+  if (resource.length === 0 || deployment.length === 0 || apiKey.length === 0) {
+    return {
+      ok: false,
+      provider: 'azure',
+      redacted,
+      models: [],
+      error: 'Resource name, deployment name and API key are all required.',
+    };
   }
 
-  const model: import('@mochi/core').DiscoveredModel = {
-    id: deploymentName,
+  const model: DiscoveredModel = {
+    id: deployment,
     provider: 'azure',
     capabilities: ['text', 'tools'],
   };
 
-  // Validate by probing the deployment's /chat/completions endpoint directly.
-  // This avoids 404 errors on Azure accounts that restrict listing deployments.
-  const url = `https://${resource}.openai.azure.com/openai/deployments/${deploymentName}/chat/completions?api-version=${apiVersion}`;
+  const fail = (error: string): KeyValidation => ({
+    ok: false,
+    provider: 'azure',
+    redacted,
+    models: [],
+    error,
+  });
+
+  const url = azureChatUrl(resource, deployment, apiVersion);
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), REMOTE_TIMEOUT_MS);
+
   try {
-    await fetchJson(
-      url,
-      {
-        method: 'POST',
-        headers: {
-          'api-key': apiKey,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          messages: [{ role: 'user', content: 'hi' }],
-          max_tokens: 1,
-        }),
-      },
-      REMOTE_TIMEOUT_MS,
-    );
-    return { ok: true, provider: 'azure', redacted, models: [model] };
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: { 'api-key': apiKey, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ messages: [{ role: 'user', content: 'hi' }], max_tokens: 1 }),
+      signal: controller.signal,
+    });
+
+    if (response.ok) return { ok: true, provider: 'azure', redacted, models: [model] };
+
+    // Azure explains itself in the body; the status alone cannot tell a wrong
+    // api-version from a missing deployment. Read it before deciding.
+    const detail = await azureErrorDetail(response);
+
+    switch (response.status) {
+      case 401:
+      case 403:
+        return fail('Azure rejected that key. Check you copied KEY 1 from Keys and Endpoint.');
+      case 404:
+        return fail(
+          `No deployment named "${deployment}" on resource "${resource}". ` +
+            'Use the deployment name from Azure AI Foundry, not the model name.',
+        );
+      case 429:
+        return fail('Azure is rate-limiting this resource. Try again in a moment.');
+      case 400:
+      case 422:
+        // Auth, resource and deployment all resolved — Azure only objected to
+        // the one-token probe body, which is not a reason to reject the key.
+        // Anything that names the deployment or api-version is a real problem.
+        if (/deployment|api-version|model/i.test(detail)) return fail(`Azure said: ${detail}`);
+        return { ok: true, provider: 'azure', redacted, models: [model] };
+      default:
+        return fail(`Azure returned ${response.status}. ${detail}`.trim());
+    }
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
-    // 400 or 422 means the server, deployment, and auth worked (it just didn't like the prompt/params)
-    if (message.includes('400') || message.includes('422')) {
-      return { ok: true, provider: 'azure', redacted, models: [model] };
+    if (controller.signal.aborted) {
+      return fail(`Azure did not respond within ${REMOTE_TIMEOUT_MS / 1000}s.`);
     }
-    if (message.includes('401') || message.includes('403')) {
-      return { ok: false, provider: 'azure', redacted, models: [], error: 'Azure API key rejected. Check your key and resource name.' };
-    }
-    if (message.includes('404')) {
-      return { ok: false, provider: 'azure', redacted, models: [], error: `Azure deployment "${deploymentName}" not found on resource "${resource}" (404).` };
-    }
-    if (message.includes('ENOTFOUND') || message.includes('getaddrinfo') || message.includes('fetch failed')) {
-      return { ok: false, provider: 'azure', redacted, models: [], error: `Could not reach "${resource}.openai.azure.com". Check your Resource Name.` };
-    }
-    return { ok: false, provider: 'azure', redacted, models: [], error: `Azure connection failed: ${message}` };
+    return fail(
+      `Could not reach ${resource}.openai.azure.com — check the resource name. (${message})`,
+    );
+  } finally {
+    clearTimeout(timer);
   }
+}
+
+/** Azure's `{ error: { message } }` body, or the status text. Never the key. */
+async function azureErrorDetail(response: Response): Promise<string> {
+  try {
+    const body: unknown = await response.json();
+    const error = (body as { error?: { message?: unknown } }).error;
+    if (typeof error?.message === 'string') return error.message.slice(0, 300);
+  } catch {
+    // Non-JSON error body — the status is all we have.
+  }
+  return response.statusText;
 }
 
 export interface ProviderStatus {

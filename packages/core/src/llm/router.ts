@@ -77,7 +77,17 @@ export const TASKS: Record<TaskId, TaskSpec> = {
  * Rough cost ordering. Local is free, so it always wins a `cheap` task.
  * Deliberately coarse — this ranks providers, it does not price them.
  */
-const COST_RANK: Record<ProviderId, number> = { ollama: 0, google: 1, openai: 2, anthropic: 2 };
+const COST_RANK: Record<ProviderId, number> = {
+  ollama: 0,
+  google: 1,
+  openai: 2,
+  anthropic: 2,
+  // Same models as OpenAI, so the same rank. Omitting it made the sort
+  // comparator return NaN, which silently randomises the order rather than
+  // failing — `Record<ProviderId, number>` is what catches that at compile
+  // time, so this map must gain an entry with every new provider.
+  azure: 2,
+};
 
 export interface RouterPreferences {
   /** Explicit per-task pin. Overrides preference, never capability. */

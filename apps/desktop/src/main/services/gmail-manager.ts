@@ -60,7 +60,7 @@ export class GmailManager {
     const cleanPassword = rawAppPassword.replace(/\s/g, '');
     const test = await this.imap.testConnection({ email: email.trim().toLowerCase(), appPassword: cleanPassword });
     if (!test.ok) {
-      return { ok: false, error: test.error };
+      return { ok: false, error: test.error ?? 'Gmail rejected those credentials.' };
     }
 
     const stored = this.vault.store(email, rawAppPassword);
@@ -138,7 +138,7 @@ export class GmailManager {
         ok: saveResult.ok,
         draftReply: fallbackDraft,
         suggestedSubject: `Re: ${email.subject}`,
-        error: saveResult.error,
+        ...(saveResult.error !== undefined ? { error: saveResult.error } : {}),
       };
     }
 
@@ -154,7 +154,7 @@ export class GmailManager {
       ok: saveResult.ok,
       draftReply: parsed.draftReply,
       suggestedSubject: parsed.suggestedSubject,
-      error: saveResult.error,
+      ...(saveResult.error !== undefined ? { error: saveResult.error } : {}),
     };
   }
 

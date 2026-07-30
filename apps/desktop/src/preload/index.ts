@@ -22,7 +22,6 @@ import type {
   GmailFetchResult,
   GmailSaveDraftRequest,
   GmailStatus,
-  GmailTone,
   KeyResult,
   LlmStatus,
   LoadedSkin,
