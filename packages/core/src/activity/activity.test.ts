@@ -5,6 +5,8 @@ import {
   appCategoryPrompt,
   appsNeedingCategory,
   classifyProcess,
+  KNOWN_SITES,
+  matchBrowsingSite,
   MAX_APPS_PER_REQUEST,
   parseAppCategories,
   focusedMs,
@@ -394,5 +396,45 @@ describe('gaming', () => {
     for (const c of ACTIVITY_CATEGORIES) {
       expect(activityCategoryInfo(c.id).id).toBe(c.id);
     }
+  });
+});
+
+describe('matchBrowsingSite', () => {
+  it('recognises a site from a browser title', () => {
+    expect(matchBrowsingSite('Some video - YouTube - Google Chrome')).toEqual({
+      site: 'YouTube',
+      category: 'media',
+    });
+  });
+
+  it('handles the em dash Firefox uses', () => {
+    expect(matchBrowsingSite('A thread — Reddit — Mozilla Firefox')?.site).toBe('Reddit');
+  });
+
+  it('returns null for anything unrecognised, which is the point', () => {
+    // An unmatched title yields nothing, so the caller has nothing to keep.
+    expect(matchBrowsingSite('Q3 forecast.xlsx - Excel')).toBeNull();
+    expect(matchBrowsingSite('Acme Corp contract review - Google Chrome')).toBeNull();
+    expect(matchBrowsingSite('')).toBeNull();
+  });
+
+  it('matches whole segments, not substrings', () => {
+    // Substring matching would let arbitrary text decide what gets recorded —
+    // a document called "youtube budget" is not YouTube.
+    expect(matchBrowsingSite('youtube budget 2026 - Google Docs')?.site).toBe('Google Docs');
+    expect(matchBrowsingSite('my youtube plan - Notepad')).toBeNull();
+  });
+
+  it('categorises work sites as work', () => {
+    expect(matchBrowsingSite('mochi - GitHub - Chrome')).toEqual({
+      site: 'GitHub',
+      category: 'coding',
+    });
+  });
+
+  it('publishes the full list it can ever record', () => {
+    // The tab shows this outright, so a user can see the whole surface.
+    expect(KNOWN_SITES).toContain('YouTube');
+    expect(KNOWN_SITES.length).toBeGreaterThan(10);
   });
 });

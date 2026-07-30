@@ -7,6 +7,7 @@ import {
   switchCount,
   totalsByApp,
   totalsByCategory,
+  KNOWN_SITES,
   type ActivityCategory,
   type ActivitySpan,
   type MochiSettings,
@@ -37,6 +38,7 @@ const CATEGORY_COLOUR: Record<ActivityCategory, string> = {
   communication: '#f2d3a6',
   browsing: '#8f8aa3',
   gaming: '#7fd8c8',
+  media: '#f5a3e0',
   other: '#5a5364',
 };
 
@@ -106,6 +108,7 @@ export function ActivityTab(): JSX.Element {
   }, [range, now, reload]);
 
   const tracking = settings?.activityTracking === true;
+  const sites = settings?.trackBrowsingSites === true;
 
   const apps = useMemo(() => totalsByApp(spans), [spans]);
   const categories = useMemo(
@@ -119,6 +122,10 @@ export function ActivityTab(): JSX.Element {
 
   const toggle = useCallback(async (next: boolean) => {
     setSettings(await window.mochi.settings.setActivityTracking(next));
+  }, []);
+
+  const toggleSites = useCallback(async (next: boolean) => {
+    setSettings(await window.mochi.settings.setTrackBrowsingSites(next));
   }, []);
 
   const wipe = useCallback(async () => {
@@ -145,10 +152,12 @@ export function ActivityTab(): JSX.Element {
           What is recorded
         </div>
         <div style={{ fontSize: 12.5, color: C.dim, lineHeight: 1.65 }}>
-          The name of the app in front, and nothing else. Window titles are never read, so no
-          document names, no browser tabs, no message contents ever reach the disk. Time when you
-          are away from the keyboard is discarded rather than counted. Everything stays in Mochi&apos;s
-          local database and is deleted after {90} days.
+          The name of the app in front, and nothing else. Time when you are away from the keyboard
+          is discarded rather than counted. Everything stays in Mochi&apos;s local database, never
+          leaves this machine, and is deleted after 90 days.
+          {sites
+            ? ' Site tracking is on, so browser titles are checked against the fixed list below and nothing else is kept.'
+            : ' Window titles are never read, so no document names, browser tabs or message contents can reach the disk.'}
         </div>
       </div>
 
@@ -176,6 +185,34 @@ export function ActivityTab(): JSX.Element {
           </button>
         </div>
       </div>
+
+      {tracking && (
+        <div style={{ ...card, marginBottom: 14 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: 13.5, color: C.text, marginBottom: 3 }}>
+                Split browsing into sites
+              </div>
+              <div style={{ fontSize: 12, color: C.dim, lineHeight: 1.55 }}>
+                Tells YouTube from research. This is the one feature that needs the browser window
+                title, so it is separate and off by default. The title is compared against the list
+                below and thrown away in the same instant — only a name from that list is ever
+                recorded, so anything not on it cannot be.
+              </div>
+            </div>
+            <button
+              style={button(sites ? 'ghost' : 'primary')}
+              onClick={() => void toggleSites(!sites)}
+            >
+              {sites ? 'Turn off' : 'Turn on'}
+            </button>
+          </div>
+
+          <div style={{ fontSize: 11.5, color: C.faint, marginTop: 10, lineHeight: 1.6 }}>
+            <span style={{ color: C.dim }}>The complete list:</span> {KNOWN_SITES.join(' · ')}
+          </div>
+        </div>
+      )}
 
       {tracking && (
         <>

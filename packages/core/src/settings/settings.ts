@@ -68,6 +68,14 @@ export interface MochiSettings {
    * buried in a table nobody opens.
    */
   readonly learnedAppCategories: Readonly<Record<string, string>>;
+  /**
+   * Split browsing into sites, which needs the window title.
+   *
+   * Separate from activityTracking and off by default, because it is a real
+   * weakening of the "titles are never read" guarantee and should therefore be
+   * a decision rather than something inherited from turning tracking on.
+   */
+  readonly trackBrowsingSites: boolean;
   /** IDs of up to 3 primary quick-select time tracking projects shown above Mochi. */
   readonly primaryProjectIds: readonly string[];
   /**
@@ -96,6 +104,7 @@ export const DEFAULT_SETTINGS: MochiSettings = {
   centerScreenAlerts: true,
   activityTracking: false,
   learnedAppCategories: {},
+  trackBrowsingSites: false,
   primaryProjectIds: [],
   localEndpoints: {},
   gmailAi: {
@@ -288,6 +297,7 @@ export function normalizeSettings(raw: unknown): {
       centerScreenAlerts: input.centerScreenAlerts !== false,
       activityTracking: input.activityTracking === true,
       learnedAppCategories: learnedAppCategories,
+      trackBrowsingSites: input.trackBrowsingSites === true,
       primaryProjectIds,
       localEndpoints,
       gmailAi,

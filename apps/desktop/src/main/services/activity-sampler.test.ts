@@ -3,30 +3,42 @@ import { encodeScript, parseLine } from './activity-sampler.js';
 
 describe('parseLine', () => {
   it('reads a normal line', () => {
-    expect(parseLine('Code|4213')).toEqual({ process: 'Code', idleMs: 4213 });
+    expect(parseLine('Code|4213|')).toEqual({ process: 'Code', idleMs: 4213 });
+  });
+
+  it('carries a title when one was sent', () => {
+    expect(parseLine('chrome|120|Some video - YouTube - Google Chrome')).toEqual({
+      process: 'chrome',
+      idleMs: 120,
+      title: 'Some video - YouTube - Google Chrome',
+    });
+  });
+
+  it('omits the title field when empty, rather than carrying an empty string', () => {
+    expect(parseLine('Code|10|')).not.toHaveProperty('title');
   });
 
   it('reads a process name containing a dot', () => {
     // Observed on a real machine: packaged apps report as `WhatsApp.Root`.
-    expect(parseLine('WhatsApp.Root|0')).toEqual({ process: 'WhatsApp.Root', idleMs: 0 });
+    expect(parseLine('WhatsApp.Root|0|')).toEqual({ process: 'WhatsApp.Root', idleMs: 0 });
   });
 
   it('handles an unknown process, which the helper reports as empty', () => {
-    expect(parseLine('|9000')).toEqual({ process: '', idleMs: 9000 });
+    expect(parseLine('|9000|')).toEqual({ process: '', idleMs: 9000 });
   });
 
   it('splits on the last separator, so a name with a pipe cannot break parsing', () => {
-    expect(parseLine('Weird|Name|120')).toEqual({ process: 'Weird|Name', idleMs: 120 });
+    expect(parseLine('Weird|Name|120|')).toEqual({ process: 'Weird|Name', idleMs: 120 });
   });
 
   it('tolerates trailing whitespace from the pipe', () => {
-    expect(parseLine('  Code|500  \r')).toEqual({ process: 'Code', idleMs: 500 });
+    expect(parseLine('  Code|500|  \r')).toEqual({ process: 'Code', idleMs: 500 });
   });
 
   it('rejects anything malformed rather than inventing a sample', () => {
     // The helper writes to a pipe that can carry PowerShell noise; a bad line
     // must not become a fabricated hour of activity.
-    for (const junk of ['', '   ', 'no separator', 'Code|notanumber', 'Code|-5']) {
+    for (const junk of ['', '   ', 'no separator', 'Code|notanumber|', 'Code|-5|', 'onlyone|']) {
       expect(parseLine(junk)).toBeNull();
     }
   });
@@ -42,11 +54,18 @@ describe('encodeScript', () => {
     expect(decoded).toContain('Start-Sleep -Seconds 10');
   });
 
-  it('never reads a window title', () => {
-    // The privacy guarantee, asserted rather than promised in a comment.
+  it('contains no title code at all when site tracking is off', () => {
+    // The guarantee, asserted rather than promised in a comment. Conditional
+    // generation rather than a runtime flag means there is no code path to
+    // audit and no flag that can be got wrong.
     const decoded = Buffer.from(encodeScript(10), 'base64').toString('utf16le');
     expect(decoded).not.toContain('GetWindowText');
     expect(decoded).not.toMatch(/MainWindowTitle/i);
+  });
+
+  it('includes it only when site tracking is on', () => {
+    const decoded = Buffer.from(encodeScript(10, true), 'base64').toString('utf16le');
+    expect(decoded).toContain('GetWindowText');
   });
 
   it('carries the interval through', () => {

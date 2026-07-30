@@ -105,6 +105,8 @@ const bridge: MochiBridge = {
       ipcRenderer.invoke('settings:setPrimaryProjects', ids) as Promise<MochiSettings>,
     setActivityTracking: (enabled) =>
       ipcRenderer.invoke('settings:setActivityTracking', enabled) as Promise<MochiSettings>,
+    setTrackBrowsingSites: (enabled) =>
+      ipcRenderer.invoke('settings:setTrackBrowsingSites', enabled) as Promise<MochiSettings>,
     setGmailAi: (patch) =>
       ipcRenderer.invoke('settings:setGmailAi', patch) as Promise<MochiSettings>,
     onChange: (listener) => subscribe<MochiSettings>('settings:changed', listener),

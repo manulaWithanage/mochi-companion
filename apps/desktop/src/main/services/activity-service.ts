@@ -15,6 +15,7 @@ import {
   appCategoryPrompt,
   appsNeedingCategory,
   classifyProcess,
+  matchBrowsingSite,
   parseAppCategories,
   samplesToSpans,
   type ActivityCategory,
@@ -65,7 +66,7 @@ const noLearning: LearningHooks = {
 };
 
 export class ActivityService {
-  private readonly source: ForegroundSource;
+  private source: ForegroundSource;
   private buffer: ActivitySample[] = [];
   private flushTimer: NodeJS.Timeout | null = null;
   private pruneTimer: NodeJS.Timeout | null = null;
@@ -76,13 +77,26 @@ export class ActivityService {
     private readonly storage: StorageAdapter,
     private readonly isEnabled: () => boolean,
     private readonly learning: LearningHooks = noLearning,
+    private readonly tracksSites: () => boolean = () => false,
     source?: ForegroundSource,
   ) {
-    this.source = source ?? createForegroundSource(SAMPLE_SECONDS);
+    this.source = source ?? createForegroundSource(SAMPLE_SECONDS, tracksSites());
   }
 
   get supported(): boolean {
     return this.source.supported;
+  }
+
+  /**
+   * Rebuild the helper after the site-tracking setting changed.
+   *
+   * The script is generated differently depending on it, so re-reading the flag
+   * is not enough — turning site tracking off has to remove the title code from
+   * the running helper, not merely stop looking at what it sends.
+   */
+  restartSource(): void {
+    this.source.stop();
+    this.source = createForegroundSource(SAMPLE_SECONDS, this.tracksSites());
   }
 
   start(): void {
@@ -97,7 +111,22 @@ export class ActivityService {
       if (sample.process.length === 0) return;
 
       const resolved = classifyProcess(sample.process, this.learning.get());
-      this.buffer.push({ at: Date.now(), app: resolved.app, category: resolved.category });
+
+      // The only place a window title is ever touched. It is matched against a
+      // fixed site list and goes out of scope in this tick — nothing else reads
+      // it, nothing stores it, and an unrecognised title yields null so there is
+      // nothing to keep.
+      let app = resolved.app;
+      let category = resolved.category;
+      if (sample.title !== undefined && resolved.category === 'browsing') {
+        const site = matchBrowsingSite(sample.title);
+        if (site !== null) {
+          app = site.site;
+          category = site.category;
+        }
+      }
+
+      this.buffer.push({ at: Date.now(), app, category });
     });
 
     this.flushTimer = setInterval(() => void this.flush(), FLUSH_INTERVAL_MS);

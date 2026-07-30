@@ -206,6 +206,19 @@ export function registerIpc(ctx: IpcContext): void {
     return next;
   });
 
+  ipcMain.handle('settings:setTrackBrowsingSites', async (_e, enabled: unknown) => {
+    const next = ctx.settings.update({ trackBrowsingSites: enabled === true });
+    // The helper script differs depending on this, so it has to be rebuilt
+    // rather than merely re-read — turning it off must remove the title code,
+    // not just stop looking at the result.
+    if (next.activityTracking) {
+      await ctx.activity.stop();
+      ctx.activity.restartSource();
+      ctx.activity.start();
+    }
+    return next;
+  });
+
   ipcMain.handle('settings:setPrimaryProjects', (_e, ids: unknown) => {
     const list = Array.isArray(ids)
       ? ids.filter((id): id is string => typeof id === 'string' && id.length > 0).slice(0, 3)

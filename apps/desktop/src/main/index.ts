@@ -196,6 +196,7 @@ async function bootstrap(): Promise<void> {
         return result.ok ? result.text : null;
       },
     },
+    () => settings.get().trackBrowsingSites,
   );
   if (settings.get().activityTracking) activity.start();
   const gmailManager = new GmailManager(llmClient, settings, storage, bus);

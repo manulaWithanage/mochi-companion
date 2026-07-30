@@ -177,6 +177,7 @@ export interface MochiBridge {
     setMascotSize(size: MascotSize): Promise<MochiSettings>;
     setPrimaryProjects(ids: readonly string[]): Promise<MochiSettings>;
     setActivityTracking(enabled: boolean): Promise<MochiSettings>;
+    setTrackBrowsingSites(enabled: boolean): Promise<MochiSettings>;
     setGmailAi(patch: Partial<GmailAiSettings>): Promise<MochiSettings>;
     onChange(listener: (settings: MochiSettings) => void): () => void;
   };

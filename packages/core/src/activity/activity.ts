@@ -24,6 +24,7 @@ export type ActivityCategory =
   | 'browsing'
   | 'terminal'
   | 'gaming'
+  | 'media'
   | 'other';
 
 export interface ActivityCategoryInfo {
@@ -42,6 +43,7 @@ export const ACTIVITY_CATEGORIES: readonly ActivityCategoryInfo[] = [
   { id: 'communication', label: 'Chat & mail', focused: false },
   { id: 'browsing', label: 'Browsing', focused: false },
   { id: 'gaming', label: 'Gaming', focused: false },
+  { id: 'media', label: 'Video & music', focused: false },
   { id: 'other', label: 'Other', focused: false },
 ];
 
@@ -549,3 +551,91 @@ export function appsNeedingCategory(
     .slice(0, MAX_APPS_PER_REQUEST)
     .map(([app]) => app);
 }
+
+// ---------------------------------------------------------------------------
+// Optional: which site, inside a browser
+// ---------------------------------------------------------------------------
+
+/**
+ * Splitting a browser out into sites needs the window title, and reading
+ * titles is the one thing the rest of this module refuses to do.
+ *
+ * So this is deliberately the narrowest possible version. The title is matched
+ * against a fixed list of site names and **only the matching name survives** —
+ * an unmatched title returns null and is discarded on the spot. A document
+ * called "Q3 forecast", a client portal, a search for a diagnosis: none of them
+ * match anything here, so none of them can be recorded.
+ *
+ * It is off unless the user turns it on separately from tracking itself, and
+ * that is why: it is a real weakening of the guarantee, and it should be a
+ * decision rather than a default.
+ */
+export interface SiteRule {
+  /** Matched against a whole title segment, case-insensitively. */
+  readonly segment: string;
+  readonly site: string;
+  readonly category: ActivityCategory;
+}
+
+const SITE_RULES: readonly SiteRule[] = [
+  { segment: 'youtube', site: 'YouTube', category: 'media' },
+  { segment: 'netflix', site: 'Netflix', category: 'media' },
+  { segment: 'twitch', site: 'Twitch', category: 'media' },
+  { segment: 'spotify', site: 'Spotify', category: 'media' },
+  { segment: 'prime video', site: 'Prime Video', category: 'media' },
+  { segment: 'disney+', site: 'Disney+', category: 'media' },
+
+  { segment: 'reddit', site: 'Reddit', category: 'browsing' },
+  { segment: 'x', site: 'X', category: 'browsing' },
+  { segment: 'instagram', site: 'Instagram', category: 'browsing' },
+  { segment: 'facebook', site: 'Facebook', category: 'browsing' },
+  { segment: 'linkedin', site: 'LinkedIn', category: 'browsing' },
+  { segment: 'tiktok', site: 'TikTok', category: 'browsing' },
+
+  { segment: 'github', site: 'GitHub', category: 'coding' },
+  { segment: 'stack overflow', site: 'Stack Overflow', category: 'coding' },
+  { segment: 'gitlab', site: 'GitLab', category: 'coding' },
+  { segment: 'figma', site: 'Figma', category: 'design' },
+  { segment: 'google docs', site: 'Google Docs', category: 'writing' },
+  { segment: 'google sheets', site: 'Google Sheets', category: 'writing' },
+  { segment: 'notion', site: 'Notion', category: 'writing' },
+  { segment: 'gmail', site: 'Gmail', category: 'communication' },
+  { segment: 'jira', site: 'Jira', category: 'coding' },
+  { segment: 'linear', site: 'Linear', category: 'coding' },
+];
+
+export interface MatchedSite {
+  readonly site: string;
+  readonly category: ActivityCategory;
+}
+
+/**
+ * The site a browser title names, or null.
+ *
+ * Matched on whole segments rather than substrings. A browser title is
+ * `<page> - <Site> - <Browser>`, so the site is its own segment; substring
+ * matching would let a spreadsheet called "youtube budget 2026" register as
+ * YouTube, and worse, would mean arbitrary text influenced what got stored.
+ *
+ * Returns null for everything it does not recognise, which is the point: an
+ * unrecognised title yields nothing and the caller has nothing to keep.
+ */
+export function matchBrowsingSite(title: string): MatchedSite | null {
+  if (title.length === 0) return null;
+
+  // Browsers disagree about the separator: Chrome and Edge use a hyphen,
+  // Firefox an em dash.
+  const segments = title
+    .split(/\s+[-—–|]\s+/)
+    .map((part) => part.trim().toLowerCase())
+    .filter((part) => part.length > 0);
+
+  for (const segment of segments) {
+    const rule = SITE_RULES.find((r) => r.segment === segment);
+    if (rule !== undefined) return { site: rule.site, category: rule.category };
+  }
+  return null;
+}
+
+/** Every site name that can ever be recorded. Shown in the tab, in full. */
+export const KNOWN_SITES: readonly string[] = [...new Set(SITE_RULES.map((r) => r.site))].sort();

@@ -23,6 +23,13 @@ export interface ForegroundSample {
   readonly process: string;
   /** Milliseconds since the last keyboard or mouse input, system-wide. */
   readonly idleMs: number;
+  /**
+   * Window title, present only when site tracking is on.
+   *
+   * Matched against a fixed site list and discarded in the same tick. It is
+   * never stored, never logged and never sent anywhere.
+   */
+  readonly title?: string;
 }
 
 export interface ForegroundSource {
@@ -42,7 +49,22 @@ export interface ForegroundSource {
  * `GetLastInputInfo` is what makes the numbers honest: without it, a machine
  * left unlocked overnight reports eight hours in whatever was on screen.
  */
-function script(intervalSeconds: number): string {
+/**
+ * The title-reading members, injected only when the user asked for them.
+ *
+ * Conditional *generation* rather than a runtime flag: with site tracking off
+ * the script does not contain GetWindowText at all, so there is no code path to
+ * audit and no flag to get wrong. A test asserts both halves of that.
+ */
+const TITLE_MEMBERS = `
+  [DllImport("user32.dll", CharSet=CharSet.Unicode)] public static extern int GetWindowText(IntPtr h, System.Text.StringBuilder sb, int n);
+  public static string Title() {
+    var sb = new System.Text.StringBuilder(512);
+    GetWindowText(GetForegroundWindow(), sb, sb.Capacity);
+    return sb.ToString().Replace("|", " ");
+  }`;
+
+function script(intervalSeconds: number, withTitle: boolean): string {
   return `
 $ErrorActionPreference = 'Stop'
 Add-Type -TypeDefinition @'
@@ -53,7 +75,7 @@ public static class MochiFg {
   [DllImport("user32.dll")] public static extern int GetWindowThreadProcessId(IntPtr h, out int pid);
   [StructLayout(LayoutKind.Sequential)] public struct LASTINPUTINFO { public uint cbSize; public uint dwTime; }
   [DllImport("user32.dll")] public static extern bool GetLastInputInfo(ref LASTINPUTINFO plii);
-  public static int Pid() { int p; GetWindowThreadProcessId(GetForegroundWindow(), out p); return p; }
+  public static int Pid() { int p; GetWindowThreadProcessId(GetForegroundWindow(), out p); return p; }${withTitle ? TITLE_MEMBERS : ''}
   public static uint IdleMs() {
     LASTINPUTINFO li = new LASTINPUTINFO(); li.cbSize = (uint)Marshal.SizeOf(li);
     GetLastInputInfo(ref li); return (uint)Environment.TickCount - li.dwTime;
@@ -66,9 +88,10 @@ while ($true) {
     $n = ''
     if ($p -gt 0) { $n = (Get-Process -Id $p -ErrorAction SilentlyContinue).ProcessName }
     if (-not $n) { $n = '' }
-    Write-Output ("{0}|{1}" -f $n, [MochiFg]::IdleMs())
+    $t = ${withTitle ? '[MochiFg]::Title()' : "''"}
+    Write-Output ("{0}|{1}|{2}" -f $n, [MochiFg]::IdleMs(), $t)
   } catch {
-    Write-Output "|0"
+    Write-Output "|0|"
   }
   Start-Sleep -Seconds ${intervalSeconds}
 }
@@ -82,8 +105,8 @@ while ($true) {
  * process that starts, prints a parse error to stderr that nothing reads, and
  * exits — which looks exactly like an idle user.
  */
-export function encodeScript(intervalSeconds: number): string {
-  return Buffer.from(script(intervalSeconds), 'utf16le').toString('base64');
+export function encodeScript(intervalSeconds: number, withTitle = false): string {
+  return Buffer.from(script(intervalSeconds, withTitle), 'utf16le').toString('base64');
 }
 
 /** Wait this long before restarting a helper that died, so a failing spawn cannot loop hot. */
@@ -96,7 +119,10 @@ export class WindowsForegroundSource implements ForegroundSource {
   private stopped = false;
   private buffer = '';
 
-  constructor(private readonly intervalSeconds: number) {}
+  constructor(
+    private readonly intervalSeconds: number,
+    private readonly withTitle: boolean,
+  ) {}
 
   get supported(): boolean {
     return process.platform === 'win32';
@@ -119,7 +145,7 @@ export class WindowsForegroundSource implements ForegroundSource {
       // stdin parsing and the quoting minefield.
       this.child = spawn(
         'powershell.exe',
-        ['-NoProfile', '-NonInteractive', '-EncodedCommand', encodeScript(this.intervalSeconds)],
+        ['-NoProfile', '-NonInteractive', '-EncodedCommand', encodeScript(this.intervalSeconds, this.withTitle)],
         { windowsHide: true, stdio: ['ignore', 'pipe', 'pipe'] },
       );
     } catch {
@@ -174,13 +200,23 @@ export function parseLine(line: string): ForegroundSample | null {
   const trimmed = line.trim();
   if (trimmed.length === 0) return null;
 
-  const separator = trimmed.lastIndexOf('|');
-  if (separator < 0) return null;
+  // `process|idleMs|title`. The title may be empty and the process name may
+  // itself contain a pipe, so the two separators are found from known ends
+  // rather than by splitting.
+  const last = trimmed.lastIndexOf('|');
+  if (last < 0) return null;
+  const first = trimmed.lastIndexOf('|', last - 1);
+  if (first < 0) return null;
 
-  const idleMs = Number(trimmed.slice(separator + 1));
+  const idleMs = Number(trimmed.slice(first + 1, last));
   if (!Number.isFinite(idleMs) || idleMs < 0) return null;
 
-  return { process: trimmed.slice(0, separator).trim(), idleMs };
+  const title = trimmed.slice(last + 1).trim();
+  return {
+    process: trimmed.slice(0, first).trim(),
+    idleMs,
+    ...(title.length > 0 ? { title } : {}),
+  };
 }
 
 /** Nothing to sample on platforms without an implementation yet. */
@@ -194,8 +230,11 @@ export class UnsupportedForegroundSource implements ForegroundSource {
   }
 }
 
-export function createForegroundSource(intervalSeconds: number): ForegroundSource {
+export function createForegroundSource(
+  intervalSeconds: number,
+  withTitle = false,
+): ForegroundSource {
   return process.platform === 'win32'
-    ? new WindowsForegroundSource(intervalSeconds)
+    ? new WindowsForegroundSource(intervalSeconds, withTitle)
     : new UnsupportedForegroundSource();
 }
