@@ -6,6 +6,8 @@
  */
 
 import type {
+  CachedEmail,
+  EmailStore,
   EmailCategory,
   GmailConnectResult,
   GmailDraftResult,
@@ -14,29 +16,49 @@ import type {
   GmailStatus,
   GmailTone,
 } from '@mochi/core';
-import {
-  buildEmailReplyPrompt,
-  parseEmailReplyResponse,
-} from '@mochi/core';
+import { buildEmailReplyPrompt, parseEmailReplyResponse } from '@mochi/core';
 import { GmailVault } from '../storage/gmail-vault.js';
 import { GmailImapService } from './gmail-imap.js';
 import type { LlmClient } from './llm-client.js';
 import type { SettingsStore } from '../storage/settings-store.js';
+import { GmailSyncService, type GmailSyncStatus } from './gmail-sync-service.js';
 
 export class GmailManager {
   private readonly vault: GmailVault;
   private readonly imap: GmailImapService;
+  private readonly syncService: GmailSyncService;
+  private readonly inboxListeners = new Set<
+    (account: string, newEmails: readonly CachedEmail[]) => void
+  >();
+  private readonly syncStatusListeners = new Set<(status: GmailSyncStatus) => void>();
   /** Cache of the last fetched emails for the current session. */
   private emailCache: import('./gmail-imap.js').EmailSummary[] = [];
 
   constructor(
     private readonly llmClient: LlmClient,
     private readonly settings: SettingsStore,
+    emailStore: EmailStore,
     vault?: GmailVault,
     imap?: GmailImapService,
   ) {
     this.vault = vault ?? new GmailVault();
     this.imap = imap ?? new GmailImapService();
+    this.syncService = new GmailSyncService(() => this.vault.reveal(), this.imap, emailStore, {
+      onInboxChanged: (account, newEmails) => {
+        for (const listener of this.inboxListeners) listener(account, newEmails);
+      },
+      onStatus: (status) => {
+        for (const listener of this.syncStatusListeners) listener(status);
+      },
+    });
+  }
+
+  start(): void {
+    if (this.vault.hasCredentials) this.syncService.start();
+  }
+
+  async stop(): Promise<void> {
+    await this.syncService.stop();
   }
 
   status(): GmailStatus {
@@ -59,22 +81,50 @@ export class GmailManager {
     }
 
     const cleanPassword = rawAppPassword.replace(/\s/g, '');
-    const test = await this.imap.testConnection({ email: email.trim().toLowerCase(), appPassword: cleanPassword });
+    const test = await this.imap.testConnection({
+      email: email.trim().toLowerCase(),
+      appPassword: cleanPassword,
+    });
     if (!test.ok) {
       return { ok: false, error: test.error ?? 'Gmail rejected those credentials.' };
     }
 
     const stored = this.vault.store(email, rawAppPassword);
     if (!stored) {
-      return { ok: false, error: 'Could not encrypt credentials. This system may not support encrypted storage.' };
+      return {
+        ok: false,
+        error: 'Could not encrypt credentials. This system may not support encrypted storage.',
+      };
     }
 
+    this.syncService.start();
     return { ok: true };
   }
 
-  disconnect(): void {
+  async disconnect(): Promise<void> {
+    await this.syncService.stop();
     this.vault.clear();
     this.emailCache = [];
+  }
+
+  async refresh(): Promise<void> {
+    await this.syncService.sync('manual');
+  }
+
+  get syncStatus(): GmailSyncStatus {
+    return this.syncService.status;
+  }
+
+  onInboxChanged(
+    listener: (account: string, newEmails: readonly CachedEmail[]) => void,
+  ): () => void {
+    this.inboxListeners.add(listener);
+    return () => this.inboxListeners.delete(listener);
+  }
+
+  onSyncStatus(listener: (status: GmailSyncStatus) => void): () => void {
+    this.syncStatusListeners.add(listener);
+    return () => this.syncStatusListeners.delete(listener);
   }
 
   async fetchUnread(
@@ -94,7 +144,10 @@ export class GmailManager {
     return result;
   }
 
-  async generateAndSaveDraft(emailUid: number, tone: GmailTone = 'professional'): Promise<GmailDraftResult> {
+  async generateAndSaveDraft(
+    emailUid: number,
+    tone: GmailTone = 'professional',
+  ): Promise<GmailDraftResult> {
     const credentials = this.vault.reveal();
     if (!credentials) {
       return { ok: false, error: 'No Gmail account connected.' };
@@ -103,7 +156,10 @@ export class GmailManager {
     // Look up the email from cache (fetched in the same session)
     const email = this.emailCache.find((e) => e.uid === emailUid);
     if (!email) {
-      return { ok: false, error: `Email UID ${emailUid} not found. Please refresh your inbox first.` };
+      return {
+        ok: false,
+        error: `Email UID ${emailUid} not found. Please refresh your inbox first.`,
+      };
     }
 
     const userName = this.settings.get().assistantName ?? 'Mochi User';

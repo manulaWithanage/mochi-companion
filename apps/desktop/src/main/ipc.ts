@@ -54,7 +54,11 @@ export interface IpcContext {
   llm: {
     status(): LlmStatus;
     saveKey(rawKey: string): Promise<import('@mochi/core').KeyResult>;
-    saveAzureKey(resourceName: string, deploymentName: string, apiKey: string): Promise<import('@mochi/core').KeyResult>;
+    saveAzureKey(
+      resourceName: string,
+      deploymentName: string,
+      apiKey: string,
+    ): Promise<import('@mochi/core').KeyResult>;
     forgetKey(provider: ProviderId): LlmStatus;
     setDailyTokenCap(cap: number): LlmStatus;
     setLocalEndpoint(provider: ProviderId, baseUrl: string | null): Promise<LlmStatus>;
@@ -279,15 +283,11 @@ export function registerIpc(ctx: IpcContext): void {
     return ctx.gmail.connect(emailStr, passStr);
   });
 
-  ipcMain.handle('gmail:disconnect', () => {
-    ctx.gmail.disconnect();
-  });
+  ipcMain.handle('gmail:disconnect', () => ctx.gmail.disconnect());
 
   ipcMain.handle('gmail:fetchUnread', (_e, limit: unknown, only: unknown) => {
     const n =
-      typeof limit === 'number' && Number.isFinite(limit)
-        ? Math.min(Math.max(1, limit), 50)
-        : 10;
+      typeof limit === 'number' && Number.isFinite(limit) ? Math.min(Math.max(1, limit), 50) : 10;
 
     // Category ids become part of an X-GM-RAW query, so they are whitelisted
     // against the union rather than passed through. An empty result after
@@ -336,7 +336,10 @@ export function registerIpc(ctx: IpcContext): void {
 
   ipcMain.handle('userRoutines:triggerTestAlert', (_e, title: unknown, message: unknown) => {
     const titleStr = typeof title === 'string' ? title : 'Hydration Break';
-    const msgStr = typeof message === 'string' ? message : 'Time for a glass of water! Staying hydrated keeps your energy steady.';
+    const msgStr =
+      typeof message === 'string'
+        ? message
+        : 'Time for a glass of water! Staying hydrated keeps your energy steady.';
     ctx.userRoutineScheduler.triggerAlert(titleStr, msgStr);
   });
 }

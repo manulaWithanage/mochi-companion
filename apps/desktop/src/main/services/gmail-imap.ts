@@ -12,6 +12,7 @@ import {
   assignCategories,
   CATEGORY_IDS,
   unreadInCategory,
+  type CachedEmail,
   type EmailCategory,
 } from '@mochi/core';
 import type { GmailCredentials } from '../storage/gmail-vault.js';
@@ -44,6 +45,15 @@ export interface GmailDraftResult {
   readonly ok: boolean;
   readonly error?: string;
 }
+
+export type GmailInboxSnapshotResult =
+  | {
+      readonly ok: true;
+      readonly emails: readonly CachedEmail[];
+      readonly uidValidity: string;
+      readonly counts: readonly { readonly category: EmailCategory; readonly count: number }[];
+    }
+  | { readonly ok: false; readonly error: string };
 
 /**
  * Strip HTML tags and collapse whitespace for a clean plain-text body.
@@ -105,6 +115,137 @@ function buildRawEmail(opts: {
 
 export class GmailImapService {
   /**
+   * Fetch a durable, metadata-only view of the newest unread inbox messages.
+   *
+   * Unlike fetchUnread(), this does not download complete RFC-822 bodies.
+   * It is safe to run on startup and during periodic reconciliation.
+   */
+  async fetchInboxSnapshot(
+    credentials: GmailCredentials,
+    limit = 100,
+    only: readonly EmailCategory[] = CATEGORY_IDS,
+  ): Promise<GmailInboxSnapshotResult> {
+    let client: import('imapflow').ImapFlow | null = null;
+    try {
+      const { ImapFlow } = await import('imapflow');
+      client = new ImapFlow({
+        host: 'imap.gmail.com',
+        port: 993,
+        secure: true,
+        auth: {
+          user: credentials.email,
+          pass: credentials.appPassword,
+        },
+        logger: false,
+      });
+
+      await client.connect();
+      const mailbox = await client.mailboxOpen('INBOX');
+
+      const perCategory: { category: EmailCategory; ids: readonly number[] }[] = [];
+      for (const category of CATEGORY_IDS) {
+        const found = await client.search({ gmraw: unreadInCategory(category) }, { uid: true });
+        perCategory.push({ category, ids: found === false ? [] : found });
+      }
+
+      const categoryOf = assignCategories(perCategory);
+      const counts = perCategory.map((result) => ({
+        category: result.category,
+        count: result.ids.length,
+      }));
+      const wanted = new Set(only);
+      const uids = [
+        ...new Set(
+          perCategory
+            .filter((result) => wanted.has(result.category))
+            .flatMap((result) => result.ids),
+        ),
+      ]
+        .sort((a, b) => b - a)
+        .slice(0, Math.min(100, Math.max(1, limit)));
+
+      const syncedAt = Date.now();
+      const emails: CachedEmail[] = [];
+      if (uids.length > 0) {
+        for await (const message of client.fetch(
+          uids,
+          {
+            uid: true,
+            envelope: true,
+            flags: true,
+            labels: true,
+            threadId: true,
+            internalDate: true,
+          },
+          { uid: true },
+        )) {
+          const envelope = message.envelope;
+          const from = envelope?.from?.[0];
+          const replyTo = envelope?.replyTo?.[0] ?? from;
+          const fromAddress = from?.address?.trim().toLowerCase() ?? '';
+          const received =
+            envelope?.date instanceof Date
+              ? envelope.date.getTime()
+              : message.internalDate instanceof Date
+                ? message.internalDate.getTime()
+                : syncedAt;
+          const messageId = envelope?.messageId ?? `uid-${message.uid}`;
+
+          emails.push({
+            account: credentials.email,
+            emailId: message.emailId ?? `${mailbox.uidValidity.toString()}:${message.uid}`,
+            threadId: message.threadId ?? message.emailId ?? messageId,
+            uid: message.uid,
+            messageId,
+            fromName: from?.name?.trim() ?? '',
+            fromAddress,
+            replyToAddress: replyTo?.address?.trim().toLowerCase() ?? fromAddress,
+            toAddresses: (envelope?.to ?? [])
+              .map((address) => address.address?.trim().toLowerCase() ?? '')
+              .filter((address) => address.length > 0),
+            ccAddresses: (envelope?.cc ?? [])
+              .map((address) => address.address?.trim().toLowerCase() ?? '')
+              .filter((address) => address.length > 0),
+            subject: envelope?.subject ?? '(no subject)',
+            receivedAt: received,
+            category: categoryOf.get(message.uid) ?? 'primary',
+            labels: [...(message.labels ?? [])],
+            snippet: '',
+            unread: !(message.flags?.has('\\Seen') ?? false),
+            inInbox: true,
+            syncedAt,
+          });
+        }
+      }
+
+      await client.logout();
+      emails.sort((a, b) => b.receivedAt - a.receivedAt);
+      return {
+        ok: true,
+        emails,
+        uidValidity: mailbox.uidValidity.toString(),
+        counts,
+      };
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      console.error('[gmail-imap] metadata sync failed:', message);
+      if (client) {
+        try {
+          await client.logout();
+        } catch {
+          /* ignore logout errors */
+        }
+      }
+      return {
+        ok: false,
+        error: /authentication|535|AUTHENTICATIONFAILED/i.test(message)
+          ? 'Authentication failed. Check your Gmail App Password.'
+          : `Gmail sync error: ${message}`,
+      };
+    }
+  }
+
+  /**
    * Connect to Gmail and fetch up to `limit` unread emails.
    *
    * `only` restricts which inbox tabs are downloaded, defaulting to Primary.
@@ -148,10 +289,7 @@ export class GmailImapService {
       // fails, and that is indistinguishable from an empty result here.
       const perCategory: { category: EmailCategory; ids: readonly number[] }[] = [];
       for (const category of CATEGORY_IDS) {
-        const found = await client.search(
-          { gmraw: unreadInCategory(category) },
-          { uid: true },
-        );
+        const found = await client.search({ gmraw: unreadInCategory(category) }, { uid: true });
         perCategory.push({ category, ids: found === false ? [] : found });
       }
 
@@ -174,8 +312,7 @@ export class GmailImapService {
 
         const parsed = await simpleParser(msg.source);
 
-        const fromAddr =
-          parsed.from?.text ?? parsed.from?.value?.[0]?.address ?? 'Unknown';
+        const fromAddr = parsed.from?.text ?? parsed.from?.value?.[0]?.address ?? 'Unknown';
         const subject = parsed.subject ?? '(no subject)';
         const messageId = parsed.messageId ?? `uid-${uid}`;
         const date = parsed.date?.toISOString() ?? new Date().toISOString();

@@ -8,6 +8,16 @@
 
 import type { SessionId, WorkSession } from '../timer/session.js';
 import type { Task } from '../tasks/tasks.js';
+import type {
+  CachedEmail,
+  CachedEmailQuery,
+  CachedInboxItem,
+  EmailReminderState,
+  EmailStore,
+  GmailSyncState,
+  StoredEmailDraft,
+  StoredEmailPriority,
+} from '../google/email-state.js';
 
 export interface Project {
   readonly id: string;
@@ -27,7 +37,7 @@ export interface SessionQuery {
   readonly limit?: number;
 }
 
-export interface StorageAdapter {
+export interface StorageAdapter extends EmailStore {
   listProjects(): Promise<readonly Project[]>;
   createProject(input: Omit<Project, 'createdAt' | 'archivedAt'>): Promise<Project>;
   archiveProject(id: string, at: number): Promise<void>;
@@ -60,7 +70,16 @@ export class InMemoryStorageAdapter implements StorageAdapter {
   private projects = new Map<string, Project>();
   private sessions = new Map<SessionId, WorkSession>();
   private tasks = new Map<string, Task>();
+  private emails = new Map<string, CachedEmail>();
+  private emailPriorities = new Map<string, StoredEmailPriority>();
+  private emailDrafts = new Map<string, StoredEmailDraft>();
+  private emailReminders = new Map<string, EmailReminderState>();
+  private gmailSyncStates = new Map<string, GmailSyncState>();
   private running: WorkSession | null = null;
+
+  private emailKey(account: string, emailId: string): string {
+    return `${account}\u0000${emailId}`;
+  }
 
   async listProjects(): Promise<readonly Project[]> {
     return [...this.projects.values()].filter((p) => p.archivedAt === null);
@@ -120,6 +139,105 @@ export class InMemoryStorageAdapter implements StorageAdapter {
 
   async setRunningSession(session: WorkSession | null): Promise<void> {
     this.running = session;
+  }
+
+  async replaceInboxSnapshot(
+    account: string,
+    emails: readonly CachedEmail[],
+    syncedAt: number,
+  ): Promise<void> {
+    for (const [key, existing] of this.emails) {
+      if (existing.account === account && existing.inInbox) {
+        this.emails.set(key, {
+          ...existing,
+          unread: false,
+          inInbox: false,
+          syncedAt,
+        });
+      }
+    }
+    for (const email of emails) {
+      this.emails.set(this.emailKey(account, email.emailId), {
+        ...email,
+        account,
+        syncedAt,
+      });
+    }
+  }
+
+  async listCachedEmails(
+    account: string,
+    query: CachedEmailQuery = {},
+  ): Promise<readonly CachedInboxItem[]> {
+    let rows = [...this.emails.values()].filter(
+      (email) =>
+        email.account === account &&
+        email.inInbox &&
+        email.unread &&
+        (query.category === undefined || email.category === query.category),
+    );
+    rows.sort((a, b) => {
+      if (query.sort === 'priority') {
+        const aScore = this.emailPriorities.get(this.emailKey(a.account, a.emailId))?.score ?? -1;
+        const bScore = this.emailPriorities.get(this.emailKey(b.account, b.emailId))?.score ?? -1;
+        if (aScore !== bScore) return bScore - aScore;
+      }
+      return b.receivedAt - a.receivedAt;
+    });
+
+    const offset = Math.max(0, query.offset ?? 0);
+    const limit = Math.min(100, Math.max(1, query.limit ?? 25));
+    return rows.slice(offset, offset + limit).map((email) => {
+      const key = this.emailKey(email.account, email.emailId);
+      return {
+        ...email,
+        priority: this.emailPriorities.get(key) ?? null,
+        draft: this.emailDrafts.get(key) ?? null,
+        reminder: this.emailReminders.get(key) ?? null,
+      };
+    });
+  }
+
+  async getCachedEmail(account: string, emailId: string): Promise<CachedInboxItem | null> {
+    const key = this.emailKey(account, emailId);
+    const email = this.emails.get(key);
+    if (email === undefined) return null;
+    return {
+      ...email,
+      priority: this.emailPriorities.get(key) ?? null,
+      draft: this.emailDrafts.get(key) ?? null,
+      reminder: this.emailReminders.get(key) ?? null,
+    };
+  }
+
+  async saveEmailPriority(priority: StoredEmailPriority): Promise<void> {
+    this.emailPriorities.set(this.emailKey(priority.account, priority.emailId), priority);
+  }
+
+  async saveEmailDraft(draft: StoredEmailDraft): Promise<void> {
+    this.emailDrafts.set(this.emailKey(draft.account, draft.emailId), draft);
+  }
+
+  async saveEmailReminder(reminder: EmailReminderState): Promise<void> {
+    this.emailReminders.set(this.emailKey(reminder.account, reminder.emailId), reminder);
+  }
+
+  async listPendingEmailReminders(account: string): Promise<readonly EmailReminderState[]> {
+    return [...this.emailReminders.values()]
+      .filter(
+        (reminder) =>
+          reminder.account === account &&
+          (reminder.state === 'pending' || reminder.state === 'draft-ready'),
+      )
+      .sort((a, b) => (a.nextReminderAt ?? Infinity) - (b.nextReminderAt ?? Infinity));
+  }
+
+  async getGmailSyncState(account: string): Promise<GmailSyncState | null> {
+    return this.gmailSyncStates.get(account) ?? null;
+  }
+
+  async saveGmailSyncState(state: GmailSyncState): Promise<void> {
+    this.gmailSyncStates.set(state.account, state);
   }
 
   async close(): Promise<void> {

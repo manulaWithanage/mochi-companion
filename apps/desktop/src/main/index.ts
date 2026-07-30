@@ -142,7 +142,7 @@ async function bootstrap(): Promise<void> {
     },
   });
   const llmClient = new LlmClient(llm);
-  const gmailManager = new GmailManager(llmClient, settings);
+  const gmailManager = new GmailManager(llmClient, settings, storage);
 
   const notifyTasks = async () => {
     const tasks = await storage.listTasks();
@@ -295,6 +295,7 @@ async function bootstrap(): Promise<void> {
   await timer.restore();
   mascot.start();
   routines.start();
+  gmailManager.start();
 
   // Zero-key onboarding: if Ollama is running, every AI feature works with
   // nothing pasted and no account. Fire-and-forget — the mascot must never
@@ -322,6 +323,7 @@ async function bootstrap(): Promise<void> {
   app.on('second-instance', () => setup.open());
 
   app.on('before-quit', () => {
+    void gmailManager.stop();
     userRoutineScheduler.stop();
     routines.stop();
     mascot.stop();
