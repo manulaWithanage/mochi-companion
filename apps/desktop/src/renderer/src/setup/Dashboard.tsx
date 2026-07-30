@@ -86,23 +86,26 @@ export function Dashboard(): JSX.Element {
       {/* ---- sidebar ---- */}
       <nav
         style={{
-          width: 168,
+          width: 195,
           flexShrink: 0,
           borderRight: `1px solid ${C.border}`,
-          padding: '18px 10px',
+          padding: '20px 12px',
           display: 'flex',
           flexDirection: 'column',
-          gap: 2,
-          background: '#191521',
+          gap: 4,
+          background: 'linear-gradient(180deg, #1e1929 0%, #14101b 100%)',
+          boxSizing: 'border-box',
         }}
       >
-        <div style={{ padding: '0 10px 14px', borderBottom: `1px solid ${C.border}`, marginBottom: 8 }}>
-          <div style={{ fontSize: 15, fontWeight: 650 }}>{settings?.assistantName ?? 'Mochi'}</div>
+        <div style={{ padding: '0 6px 16px', borderBottom: `1px solid ${C.border}`, marginBottom: 10 }}>
+          <div style={{ fontSize: 16, fontWeight: 700, letterSpacing: '-0.01em', color: C.text }}>
+            {settings?.assistantName ?? 'Mochi'}
+          </div>
           <div
             style={{
               fontSize: 11.5,
               color: running ? C.accent : C.faint,
-              marginTop: 4,
+              marginTop: 6,
               display: 'flex',
               flexDirection: 'column',
               gap: 4,
@@ -111,54 +114,65 @@ export function Dashboard(): JSX.Element {
             {running ? (
               <div
                 style={{
-                  background: 'rgba(242, 166, 179, 0.15)',
-                  border: `1px solid ${C.accent}`,
-                  borderRadius: 8,
-                  padding: '6px 8px',
+                  background: 'linear-gradient(135deg, rgba(242, 166, 179, 0.16), rgba(35, 24, 42, 0.8))',
+                  border: `1px solid rgba(242, 166, 179, 0.35)`,
+                  boxShadow: '0 4px 14px rgba(0, 0, 0, 0.3)',
+                  borderRadius: 11,
+                  padding: '10px 12px',
                   display: 'flex',
                   flexDirection: 'column',
-                  gap: 3,
+                  gap: 5,
                 }}
               >
-                <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 10, fontWeight: 700, color: C.accent, textTransform: 'uppercase' }}>
-                  <span style={{ width: 6, height: 6, borderRadius: '50%', background: C.accent, display: 'inline-block' }} />
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 9.5, fontWeight: 750, color: C.accent, letterSpacing: '0.04em', textTransform: 'uppercase' }}>
+                  <span style={{ width: 7, height: 7, borderRadius: '50%', background: C.accent, boxShadow: `0 0 8px ${C.accent}`, display: 'inline-block' }} />
                   <span>Tracking Active</span>
                 </div>
-                <div style={{ fontSize: 12, fontWeight: 700, color: C.text, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                <div style={{ fontSize: 12.5, fontWeight: 700, color: C.text, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                   {activeProjectName}
                 </div>
                 {timer !== null && (
-                  <div style={{ fontSize: 11, fontWeight: 600, color: C.accent, fontVariantNumeric: 'tabular-nums' }}>
+                  <div style={{ fontSize: 12, fontWeight: 650, color: C.accent, fontVariantNumeric: 'tabular-nums' }}>
                     {formatDuration(timer.elapsedMs)}
                   </div>
                 )}
                 <button
                   onClick={() => void window.mochi.timer.stop().then(setTimer)}
                   style={{
-                    background: C.warn,
-                    color: '#fff',
+                    background: 'linear-gradient(135deg, #ff5e7e, #e63956)',
+                    color: '#ffffff',
                     border: 'none',
-                    borderRadius: 5,
-                    padding: '3px 6px',
-                    fontSize: 10.5,
-                    fontWeight: 600,
+                    borderRadius: 7,
+                    padding: '5px 8px',
+                    fontSize: 11,
+                    fontWeight: 700,
                     cursor: 'pointer',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    gap: 3,
-                    marginTop: 2,
+                    gap: 4,
+                    marginTop: 3,
+                    boxShadow: '0 2px 8px rgba(230, 57, 86, 0.35)',
+                    transition: 'transform 120ms ease, filter 120ms ease',
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.filter = 'brightness(1.1)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.filter = 'none';
                   }}
                 >
-                  ⏹ Stop Session
+                  <span>⏹</span>
+                  <span>Stop Session</span>
                 </button>
               </div>
             ) : (
-              <div>{humanDuration(todayMs)} today</div>
+              <div style={{ fontSize: 11.5, color: C.dim }}>{humanDuration(todayMs)} focus today</div>
             )}
           </div>
         </div>
 
+        {/* Tab Items */}
         {TABS.map((t) => {
           const active = t.id === tab;
           return (
@@ -168,20 +182,34 @@ export function Dashboard(): JSX.Element {
               style={{
                 display: 'flex',
                 alignItems: 'center',
-                gap: 9,
+                gap: 10,
                 textAlign: 'left',
-                padding: '8px 10px',
+                padding: '9px 12px',
                 borderRadius: 9,
                 border: 'none',
+                borderLeft: active ? `3px solid ${C.accent}` : '3px solid transparent',
                 cursor: 'pointer',
                 fontSize: 13.5,
-                background: active ? 'rgba(242, 166, 179, 0.14)' : 'transparent',
+                background: active ? 'rgba(242, 166, 179, 0.12)' : 'transparent',
                 color: active ? C.accent : C.dim,
-                fontWeight: active ? 600 : 500,
+                fontWeight: active ? 650 : 450,
+                transition: 'all 140ms ease',
+              }}
+              onMouseEnter={(e) => {
+                if (!active) {
+                  e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)';
+                  e.currentTarget.style.color = C.text;
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (!active) {
+                  e.currentTarget.style.background = 'transparent';
+                  e.currentTarget.style.color = C.dim;
+                }
               }}
             >
-              <span style={{ fontSize: 13, width: 14, textAlign: 'center' }}>{t.icon}</span>
-              {t.label}
+              <span style={{ fontSize: 14, width: 16, textAlign: 'center', opacity: active ? 1 : 0.7 }}>{t.icon}</span>
+              <span>{t.label}</span>
             </button>
           );
         })}
@@ -190,13 +218,24 @@ export function Dashboard(): JSX.Element {
           onClick={() => window.mochi.window.closeSetup()}
           style={{
             marginTop: 'auto',
-            padding: '8px 10px',
+            padding: '9px 12px',
             borderRadius: 9,
             border: `1px solid ${C.border}`,
-            background: 'transparent',
+            background: 'rgba(255, 255, 255, 0.02)',
             color: C.dim,
             fontSize: 12.5,
+            fontWeight: 500,
             cursor: 'pointer',
+            textAlign: 'center',
+            transition: 'all 140ms ease',
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.background = 'rgba(255, 255, 255, 0.06)';
+            e.currentTarget.style.color = C.text;
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.background = 'rgba(255, 255, 255, 0.02)';
+            e.currentTarget.style.color = C.dim;
           }}
         >
           Close
