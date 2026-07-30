@@ -50,8 +50,8 @@ describe('clampPosition', () => {
 });
 
 describe('defaultPosition', () => {
-  it('rests in the bottom-right with a margin', () => {
-    expect(defaultPosition(SIZE, laptop.workArea)).toEqual({ x: 1696, y: 816 });
+  it('rests in the top-right with a margin', () => {
+    expect(defaultPosition(SIZE, laptop.workArea)).toEqual({ x: 1696, y: 24 });
   });
 });
 

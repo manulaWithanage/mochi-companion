@@ -60,7 +60,7 @@ export function clampPosition(position: Point, size: Size, workArea: Rect): Poin
   };
 }
 
-/** Bottom-right of the work area, inset by `margin`. */
+/** Top-right of the work area, inset by `margin`. */
 export function defaultPosition(
   size: Size,
   workArea: Rect,
@@ -69,7 +69,7 @@ export function defaultPosition(
   return clampPosition(
     {
       x: workArea.x + workArea.width - size.width - margin,
-      y: workArea.y + workArea.height - size.height - margin,
+      y: workArea.y + margin,
     },
     size,
     workArea,
