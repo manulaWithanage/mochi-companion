@@ -94,6 +94,13 @@ export function registerIpc(ctx: IpcContext): void {
     }),
   );
 
+  ipcMain.handle('projects:archive', async (_e, id: unknown) => {
+    if (typeof id === 'string') {
+      await ctx.storage.archiveProject(id, Date.now());
+    }
+    return ctx.storage.listProjects();
+  });
+
   // ---- tasks -------------------------------------------------------------
   ipcMain.handle('tasks:list', () => ctx.storage.listTasks());
 

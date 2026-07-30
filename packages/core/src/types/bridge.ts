@@ -112,6 +112,7 @@ export interface MochiBridge {
   readonly projects: {
     list(): Promise<readonly Project[]>;
     create(name: string, colour: string): Promise<Project>;
+    archive(id: string): Promise<readonly Project[]>;
   };
 
   readonly tasks: {

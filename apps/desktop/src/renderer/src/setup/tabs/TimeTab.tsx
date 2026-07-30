@@ -32,7 +32,7 @@ export function TimeTab(): JSX.Element {
     setProjects(pList);
     setSettings(setObj);
 
-    // Auto-seed top 3 projects as primary if none selected yet
+    // Auto-seed top 3 unique projects as primary if none selected yet
     if (setObj.primaryProjectIds.length === 0 && pList.length > 0) {
       const defaultPrimary = pList.slice(0, 3).map((p) => p.id);
       void window.mochi.settings.setPrimaryProjects(defaultPrimary);
@@ -61,7 +61,6 @@ export function TimeTab(): JSX.Element {
         updated = current.filter((id) => id !== projectId);
       } else {
         if (current.length >= 3) {
-          // Replace last one if already at 3 max
           updated = [current[0]!, current[1]!, projectId].filter(Boolean);
         } else {
           updated = [...current, projectId];
@@ -76,17 +75,35 @@ export function TimeTab(): JSX.Element {
 
   const createProject = useCallback(
     async (nameOverride?: string, colourOverride?: string, iconOverride?: string) => {
-      const name = (nameOverride || newName).trim();
-      if (name.length === 0) return;
+      const targetName = (nameOverride || newName).trim();
+      if (targetName.length === 0) return;
+
+      const icon = iconOverride || selectedIcon;
+      const fullDisplayName = `${icon} ${targetName}`;
+
+      // DEDUPLICATION CHECK: Check if project with this name already exists
+      const existing = projects.find(
+        (p) =>
+          p.name.toLowerCase() === fullDisplayName.toLowerCase() ||
+          p.name.toLowerCase() === targetName.toLowerCase() ||
+          p.name.toLowerCase().endsWith(targetName.toLowerCase()),
+      );
+
+      if (existing) {
+        // Project already exists, don't duplicate! Auto-set as primary if slot available.
+        if (settings && !settings.primaryProjectIds.includes(existing.id) && settings.primaryProjectIds.length < 3) {
+          void window.mochi.settings.setPrimaryProjects([...settings.primaryProjectIds, existing.id]);
+        }
+        setNewName('');
+        return;
+      }
+
       setBusy(true);
       try {
-        const icon = iconOverride || selectedIcon;
-        const displayName = `${icon} ${name}`;
         const colour = colourOverride || selectedColour;
-        const created = await window.mochi.projects.create(displayName, colour);
+        const created = await window.mochi.projects.create(fullDisplayName, colour);
         setNewName('');
 
-        // If primary projects is less than 3, auto-add this new project as primary!
         if (settings && settings.primaryProjectIds.length < 3) {
           void window.mochi.settings.setPrimaryProjects([...settings.primaryProjectIds, created.id]);
         }
@@ -96,7 +113,21 @@ export function TimeTab(): JSX.Element {
         setBusy(false);
       }
     },
-    [newName, selectedIcon, selectedColour, settings, reload],
+    [newName, selectedIcon, selectedColour, projects, settings, reload],
+  );
+
+  const archiveCategory = useCallback(
+    async (projectId: string) => {
+      // Remove from primary list if present
+      if (settings && settings.primaryProjectIds.includes(projectId)) {
+        const updatedPrimary = settings.primaryProjectIds.filter((id) => id !== projectId);
+        void window.mochi.settings.setPrimaryProjects(updatedPrimary);
+      }
+      const updatedProjects = await window.mochi.projects.archive(projectId);
+      setProjects(updatedProjects);
+      await reload();
+    },
+    [settings, reload],
   );
 
   const totals = useMemo(() => {
@@ -140,7 +171,7 @@ export function TimeTab(): JSX.Element {
               ⭐ 3 Primary Category Quick-Trackers (Floating on Mochi)
             </div>
             <div style={{ fontSize: 11.5, color: C.dim, marginTop: 2 }}>
-              These 3 icons float above Mochi on your desktop. Click any icon on Mochi to switch categories instantly!
+              These 3 icons pop out at the bottom when you click Mochi. Click any icon to switch categories!
             </div>
           </div>
         </div>
@@ -224,30 +255,38 @@ export function TimeTab(): JSX.Element {
           ⚡ QUICK CATEGORY PRESETS
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: 8 }}>
-          {CATEGORY_PRESETS.map((preset) => (
-            <button
-              key={preset.name}
-              disabled={busy}
-              onClick={() => void createProject(preset.name, preset.colour, preset.icon)}
-              style={{
-                background: '#191522',
-                border: `1px solid ${C.border}`,
-                borderRadius: 10,
-                padding: '10px 12px',
-                textAlign: 'left',
-                cursor: 'pointer',
-                transition: 'all 160ms ease',
-                color: C.text,
-              }}
-              onMouseEnter={(e) => (e.currentTarget.style.borderColor = preset.colour)}
-              onMouseLeave={(e) => (e.currentTarget.style.borderColor = C.border)}
-            >
-              <div style={{ fontSize: 18, marginBottom: 4 }}>{preset.icon}</div>
-              <div style={{ fontSize: 12.5, fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                {preset.name}
-              </div>
-            </button>
-          ))}
+          {CATEGORY_PRESETS.map((preset) => {
+            const alreadyExists = projects.some((p) => p.name.toLowerCase().includes(preset.name.toLowerCase()));
+
+            return (
+              <button
+                key={preset.name}
+                disabled={busy}
+                onClick={() => void createProject(preset.name, preset.colour, preset.icon)}
+                style={{
+                  background: '#191522',
+                  border: `1px solid ${alreadyExists ? preset.colour : C.border}`,
+                  borderRadius: 10,
+                  padding: '10px 12px',
+                  textAlign: 'left',
+                  cursor: 'pointer',
+                  transition: 'all 160ms ease',
+                  color: C.text,
+                  position: 'relative',
+                }}
+                onMouseEnter={(e) => (e.currentTarget.style.borderColor = preset.colour)}
+                onMouseLeave={(e) => (e.currentTarget.style.borderColor = alreadyExists ? preset.colour : C.border)}
+              >
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+                  <span style={{ fontSize: 18 }}>{preset.icon}</span>
+                  {alreadyExists && <span style={{ fontSize: 10, color: C.accent, fontWeight: 600 }}>Active</span>}
+                </div>
+                <div style={{ fontSize: 12.5, fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                  {preset.name}
+                </div>
+              </button>
+            );
+          })}
         </div>
       </div>
 
@@ -289,10 +328,11 @@ export function TimeTab(): JSX.Element {
                   <span style={{ fontWeight: 600 }}>{project.name}</span>
                 </span>
 
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                   <span style={{ color: C.dim, fontVariantNumeric: 'tabular-nums', fontSize: 12 }}>
                     {humanDuration(ms)} · {count} session{count === 1 ? '' : 's'}
                   </span>
+
                   <button
                     onClick={() => void togglePrimaryProject(project.id)}
                     style={{
@@ -302,6 +342,23 @@ export function TimeTab(): JSX.Element {
                     }}
                   >
                     {isPrimary ? '★ Primary' : '☆ Set Primary'}
+                  </button>
+
+                  <button
+                    onClick={() => void archiveCategory(project.id)}
+                    title="Delete category"
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      color: C.dim,
+                      cursor: 'pointer',
+                      fontSize: 14,
+                      padding: '2px 4px',
+                    }}
+                    onMouseEnter={(e) => (e.currentTarget.style.color = C.warn)}
+                    onMouseLeave={(e) => (e.currentTarget.style.color = C.dim)}
+                  >
+                    🗑️
                   </button>
                 </div>
               </div>

@@ -64,6 +64,7 @@ const bridge: MochiBridge = {
     list: () => ipcRenderer.invoke('projects:list') as Promise<readonly Project[]>,
     create: (name, colour) =>
       ipcRenderer.invoke('projects:create', name, colour) as Promise<Project>,
+    archive: (id) => ipcRenderer.invoke('projects:archive', id) as Promise<readonly Project[]>,
   },
 
   tasks: {
