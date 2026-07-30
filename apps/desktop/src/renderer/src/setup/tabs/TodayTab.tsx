@@ -1,10 +1,16 @@
 import { useCallback, useEffect, useMemo, useState, type JSX } from 'react';
 import {
+  clockLabel,
+  describeLead,
   dueToday,
   elapsedMs,
+  inProgress,
+  upcoming,
   progressForToday,
   sortForDisplay,
   taskDay,
+  type CalendarEvent,
+  type CalendarStatus,
   type Project,
   type Task,
   type TimerSnapshot,
@@ -64,6 +70,121 @@ const LockedCard = ({
     <div style={{ fontSize: 12, color: C.dim, lineHeight: 1.5 }}>{examples}</div>
   </div>
 );
+
+/**
+ * What is coming, once a calendar is connected.
+ *
+ * Falls back to the locked card rather than an empty one: "nothing today" and
+ * "no calendar connected" look identical if both render as a blank list, and
+ * only one of them is worth acting on.
+ */
+function ComingUp(): JSX.Element {
+  const [status, setStatus] = useState<CalendarStatus | null>(null);
+  const [events, setEvents] = useState<readonly CalendarEvent[]>([]);
+  const [now, setNow] = useState(() => Date.now());
+
+  const reload = useCallback(() => {
+    void window.mochi.calendar.events().then(setEvents);
+  }, []);
+
+  useEffect(() => {
+    void window.mochi.calendar.status().then(setStatus);
+    reload();
+    return window.mochi.calendar.onChange((next) => {
+      setStatus(next);
+      reload();
+    });
+  }, [reload]);
+
+  // The countdown has to move on its own, or "in 5 min" is still on screen
+  // twenty minutes later.
+  useEffect(() => {
+    const id = setInterval(() => setNow(Date.now()), 30_000);
+    return () => clearInterval(id);
+  }, []);
+
+  if (status?.connected !== true) {
+    return (
+      <LockedCard
+        title="Coming up"
+        needs="CALENDAR"
+        examples="Your next meeting, with a reminder five minutes before and a one-click join."
+      />
+    );
+  }
+
+  const running = inProgress(events, now);
+  const next = upcoming(events, now, 12 * 60 * 60_000).slice(0, 3);
+  const current = running[0];
+
+  return (
+    <div style={{ ...card, flex: 1 }}>
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          marginBottom: 8,
+        }}
+      >
+        <strong style={{ fontSize: 13 }}>Coming up</strong>
+        {status.error !== undefined && (
+          <span style={{ fontSize: 10.5, color: C.warn, letterSpacing: 0.4 }}>OUT OF DATE</span>
+        )}
+      </div>
+
+      {current !== undefined && (
+        <div
+          style={{
+            border: `1px solid rgba(242,166,179,0.3)`,
+            background: 'rgba(242,166,179,0.07)',
+            borderRadius: 9,
+            padding: '8px 10px',
+            marginBottom: 8,
+          }}
+        >
+          <div style={{ fontSize: 10.5, color: C.accent, letterSpacing: 0.4, marginBottom: 2 }}>
+            NOW
+          </div>
+          <div style={{ fontSize: 13, color: C.text }}>{current.title}</div>
+          <div style={{ fontSize: 11.5, color: C.dim, marginTop: 2 }}>
+            until {clockLabel(current.endsAt)}
+            {current.conferenceUrl !== undefined && ' · joinable'}
+          </div>
+        </div>
+      )}
+
+      {next.length === 0 && current === undefined ? (
+        <div style={{ fontSize: 12, color: C.dim, lineHeight: 1.5 }}>
+          Nothing else scheduled today. The rest of the day is yours.
+        </div>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
+          {next.map((event) => (
+            <div key={event.id} style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
+              <span
+                style={{
+                  fontSize: 11.5,
+                  color: C.faint,
+                  minWidth: 52,
+                  fontVariantNumeric: 'tabular-nums',
+                }}
+              >
+                {clockLabel(event.startsAt)}
+              </span>
+              <span style={{ fontSize: 12.5, color: C.text, flex: 1, lineHeight: 1.4 }}>
+                {event.title}
+              </span>
+              <span style={{ fontSize: 11, color: C.dim, whiteSpace: 'nowrap' }}>
+                {describeLead(event.startsAt - now)}
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
 
 export function TodayTab(): JSX.Element {
   const [sessions, setSessions] = useState<readonly WorkSession[]>([]);
@@ -265,11 +386,7 @@ export function TodayTab(): JSX.Element {
 
       {/* ---- not yet connected ---- */}
       <div style={{ display: 'flex', gap: 10, marginBottom: 14 }}>
-        <LockedCard
-          title="Coming up"
-          needs="CALENDAR"
-          examples="Your next meeting, with a reminder five minutes before and a one-click join."
-        />
+        <ComingUp />
         <LockedCard
           title="Needs a reply"
           needs="EMAIL"
