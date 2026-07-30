@@ -7,7 +7,7 @@
  */
 
 import { powerMonitor } from 'electron';
-import type { CachedEmail, EmailStore } from '@mochi/core';
+import type { CachedEmail, EmailStore, GmailSyncStatus } from '@mochi/core';
 import type { GmailCredentials } from '../storage/gmail-vault.js';
 import type { GmailImapService } from './gmail-imap.js';
 
@@ -18,14 +18,6 @@ const RECONNECT_DELAY_MS = 30_000;
 const SNAPSHOT_LIMIT = 100;
 
 export type GmailSyncReason = 'startup' | 'idle' | 'interval' | 'resume' | 'manual';
-
-export interface GmailSyncStatus {
-  readonly running: boolean;
-  readonly syncing: boolean;
-  readonly watching: boolean;
-  readonly lastSyncedAt: number | null;
-  readonly lastError: string | null;
-}
 
 export interface GmailSyncCallbacks {
   onInboxChanged(

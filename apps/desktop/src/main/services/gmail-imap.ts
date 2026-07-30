@@ -245,6 +245,71 @@ export class GmailImapService {
     }
   }
 
+  /** Download and parse one complete message after the user opens or drafts it. */
+  async fetchMessage(
+    credentials: GmailCredentials,
+    uid: number,
+    category: EmailCategory,
+  ): Promise<EmailSummary | null> {
+    let client: import('imapflow').ImapFlow | null = null;
+    try {
+      const { ImapFlow } = await import('imapflow');
+      const { simpleParser } = await import('mailparser');
+      client = new ImapFlow({
+        host: 'imap.gmail.com',
+        port: 993,
+        secure: true,
+        auth: {
+          user: credentials.email,
+          pass: credentials.appPassword,
+        },
+        logger: false,
+      });
+      await client.connect();
+      await client.mailboxOpen('INBOX');
+      const message = await client.fetchOne(String(uid), { source: true }, { uid: true });
+      if (message === false || message.source === undefined) {
+        await client.logout();
+        return null;
+      }
+
+      const parsed = await simpleParser(message.source);
+      const from = parsed.from?.text ?? parsed.from?.value?.[0]?.address ?? 'Unknown';
+      const messageId = parsed.messageId ?? `uid-${uid}`;
+      const references = Array.isArray(parsed.references)
+        ? parsed.references.join(' ')
+        : (parsed.references ?? '');
+      const bodyText = parsed.text
+        ? cleanBody(parsed.text)
+        : parsed.html
+          ? cleanBody(stripHtml(parsed.html))
+          : '';
+
+      await client.logout();
+      return {
+        uid,
+        messageId,
+        from,
+        subject: parsed.subject ?? '(no subject)',
+        date: parsed.date?.toISOString() ?? new Date().toISOString(),
+        bodyText,
+        threadReferences: `${references} ${messageId}`.trim(),
+        category,
+      };
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      console.error('[gmail-imap] single-message fetch failed:', message);
+      if (client) {
+        try {
+          await client.logout();
+        } catch {
+          /* ignore logout errors */
+        }
+      }
+      return null;
+    }
+  }
+
   /**
    * Connect to Gmail and fetch up to `limit` unread emails.
    *

@@ -143,6 +143,14 @@ async function bootstrap(): Promise<void> {
   });
   const llmClient = new LlmClient(llm);
   const gmailManager = new GmailManager(llmClient, settings, storage);
+  gmailManager.onInboxChanged((account, newEmails) => {
+    setup.send('gmail:inboxChanged', {
+      account,
+      newEmailCount: newEmails.length,
+      status: gmailManager.syncStatus,
+    });
+  });
+  gmailManager.onSyncStatus((status) => setup.send('gmail:syncStatus', status));
 
   const notifyTasks = async () => {
     const tasks = await storage.listTasks();

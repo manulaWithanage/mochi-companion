@@ -8,7 +8,13 @@
  */
 
 import { useState, useEffect, useCallback, type JSX } from 'react';
-import type { EmailCategory, GmailEmailSummary, GmailStatus, GmailTone } from '@mochi/core';
+import type {
+  CachedInboxItem,
+  EmailCategory,
+  GmailStatus,
+  GmailSyncStatus,
+  GmailTone,
+} from '@mochi/core';
 import { CATEGORIES } from '@mochi/core';
 import { C, card, label, input, button, h2, sub } from '../ui.js';
 
@@ -29,9 +35,11 @@ export function GmailTab(): JSX.Element {
   const [connecting, setConnecting] = useState(false);
   const [connectError, setConnectError] = useState<string | null>(null);
 
-  const [emails, setEmails] = useState<readonly GmailEmailSummary[]>([]);
+  const [emails, setEmails] = useState<readonly CachedInboxItem[]>([]);
   const [fetching, setFetching] = useState(false);
   const [fetchError, setFetchError] = useState<string | null>(null);
+  const [syncStatus, setSyncStatus] = useState<GmailSyncStatus | null>(null);
+  const [sortMode, setSortMode] = useState<'priority' | 'recent'>('priority');
 
   // Primary only by default. Most unread mail is promotions, and every message
   // shown costs a full body download, so the default both looks better and is
@@ -47,9 +55,49 @@ export function GmailTab(): JSX.Element {
   const [savingDraft, setSavingDraft] = useState(false);
   const [savedOk, setSavedOk] = useState(false);
 
+  const loadCached = useCallback(
+    async (category: EmailCategory, sort: 'priority' | 'recent'): Promise<void> => {
+      const all = await window.mochi.gmail.listCached({ sort, limit: 100 });
+      setCounts(
+        new Map(
+          CATEGORIES.map((candidate) => [
+            candidate.id,
+            all.filter((email) => email.category === candidate.id).length,
+          ]),
+        ),
+      );
+      setEmails(all.filter((email) => email.category === category).slice(0, 25));
+    },
+    [],
+  );
+
   useEffect(() => {
-    void window.mochi.gmail.status().then(setStatus);
-  }, []);
+    let disposed = false;
+    void window.mochi.gmail.status().then((next) => {
+      if (disposed) return;
+      setStatus(next);
+      if (next.connected) {
+        void loadCached('primary', 'priority');
+        void window.mochi.gmail.refresh().then((sync) => {
+          if (!disposed) setSyncStatus(sync);
+        });
+      }
+    });
+    return () => {
+      disposed = true;
+    };
+  }, [loadCached]);
+
+  useEffect(() => {
+    const stopInbox = window.mochi.gmail.onInboxChanged(() => {
+      void loadCached(active, sortMode);
+    });
+    const stopStatus = window.mochi.gmail.onSyncStatus(setSyncStatus);
+    return () => {
+      stopInbox();
+      stopStatus();
+    };
+  }, [active, loadCached, sortMode]);
 
   const handleConnect = async (): Promise<void> => {
     setConnecting(true);
@@ -78,36 +126,33 @@ export function GmailTab(): JSX.Element {
     async (category: EmailCategory = active): Promise<void> => {
       setFetching(true);
       setFetchError(null);
-      const result = await window.mochi.gmail.fetchUnread(10, [category]);
-      setFetching(false);
-      if (result.ok && result.emails) {
-        setEmails(result.emails);
-        // Counts cover every tab even though only one was downloaded, so the
-        // chips stay accurate without a second round trip.
-        if (result.counts !== undefined) {
-          setCounts(new Map(result.counts.map((c) => [c.category, c.count])));
-        }
-      } else {
-        setFetchError(result.error ?? 'Failed to fetch emails.');
+      try {
+        const next = await window.mochi.gmail.refresh();
+        setSyncStatus(next);
+        await loadCached(category, sortMode);
+        if (next.lastError !== null) setFetchError(next.lastError);
+      } catch {
+        setFetchError('Failed to refresh Gmail.');
+      } finally {
+        setFetching(false);
       }
     },
-    [active],
+    [active, loadCached, sortMode],
   );
 
   const selectCategory = (category: EmailCategory): void => {
     setActive(category);
-    setEmails([]);
-    void handleFetch(category);
+    void loadCached(category, sortMode);
   };
 
-  const handleGenerate = async (email: GmailEmailSummary): Promise<void> => {
+  const handleGenerate = async (email: CachedInboxItem): Promise<void> => {
     setGenerating(true);
     setGenerateError(null);
     setView('draft');
     setDraft({
       emailUid: email.uid,
       subject: email.subject,
-      from: email.from,
+      from: email.replyToAddress || email.fromAddress,
       draftReply: '',
       suggestedSubject: `Re: ${email.subject}`,
     });
@@ -118,7 +163,7 @@ export function GmailTab(): JSX.Element {
       setDraft({
         emailUid: email.uid,
         subject: email.subject,
-        from: email.from,
+        from: email.replyToAddress || email.fromAddress,
         draftReply: result.draftReply,
         suggestedSubject: result.suggestedSubject ?? `Re: ${email.subject}`,
       });
@@ -171,8 +216,7 @@ export function GmailTab(): JSX.Element {
               }}
             >
               <li>
-                Go to{' '}
-                <strong style={{ color: C.accent }}>myaccount.google.com → Security</strong>
+                Go to <strong style={{ color: C.accent }}>myaccount.google.com → Security</strong>
               </li>
               <li>
                 Enable <strong style={{ color: C.text }}>2-Step Verification</strong>
@@ -352,7 +396,9 @@ export function GmailTab(): JSX.Element {
                 {savingDraft ? 'Saving…' : 'Save to Drafts'}
               </button>
               <button
-                onClick={() => void handleGenerate({ ...emails.find((e) => e.uid === draft.emailUid)! })}
+                onClick={() =>
+                  void handleGenerate({ ...emails.find((e) => e.uid === draft.emailUid)! })
+                }
                 style={button('ghost')}
               >
                 Regenerate
@@ -367,14 +413,49 @@ export function GmailTab(): JSX.Element {
   // ---- Connected + Inbox view ----
   return (
     <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 18 }}>
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'flex-start',
+          marginBottom: 18,
+        }}
+      >
         <div>
           <h2 style={h2}>Gmail Inbox</h2>
           <p style={{ margin: 0, fontSize: 12.5, color: C.dim }}>
             Connected as <strong style={{ color: C.accent }}>{status.email}</strong>
           </p>
+          <p style={{ margin: '4px 0 0', fontSize: 11.5, color: C.faint }}>
+            {syncStatus?.syncing
+              ? 'Syncing inbox…'
+              : syncStatus?.watching
+                ? '● Live inbox'
+                : syncStatus?.lastSyncedAt
+                  ? `Last synced ${new Date(syncStatus.lastSyncedAt).toLocaleTimeString()}`
+                  : 'Starting inbox sync…'}
+          </p>
         </div>
         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+          <select
+            id="gmail-sort-select"
+            value={sortMode}
+            onChange={(event) => {
+              const next = event.target.value === 'recent' ? 'recent' : 'priority';
+              setSortMode(next);
+              void loadCached(active, next);
+            }}
+            style={{
+              ...input,
+              width: 'auto',
+              padding: '6px 10px',
+              fontSize: 12,
+              cursor: 'pointer',
+            }}
+          >
+            <option value="priority">Priority</option>
+            <option value="recent">Recent</option>
+          </select>
           <select
             id="gmail-tone-select"
             value={tone}
@@ -397,7 +478,7 @@ export function GmailTab(): JSX.Element {
             disabled={fetching}
             style={{ ...button('primary'), opacity: fetching ? 0.6 : 1, whiteSpace: 'nowrap' }}
           >
-            {fetching ? 'Fetching…' : 'Fetch Unread'}
+            {fetching ? 'Syncing…' : 'Refresh'}
           </button>
           <button
             onClick={() => void handleDisconnect()}
@@ -434,9 +515,7 @@ export function GmailTab(): JSX.Element {
               }}
             >
               {c.label}
-              {count !== undefined && (
-                <span style={{ opacity: 0.65, marginLeft: 6 }}>{count}</span>
-              )}
+              {count !== undefined && <span style={{ opacity: 0.65, marginLeft: 6 }}>{count}</span>}
             </button>
           );
         })}
@@ -496,7 +575,14 @@ export function GmailTab(): JSX.Element {
                 gap: 6,
               }}
             >
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12 }}>
+              <div
+                style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'flex-start',
+                  gap: 12,
+                }}
+              >
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div
                     style={{
@@ -512,10 +598,13 @@ export function GmailTab(): JSX.Element {
                     {email.subject || '(no subject)'}
                   </div>
                   <div style={{ fontSize: 12, color: C.dim }}>
-                    From: {email.from}
+                    From:{' '}
+                    {email.fromName.length > 0
+                      ? `${email.fromName} <${email.fromAddress}>`
+                      : email.fromAddress}
                   </div>
                   <div style={{ fontSize: 11.5, color: C.faint, marginTop: 2 }}>
-                    {new Date(email.date).toLocaleString()}
+                    {new Date(email.receivedAt).toLocaleString()}
                   </div>
                 </div>
                 <button
@@ -533,7 +622,7 @@ export function GmailTab(): JSX.Element {
                 </button>
               </div>
 
-              {email.bodyText.length > 0 && (
+              {email.snippet.length > 0 && (
                 <div
                   style={{
                     fontSize: 12,
@@ -545,8 +634,8 @@ export function GmailTab(): JSX.Element {
                     lineHeight: 1.5,
                   }}
                 >
-                  {email.bodyText.slice(0, 200)}
-                  {email.bodyText.length > 200 ? '…' : ''}
+                  {email.snippet.slice(0, 200)}
+                  {email.snippet.length > 200 ? '…' : ''}
                 </div>
               )}
             </div>

@@ -299,6 +299,29 @@ export function registerIpc(ctx: IpcContext): void {
     return ctx.gmail.fetchUnread(n, requested.length > 0 ? requested : ['primary']);
   });
 
+  ipcMain.handle('gmail:listCached', (_e, query: unknown) => {
+    const input =
+      typeof query === 'object' && query !== null ? (query as Record<string, unknown>) : {};
+    const category = parseCategory(input['category']);
+    const sort = input['sort'] === 'priority' ? 'priority' : 'recent';
+    const limit =
+      typeof input['limit'] === 'number' && Number.isFinite(input['limit'])
+        ? Math.min(100, Math.max(1, Math.floor(input['limit'])))
+        : 25;
+    const offset =
+      typeof input['offset'] === 'number' && Number.isFinite(input['offset'])
+        ? Math.max(0, Math.floor(input['offset']))
+        : 0;
+    return ctx.gmail.listCached({
+      ...(category !== null ? { category } : {}),
+      sort,
+      limit,
+      offset,
+    });
+  });
+
+  ipcMain.handle('gmail:refresh', () => ctx.gmail.refresh());
+
   ipcMain.handle('gmail:generateAndSaveDraft', (_e, uid: unknown, tone: unknown) => {
     const emailUid = typeof uid === 'number' ? uid : Number(uid);
     const validTone = tone === 'friendly' || tone === 'brief' ? tone : 'professional';

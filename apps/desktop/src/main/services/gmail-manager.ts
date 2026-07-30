@@ -7,6 +7,8 @@
 
 import type {
   CachedEmail,
+  CachedEmailQuery,
+  CachedInboxItem,
   EmailStore,
   EmailCategory,
   GmailConnectResult,
@@ -14,6 +16,7 @@ import type {
   GmailFetchResult,
   GmailSaveDraftRequest,
   GmailStatus,
+  GmailSyncStatus,
   GmailTone,
 } from '@mochi/core';
 import { buildEmailReplyPrompt, parseEmailReplyResponse } from '@mochi/core';
@@ -21,7 +24,7 @@ import { GmailVault } from '../storage/gmail-vault.js';
 import { GmailImapService } from './gmail-imap.js';
 import type { LlmClient } from './llm-client.js';
 import type { SettingsStore } from '../storage/settings-store.js';
-import { GmailSyncService, type GmailSyncStatus } from './gmail-sync-service.js';
+import { GmailSyncService } from './gmail-sync-service.js';
 
 export class GmailManager {
   private readonly vault: GmailVault;
@@ -37,7 +40,7 @@ export class GmailManager {
   constructor(
     private readonly llmClient: LlmClient,
     private readonly settings: SettingsStore,
-    emailStore: EmailStore,
+    private readonly emailStore: EmailStore,
     vault?: GmailVault,
     imap?: GmailImapService,
   ) {
@@ -107,8 +110,15 @@ export class GmailManager {
     this.emailCache = [];
   }
 
-  async refresh(): Promise<void> {
+  async refresh(): Promise<GmailSyncStatus> {
     await this.syncService.sync('manual');
+    return this.syncService.status;
+  }
+
+  async listCached(query: CachedEmailQuery = {}): Promise<readonly CachedInboxItem[]> {
+    const account = this.vault.email;
+    if (account === null) return [];
+    return this.emailStore.listCachedEmails(account, query);
   }
 
   get syncStatus(): GmailSyncStatus {
@@ -154,7 +164,16 @@ export class GmailManager {
     }
 
     // Look up the email from cache (fetched in the same session)
-    const email = this.emailCache.find((e) => e.uid === emailUid);
+    let email = this.emailCache.find((entry) => entry.uid === emailUid);
+    if (!email) {
+      const cached = (await this.listCached({ limit: 100 })).find(
+        (entry) => entry.uid === emailUid,
+      );
+      if (cached !== undefined) {
+        email =
+          (await this.imap.fetchMessage(credentials, cached.uid, cached.category)) ?? undefined;
+      }
+    }
     if (!email) {
       return {
         ok: false,

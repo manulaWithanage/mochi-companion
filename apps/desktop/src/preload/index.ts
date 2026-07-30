@@ -16,12 +16,16 @@
 import { contextBridge, ipcRenderer, type IpcRendererEvent } from 'electron';
 import type {
   BubbleMessage,
+  CachedEmailQuery,
+  CachedInboxItem,
   GoogleStatus,
   GmailConnectResult,
   GmailDraftResult,
   GmailFetchResult,
+  GmailInboxChanged,
   GmailSaveDraftRequest,
   GmailStatus,
+  GmailSyncStatus,
   KeyResult,
   LlmStatus,
   LoadedSkin,
@@ -111,7 +115,12 @@ const bridge: MochiBridge = {
     // The raw key goes to main and never comes back (RULE 1).
     saveKey: (rawKey) => ipcRenderer.invoke('llm:saveKey', rawKey) as Promise<KeyResult>,
     saveAzureKey: (resourceName, deploymentName, apiKey) =>
-      ipcRenderer.invoke('llm:saveAzureKey', resourceName, deploymentName, apiKey) as Promise<KeyResult>,
+      ipcRenderer.invoke(
+        'llm:saveAzureKey',
+        resourceName,
+        deploymentName,
+        apiKey,
+      ) as Promise<KeyResult>,
     forgetKey: (provider) => ipcRenderer.invoke('llm:forgetKey', provider) as Promise<LlmStatus>,
     setDailyTokenCap: (cap) =>
       ipcRenderer.invoke('llm:setDailyTokenCap', cap) as Promise<LlmStatus>,
@@ -171,6 +180,11 @@ const bridge: MochiBridge = {
     status: () => ipcRenderer.invoke('gmail:status') as Promise<GmailStatus>,
     fetchUnread: (limit, only) =>
       ipcRenderer.invoke('gmail:fetchUnread', limit, only) as Promise<GmailFetchResult>,
+    listCached: (query?: CachedEmailQuery) =>
+      ipcRenderer.invoke('gmail:listCached', query) as Promise<readonly CachedInboxItem[]>,
+    refresh: () => ipcRenderer.invoke('gmail:refresh') as Promise<GmailSyncStatus>,
+    onInboxChanged: (listener) => subscribe<GmailInboxChanged>('gmail:inboxChanged', listener),
+    onSyncStatus: (listener) => subscribe<GmailSyncStatus>('gmail:syncStatus', listener),
     generateAndSaveDraft: (emailUid, tone) =>
       ipcRenderer.invoke('gmail:generateAndSaveDraft', emailUid, tone) as Promise<GmailDraftResult>,
     saveDraft: (request: GmailSaveDraftRequest) =>

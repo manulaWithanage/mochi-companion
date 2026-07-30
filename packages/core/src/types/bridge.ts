@@ -10,6 +10,12 @@
  */
 
 import type { EmailCategory } from '../google/categories.js';
+import type {
+  CachedEmailQuery,
+  CachedInboxItem,
+  GmailInboxChanged,
+  GmailSyncStatus,
+} from '../google/email-state.js';
 import type { MagicianPhase } from '../mascot/magician.js';
 import type { DiscoveredModel, ProviderId } from '../llm/providers.js';
 import type { MascotState, WorkHours } from '../mascot/state.js';
@@ -282,6 +288,12 @@ export interface MochiBridge {
      * the filter chips can show totals without paying for the bodies.
      */
     fetchUnread(limit?: number, only?: readonly EmailCategory[]): Promise<GmailFetchResult>;
+    /** Read the durable local inbox immediately, without waiting for Gmail. */
+    listCached(query?: CachedEmailQuery): Promise<readonly CachedInboxItem[]>;
+    /** Reconcile the local inbox with Gmail now. */
+    refresh(): Promise<GmailSyncStatus>;
+    onInboxChanged(listener: (change: GmailInboxChanged) => void): () => void;
+    onSyncStatus(listener: (status: GmailSyncStatus) => void): () => void;
     /**
      * Generate an LLM draft reply for the given email and save it to
      * [Gmail]/Drafts. Returns the generated draft text on success.

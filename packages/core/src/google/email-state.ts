@@ -76,6 +76,20 @@ export interface GmailSyncState {
   readonly lastError: string | null;
 }
 
+export interface GmailSyncStatus {
+  readonly running: boolean;
+  readonly syncing: boolean;
+  readonly watching: boolean;
+  readonly lastSyncedAt: number | null;
+  readonly lastError: string | null;
+}
+
+export interface GmailInboxChanged {
+  readonly account: string;
+  readonly newEmailCount: number;
+  readonly status: GmailSyncStatus;
+}
+
 export interface CachedEmailQuery {
   readonly category?: EmailCategory;
   readonly sort?: 'priority' | 'recent';
