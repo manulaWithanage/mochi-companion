@@ -98,26 +98,25 @@ export function Dashboard(): JSX.Element {
         }}
       >
         <div style={{ padding: '0 6px 16px', borderBottom: `1px solid ${C.border}`, marginBottom: 10 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
-            <div
-              style={{
-                width: 28,
-                height: 28,
-                borderRadius: '50%',
-                background: 'linear-gradient(135deg, rgba(242, 166, 179, 0.25), rgba(255, 140, 175, 0.4))',
-                border: `1px solid ${C.accent}`,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: 15,
-                boxShadow: `0 0 10px ${C.accent}55`,
-                flexShrink: 0,
-              }}
-            >
-              🍡
-            </div>
-            <div style={{ fontSize: 16, fontWeight: 700, letterSpacing: '-0.01em', color: C.text }}>
-              {settings?.assistantName ?? 'Mochi'}
+          {/* Web App Brand Logo */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <svg width="30" height="30" viewBox="0 0 100 100" fill="none" style={{ flexShrink: 0 }}>
+              <rect x="8" y="8" width="84" height="84" rx="32" fill="#F8FAFD" stroke="#3D4963" strokeWidth="7" />
+              <path d="M 28 42 Q 36 32 44 42" stroke="#3D4963" strokeWidth="6" strokeLinecap="round" fill="none" />
+              <path d="M 56 42 Q 64 32 72 42" stroke="#3D4963" strokeWidth="6" strokeLinecap="round" fill="none" />
+              <path d="M 44 56 Q 50 64 56 56" stroke="#3D4963" strokeWidth="5" strokeLinecap="round" fill="none" />
+              <ellipse cx="22" cy="52" rx="7" ry="5" fill="#FF9F73" opacity="0.9" />
+              <ellipse cx="78" cy="52" rx="7" ry="5" fill="#FF9F73" opacity="0.9" />
+            </svg>
+            <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <span style={{ fontSize: 17, fontWeight: 800, color: '#7c5cfc', letterSpacing: '-0.02em', lineHeight: 1 }}>
+                  {settings?.assistantName ?? 'Mochi'}
+                </span>
+              </div>
+              <span style={{ fontSize: 10, fontWeight: 550, color: '#9aa5b8', marginTop: 3, letterSpacing: '0.01em' }}>
+                Desktop Companion
+              </span>
             </div>
           </div>
           <div
