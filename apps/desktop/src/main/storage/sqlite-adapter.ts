@@ -651,7 +651,7 @@ export class SqliteStorageAdapter implements StorageAdapter, EmailStore {
 
     const order =
       query.sort === 'priority'
-        ? 'COALESCE(a.priority_score, -1) DESC, e.received_at DESC'
+        ? 'COALESCE(a.priority_score, 2) DESC, e.received_at DESC'
         : 'e.received_at DESC';
     const limit = Math.min(100, Math.max(1, query.limit ?? 25));
     const offset = Math.max(0, query.offset ?? 0);

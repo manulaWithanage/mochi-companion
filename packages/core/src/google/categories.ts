@@ -119,6 +119,26 @@ export function assignCategories<T>(
   return assigned;
 }
 
+/**
+ * Select newest unread INBOX UIDs while treating categories as annotation.
+ *
+ * Gmail can emit IMAP EXISTS before its X-GM-RAW category index includes the
+ * message. An unassigned UID therefore defaults to Primary instead of being
+ * dropped from the snapshot.
+ */
+export function selectNewestInboxUids(
+  unreadUids: readonly number[],
+  assigned: ReadonlyMap<number, EmailCategory>,
+  only: readonly EmailCategory[],
+  limit: number,
+): readonly number[] {
+  const wanted = new Set(only);
+  return [...new Set(unreadUids)]
+    .filter((uid) => wanted.has(assigned.get(uid) ?? 'primary'))
+    .sort((a, b) => b - a)
+    .slice(0, Math.min(100, Math.max(1, limit)));
+}
+
 export interface CategoryCount {
   readonly category: EmailCategory;
   readonly label: string;
@@ -132,7 +152,9 @@ export interface CategoryCount {
  * row of controls that changes width while being clicked is worse than a chip
  * reading "Social 0".
  */
-export function countByCategory<T>(assigned: ReadonlyMap<T, EmailCategory>): readonly CategoryCount[] {
+export function countByCategory<T>(
+  assigned: ReadonlyMap<T, EmailCategory>,
+): readonly CategoryCount[] {
   const counts = new Map<EmailCategory, number>(CATEGORY_IDS.map((id) => [id, 0]));
   for (const category of assigned.values()) {
     counts.set(category, (counts.get(category) ?? 0) + 1);

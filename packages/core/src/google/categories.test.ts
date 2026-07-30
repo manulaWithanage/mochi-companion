@@ -7,6 +7,7 @@ import {
   countByCategory,
   INTERRUPTIBLE_CATEGORIES,
   parseCategory,
+  selectNewestInboxUids,
   unreadInCategory,
   worthInterrupting,
   type EmailCategory,
@@ -88,6 +89,21 @@ describe('assignCategories', () => {
 
   it('handles empty input', () => {
     expect(assignCategories([]).size).toBe(0);
+  });
+});
+
+describe('selectNewestInboxUids', () => {
+  it('keeps a newly delivered UID before Gmail category indexing catches up', () => {
+    const assigned = new Map<number, EmailCategory>([
+      [10, 'primary'],
+      [9, 'promotions'],
+    ]);
+    expect(selectNewestInboxUids([9, 10, 11], assigned, CATEGORY_IDS, 100)).toEqual([11, 10, 9]);
+    expect(selectNewestInboxUids([9, 10, 11], assigned, ['primary'], 100)).toEqual([11, 10]);
+  });
+
+  it('deduplicates, orders newest first, and applies the snapshot cap', () => {
+    expect(selectNewestInboxUids([2, 4, 3, 4, 1], new Map(), CATEGORY_IDS, 3)).toEqual([4, 3, 2]);
   });
 });
 

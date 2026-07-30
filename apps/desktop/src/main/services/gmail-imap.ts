@@ -11,6 +11,7 @@
 import {
   assignCategories,
   CATEGORY_IDS,
+  selectNewestInboxUids,
   unreadInCategory,
   type CachedEmail,
   type EmailCategory,
@@ -146,6 +147,8 @@ export class GmailImapService {
 
       await client.connect();
       const mailbox = await client.mailboxOpen('INBOX');
+      const unread = await client.search({ seen: false }, { uid: true });
+      const unreadUids = unread === false ? [] : unread;
 
       const perCategory: { category: EmailCategory; ids: readonly number[] }[] = [];
       for (const category of CATEGORY_IDS) {
@@ -158,22 +161,13 @@ export class GmailImapService {
         category: result.category,
         count: result.ids.length,
       }));
-      const wanted = new Set(only);
-      const uids = [
-        ...new Set(
-          perCategory
-            .filter((result) => wanted.has(result.category))
-            .flatMap((result) => result.ids),
-        ),
-      ]
-        .sort((a, b) => b - a)
-        .slice(0, Math.min(100, Math.max(1, limit)));
+      const uids = selectNewestInboxUids(unreadUids, categoryOf, only, limit);
 
       const syncedAt = Date.now();
       const emails: CachedEmail[] = [];
       if (uids.length > 0) {
         for await (const message of client.fetch(
-          uids,
+          [...uids],
           {
             uid: true,
             envelope: true,
@@ -189,10 +183,10 @@ export class GmailImapService {
           const replyTo = envelope?.replyTo?.[0] ?? from;
           const fromAddress = from?.address?.trim().toLowerCase() ?? '';
           const received =
-            envelope?.date instanceof Date
-              ? envelope.date.getTime()
-              : message.internalDate instanceof Date
-                ? message.internalDate.getTime()
+            message.internalDate instanceof Date
+              ? message.internalDate.getTime()
+              : envelope?.date instanceof Date
+                ? envelope.date.getTime()
                 : syncedAt;
           const messageId = envelope?.messageId ?? `uid-${message.uid}`;
 

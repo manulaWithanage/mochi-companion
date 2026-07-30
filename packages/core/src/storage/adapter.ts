@@ -178,8 +178,8 @@ export class InMemoryStorageAdapter implements StorageAdapter {
     );
     rows.sort((a, b) => {
       if (query.sort === 'priority') {
-        const aScore = this.emailPriorities.get(this.emailKey(a.account, a.emailId))?.score ?? -1;
-        const bScore = this.emailPriorities.get(this.emailKey(b.account, b.emailId))?.score ?? -1;
+        const aScore = this.emailPriorities.get(this.emailKey(a.account, a.emailId))?.score ?? 2;
+        const bScore = this.emailPriorities.get(this.emailKey(b.account, b.emailId))?.score ?? 2;
         if (aScore !== bScore) return bScore - aScore;
       }
       return b.receivedAt - a.receivedAt;

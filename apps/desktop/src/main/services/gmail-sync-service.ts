@@ -105,7 +105,7 @@ export class GmailSyncService {
       return this.syncPromise;
     }
 
-    this.syncPromise = this.performSync();
+    this.syncPromise = this.performSync(reason);
     this.emitStatus();
     try {
       await this.syncPromise;
@@ -119,7 +119,7 @@ export class GmailSyncService {
     }
   }
 
-  private async performSync(): Promise<void> {
+  private async performSync(reason: GmailSyncReason): Promise<void> {
     const credentials = this.getCredentials();
     if (credentials === null) return;
 
@@ -131,6 +131,7 @@ export class GmailSyncService {
     const now = Date.now();
 
     if (!result.ok) {
+      console.warn(`[gmail-sync] ${reason} failed: ${result.error}`);
       this.lastError = result.error;
       await this.store.saveGmailSyncState({
         account: credentials.email,
@@ -142,6 +143,11 @@ export class GmailSyncService {
     }
 
     const newEmails = result.emails.filter((email) => !previousIds.has(email.emailId));
+    const newest = result.emails[0]?.receivedAt;
+    console.log(
+      `[gmail-sync] ${reason}: fetched=${result.emails.length} new=${newEmails.length}` +
+        ` newest=${newest === undefined ? 'none' : new Date(newest).toISOString()}`,
+    );
     await this.store.replaceInboxSnapshot(credentials.email, result.emails, now);
     await this.store.saveGmailSyncState({
       account: credentials.email,
@@ -173,7 +179,10 @@ export class GmailSyncService {
         maxIdleTime: IDLE_RESTART_MS,
       });
       this.watcher = client;
-      client.on('exists', () => this.scheduleChangeSync());
+      client.on('exists', () => {
+        console.log('[gmail-sync] IMAP EXISTS received');
+        this.scheduleChangeSync();
+      });
       client.on('error', (error) => {
         this.lastError = `Gmail watcher error: ${error.message}`;
         this.emitStatus();
@@ -189,6 +198,7 @@ export class GmailSyncService {
       await client.mailboxOpen('INBOX');
       this.watching = true;
       this.lastError = null;
+      console.log('[gmail-sync] IMAP IDLE watcher ready');
       this.emitStatus();
       // ImapFlow automatically enters IDLE after the connection is inactive.
     } catch (error) {

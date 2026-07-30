@@ -70,8 +70,44 @@ describe('InMemoryStorageAdapter email cache', () => {
       scorerVersion: 1,
       classifiedAt: 300,
     });
+    await store.saveEmailPriority({
+      account: low.account,
+      emailId: low.emailId,
+      score: 0.2,
+      tier: 'low',
+      confidence: 0.9,
+      source: 'rules',
+      signals: [],
+      reason: 'Low priority',
+      replyLikely: false,
+      scorerVersion: 1,
+      classifiedAt: 300,
+    });
 
     const rows = await store.listCachedEmails(low.account, { sort: 'priority' });
     expect(rows.map((row) => row.emailId)).toEqual(['urgent', 'low']);
+  });
+
+  it('surfaces a new unscored arrival while priority enrichment is pending', async () => {
+    const store = new InMemoryStorageAdapter();
+    const existing = email({ emailId: 'existing', receivedAt: 100 });
+    const arriving = email({ emailId: 'arriving', receivedAt: 200 });
+    await store.replaceInboxSnapshot(existing.account, [existing, arriving], 300);
+    await store.saveEmailPriority({
+      account: existing.account,
+      emailId: existing.emailId,
+      score: 0.9,
+      tier: 'urgent',
+      confidence: 0.9,
+      source: 'rules',
+      signals: [],
+      reason: 'Important',
+      replyLikely: true,
+      scorerVersion: 1,
+      classifiedAt: 300,
+    });
+
+    const rows = await store.listCachedEmails(existing.account, { sort: 'priority' });
+    expect(rows.map((row) => row.emailId)).toEqual(['arriving', 'existing']);
   });
 });
