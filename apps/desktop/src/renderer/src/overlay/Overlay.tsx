@@ -106,12 +106,19 @@ export function Overlay(): JSX.Element {
   // ---- subscriptions -----------------------------------------------------
   useEffect(() => {
     const offState = window.mochi.mascot.onStateChange((state) => {
-      // Don't overwrite active alert state while a bubble is showing
-      if (bubbleSubject.current === null) {
+      // Only hold back state update if a high-priority routine alert bubble is active
+      if (bubbleSubject.current === null || !bubbleSubject.current.includes('routine')) {
         setMascotState(state);
       }
     });
-    const offTimer = window.mochi.timer.onChange(setTimer);
+    const offTimer = window.mochi.timer.onChange((s) => {
+      setTimer(s);
+      void window.mochi.mascot.current().then((st) => {
+        if (bubbleSubject.current === null || !bubbleSubject.current.includes('routine')) {
+          setMascotState(st);
+        }
+      });
+    });
     const offVisible = window.mochi.overlay.onVisibilityChange(setVisible);
     const offSettings = window.mochi.settings.onChange((next) => {
       void window.mochi.skin
