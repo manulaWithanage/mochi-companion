@@ -25,4 +25,5 @@ export * from './brain/eval.js';
 export * from './google/oauth.js';
 export * from './google/email-prompt.js';
 export * from './google/categories.js';
+export * from './google/email-state.js';
 export type * from './types/bridge.js';
