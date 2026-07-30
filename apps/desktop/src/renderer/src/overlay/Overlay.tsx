@@ -189,6 +189,17 @@ export function Overlay(): JSX.Element {
     [setInteractive],
   );
 
+  const [showPills, setShowPills] = useState(false);
+  const pillsTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+
+  const revealPills = useCallback(() => {
+    setShowPills(true);
+    if (pillsTimer.current !== undefined) clearTimeout(pillsTimer.current);
+    pillsTimer.current = setTimeout(() => {
+      setShowPills(false);
+    }, 4500);
+  }, []);
+
   const [clickScale, setClickScale] = useState(1);
 
   const handlePointerDown = useCallback((event: React.PointerEvent<HTMLCanvasElement>) => {
@@ -197,18 +208,24 @@ export function Overlay(): JSX.Element {
     setClickScale(0.90);
   }, []);
 
-  const handlePointerUp = useCallback((event: React.PointerEvent<HTMLCanvasElement>) => {
-    const wasDrag = drag.current.moved;
-    drag.current.active = false;
-    event.currentTarget.releasePointerCapture(event.pointerId);
+  const handlePointerUp = useCallback(
+    (event: React.PointerEvent<HTMLCanvasElement>) => {
+      const wasDrag = drag.current.moved;
+      drag.current.active = false;
+      event.currentTarget.releasePointerCapture(event.pointerId);
 
-    setClickScale(1.14);
-    setTimeout(() => setClickScale(1), 160);
+      setClickScale(1.14);
+      setTimeout(() => setClickScale(1), 160);
 
-    if (!wasDrag) {
-      void window.mochi.timer.toggle('default').then(setTimer);
-    }
-  }, []);
+      // Reveal category pills at bottom on click!
+      revealPills();
+
+      if (!wasDrag) {
+        void window.mochi.timer.toggle('default').then(setTimer);
+      }
+    },
+    [revealPills],
+  );
 
   const running = timer?.running === true;
 
@@ -228,8 +245,15 @@ export function Overlay(): JSX.Element {
           justifyContent: 'center',
         }}
       >
-        {/* 3 Primary Floating Category Quick-Tracker Pills */}
-        <OverlayCategoryPills timer={timer} onHoverChange={setInteractive} />
+        {/* 3 Primary Floating Category Quick-Tracker Pills at the Bottom */}
+        <OverlayCategoryPills
+          timer={timer}
+          visible={showPills}
+          onHoverChange={(interactive) => {
+            setInteractive(interactive);
+            if (interactive) revealPills();
+          }}
+        />
 
         {/* Magician entrance smoke cloud & sparkles */}
         <SmokeEffect active={showSmoke} />

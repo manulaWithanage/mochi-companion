@@ -3,11 +3,13 @@ import type { Project, TimerSnapshot } from '@mochi/core';
 
 interface OverlayCategoryPillsProps {
   timer: TimerSnapshot | null;
+  visible: boolean;
   onHoverChange: (interactive: boolean) => void;
 }
 
 export function OverlayCategoryPills({
   timer,
+  visible,
   onHoverChange,
 }: OverlayCategoryPillsProps): JSX.Element | null {
   const [projects, setProjects] = useState<readonly Project[]>([]);
@@ -31,12 +33,10 @@ export function OverlayCategoryPills({
     };
   }, []);
 
-  // Filter 3 primary projects
   let primaryProjects = primaryIds
     .map((id) => projects.find((p) => p.id === id))
     .filter((p): p is Project => p !== undefined);
 
-  // Fallback to first 3 projects if no primary explicitly configured
   if (primaryProjects.length === 0 && projects.length > 0) {
     primaryProjects = projects.slice(0, 3);
   }
@@ -49,14 +49,18 @@ export function OverlayCategoryPills({
     <div
       style={{
         position: 'absolute',
-        top: 8,
+        bottom: 8,
         left: '50%',
-        transform: 'translateX(-50%)',
+        transform: visible
+          ? 'translateX(-50%) translateY(0) scale(1)'
+          : 'translateX(-50%) translateY(14px) scale(0.85)',
+        opacity: visible ? 1 : 0,
+        pointerEvents: visible ? 'auto' : 'none',
         display: 'flex',
         alignItems: 'center',
         gap: 8,
-        zIndex: 20,
-        pointerEvents: 'auto',
+        zIndex: 25,
+        transition: 'all 240ms cubic-bezier(0.34, 1.56, 0.64, 1)',
       }}
       onMouseEnter={() => onHoverChange(true)}
       onMouseLeave={() => onHoverChange(false)}
@@ -65,7 +69,6 @@ export function OverlayCategoryPills({
         const isActive = activeProjectId === project.id;
         const isHovered = activeHoverId === project.id;
 
-        // Extract icon or default emoji
         const iconChar = project.name.slice(0, 2).trim() || '⏱️';
 
         return (
@@ -90,23 +93,23 @@ export function OverlayCategoryPills({
               borderRadius: '50%',
               background: isActive
                 ? `radial-gradient(circle at 30% 30%, ${project.colour}, #1a1625)`
-                : 'rgba(27, 23, 34, 0.84)',
-              backdropFilter: 'blur(8px)',
+                : 'rgba(23, 19, 30, 0.92)',
+              backdropFilter: 'blur(10px)',
               border: isActive
                 ? `2px solid ${project.colour}`
-                : `1px solid ${isHovered ? project.colour : 'rgba(255, 255, 255, 0.18)'}`,
+                : `1px solid ${isHovered ? project.colour : 'rgba(255, 255, 255, 0.22)'}`,
               boxShadow: isActive
-                ? `0 0 14px ${project.colour}88, 0 3px 8px rgba(0,0,0,0.5)`
+                ? `0 0 14px ${project.colour}aa, 0 3px 8px rgba(0,0,0,0.5)`
                 : isHovered
-                  ? `0 0 10px ${project.colour}66, 0 2px 6px rgba(0,0,0,0.4)`
-                  : '0 2px 8px rgba(0,0,0,0.3)',
+                  ? `0 0 10px ${project.colour}88, 0 2px 6px rgba(0,0,0,0.4)`
+                  : '0 2px 8px rgba(0,0,0,0.4)',
               color: '#ffffff',
               fontSize: isActive ? 15 : 13,
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               cursor: 'pointer',
-              transform: isHovered ? 'scale(1.22)' : isActive ? 'scale(1.1)' : 'scale(1.0)',
+              transform: isHovered ? 'scale(1.22)' : isActive ? 'scale(1.08)' : 'scale(1.0)',
               transition: 'all 180ms cubic-bezier(0.34, 1.56, 0.64, 1)',
               outline: 'none',
               padding: 0,
