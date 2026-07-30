@@ -14,10 +14,12 @@ const QUICK_PRESETS = [
 const EMOJI_OPTIONS = ['💼', '👤', '📚', '🎨', '🧘', '💻', '☕', '⚡', '🏋️', '🎧', '📝', '🎯', '🚀', '🛠️'];
 const SWATCH_OPTIONS = ['#6366f1', '#ec4899', '#10b981', '#f59e0b', '#8b5cf6', '#3b82f6', '#F2A6B3', '#A6D6F2'];
 
-type TimeSubTab = 'categories' | 'history';
+type TimeSubTab = 'categories' | 'performance' | 'history';
+type DateRangeFilter = 'today' | '7days' | '30days' | 'all';
 
 export function TimeTab(): JSX.Element {
   const [subTab, setSubTab] = useState<TimeSubTab>('categories');
+  const [dateRange, setDateRange] = useState<DateRangeFilter>('7days');
   const [sessions, setSessions] = useState<readonly WorkSession[]>([]);
   const [projects, setProjects] = useState<readonly Project[]>([]);
   const [settings, setSettings] = useState<MochiSettings | null>(null);
@@ -207,6 +209,63 @@ export function TimeTab(): JSX.Element {
     return { rows, grand };
   }, [sessions, projects]);
 
+  // Performance Filtering & Calculations
+  const filteredSessions = useMemo(() => {
+    const now = Date.now();
+    if (dateRange === 'all') return sessions;
+
+    let startThreshold = 0;
+    const startOfDay = new Date();
+    startOfDay.setHours(0, 0, 0, 0);
+
+    if (dateRange === 'today') {
+      startThreshold = startOfDay.getTime();
+    } else if (dateRange === '7days') {
+      startThreshold = now - 7 * 24 * 60 * 60 * 1000;
+    } else if (dateRange === '30days') {
+      startThreshold = now - 30 * 24 * 60 * 60 * 1000;
+    }
+
+    return sessions.filter((s) => s.startedAt >= startThreshold);
+  }, [sessions, dateRange]);
+
+  const performanceStats = useMemo(() => {
+    const now = Date.now();
+    const byProject = new Map<string, { ms: number; count: number }>();
+    let totalMs = 0;
+
+    for (const s of filteredSessions) {
+      const dur = elapsedMs(s, now);
+      totalMs += dur;
+      const entry = byProject.get(s.projectId) ?? { ms: 0, count: 0 };
+      entry.ms += dur;
+      entry.count += 1;
+      byProject.set(s.projectId, entry);
+    }
+
+    const categoryBreakdown = projects
+      .map((p) => {
+        const data = byProject.get(p.id) ?? { ms: 0, count: 0 };
+        const pct = totalMs > 0 ? (data.ms / totalMs) * 100 : 0;
+        return { project: p, ms: data.ms, count: data.count, pct };
+      })
+      .filter((c) => c.ms > 0);
+
+    categoryBreakdown.sort((a, b) => b.ms - a.ms);
+
+    const topCategory = categoryBreakdown.length > 0 ? categoryBreakdown[0] : null;
+    const sessionCount = filteredSessions.length;
+    const avgSessionMs = sessionCount > 0 ? totalMs / sessionCount : 0;
+
+    return {
+      totalMs,
+      sessionCount,
+      avgSessionMs,
+      topCategory,
+      categoryBreakdown,
+    };
+  }, [filteredSessions, projects]);
+
   const activeProject = useMemo(() => {
     if (!timer?.running) return null;
     const currentId = timer.projectId || timer.session?.projectId || null;
@@ -250,6 +309,27 @@ export function TimeTab(): JSX.Element {
         >
           <span>▤</span>
           <span>Categories & Mascot Badges</span>
+        </button>
+        <button
+          type="button"
+          onClick={() => setSubTab('performance')}
+          style={{
+            background: subTab === 'performance' ? C.accent : 'transparent',
+            color: subTab === 'performance' ? '#ffffff' : C.dim,
+            border: 'none',
+            borderRadius: 7,
+            padding: '6px 14px',
+            fontSize: 12.5,
+            fontWeight: 650,
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 6,
+            transition: 'all 140ms ease',
+          }}
+        >
+          <span>📊</span>
+          <span>Performance & Reports</span>
         </button>
         <button
           type="button"
@@ -708,6 +788,163 @@ export function TimeTab(): JSX.Element {
                   </div>
                 );
               })
+            )}
+          </div>
+        </div>
+      ) : subTab === 'performance' ? (
+        /* Dedicated Performance & Reports Analytics Sub-Tab */
+        <div>
+          {/* Header Bar & Date Period Filters */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+            <div>
+              <h2 style={h2}>Performance & Reports</h2>
+              <p style={sub}>Analyze how you manage focus time and category distribution across date ranges.</p>
+            </div>
+
+            {/* Date Range Filter Switcher */}
+            <div style={{ display: 'flex', gap: 4, background: '#181422', padding: 3, borderRadius: 8, border: `1px solid ${C.border}` }}>
+              {(
+                [
+                  { id: 'today', label: 'Today' },
+                  { id: '7days', label: 'Last 7 Days' },
+                  { id: '30days', label: 'Last 30 Days' },
+                  { id: 'all', label: 'All Time' },
+                ] as const
+              ).map((filter) => {
+                const active = dateRange === filter.id;
+                return (
+                  <button
+                    key={filter.id}
+                    type="button"
+                    onClick={() => setDateRange(filter.id)}
+                    style={{
+                      background: active ? 'rgba(242, 166, 179, 0.18)' : 'transparent',
+                      color: active ? C.accent : C.dim,
+                      border: active ? `1px solid ${C.accent}66` : '1px solid transparent',
+                      borderRadius: 6,
+                      padding: '4px 10px',
+                      fontSize: 11.5,
+                      fontWeight: active ? 700 : 500,
+                      cursor: 'pointer',
+                      transition: 'all 120ms ease',
+                    }}
+                  >
+                    {filter.label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* KPI Stat Cards Grid */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 14, marginBottom: 20 }}>
+            {/* Total Focus Time */}
+            <div style={{ ...card, display: 'flex', flexDirection: 'column', gap: 6 }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: C.dim, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                ⏱️ Total Focus Time
+              </div>
+              <div style={{ fontSize: 22, fontWeight: 800, color: C.text, fontVariantNumeric: 'tabular-nums' }}>
+                {humanDuration(performanceStats.totalMs)}
+              </div>
+            </div>
+
+            {/* Total Sessions */}
+            <div style={{ ...card, display: 'flex', flexDirection: 'column', gap: 6 }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: C.dim, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                🎯 Focus Sessions
+              </div>
+              <div style={{ fontSize: 22, fontWeight: 800, color: C.text }}>
+                {performanceStats.sessionCount} {performanceStats.sessionCount === 1 ? 'session' : 'sessions'}
+              </div>
+            </div>
+
+            {/* Avg Session Length */}
+            <div style={{ ...card, display: 'flex', flexDirection: 'column', gap: 6 }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: C.dim, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                ⚡ Avg Session Length
+              </div>
+              <div style={{ fontSize: 22, fontWeight: 800, color: C.text, fontVariantNumeric: 'tabular-nums' }}>
+                {humanDuration(performanceStats.avgSessionMs)}
+              </div>
+            </div>
+
+            {/* Top Category */}
+            <div style={{ ...card, display: 'flex', flexDirection: 'column', gap: 6 }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: C.dim, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                🏆 Top Category
+              </div>
+              <div style={{ fontSize: 16, fontWeight: 750, color: performanceStats.topCategory?.project.colour ?? C.text, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                {performanceStats.topCategory ? performanceStats.topCategory.project.name : 'No data'}
+              </div>
+            </div>
+          </div>
+
+          {/* Proportional Category Distribution Bar */}
+          {performanceStats.categoryBreakdown.length > 0 && (
+            <div style={{ ...card, marginBottom: 20 }}>
+              <div style={{ fontSize: 12, fontWeight: 700, color: C.dim, textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: 12 }}>
+                Category Time Distribution
+              </div>
+              <div style={{ height: 12, borderRadius: 6, display: 'flex', overflow: 'hidden', gap: 2, background: '#1c1724' }}>
+                {performanceStats.categoryBreakdown.map((item) => (
+                  <div
+                    key={item.project.id}
+                    title={`${item.project.name}: ${item.pct.toFixed(1)}%`}
+                    style={{
+                      width: `${item.pct}%`,
+                      height: '100%',
+                      background: item.project.colour,
+                      transition: 'width 250ms ease',
+                    }}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Detailed Category Performance Table */}
+          <div style={card}>
+            <div style={{ fontSize: 12, fontWeight: 700, color: C.dim, textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: 14 }}>
+              Category Breakdown ({performanceStats.categoryBreakdown.length})
+            </div>
+
+            {performanceStats.categoryBreakdown.length === 0 ? (
+              <div style={{ fontSize: 13, color: C.faint, padding: '16px 0', textAlign: 'center' }}>
+                No focus activity logged for this time range. Select another date filter above!
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                {performanceStats.categoryBreakdown.map((item) => (
+                  <div
+                    key={item.project.id}
+                    style={{
+                      background: '#181422',
+                      border: `1px solid ${C.border}`,
+                      borderRadius: 10,
+                      padding: '12px 14px',
+                    }}
+                  >
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                        <div style={{ width: 10, height: 10, borderRadius: '50%', background: item.project.colour, boxShadow: `0 0 6px ${item.project.colour}` }} />
+                        <span style={{ fontSize: 14, fontWeight: 700, color: C.text }}>{item.project.name}</span>
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+                        <span style={{ fontSize: 12, fontWeight: 700, color: item.project.colour, fontVariantNumeric: 'tabular-nums' }}>
+                          {item.pct.toFixed(1)}%
+                        </span>
+                        <span style={{ fontSize: 12, color: C.dim, fontVariantNumeric: 'tabular-nums' }}>
+                          {humanDuration(item.ms)} · {item.count} session{item.count === 1 ? '' : 's'}
+                        </span>
+                      </div>
+                    </div>
+                    {/* Individual progress bar */}
+                    <div style={{ height: 4, borderRadius: 2, background: '#262033', overflow: 'hidden' }}>
+                      <div style={{ width: `${item.pct}%`, height: '100%', background: item.project.colour }} />
+                    </div>
+                  </div>
+                ))}
+              </div>
             )}
           </div>
         </div>
