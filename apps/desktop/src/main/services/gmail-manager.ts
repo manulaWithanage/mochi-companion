@@ -5,7 +5,6 @@
  * Main process only. Never imported by the renderer.
  */
 
-import { app } from 'electron';
 import type {
   CachedEmail,
   CachedEmailQuery,
@@ -75,13 +74,22 @@ export class GmailManager {
       this.emailStore,
       this.imap,
       () => this.vault.reveal(),
-      app.isPackaged
-        ? undefined
-        : {
-            urgentFirstReminderMs: 10_000,
-            reviewFirstReminderMs: 4 * 60 * 60_000,
-            replanGraceMs: 1_000,
+      () => {
+        const preferences = this.settings.get().gmailAi;
+        const shortestDelay = Math.min(
+          preferences.urgentReminderDelayMs,
+          preferences.reviewReminderDelayMs,
+        );
+        return {
+          enabled: preferences.remindersEnabled,
+          timing: {
+            urgentFirstReminderMs: preferences.urgentReminderDelayMs,
+            reviewFirstReminderMs: preferences.reviewReminderDelayMs,
+            urgentFollowUpMs: preferences.urgentFollowUpDelayMs,
+            replanGraceMs: shortestDelay <= 30_000 ? 1_000 : 60_000,
           },
+        };
+      },
     );
     this.syncService = new GmailSyncService(() => this.vault.reveal(), this.imap, emailStore, {
       onInboxChanged: async (account, newEmails) => {

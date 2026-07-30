@@ -214,6 +214,28 @@ export function registerIpc(ctx: IpcContext): void {
           typeof input['maxBackgroundDraftsPerSync'] === 'number'
             ? input['maxBackgroundDraftsPerSync']
             : current.maxBackgroundDraftsPerSync,
+        remindersEnabled:
+          typeof input['remindersEnabled'] === 'boolean'
+            ? input['remindersEnabled']
+            : current.remindersEnabled,
+        urgentReminderDelayMs:
+          typeof input['urgentReminderDelayMs'] === 'number'
+            ? input['urgentReminderDelayMs']
+            : current.urgentReminderDelayMs,
+        reviewReminderDelayMs:
+          typeof input['reviewReminderDelayMs'] === 'number'
+            ? input['reviewReminderDelayMs']
+            : current.reviewReminderDelayMs,
+        urgentFollowUpDelayMs:
+          typeof input['urgentFollowUpDelayMs'] === 'number'
+            ? input['urgentFollowUpDelayMs']
+            : current.urgentFollowUpDelayMs,
+        defaultDraftTone:
+          input['defaultDraftTone'] === 'friendly' || input['defaultDraftTone'] === 'brief'
+            ? input['defaultDraftTone']
+            : input['defaultDraftTone'] === 'professional'
+              ? 'professional'
+              : current.defaultDraftTone,
       },
     });
   });

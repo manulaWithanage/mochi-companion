@@ -28,6 +28,11 @@ interface ScheduledContext {
   readonly state: EmailReminderState;
 }
 
+interface EmailReminderPreferences {
+  readonly enabled: boolean;
+  readonly timing: EmailReminderTiming;
+}
+
 export class EmailReminderService {
   private readonly scheduler: Scheduler;
   private readonly contexts = new Map<string, ScheduledContext>();
@@ -37,7 +42,7 @@ export class EmailReminderService {
     private readonly store: EmailStore,
     private readonly imap: GmailImapService,
     private readonly getCredentials: () => GmailCredentials | null,
-    private readonly timing?: EmailReminderTiming,
+    private readonly getPreferences: () => EmailReminderPreferences,
   ) {
     this.scheduler = new Scheduler({
       onFire: (event, reason) => {
@@ -48,6 +53,12 @@ export class EmailReminderService {
   }
 
   async reconcile(account: string, now = Date.now()): Promise<void> {
+    const preferences = this.getPreferences();
+    if (!preferences.enabled) {
+      this.contexts.clear();
+      this.scheduler.replaceNamespace(EMAIL_REMINDER_PREFIX, []);
+      return;
+    }
     const inbox = await this.store.listCachedEmails(account, {
       sort: 'priority',
       limit: 100,
@@ -88,7 +99,7 @@ export class EmailReminderService {
         continue;
       }
 
-      const planned = planEmailReminder(email, email.reminder, now, this.timing);
+      const planned = planEmailReminder(email, email.reminder, now, preferences.timing);
       if (planned === null) continue;
       await this.store.saveEmailReminder(planned.state);
       const item = this.scheduledItem(email, planned.state, planned.at);
@@ -186,7 +197,14 @@ export class EmailReminderService {
     if (context === undefined || context.email.priority === null) return;
     this.contexts.delete(event.id);
 
-    const next = afterEmailReminderFired(context.state, context.email.priority.tier, Date.now());
+    const preferences = this.getPreferences();
+    if (!preferences.enabled) return;
+    const next = afterEmailReminderFired(
+      context.state,
+      context.email.priority.tier,
+      Date.now(),
+      preferences.timing,
+    );
     await this.store.saveEmailReminder(next);
     this.bus.emit(event);
 

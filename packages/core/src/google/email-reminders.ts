@@ -53,10 +53,10 @@ export function planEmailReminder(
 
   const initialDelay =
     email.priority?.tier === 'urgent' ? timing.urgentFirstReminderMs : timing.reviewFirstReminderMs;
-  let at = email.receivedAt + initialDelay;
-  if (existing?.nextReminderAt !== null && existing?.nextReminderAt !== undefined) {
-    at = existing.nextReminderAt;
-  }
+  let at =
+    reminderCount > 0 && existing?.lastRemindedAt !== null && existing?.lastRemindedAt !== undefined
+      ? existing.lastRemindedAt + timing.urgentFollowUpMs
+      : email.receivedAt + initialDelay;
   if (existing?.snoozedUntil !== null && existing?.snoozedUntil !== undefined) {
     at = Math.max(at, existing.snoozedUntil);
   }

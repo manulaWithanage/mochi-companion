@@ -156,7 +156,7 @@ export class EmailDraftService {
         this.queued.delete(emailId);
         this.active.add(emailId);
         try {
-          await this.generate(account, emailId, 'professional', true);
+          await this.generate(account, emailId, this.settings.get().gmailAi.defaultDraftTone, true);
         } finally {
           this.active.delete(emailId);
         }

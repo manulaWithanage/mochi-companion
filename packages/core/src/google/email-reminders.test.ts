@@ -109,6 +109,16 @@ describe('planEmailReminder', () => {
     expect(planEmailReminder(email(), reminder({ state: 'replied' }), 2_000)).toBeNull();
   });
 
+  it('re-plans pending reminders when the user changes timing', () => {
+    const timing = {
+      ...DEFAULT_EMAIL_REMINDER_TIMING,
+      urgentFirstReminderMs: 30_000,
+    };
+    expect(
+      planEmailReminder(email(), reminder({ nextReminderAt: 500_000 }), 2_000, timing)?.at,
+    ).toBe(31_000);
+  });
+
   it('stops after the conservative reminder cap', () => {
     expect(planEmailReminder(email('urgent'), reminder({ reminderCount: 2 }), 2_000)).toBeNull();
     expect(planEmailReminder(email('review'), reminder({ reminderCount: 1 }), 2_000)).toBeNull();
