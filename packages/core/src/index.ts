@@ -17,6 +17,7 @@ export * from './routines/user-routines.js';
 export * from './llm/providers.js';
 export * from './llm/router.js';
 export * from './tasks/tasks.js';
+export * from './calendar/calendar.js';
 export * from './brain/graph.js';
 export * from './brain/confidence.js';
 export * from './brain/stats.js';

@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en" style="background: transparent !important; background-color: rgba(0, 0, 0, 0) !important;">
+<html lang="en">
   <head>
     <meta charset="UTF-8" />
     <!--
@@ -14,24 +14,29 @@
     <title>Mochi</title>
     <style>
       html,
-      body,
-      #root {
+      body {
         margin: 0;
         padding: 0;
         width: 100%;
         height: 100%;
         overflow: hidden;
         background: transparent !important;
-        background-color: rgba(0, 0, 0, 0) !important;
+        background-color: transparent !important;
         /* The window is mascot-sized and click-through; nothing here should
            ever show a text cursor or be selectable. */
         user-select: none;
         cursor: default;
       }
+      #root {
+        width: 100%;
+        height: 100%;
+        background: transparent !important;
+        background-color: transparent !important;
+      }
     </style>
   </head>
-  <body style="background: transparent !important; background-color: rgba(0, 0, 0, 0) !important;">
-    <div id="root" style="background: transparent !important; background-color: rgba(0, 0, 0, 0) !important;"></div>
+  <body>
+    <div id="root"></div>
     <script type="module" src="./src/overlay/main.tsx"></script>
   </body>
 </html>

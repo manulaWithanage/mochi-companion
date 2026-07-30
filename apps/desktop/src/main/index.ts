@@ -52,9 +52,6 @@ interface SayOptions {
   readonly userInitiated?: boolean;
 }
 
-// Disable GPU shader disk cache to prevent file lock conflicts on dev restarts on Windows
-app.commandLine.appendSwitch('disable-gpu-shader-disk-cache');
-
 // Single instance: two mascots writing the same database would corrupt
 // session state, and two overlays is nonsense anyway.
 if (!app.requestSingleInstanceLock()) {

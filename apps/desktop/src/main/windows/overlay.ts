@@ -14,7 +14,6 @@
 import { BrowserWindow, screen, powerMonitor, type Display } from 'electron';
 import { join } from 'node:path';
 import {
-  clampToDisplays,
   displayContaining,
   magicianDuration,
   magicianSequence,
@@ -64,9 +63,7 @@ export class OverlayWindow {
       y: placement.position.y,
       transparent: true,
       backgroundColor: '#00000000',
-      type: 'toolbar',
       frame: false,
-      thickFrame: false,
       resizable: false,
       maximizable: false,
       minimizable: false,
@@ -84,8 +81,6 @@ export class OverlayWindow {
         nodeIntegration: false,
       },
     });
-
-    this.win.setBackgroundColor('#00000000');
 
     // Respect alwaysOnTop setting
     if (alwaysOnTop) {
@@ -116,17 +111,12 @@ export class OverlayWindow {
     } else {
       await this.win.loadFile(join(import.meta.dirname, '../renderer/overlay.html'));
     }
+    this.win.show();
   }
 
   private wireEvents(): void {
     const win = this.win;
     if (win === null) return;
-
-    win.once('ready-to-show', () => {
-      if (!win.isDestroyed() && !win.isVisible()) {
-        win.showInactive();
-      }
-    });
 
     win.on('moved', () => this.schedulePersist());
 
@@ -182,8 +172,8 @@ export class OverlayWindow {
   }
 
   /**
-   * Move by a delta in screen pixels, clamped smoothly across active displays.
-   * Called from the renderer while dragging.
+   * Move by a delta in screen pixels, clamped to whichever display the mascot
+   * currently sits on. Called from the renderer while dragging.
    */
   moveBy(dx: number, dy: number): void {
     const win = this.win;
@@ -193,11 +183,16 @@ export class OverlayWindow {
     const target: Point = { x: x + Math.round(dx), y: y + Math.round(dy) };
 
     const displays = screen.getAllDisplays().map(toDisplayInfo);
-    const primaryId = screen.getPrimaryDisplay().id;
+    const host = displayContaining(target, displays) ?? displayContaining({ x, y }, displays);
 
-    const result = clampToDisplays(target, { width, height }, displays, primaryId);
+    const placement = resolvePlacement(
+      { ...target, displayId: host?.id ?? screen.getPrimaryDisplay().id },
+      { width, height },
+      displays,
+      screen.getPrimaryDisplay().id,
+    );
 
-    win.setPosition(result.position.x, result.position.y);
+    win.setPosition(placement.position.x, placement.position.y);
     this.schedulePersist();
   }
 
