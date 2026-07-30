@@ -9,6 +9,7 @@ import {
 } from '@mochi/core';
 import { useSpriteAnimation } from './useSpriteAnimation.js';
 import { SpeechBubble } from './SpeechBubble.js';
+import { SmokeEffect } from './SmokeEffect.js';
 
 /** Pointer travel beyond this counts as a drag, not a click. */
 const DRAG_THRESHOLD_PX = 4;
@@ -24,6 +25,7 @@ export function Overlay(): JSX.Element {
   const [timer, setTimer] = useState<TimerSnapshot | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [bubble, setBubble] = useState<string | null>(null);
+  const [showSmoke, setShowSmoke] = useState(false);
   const bubbleSubject = useRef<string | null>(null);
   const bubbleTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
@@ -52,13 +54,16 @@ export function Overlay(): JSX.Element {
     })();
   }, []);
 
-  // ---- speech bubble -----------------------------------------------------
+  // ---- speech bubble & magician alert entrance ----------------------------
   const dismissBubble = useCallback(() => {
     if (bubbleTimer.current !== undefined) clearTimeout(bubbleTimer.current);
     bubbleTimer.current = undefined;
     setBubble(null);
-    // Tell the governor the user waved this subject away, so a re-poll
-    // cannot raise it again.
+    setShowSmoke(false);
+
+    // Restore normal facial expression after alert
+    void window.mochi.mascot.current().then(setMascotState);
+
     if (bubbleSubject.current !== null) {
       window.mochi.bubble.dismiss(bubbleSubject.current);
       bubbleSubject.current = null;
@@ -70,11 +75,20 @@ export function Overlay(): JSX.Element {
       if (bubbleTimer.current !== undefined) clearTimeout(bubbleTimer.current);
       bubbleSubject.current = message.subject;
       setBubble(message.text);
-      // Auto-expiry is not a dismissal: letting a bubble fade is not the same
-      // as waving it away, so it must not suppress the subject forever.
+
+      // Trigger Magician entrance smoke puff & switch face to alert status!
+      setShowSmoke(true);
+      setMascotState('alert');
+
+      const smokeTimeout = setTimeout(() => setShowSmoke(false), 2000);
+
       bubbleTimer.current = setTimeout(() => {
+        clearTimeout(smokeTimeout);
         bubbleSubject.current = null;
         setBubble(null);
+        setShowSmoke(false);
+        // Restore default facial state
+        void window.mochi.mascot.current().then(setMascotState);
       }, message.ttlMs);
     });
     return () => {
@@ -85,7 +99,12 @@ export function Overlay(): JSX.Element {
 
   // ---- subscriptions -----------------------------------------------------
   useEffect(() => {
-    const offState = window.mochi.mascot.onStateChange(setMascotState);
+    const offState = window.mochi.mascot.onStateChange((state) => {
+      // Don't overwrite active alert state while a bubble is showing
+      if (bubbleSubject.current === null) {
+        setMascotState(state);
+      }
+    });
     const offTimer = window.mochi.timer.onChange(setTimer);
     const offVisible = window.mochi.overlay.onVisibilityChange(setVisible);
     const offSettings = window.mochi.settings.onChange((next) => {
@@ -102,8 +121,6 @@ export function Overlay(): JSX.Element {
     };
   }, []);
 
-  // Page Visibility catches cases the main process cannot see, e.g. the
-  // compositor throttling us while another app is fullscreen.
   useEffect(() => {
     const onChange = (): void => {
       if (document.visibilityState === 'hidden') setVisible(false);
@@ -113,7 +130,6 @@ export function Overlay(): JSX.Element {
     return () => document.removeEventListener('visibilitychange', onChange);
   }, []);
 
-  // Keep the running duration ticking while a session is open.
   useEffect(() => {
     if (timer === null || !timer.running || !visible) return;
     const id = setInterval(() => {
@@ -122,12 +138,6 @@ export function Overlay(): JSX.Element {
     return () => clearInterval(id);
   }, [timer, visible]);
 
-  /**
-   * The window is click-through by default. `forward: true` keeps mousemove
-   * flowing, so we sample the canvas alpha under the cursor and enable input
-   * only over drawn pixels — clicks on the transparent corners still reach
-   * whatever is behind Mochi.
-   */
   const setInteractive = useCallback((next: boolean) => {
     if (interactiveRef.current === next) return;
     interactiveRef.current = next;
@@ -183,7 +193,6 @@ export function Overlay(): JSX.Element {
     drag.current.active = false;
     event.currentTarget.releasePointerCapture(event.pointerId);
 
-    // A click, not the end of a drag: toggle the stopwatch.
     if (!wasDrag) {
       void window.mochi.timer.toggle('default').then(setTimer);
     }
@@ -192,16 +201,9 @@ export function Overlay(): JSX.Element {
   const running = timer?.running === true;
 
   return (
-    // Nothing here captures pointer events by default — the window is
-    // click-through and only the mascot's own pixels re-enable input.
     <div style={{ width: '100%', height: '100%', position: 'relative', pointerEvents: 'none' }}>
       <SpeechBubble text={bubble} onDismiss={dismissBubble} onHoverChange={setInteractive} />
 
-      {/*
-        The mascot is anchored to the window's bottom-right. The window is a
-        fixed size and never resizes; the space above and to the left is
-        transparent and exists so a speech bubble has somewhere to go.
-      */}
       <div
         style={{
           position: 'absolute',
@@ -214,6 +216,9 @@ export function Overlay(): JSX.Element {
           justifyContent: 'center',
         }}
       >
+        {/* Magician entrance smoke cloud & sparkles */}
+        <SmokeEffect active={showSmoke} />
+
         {error !== null && (
           <div
             style={{
@@ -223,7 +228,6 @@ export function Overlay(): JSX.Element {
               padding: 8,
             }}
           >
-            {/* textContent via React children — never innerHTML (RULE 1). */}
             {error}
           </div>
         )}
