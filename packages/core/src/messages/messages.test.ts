@@ -49,7 +49,8 @@ describe('composeMessage', () => {
   });
 
   it('does not congratulate a misclick', () => {
-    expect(composeMessage('timer-stopped-brief', ctx())).toBe('Stopped.');
+    // No trailing full stop: Mochi's lines are spoken, not written.
+    expect(composeMessage('timer-stopped-brief', ctx())).toBe('Stopped');
   });
 
   it('handles a missing duration without producing NaN', () => {

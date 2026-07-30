@@ -127,12 +127,6 @@ export function TimeTab(): JSX.Element {
     [timer, reload],
   );
 
-  const stopCurrentSession = useCallback(async () => {
-    const next = await window.mochi.timer.stop();
-    setTimer(next);
-    await reload();
-  }, [reload]);
-
   const createCategory = useCallback(
     async (nameOverride?: string, colourOverride?: string, iconOverride?: string) => {
       const rawName = (nameOverride || newName).trim();
@@ -294,12 +288,6 @@ export function TimeTab(): JSX.Element {
       categoryBreakdown,
     };
   }, [filteredSessions, projects]);
-
-  const activeProject = useMemo(() => {
-    if (!timer?.running) return null;
-    const currentId = timer.projectId || timer.session?.projectId || null;
-    return projects.find((p) => p.id === currentId) ?? null;
-  }, [timer, projects]);
 
   const primaryCount = settings?.primaryProjectIds?.length ?? 0;
 

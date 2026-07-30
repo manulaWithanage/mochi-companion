@@ -16,7 +16,14 @@ import type {
   SetupPayload,
   StorageAdapter,
 } from '@mochi/core';
-import { createTask, parseCategory, parseHhMm, rollForward, toggleDone } from '@mochi/core';
+import {
+  LOCAL_PROVIDERS,
+  createTask,
+  parseCategory,
+  parseHhMm,
+  rollForward,
+  toggleDone,
+} from '@mochi/core';
 import { DEFAULT_PROJECT } from '@mochi/db';
 import type { TimerService } from './services/timer-service.js';
 import type { MascotService } from './services/mascot-service.js';
@@ -50,6 +57,7 @@ export interface IpcContext {
     saveAzureKey(resourceName: string, deploymentName: string, apiKey: string): Promise<import('@mochi/core').KeyResult>;
     forgetKey(provider: ProviderId): LlmStatus;
     setDailyTokenCap(cap: number): LlmStatus;
+    setLocalEndpoint(provider: ProviderId, baseUrl: string | null): Promise<LlmStatus>;
     refresh(): Promise<LlmStatus>;
     test(): Promise<{ ok: boolean; text: string; model?: string; tokens?: number }>;
   };
@@ -206,6 +214,17 @@ export function registerIpc(ctx: IpcContext): void {
   );
 
   ipcMain.handle('llm:refresh', () => ctx.llm.refresh());
+
+  // The base URL ends up in a fetch() from main, so the provider is whitelisted
+  // against the local runtimes and the URL is re-validated in normaliseBaseUrl.
+  ipcMain.handle('llm:setLocalEndpoint', (_e, provider: unknown, baseUrl: unknown) => {
+    const target = LOCAL_PROVIDERS.find((p) => p.id === provider);
+    if (target === undefined) return ctx.llm.status();
+    return ctx.llm.setLocalEndpoint(
+      target.id,
+      typeof baseUrl === 'string' && baseUrl.trim().length > 0 ? baseUrl : null,
+    );
+  });
 
   ipcMain.handle('llm:test', () => ctx.llm.test());
 

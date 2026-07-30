@@ -13,11 +13,12 @@
 
 import {
   AZURE_API_VERSION,
-  OLLAMA_DEFAULT_HOST,
+  LOCAL_PROVIDERS,
   PROVIDERS,
   azureChatUrl,
   cleanAzureResourceName,
   detectProvider,
+  localModelsUrl,
   looksLikeKey,
   parseModelList,
   redactKey,
@@ -26,7 +27,7 @@ import {
 } from '@mochi/core';
 
 /** Local probe: fast, because a slow one delays first paint for everyone. */
-const OLLAMA_TIMEOUT_MS = 1500;
+const LOCAL_TIMEOUT_MS = 1500;
 /** Remote calls: slower networks are real, but nobody waits forever. */
 const REMOTE_TIMEOUT_MS = 10_000;
 
@@ -51,20 +52,39 @@ async function fetchJson(url: string, init: RequestInit, timeoutMs: number): Pro
 }
 
 /**
- * Is Ollama running locally, and what does it have?
+ * Is a local model server running, and what has it loaded?
  *
- * Never throws. A machine without Ollama is the common case, not an error —
- * this returns `available: false` and Mochi carries on asking for a key.
+ * Never throws. A machine without Ollama or LM Studio is the common case, not
+ * an error — this returns `available: false` and Mochi carries on asking for a
+ * key.
+ *
+ * Reached zero models counts as unavailable. A running LM Studio with nothing
+ * loaded answers `/v1/models` with an empty list, and reporting that as "ready"
+ * produces a routing decision that picks a model which does not exist.
  */
-export async function probeOllama(host: string = OLLAMA_DEFAULT_HOST): Promise<ProbeResult> {
+export async function probeLocal(
+  provider: ProviderId,
+  baseUrl?: string,
+): Promise<ProbeResult & { readonly baseUrl: string }> {
+  const url = localModelsUrl(provider, baseUrl);
+  const resolved = url.replace(PROVIDERS[provider].modelsPath ?? '', '');
   try {
-    const payload = await fetchJson(`${host}/api/tags`, {}, OLLAMA_TIMEOUT_MS);
-    const models = parseModelList('ollama', payload);
-    return { available: true, models };
+    const payload = await fetchJson(url, {}, LOCAL_TIMEOUT_MS);
+    const models = parseModelList(provider, payload);
+    if (models.length === 0) {
+      return {
+        available: false,
+        models: [],
+        baseUrl: resolved,
+        error: 'reachable, but no model is loaded',
+      };
+    }
+    return { available: true, models, baseUrl: resolved };
   } catch (error) {
     return {
       available: false,
       models: [],
+      baseUrl: resolved,
       error: error instanceof Error ? error.message : 'unreachable',
     };
   }
@@ -81,7 +101,10 @@ function authHeaders(provider: ProviderId, key: string): Record<string, string> 
       return { Authorization: `Bearer ${key}` };
     case 'azure':
       return { 'api-key': key };
+    // Local runtimes need no auth. The switch is exhaustive on purpose: adding
+    // a provider without deciding how it authenticates is a compile error.
     case 'ollama':
+    case 'lmstudio':
       return {};
   }
 }
@@ -264,31 +287,74 @@ async function azureErrorDetail(response: Response): Promise<string> {
   return response.statusText;
 }
 
+export interface LocalProbe extends ProbeResult {
+  readonly baseUrl: string;
+}
+
 export interface ProviderStatus {
-  readonly ollama: ProbeResult;
+  /** Every local runtime, keyed by provider id. Always fully populated. */
+  readonly local: ReadonlyMap<ProviderId, LocalProbe>;
   /** Providers the user has stored a working key for. */
   readonly configured: readonly ProviderId[];
   /** True when Mochi can do AI right now, whatever the reason. */
   readonly ready: boolean;
 }
 
+/**
+ * Tracks what Mochi can currently reach.
+ *
+ * Local runtimes live in a map keyed by provider rather than in named fields,
+ * so supporting a second one meant adding a row to PROVIDERS rather than a
+ * second `lmStudioResult` beside `ollamaResult` and a second branch in every
+ * method that touched it.
+ */
 export class ProviderService {
-  private ollamaResult: ProbeResult = { available: false, models: [] };
+  private readonly localProbes = new Map<ProviderId, LocalProbe>();
   private readonly configured = new Set<ProviderId>();
 
-  /**
-   * Probe on launch. Deliberately fire-and-forget with a short timeout: the
-   * mascot must not wait on a network call to appear.
-   */
-  async probe(host?: string): Promise<ProbeResult> {
-    this.ollamaResult = await probeOllama(host);
-    if (this.ollamaResult.available) {
-      this.configured.add('ollama');
-      console.log(
-        `[llm] Ollama detected — ${this.ollamaResult.models.length} model(s), zero-key mode available`,
-      );
+  constructor() {
+    // Seed every local provider as unavailable so the UI can list them all
+    // before the first probe returns, rather than popping rows in.
+    for (const info of LOCAL_PROVIDERS) {
+      this.localProbes.set(info.id, {
+        available: false,
+        models: [],
+        baseUrl: info.defaultBaseUrl ?? '',
+      });
     }
-    return this.ollamaResult;
+  }
+
+  /**
+   * Probe every local runtime.
+   *
+   * Concurrent, because two sequential 1.5s timeouts on a machine with neither
+   * installed would be three seconds of the AI panel saying "checking".
+   */
+  async probe(endpoints: Readonly<Record<string, string>> = {}): Promise<void> {
+    await Promise.all(
+      LOCAL_PROVIDERS.map(async (info) => {
+        await this.probeOne(info.id, endpoints[info.id]);
+      }),
+    );
+  }
+
+  /** Probe one runtime, e.g. after the user changed its base URL. */
+  async probeOne(provider: ProviderId, baseUrl?: string): Promise<LocalProbe> {
+    const result = await probeLocal(provider, baseUrl);
+    this.localProbes.set(provider, result);
+
+    if (result.available) {
+      this.configured.add(provider);
+      console.log(
+        `[llm] ${PROVIDERS[provider].label} detected at ${result.baseUrl} — ` +
+          `${result.models.length} model(s), zero-key mode available`,
+      );
+    } else {
+      // A runtime that has gone away must stop being routable, or every call
+      // fails against a server that is no longer listening.
+      this.configured.delete(provider);
+    }
+    return result;
   }
 
   markConfigured(provider: ProviderId): void {
@@ -301,14 +367,14 @@ export class ProviderService {
 
   get status(): ProviderStatus {
     return {
-      ollama: this.ollamaResult,
+      local: this.localProbes,
       configured: [...this.configured],
       ready: this.configured.size > 0,
     };
   }
 
-  /** Every model Mochi can currently reach. */
+  /** Models served from this machine, across every local runtime. */
   get localModels(): readonly DiscoveredModel[] {
-    return this.ollamaResult.models;
+    return [...this.localProbes.values()].flatMap((p) => p.models);
   }
 }

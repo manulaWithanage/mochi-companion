@@ -8,8 +8,10 @@
 
 import {
   DEFAULT_BUDGET,
+  LOCAL_PROVIDERS,
   cleanAzureResourceName,
   emptyBudget,
+  normaliseBaseUrl,
   packAzureKey,
   recordUsage,
   spentToday,
@@ -19,33 +21,86 @@ import {
   type DiscoveredModel,
   type KeyResult,
   type LlmStatus,
+  type LocalProviderStatus,
   type ProviderId,
 } from '@mochi/core';
 import { KeyVault } from '../storage/key-vault.js';
 import { ProviderService, validateKey, validateAzureKey } from './provider-service.js';
 
+/**
+ * Where local base-URL overrides are read and written.
+ *
+ * A port is not a secret, so these live in settings rather than the vault —
+ * but LlmService should not depend on SettingsStore directly, so the wiring is
+ * handed in. Defaults to in-memory, which keeps the class testable.
+ */
+export interface LocalEndpointStore {
+  get(): Readonly<Record<string, string>>;
+  set(endpoints: Readonly<Record<string, string>>): void;
+}
+
+const memoryEndpointStore = (): LocalEndpointStore => {
+  let value: Readonly<Record<string, string>> = {};
+  return {
+    get: () => value,
+    set: (next) => {
+      value = next;
+    },
+  };
+};
+
 export class LlmService {
   private readonly vault: KeyVault;
   private readonly providers: ProviderService;
+  private readonly endpoints: LocalEndpointStore;
   private remoteModels = new Map<ProviderId, readonly DiscoveredModel[]>();
   private budget: BudgetState = emptyBudget;
   private config: BudgetConfig = DEFAULT_BUDGET;
   private readonly listeners = new Set<(status: LlmStatus) => void>();
 
-  constructor(vault = new KeyVault(), providers = new ProviderService()) {
+  constructor(
+    vault = new KeyVault(),
+    providers = new ProviderService(),
+    endpoints: LocalEndpointStore = memoryEndpointStore(),
+  ) {
     this.vault = vault;
     this.providers = providers;
+    this.endpoints = endpoints;
   }
 
   /**
-   * Probe Ollama and re-validate any stored keys.
+   * Probe the local runtimes and re-validate any stored keys.
    *
    * Keys are re-checked on launch because a revoked one should surface in
    * Settings rather than as a failed briefing hours later.
    */
   async initialize(): Promise<LlmStatus> {
-    await this.providers.probe();
+    await this.providers.probe(this.endpoints.get());
     await Promise.all(this.vault.providers.map((p) => this.refreshProvider(p)));
+    return this.emit();
+  }
+
+  /**
+   * The base URL a local provider should be reached on.
+   *
+   * The single source of truth for this, read by both the probe and the model
+   * builder — the Azure lesson was that validating one URL while calling
+   * another produces a setup that tests green and then fails every call.
+   */
+  localBaseUrl(provider: ProviderId): string | undefined {
+    return this.endpoints.get()[provider];
+  }
+
+  /** Point a local runtime somewhere else, or back to its default with null. */
+  async setLocalEndpoint(provider: ProviderId, baseUrl: string | null): Promise<LlmStatus> {
+    const next = { ...this.endpoints.get() };
+    const cleaned = baseUrl === null ? '' : normaliseBaseUrl(baseUrl);
+
+    if (cleaned.length === 0) delete next[provider];
+    else next[provider] = cleaned;
+
+    this.endpoints.set(next);
+    await this.providers.probeOne(provider, next[provider]);
     return this.emit();
   }
 
@@ -198,7 +253,7 @@ export class LlmService {
 
   /** Re-probe, for when the user starts Ollama after Mochi is already open. */
   async refresh(): Promise<LlmStatus> {
-    await this.providers.probe();
+    await this.providers.probe(this.endpoints.get());
     return this.emit();
   }
 
@@ -233,8 +288,24 @@ export class LlmService {
 
   status(now: Date = new Date()): LlmStatus {
     const probe = this.providers.status;
+    const overrides = this.endpoints.get();
+
+    const local: LocalProviderStatus[] = LOCAL_PROVIDERS.map((info) => {
+      const result = probe.local.get(info.id);
+      return {
+        provider: info.id,
+        label: info.label,
+        available: result?.available ?? false,
+        baseUrl: result?.baseUrl ?? info.defaultBaseUrl ?? '',
+        custom: overrides[info.id] !== undefined,
+        modelCount: result?.models.length ?? 0,
+        ...(result?.error !== undefined ? { error: result.error } : {}),
+      };
+    });
+
     return {
-      ollamaAvailable: probe.ollama.available,
+      local,
+      anyLocalAvailable: local.some((l) => l.available),
       configured: this.vault.summaries().map((s) => ({
         provider: s.provider,
         redacted: s.redacted,

@@ -16,7 +16,8 @@ import { createGoogleGenerativeAI } from '@ai-sdk/google';
 import { createAzure } from '@ai-sdk/azure';
 import {
   AZURE_API_VERSION,
-  OLLAMA_DEFAULT_HOST,
+  isLocalProvider,
+  localCompatUrl,
   route,
   TASKS,
   unpackAzureKey,
@@ -51,11 +52,12 @@ export type GenerateResult =
 /**
  * Build a model handle for the chosen provider.
  *
- * Ollama is reached through the OpenAI provider pointed at localhost, because
- * it exposes an OpenAI-compatible API — but it only implements
- * `/v1/chat/completions`, so `.chat()` is required. Calling `provider(id)`
+ * Ollama and LM Studio are both reached through the OpenAI provider pointed at
+ * localhost, because both expose an OpenAI-compatible API — but neither
+ * implements `/v1/responses`, so `.chat()` is required. Calling `provider(id)`
  * instead targets OpenAI's Responses API and fails against every local
- * runtime. That distinction is invisible until it breaks at runtime.
+ * runtime. That distinction is invisible until it breaks at runtime, and it is
+ * why one code path can serve both.
  *
  * Azure has the same trap, one layer deeper. `createAzure(...)(id)` resolves to
  * `provider.languageModel`, which in @ai-sdk/azure v4 is the **Responses**
@@ -65,12 +67,15 @@ export type GenerateResult =
  * `useDeploymentBasedUrls` is what produces the deployment URL the key was
  * actually validated against.
  */
-function buildModel(model: DiscoveredModel, key: string | null) {
+function buildModel(model: DiscoveredModel, key: string | null, localBaseUrl?: string) {
   switch (model.provider) {
-    case 'ollama': {
+    case 'ollama':
+    case 'lmstudio': {
       const local = createOpenAI({
-        apiKey: 'ollama', // required by the client, ignored by the server
-        baseURL: `${OLLAMA_DEFAULT_HOST}/v1`,
+        // Required by the client, ignored by both servers. LM Studio accepts
+        // any bearer token; Ollama ignores the header entirely.
+        apiKey: 'local',
+        baseURL: localCompatUrl(model.provider, localBaseUrl),
       });
       return local.chat(model.id);
     }
@@ -135,14 +140,18 @@ export class LlmClient {
     }
 
     const model = decision.model;
-    const key = model.provider === 'ollama' ? null : this.llm.revealKey(model.provider);
-    if (key === null && model.provider !== 'ollama') {
+    // Local runtimes have no key at all. Testing for 'ollama' specifically
+    // would send LM Studio down the key path and reject it for the absence of
+    // something it never needed.
+    const local = isLocalProvider(model.provider);
+    const key = local ? null : this.llm.revealKey(model.provider);
+    if (key === null && !local) {
       return { ok: false, reason: `No stored key for ${model.provider}.` };
     }
 
     try {
       const result = await generateText({
-        model: buildModel(model, key),
+        model: buildModel(model, key, local ? this.llm.localBaseUrl(model.provider) : undefined),
         ...(request.system !== undefined ? { system: request.system } : {}),
         prompt: request.prompt,
         maxOutputTokens: spec.maxTokens,

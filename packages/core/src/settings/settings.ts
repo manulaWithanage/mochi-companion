@@ -32,6 +32,15 @@ export interface MochiSettings {
   readonly centerScreenAlerts: boolean;
   /** IDs of up to 3 primary quick-select time tracking projects shown above Mochi. */
   readonly primaryProjectIds: readonly string[];
+  /**
+   * Base URLs for local model servers, when the default port is wrong.
+   *
+   * Not a secret, so it belongs here rather than in the vault — it is a host
+   * and port, and putting it in safeStorage would mean the user could not see
+   * or fix what Mochi is trying to reach. Keyed by provider id; absent means
+   * "use the documented default".
+   */
+  readonly localEndpoints: Readonly<Record<string, string>>;
 }
 
 export const DEFAULT_SETTINGS: MochiSettings = {
@@ -44,6 +53,7 @@ export const DEFAULT_SETTINGS: MochiSettings = {
   doNotDisturb: false,
   centerScreenAlerts: true,
   primaryProjectIds: [],
+  localEndpoints: {},
 };
 
 export const MAX_NAME_LENGTH = 24;
@@ -122,6 +132,22 @@ export function normalizeSettings(raw: unknown): {
       .slice(0, 3);
   }
 
+  // Only http(s) origins are kept. This value is fed to fetch() in the main
+  // process, so a settings file someone hand-edited must not be able to point
+  // it at file:// or a non-URL.
+  const localEndpoints: Record<string, string> = {};
+  const rawEndpoints = input.localEndpoints;
+  if (typeof rawEndpoints === 'object' && rawEndpoints !== null) {
+    for (const [id, value] of Object.entries(rawEndpoints as Record<string, unknown>)) {
+      if (typeof value !== 'string') continue;
+      const url = value.trim();
+      if (/^https?:\/\/[^\s]+$/i.test(url)) localEndpoints[id] = url.replace(/\/+$/, '');
+      else if (url.length > 0) {
+        issues.push({ field: 'localEndpoints', message: `${id}: not an http(s) URL, ignored` });
+      }
+    }
+  }
+
   return {
     settings: {
       assistantName,
@@ -133,6 +159,7 @@ export function normalizeSettings(raw: unknown): {
       doNotDisturb: input.doNotDisturb === true,
       centerScreenAlerts: input.centerScreenAlerts !== false,
       primaryProjectIds,
+      localEndpoints,
     },
     issues,
   };

@@ -77,7 +77,7 @@ export function SmokeEffect({ active }: SmokeEffectProps): JSX.Element | null {
     });
 
     let animationId: number;
-    let startTime = performance.now();
+    const startTime = performance.now();
 
     const drawStar = (cx: number, cy: number, spikes: number, outerRadius: number, innerRadius: number, color: string, alpha: number) => {
       ctx.save();

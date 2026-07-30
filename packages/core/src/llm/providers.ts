@@ -10,7 +10,33 @@
  * It performs no network calls — apps/desktop does that (RULE 2).
  */
 
-export type ProviderId = 'openai' | 'anthropic' | 'google' | 'ollama' | 'azure';
+export type ProviderId = 'openai' | 'anthropic' | 'google' | 'ollama' | 'lmstudio' | 'azure';
+
+/**
+ * How a provider is set up. This is the axis the whole stack branches on —
+ * the settings UI, the probe, the vault and the model builder all read it
+ * instead of testing provider ids one by one.
+ *
+ * Azure is why this exists. It arrived as a `case 'azure'` in six places, and
+ * every one of them was a chance to get the credential order wrong. A new
+ * provider should be a row in PROVIDERS, not six new branches.
+ */
+export type ProviderKind =
+  /** One pasted key; which provider it belongs to is read off the prefix. */
+  | 'key'
+  /** An OpenAI-compatible server on this machine. No key, discovered by probe. */
+  | 'local'
+  /** Structured credentials that a key alone cannot express. */
+  | 'endpoint';
+
+/**
+ * Shape of a provider's model-list response.
+ *
+ * Named separately from the provider because it does not correlate with it:
+ * LM Studio is OpenAI-compatible and returns OpenAI's shape, while Ollama —
+ * the other local runtime — returns its own.
+ */
+export type ModelListShape = 'openai' | 'ollama' | 'google';
 
 /**
  * What a task needs from a model.
@@ -25,47 +51,151 @@ export type Capability = 'text' | 'tools' | 'vision';
 export interface ProviderInfo {
   readonly id: ProviderId;
   readonly label: string;
-  /** Endpoint returning the provider's current model list. */
-  readonly modelsUrl: string;
+  readonly kind: ProviderKind;
   /** True when no API key is involved — the zero-key path. */
   readonly local: boolean;
+  readonly listShape: ModelListShape;
+  /**
+   * Absolute discovery endpoint. Only meaningful for `key` providers — for
+   * `local` it is built from the user's base URL, and for `endpoint` there is
+   * no listable endpoint at all.
+   */
+  readonly modelsUrl: string;
+  /** `local` only: where the server listens when nobody has changed anything. */
+  readonly defaultBaseUrl?: string;
+  /** `local` only: path appended to the base URL to list models. */
+  readonly modelsPath?: string;
+  /**
+   * `local` only: path to the OpenAI-compatible API root.
+   *
+   * Both local runtimes speak OpenAI's protocol at `/v1`, which is what lets a
+   * single code path drive them.
+   */
+  readonly compatPath?: string;
+  /** Where to get it, for the empty state in Settings. */
+  readonly setupUrl?: string;
+  /** One line of UI copy. Kept beside the endpoint it describes. */
+  readonly hint?: string;
 }
 
 export const OLLAMA_DEFAULT_HOST = 'http://127.0.0.1:11434';
+export const LMSTUDIO_DEFAULT_HOST = 'http://127.0.0.1:1234';
 
 export const PROVIDERS: Record<ProviderId, ProviderInfo> = {
   openai: {
     id: 'openai',
     label: 'OpenAI',
-    modelsUrl: 'https://api.openai.com/v1/models',
+    kind: 'key',
     local: false,
+    listShape: 'openai',
+    modelsUrl: 'https://api.openai.com/v1/models',
   },
   anthropic: {
     id: 'anthropic',
     label: 'Anthropic',
-    modelsUrl: 'https://api.anthropic.com/v1/models',
+    kind: 'key',
     local: false,
+    listShape: 'openai',
+    modelsUrl: 'https://api.anthropic.com/v1/models',
   },
   google: {
     id: 'google',
     label: 'Google Gemini',
-    modelsUrl: 'https://generativelanguage.googleapis.com/v1beta/models',
+    kind: 'key',
     local: false,
+    listShape: 'google',
+    modelsUrl: 'https://generativelanguage.googleapis.com/v1beta/models',
   },
   ollama: {
     id: 'ollama',
     label: 'Ollama',
-    modelsUrl: `${OLLAMA_DEFAULT_HOST}/api/tags`,
+    kind: 'local',
     local: true,
+    listShape: 'ollama',
+    modelsUrl: '',
+    defaultBaseUrl: OLLAMA_DEFAULT_HOST,
+    // Ollama's own API, not the compatible one: it reports richer tags here,
+    // and /v1/models omits models that have been pulled but never run.
+    modelsPath: '/api/tags',
+    compatPath: '/v1',
+    setupUrl: 'https://ollama.com',
+    hint: 'Runs models on this machine. No key, no account.',
+  },
+  lmstudio: {
+    id: 'lmstudio',
+    label: 'LM Studio',
+    kind: 'local',
+    local: true,
+    // LM Studio is OpenAI-compatible all the way through, so its model list
+    // is OpenAI's `{ data: [{ id }] }` rather than Ollama's shape.
+    listShape: 'openai',
+    modelsUrl: '',
+    defaultBaseUrl: LMSTUDIO_DEFAULT_HOST,
+    modelsPath: '/v1/models',
+    compatPath: '/v1',
+    setupUrl: 'https://lmstudio.ai',
+    hint: 'Start the local server from LM Studio’s Developer tab.',
   },
   azure: {
     id: 'azure',
     label: 'Azure OpenAI',
-    // modelsUrl is dynamic — built from the user's resource name at runtime.
-    modelsUrl: '',
+    kind: 'endpoint',
     local: false,
+    listShape: 'openai',
+    // Azure has no listable model endpoint on the data-plane key: enumerating
+    // deployments needs ARM management credentials. The deployment itself is
+    // the probe. See validateAzureKey.
+    modelsUrl: '',
+    hint: 'Needs a resource name and deployment, not just a key.',
   },
 };
+
+export const PROVIDER_IDS: readonly ProviderId[] = Object.keys(PROVIDERS) as ProviderId[];
+
+export const providersOfKind = (kind: ProviderKind): readonly ProviderInfo[] =>
+  PROVIDER_IDS.map((id) => PROVIDERS[id]).filter((p) => p.kind === kind);
+
+/** The local runtimes, in the order Settings should list them. */
+export const LOCAL_PROVIDERS: readonly ProviderInfo[] = providersOfKind('local');
+
+export const isLocalProvider = (id: ProviderId): boolean => PROVIDERS[id].local;
+
+export const providerLabel = (id: ProviderId): string => PROVIDERS[id].label;
+
+// ---------------------------------------------------------------------------
+// Local servers
+// ---------------------------------------------------------------------------
+
+/**
+ * Clean up a pasted base URL.
+ *
+ * The one that matters is the trailing `/v1`. LM Studio's own UI shows the
+ * server as `http://localhost:1234/v1`, so that is what people copy — and
+ * since we append `/v1/models` ourselves, keeping it produces a request to
+ * `/v1/v1/models` and a 404 that reads as "LM Studio isn't running".
+ */
+export function normaliseBaseUrl(input: string): string {
+  let url = input.trim();
+  if (url.length === 0) return '';
+  if (!/^https?:\/\//i.test(url)) url = `http://${url}`;
+  url = url.replace(/\/+$/, '');
+  url = url.replace(/\/v\d+$/i, '');
+  return url;
+}
+
+/** Where to ask a local server what it has loaded. */
+export function localModelsUrl(id: ProviderId, baseUrl?: string): string {
+  const info = PROVIDERS[id];
+  const base = normaliseBaseUrl(baseUrl ?? '') || (info.defaultBaseUrl ?? '');
+  return `${base}${info.modelsPath ?? '/v1/models'}`;
+}
+
+/** The OpenAI-compatible root a local server's chat calls go to. */
+export function localCompatUrl(id: ProviderId, baseUrl?: string): string {
+  const info = PROVIDERS[id];
+  const base = normaliseBaseUrl(baseUrl ?? '') || (info.defaultBaseUrl ?? '');
+  return `${base}${info.compatPath ?? '/v1'}`;
+}
 
 /**
  * Identify a provider from the shape of its key.
@@ -241,11 +371,17 @@ export function inferCapabilities(provider: ProviderId, modelId: string): readon
   const id = modelId.toLowerCase();
   const caps: Capability[] = ['text'];
 
-  if (provider === 'ollama') {
+  // Every local runtime gets the conservative treatment, not just Ollama —
+  // LM Studio serves the same class of small models with the same tendency to
+  // invent tool arguments.
+  if (isLocalProvider(provider)) {
     // Tool calling needs both a family known to handle it AND enough
     // parameters. `llama3.2:3b` is the right family and still hallucinates
     // tool arguments — size is the part that actually decides it.
-    const family = /llama3\.[1-9]|qwen|mistral-nemo|firefunction|command-r/.test(id);
+    //
+    // `llama-?3\.` because the two runtimes name the same weights differently:
+    // Ollama tags it `llama3.1:8b`, LM Studio `llama-3.1-8b-instruct`.
+    const family = /llama-?3\.[1-9]|qwen|mistral-nemo|firefunction|command-r/.test(id);
     const params = parameterCount(id);
     const bigEnough = params === null || params >= MIN_TOOL_PARAMS_B;
     if (family && bigEnough) caps.push('tools');
@@ -295,29 +431,37 @@ export function parseModelList(provider: ProviderId, payload: unknown): readonly
     .map((id) => ({ id, provider, capabilities: inferCapabilities(provider, id) }));
 }
 
+/**
+ * Read ids out of a model-list response.
+ *
+ * Keyed on the declared `listShape`, not the provider id. That distinction is
+ * the point: adding LM Studio needed no new branch here, because it returns
+ * OpenAI's shape despite being a local runtime like Ollama.
+ */
 function extractIds(provider: ProviderId, payload: unknown): string[] {
   if (typeof payload !== 'object' || payload === null) return [];
   const obj = payload as Record<string, unknown>;
 
-  // Ollama: { models: [{ name: 'llama3.2:3b' }] }
-  if (provider === 'ollama') {
-    return asArray(obj['models'])
-      .map((m) => readString(m, 'name') ?? readString(m, 'model'))
-      .filter((v): v is string => v !== null);
-  }
+  switch (PROVIDERS[provider].listShape) {
+    // Ollama: { models: [{ name: 'llama3.2:3b' }] }
+    case 'ollama':
+      return asArray(obj['models'])
+        .map((m) => readString(m, 'name') ?? readString(m, 'model'))
+        .filter((v): v is string => v !== null);
 
-  // Google: { models: [{ name: 'models/gemini-...' }] }
-  if (provider === 'google') {
-    return asArray(obj['models'])
-      .map((m) => readString(m, 'name'))
-      .filter((v): v is string => v !== null)
-      .map((n) => (n.startsWith('models/') ? n.slice('models/'.length) : n));
-  }
+    // Google: { models: [{ name: 'models/gemini-...' }] }
+    case 'google':
+      return asArray(obj['models'])
+        .map((m) => readString(m, 'name'))
+        .filter((v): v is string => v !== null)
+        .map((n) => (n.startsWith('models/') ? n.slice('models/'.length) : n));
 
-  // OpenAI and Anthropic: { data: [{ id: '...' }] }
-  return asArray(obj['data'])
-    .map((m) => readString(m, 'id'))
-    .filter((v): v is string => v !== null);
+    // OpenAI, Anthropic, LM Studio: { data: [{ id: '...' }] }
+    case 'openai':
+      return asArray(obj['data'])
+        .map((m) => readString(m, 'id'))
+        .filter((v): v is string => v !== null);
+  }
 }
 
 const asArray = (value: unknown): unknown[] => (Array.isArray(value) ? value : []);

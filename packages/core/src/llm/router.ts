@@ -16,7 +16,7 @@
  */
 
 import type { Capability, DiscoveredModel, ProviderId } from './providers.js';
-import { supports } from './providers.js';
+import { isLocalProvider, supports } from './providers.js';
 
 export type TaskId = 'phrase' | 'briefing' | 'triage' | 'chat' | 'draft' | 'screen';
 
@@ -78,7 +78,9 @@ export const TASKS: Record<TaskId, TaskSpec> = {
  * Deliberately coarse — this ranks providers, it does not price them.
  */
 const COST_RANK: Record<ProviderId, number> = {
+  // Local runtimes are free, so they always win a `cheap` task.
   ollama: 0,
+  lmstudio: 0,
   google: 1,
   openai: 2,
   anthropic: 2,
@@ -241,7 +243,9 @@ export function route(
 
   if (!verdict.withinBudget) {
     if (verdict.action === 'downgrade-to-local') {
-      const local = available.filter((m) => m.provider === 'ollama');
+      // Any local runtime, not just Ollama. Hardcoding one provider here meant
+      // an LM Studio user hit "budget reached" with a free model sitting idle.
+      const local = available.filter((m) => isLocalProvider(m.provider));
       if (local.length > 0) return selectModel(task, local, prefs);
     }
 

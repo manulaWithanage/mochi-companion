@@ -114,6 +114,8 @@ const bridge: MochiBridge = {
     forgetKey: (provider) => ipcRenderer.invoke('llm:forgetKey', provider) as Promise<LlmStatus>,
     setDailyTokenCap: (cap) =>
       ipcRenderer.invoke('llm:setDailyTokenCap', cap) as Promise<LlmStatus>,
+    setLocalEndpoint: (provider, baseUrl) =>
+      ipcRenderer.invoke('llm:setLocalEndpoint', provider, baseUrl) as Promise<LlmStatus>,
     refresh: () => ipcRenderer.invoke('llm:refresh') as Promise<LlmStatus>,
     test: () =>
       ipcRenderer.invoke('llm:test') as Promise<{

@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import {
   AZURE_API_VERSION,
+  LOCAL_PROVIDERS,
+  PROVIDER_IDS,
+  isLocalProvider,
+  localCompatUrl,
+  localModelsUrl,
+  normaliseBaseUrl,
   azureChatUrl,
   cleanAzureResourceName,
   detectProvider,
@@ -204,21 +210,29 @@ describe('parseModelList', () => {
 });
 
 describe('PROVIDERS', () => {
-  it('gives every non-Azure provider a live discovery endpoint', () => {
+  it('gives every key provider a live discovery endpoint', () => {
+    // Only `key` providers have a fixed models URL. `local` builds one from
+    // the user's base URL, and `endpoint` has none to build — Azure cannot
+    // enumerate deployments without ARM management credentials.
     for (const p of Object.values(PROVIDERS)) {
-      // Azure's modelsUrl is intentionally empty — it's built dynamically
-      // from the user's resource name at runtime, not hardcoded here.
-      if (p.id === 'azure') {
-        expect(p.modelsUrl).toBe('');
-      } else {
-        expect(p.modelsUrl).toMatch(/^https?:\/\//);
-      }
+      if (p.kind === 'key') expect(p.modelsUrl).toMatch(/^https?:\/\//);
+      else expect(p.modelsUrl).toBe('');
     }
   });
 
-  it('marks Ollama as the only local provider', () => {
+  it('marks exactly the local runtimes as local', () => {
     expect(PROVIDERS.ollama.local).toBe(true);
+    expect(PROVIDERS.lmstudio.local).toBe(true);
     expect(PROVIDERS.openai.local).toBe(false);
+    expect(PROVIDERS.azure.local).toBe(false);
+  });
+
+  it('keeps `local` and `kind` in agreement', () => {
+    // Two fields encoding one fact, so a mismatch would route a keyed provider
+    // through the no-key path or vice versa.
+    for (const p of Object.values(PROVIDERS)) {
+      expect(p.local).toBe(p.kind === 'local');
+    }
   });
 
   it('hardcodes no model ids anywhere', () => {
@@ -298,5 +312,123 @@ describe('packAzureKey / unpackAzureKey', () => {
     expect(unpackAzureKey('azure::::dep::key')).toBeNull();
     expect(unpackAzureKey('azure::res::::key')).toBeNull();
     expect(unpackAzureKey('azure::res::dep::')).toBeNull();
+  });
+});
+
+describe('provider descriptors', () => {
+  it('gives every provider a kind, so nothing is configured by special case', () => {
+    for (const id of PROVIDER_IDS) {
+      expect(['key', 'local', 'endpoint']).toContain(PROVIDERS[id].kind);
+    }
+  });
+
+  it('lists both local runtimes', () => {
+    expect(LOCAL_PROVIDERS.map((p) => p.id)).toEqual(['ollama', 'lmstudio']);
+  });
+
+  it('gives every local runtime the paths a probe and a call both need', () => {
+    // A local provider missing either path silently falls back to a guess, and
+    // the guess is only wrong for one of the two runtimes.
+    for (const info of LOCAL_PROVIDERS) {
+      expect(info.defaultBaseUrl).toMatch(/^http:\/\/127\.0\.0\.1:\d+$/);
+      expect(info.modelsPath).toBeDefined();
+      expect(info.compatPath).toBeDefined();
+    }
+  });
+
+  it('puts the two local runtimes on different ports', () => {
+    const ports = LOCAL_PROVIDERS.map((p) => p.defaultBaseUrl);
+    expect(new Set(ports).size).toBe(LOCAL_PROVIDERS.length);
+  });
+
+  it('reads list shape from the descriptor, not the provider id', () => {
+    // The whole reason listShape exists: both are local, and they disagree.
+    expect(PROVIDERS.ollama.listShape).toBe('ollama');
+    expect(PROVIDERS.lmstudio.listShape).toBe('openai');
+  });
+
+  it('treats exactly the local runtimes as local', () => {
+    expect(isLocalProvider('ollama')).toBe(true);
+    expect(isLocalProvider('lmstudio')).toBe(true);
+    for (const id of ['openai', 'anthropic', 'google', 'azure'] as const) {
+      expect(isLocalProvider(id)).toBe(false);
+    }
+  });
+});
+
+describe('normaliseBaseUrl', () => {
+  it('strips a trailing /v1', () => {
+    // LM Studio's own UI shows http://localhost:1234/v1, so that is what gets
+    // pasted. Keeping it would request /v1/v1/models and 404.
+    expect(normaliseBaseUrl('http://localhost:1234/v1')).toBe('http://localhost:1234');
+    expect(normaliseBaseUrl('http://localhost:1234/v1/')).toBe('http://localhost:1234');
+  });
+
+  it('adds a scheme when the user typed a bare host', () => {
+    expect(normaliseBaseUrl('localhost:1234')).toBe('http://localhost:1234');
+    expect(normaliseBaseUrl('192.168.1.5:1234')).toBe('http://192.168.1.5:1234');
+  });
+
+  it('keeps https when given', () => {
+    expect(normaliseBaseUrl('https://box.lan:1234')).toBe('https://box.lan:1234');
+  });
+
+  it('strips trailing slashes', () => {
+    expect(normaliseBaseUrl('http://localhost:1234///')).toBe('http://localhost:1234');
+  });
+
+  it('returns empty for empty, meaning "use the default"', () => {
+    expect(normaliseBaseUrl('')).toBe('');
+    expect(normaliseBaseUrl('   ')).toBe('');
+  });
+});
+
+describe('localModelsUrl / localCompatUrl', () => {
+  it('uses each runtime’s own discovery path', () => {
+    expect(localModelsUrl('ollama')).toBe('http://127.0.0.1:11434/api/tags');
+    expect(localModelsUrl('lmstudio')).toBe('http://127.0.0.1:1234/v1/models');
+  });
+
+  it('sends both runtimes’ chat calls to the OpenAI-compatible root', () => {
+    expect(localCompatUrl('ollama')).toBe('http://127.0.0.1:11434/v1');
+    expect(localCompatUrl('lmstudio')).toBe('http://127.0.0.1:1234/v1');
+  });
+
+  it('honours an override, normalising it first', () => {
+    expect(localModelsUrl('lmstudio', 'http://localhost:4321/v1')).toBe(
+      'http://localhost:4321/v1/models',
+    );
+    expect(localCompatUrl('lmstudio', 'localhost:4321')).toBe('http://localhost:4321/v1');
+  });
+
+  it('falls back to the default when the override is blank', () => {
+    expect(localModelsUrl('lmstudio', '')).toBe('http://127.0.0.1:1234/v1/models');
+  });
+});
+
+describe('parseModelList for LM Studio', () => {
+  it('reads OpenAI’s shape even though the provider is local', () => {
+    const models = parseModelList('lmstudio', {
+      data: [{ id: 'qwen2.5-7b-instruct' }, { id: 'llama-3.2-1b-instruct' }],
+    });
+    expect(models.map((m) => m.id)).toEqual(['qwen2.5-7b-instruct', 'llama-3.2-1b-instruct']);
+    expect(models[0]?.provider).toBe('lmstudio');
+  });
+
+  it('applies the small-local-model caution to LM Studio too', () => {
+    // Same conservatism as Ollama: a 1B model must not be handed tool calling
+    // just because it is served over an OpenAI-compatible endpoint.
+    const small = parseModelList('lmstudio', { data: [{ id: 'llama-3.2-1b-instruct' }] });
+    expect(small[0]?.capabilities).not.toContain('tools');
+
+    const big = parseModelList('lmstudio', { data: [{ id: 'llama-3.1-8b-instruct' }] });
+    expect(big[0]?.capabilities).toContain('tools');
+  });
+
+  it('handles the hyphenated naming LM Studio uses', () => {
+    // Ollama tags it llama3.1:8b, LM Studio llama-3.1-8b — the family regex has
+    // to match both or tool calling is silently withheld from LM Studio.
+    expect(inferCapabilities('lmstudio', 'llama-3.1-8b-instruct')).toContain('tools');
+    expect(inferCapabilities('ollama', 'llama3.1:8b')).toContain('tools');
   });
 });

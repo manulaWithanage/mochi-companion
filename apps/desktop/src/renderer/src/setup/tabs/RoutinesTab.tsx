@@ -151,7 +151,7 @@ export function RoutinesTab(): JSX.Element {
   const saveForm = async (): Promise<void> => {
     if (!title.trim()) return;
 
-    let finalTimes = [...times];
+    const finalTimes = [...times];
     if (newTimeInput && !finalTimes.includes(newTimeInput)) {
       finalTimes.push(newTimeInput);
       finalTimes.sort();

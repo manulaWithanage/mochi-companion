@@ -27,9 +27,32 @@ export interface GoogleStatus {
   readonly hasClientId: boolean;
 }
 
+/** One local model server, as Settings needs to show it. */
+export interface LocalProviderStatus {
+  readonly provider: ProviderId;
+  readonly label: string;
+  /** Something answered there and returned a model list. */
+  readonly available: boolean;
+  /** The URL actually probed, default or user-set — never a guess. */
+  readonly baseUrl: string;
+  /** True when the user overrode the default port. */
+  readonly custom: boolean;
+  readonly modelCount: number;
+  /** Why the probe failed, when it did. Safe to show. */
+  readonly error?: string;
+}
+
 export interface LlmStatus {
-  /** Ollama answered on localhost — the zero-key path is live. */
-  readonly ollamaAvailable: boolean;
+  /**
+   * Every local runtime Mochi knows about, probed or not.
+   *
+   * Replaced a single `ollamaAvailable` boolean: with two local providers a
+   * boolean cannot say *which* one answered, and the UI needs to offer the
+   * other one rather than claim nothing is available.
+   */
+  readonly local: readonly LocalProviderStatus[];
+  /** At least one local runtime answered — the zero-key path is live. */
+  readonly anyLocalAvailable: boolean;
   /** Providers with a stored, working key. Never includes the key itself. */
   readonly configured: readonly { provider: ProviderId; redacted: string }[];
   readonly models: readonly DiscoveredModel[];
@@ -160,7 +183,15 @@ export interface MochiBridge {
     saveAzureKey(resourceName: string, deploymentName: string, apiKey: string): Promise<KeyResult>;
     forgetKey(provider: ProviderId): Promise<LlmStatus>;
     setDailyTokenCap(cap: number): Promise<LlmStatus>;
-    /** Re-probe Ollama, e.g. after the user starts it. */
+    /**
+     * Point a local runtime at a different host or port, and re-probe it.
+     *
+     * Pass null to go back to the documented default. Resolves once the probe
+     * has finished, so the UI can report the outcome of the change the user
+     * just made rather than the state before it.
+     */
+    setLocalEndpoint(provider: ProviderId, baseUrl: string | null): Promise<LlmStatus>;
+    /** Re-probe every local runtime, e.g. after the user starts one. */
     refresh(): Promise<LlmStatus>;
     /**
      * Make one real call, so the user can confirm the whole chain works

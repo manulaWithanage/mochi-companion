@@ -36,6 +36,8 @@ import { MochiTray } from './tray.js';
 import { RoutineService } from './services/routine-service.js';
 import { UserRoutineScheduler } from './services/user-routine-scheduler.js';
 import { LlmService } from './services/llm-service.js';
+import { KeyVault } from './storage/key-vault.js';
+import { ProviderService } from './services/provider-service.js';
 import { LlmClient } from './services/llm-client.js';
 import { GoogleService } from './services/google-service.js';
 import { GmailManager } from './services/gmail-manager.js';
@@ -131,7 +133,14 @@ async function bootstrap(): Promise<void> {
   userRoutineScheduler.start();
 
   const google = new GoogleService(join(app.getPath('userData'), 'google.enc.json'));
-  const llm = new LlmService();
+  // Local base URLs are a host and port, not a secret, so they live in
+  // settings — visible and fixable — rather than in the encrypted vault.
+  const llm = new LlmService(new KeyVault(), new ProviderService(), {
+    get: () => settings.get().localEndpoints,
+    set: (localEndpoints) => {
+      settings.update({ localEndpoints });
+    },
+  });
   const llmClient = new LlmClient(llm);
   const gmailManager = new GmailManager(llmClient, settings);
 
@@ -170,6 +179,7 @@ async function bootstrap(): Promise<void> {
         llm.saveAzureKey(resourceName, deploymentName, apiKey),
       forgetKey: (provider) => llm.forgetKey(provider),
       setDailyTokenCap: (cap) => llm.setDailyTokenCap(cap),
+      setLocalEndpoint: (provider, baseUrl) => llm.setLocalEndpoint(provider, baseUrl),
       refresh: () => llm.refresh(),
       // One real call, so the user can confirm the chain works end to end
       // rather than discovering it is broken during a briefing.
