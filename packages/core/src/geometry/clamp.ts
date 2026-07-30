@@ -150,3 +150,101 @@ export function displayContaining(
     ) ?? null
   );
 }
+
+/**
+ * Clamps a proposed target position across all available displays.
+ *
+ * Allows smooth, flexible cross-boundary movement across multi-monitor setups
+ * while preventing the mascot from being dragged entirely off-screen.
+ */
+export function clampToDisplays(
+  position: Point,
+  size: Size,
+  displays: readonly DisplayInfo[],
+  primaryDisplayId: number,
+): { position: Point; displayId: number } {
+  if (displays.length === 0) {
+    return { position: { x: 0, y: 0 }, displayId: primaryDisplayId };
+  }
+
+  // 1. Find the display that has the maximum overlap with the proposed rect
+  const rect = { ...position, ...size };
+  let bestDisplay: DisplayInfo | null = null;
+  let maxOverlap = -1;
+
+  for (const d of displays) {
+    const overlapW = Math.max(
+      0,
+      Math.min(rect.x + rect.width, d.workArea.x + d.workArea.width) -
+        Math.max(rect.x, d.workArea.x),
+    );
+    const overlapH = Math.max(
+      0,
+      Math.min(rect.y + rect.height, d.workArea.y + d.workArea.height) -
+        Math.max(rect.y, d.workArea.y),
+    );
+    const area = overlapW * overlapH;
+    if (area > maxOverlap) {
+      maxOverlap = area;
+      bestDisplay = d;
+    }
+  }
+
+  // If no overlap (e.g. dragged outside all displays), find display closest to rect center
+  if (bestDisplay === null || maxOverlap <= 0) {
+    const rectCenterX = position.x + size.width / 2;
+    const rectCenterY = position.y + size.height / 2;
+    let minDist = Infinity;
+
+    for (const d of displays) {
+      const dCenterX = d.workArea.x + d.workArea.width / 2;
+      const dCenterY = d.workArea.y + d.workArea.height / 2;
+      const dist = Math.hypot(rectCenterX - dCenterX, rectCenterY - dCenterY);
+      if (dist < minDist) {
+        minDist = dist;
+        bestDisplay = d;
+      }
+    }
+  }
+
+  const host = bestDisplay ?? displays[0];
+
+  // 2. Allow cross-display movement to adjacent displays:
+  // Calculate allowable bounds based on displays that neighbor host
+  let minX = host.workArea.x;
+  let maxX = host.workArea.x + host.workArea.width - size.width;
+  let minY = host.workArea.y;
+  let maxY = host.workArea.y + host.workArea.height - size.height;
+
+  for (const d of displays) {
+    // If display d is adjacent or overlapping in Y, expand X range
+    const yOverlap = Math.max(
+      0,
+      Math.min(host.workArea.y + host.workArea.height, d.workArea.y + d.workArea.height) -
+        Math.max(host.workArea.y, d.workArea.y),
+    );
+    if (yOverlap > 0) {
+      minX = Math.min(minX, d.workArea.x);
+      maxX = Math.max(maxX, d.workArea.x + d.workArea.width - size.width);
+    }
+    // If display d is adjacent or overlapping in X, expand Y range
+    const xOverlap = Math.max(
+      0,
+      Math.min(host.workArea.x + host.workArea.width, d.workArea.x + d.workArea.width) -
+        Math.max(host.workArea.x, d.workArea.x),
+    );
+    if (xOverlap > 0) {
+      minY = Math.min(minY, d.workArea.y);
+      maxY = Math.max(maxY, d.workArea.y + d.workArea.height - size.height);
+    }
+  }
+
+  const clampedX = Math.round(Math.min(Math.max(position.x, minX), maxX));
+  const clampedY = Math.round(Math.min(Math.max(position.y, minY), maxY));
+
+  return {
+    position: { x: clampedX, y: clampedY },
+    displayId: host.id,
+  };
+}
+
