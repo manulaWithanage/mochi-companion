@@ -217,6 +217,15 @@ export class GmailManager {
     this.notifyInbox(account, []);
   }
 
+  async applyPreferences(rescorePriority = false): Promise<void> {
+    const account = this.vault.email;
+    if (account === null) return;
+    if (rescorePriority) await this.triage.classifyInbox(account, true);
+    await this.reminders.reconcile(account);
+    this.drafts.enqueueEligible(account);
+    this.notifyInbox(account, []);
+  }
+
   async generateDraft(
     emailId: string,
     tone: GmailTone = 'professional',

@@ -32,12 +32,15 @@ export class EmailTriageService {
     private readonly getCredentials: () => GmailCredentials | null,
   ) {}
 
-  async classifyInbox(account: string): Promise<void> {
+  async classifyInbox(account: string, force = false): Promise<void> {
     if (!this.settings.get().gmailAi.priorityEnabled) return;
     const inbox = await this.store.listCachedEmails(account, { limit: 100 });
-    const pending = inbox.filter(
-      (email) => email.priority === null || email.priority.scorerVersion !== EMAIL_SCORER_VERSION,
-    );
+    const pending = force
+      ? inbox
+      : inbox.filter(
+          (email) =>
+            email.priority === null || email.priority.scorerVersion !== EMAIL_SCORER_VERSION,
+        );
     if (pending.length === 0) return;
 
     const ruleResults = new Map<string, StoredEmailPriority>();

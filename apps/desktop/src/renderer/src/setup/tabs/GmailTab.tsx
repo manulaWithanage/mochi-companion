@@ -11,14 +11,16 @@ import { useState, useEffect, useCallback, type JSX } from 'react';
 import type {
   CachedInboxItem,
   EmailCategory,
+  GmailAiSettings,
   GmailStatus,
   GmailSyncStatus,
   GmailTone,
 } from '@mochi/core';
 import { CATEGORIES } from '@mochi/core';
 import { C, card, label, input, button, h2, sub } from '../ui.js';
+import { GmailSettingsPanel } from './GmailSettingsPanel.js';
 
-type View = 'inbox' | 'draft';
+type View = 'inbox' | 'draft' | 'settings';
 
 interface DraftState {
   emailId: string;
@@ -41,7 +43,7 @@ export function GmailTab(): JSX.Element {
   const [fetchError, setFetchError] = useState<string | null>(null);
   const [syncStatus, setSyncStatus] = useState<GmailSyncStatus | null>(null);
   const [sortMode, setSortMode] = useState<'priority' | 'recent'>('priority');
-  const [backgroundDraftsEnabled, setBackgroundDraftsEnabled] = useState(false);
+  const [gmailSettings, setGmailSettings] = useState<GmailAiSettings | null>(null);
 
   // Primary only by default. Most unread mail is promotions, and every message
   // shown costs a full body download, so the default both looks better and is
@@ -91,10 +93,13 @@ export function GmailTab(): JSX.Element {
   }, [loadCached]);
 
   useEffect(() => {
-    void window.mochi.settings.get().then((settings) => {
-      setBackgroundDraftsEnabled(settings.gmailAi.backgroundDraftsEnabled);
-      setSortMode(settings.gmailAi.defaultSort);
-    });
+    const apply = (settings: GmailAiSettings): void => {
+      setGmailSettings(settings);
+      setSortMode(settings.defaultSort);
+      setTone(settings.defaultDraftTone);
+    };
+    void window.mochi.settings.get().then((settings) => apply(settings.gmailAi));
+    return window.mochi.settings.onChange((settings) => apply(settings.gmailAi));
   }, []);
 
   useEffect(() => {
@@ -209,6 +214,14 @@ export function GmailTab(): JSX.Element {
   const handleDismissReminder = async (emailId: string): Promise<void> => {
     await window.mochi.gmail.dismissReminder(emailId);
     await loadCached(active, sortMode);
+  };
+
+  const handleSaveSettings = async (next: GmailAiSettings): Promise<void> => {
+    const settings = await window.mochi.settings.setGmailAi(next);
+    setGmailSettings(settings.gmailAi);
+    setSortMode(settings.gmailAi.defaultSort);
+    setTone(settings.gmailAi.defaultDraftTone);
+    await loadCached(active, settings.gmailAi.defaultSort);
   };
 
   const openDraft = (email: CachedInboxItem): void => {
@@ -452,9 +465,8 @@ export function GmailTab(): JSX.Element {
     );
   }
 
-  // ---- Connected + Inbox view ----
-  return (
-    <div>
+  const connectedHeader = (
+    <>
       <div
         style={{
           display: 'flex',
@@ -479,64 +491,6 @@ export function GmailTab(): JSX.Element {
           </p>
         </div>
         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-          <label
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 5,
-              color: C.dim,
-              fontSize: 11.5,
-              whiteSpace: 'nowrap',
-            }}
-          >
-            <input
-              type="checkbox"
-              checked={backgroundDraftsEnabled}
-              onChange={(event) => {
-                const enabled = event.target.checked;
-                setBackgroundDraftsEnabled(enabled);
-                void window.mochi.settings
-                  .setGmailAi({ backgroundDraftsEnabled: enabled })
-                  .then(() => (enabled ? window.mochi.gmail.refresh() : null));
-              }}
-            />
-            Background drafts
-          </label>
-          <select
-            id="gmail-sort-select"
-            value={sortMode}
-            onChange={(event) => {
-              const next = event.target.value === 'recent' ? 'recent' : 'priority';
-              setSortMode(next);
-              void loadCached(active, next);
-            }}
-            style={{
-              ...input,
-              width: 'auto',
-              padding: '6px 10px',
-              fontSize: 12,
-              cursor: 'pointer',
-            }}
-          >
-            <option value="priority">Priority</option>
-            <option value="recent">Recent</option>
-          </select>
-          <select
-            id="gmail-tone-select"
-            value={tone}
-            onChange={(e) => setTone(e.target.value as GmailTone)}
-            style={{
-              ...input,
-              width: 'auto',
-              padding: '6px 10px',
-              fontSize: 12,
-              cursor: 'pointer',
-            }}
-          >
-            <option value="professional">Professional</option>
-            <option value="friendly">Friendly</option>
-            <option value="brief">Brief</option>
-          </select>
           <button
             id="gmail-fetch-btn"
             onClick={() => void handleFetch()}
@@ -553,6 +507,58 @@ export function GmailTab(): JSX.Element {
           </button>
         </div>
       </div>
+
+      <div
+        style={{
+          display: 'flex',
+          gap: 4,
+          borderBottom: `1px solid ${C.border}`,
+          marginBottom: 16,
+        }}
+      >
+        {(['inbox', 'settings'] as const).map((tab) => {
+          const selected = view === tab;
+          return (
+            <button
+              key={tab}
+              type="button"
+              onClick={() => setView(tab)}
+              style={{
+                border: 'none',
+                borderBottom: selected ? `2px solid ${C.accent}` : '2px solid transparent',
+                background: 'transparent',
+                color: selected ? C.text : C.dim,
+                padding: '8px 14px 10px',
+                fontSize: 12.5,
+                fontWeight: selected ? 650 : 500,
+                cursor: 'pointer',
+              }}
+            >
+              {tab === 'inbox' ? 'Inbox' : 'Settings'}
+            </button>
+          );
+        })}
+      </div>
+    </>
+  );
+
+  if (view === 'settings') {
+    return (
+      <div>
+        {connectedHeader}
+        {gmailSettings === null ? (
+          <div style={card}>Loading Gmail settings…</div>
+        ) : (
+          <GmailSettingsPanel value={gmailSettings} onSave={handleSaveSettings} />
+        )}
+      </div>
+    );
+  }
+
+  // ---- Connected + Inbox view ----
+  return (
+    <div>
+      {connectedHeader}
 
       {/*
        * Category chips. These are Gmail's own inbox tabs, read over IMAP via

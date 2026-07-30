@@ -189,11 +189,11 @@ export function registerIpc(ctx: IpcContext): void {
     return ctx.settings.update({ primaryProjectIds: list });
   });
 
-  ipcMain.handle('settings:setGmailAi', (_e, patch: unknown) => {
+  ipcMain.handle('settings:setGmailAi', async (_e, patch: unknown) => {
     const input =
       typeof patch === 'object' && patch !== null ? (patch as Record<string, unknown>) : {};
     const current = ctx.settings.get().gmailAi;
-    return ctx.settings.update({
+    const next = ctx.settings.update({
       gmailAi: {
         priorityEnabled:
           typeof input['priorityEnabled'] === 'boolean'
@@ -238,6 +238,11 @@ export function registerIpc(ctx: IpcContext): void {
               : current.defaultDraftTone,
       },
     });
+    const rescorePriority =
+      current.priorityEnabled !== next.gmailAi.priorityEnabled ||
+      current.vipSenders.join('\n') !== next.gmailAi.vipSenders.join('\n');
+    await ctx.gmail.applyPreferences(rescorePriority);
+    return next;
   });
 
   // Dismissing a bubble dismisses the subject, not just the message, so a
