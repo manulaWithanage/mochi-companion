@@ -111,6 +111,11 @@ const bridge: MochiBridge = {
       ipcRenderer.invoke('settings:setAppCategory', app, category) as Promise<MochiSettings>,
     setGmailAi: (patch) =>
       ipcRenderer.invoke('settings:setGmailAi', patch) as Promise<MochiSettings>,
+    deleteAllLocalData: (confirmation) =>
+      ipcRenderer.invoke('settings:deleteAllLocalData', confirmation) as Promise<{
+        readonly ok: boolean;
+        readonly error?: string;
+      }>,
     onChange: (listener) => subscribe<MochiSettings>('settings:changed', listener),
   },
 

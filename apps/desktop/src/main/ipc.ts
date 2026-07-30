@@ -74,6 +74,7 @@ export interface IpcContext {
   userRoutineScheduler: import('./services/user-routine-scheduler.js').UserRoutineScheduler;
   bubbleActions: import('./services/bubble-actions.js').BubbleActions;
   bubbleQueue: import('./services/bubble-queue.js').BubbleQueue;
+  deleteAllLocalData(): Promise<void>;
 }
 
 const asString = (value: unknown, fallback: string): string =>
@@ -351,6 +352,19 @@ export function registerIpc(ctx: IpcContext): void {
       current.vipSenders.join('\n') !== next.gmailAi.vipSenders.join('\n');
     await ctx.gmail.applyPreferences(rescorePriority);
     return next;
+  });
+
+  ipcMain.handle('settings:deleteAllLocalData', async (_e, confirmation: unknown) => {
+    if (confirmation !== 'DELETE') {
+      return { ok: false, error: 'Type DELETE to confirm permanent local data removal.' };
+    }
+    try {
+      await ctx.deleteAllLocalData();
+      return { ok: true };
+    } catch (error) {
+      console.error('[privacy] local data reset failed:', error);
+      return { ok: false, error: 'Could not remove all local data. Mochi was not restarted.' };
+    }
   });
 
   // Dismissing a bubble dismisses the subject, not just the message, so a

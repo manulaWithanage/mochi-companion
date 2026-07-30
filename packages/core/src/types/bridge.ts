@@ -217,6 +217,10 @@ export interface MochiBridge {
      */
     setAppCategory(app: string, category: ActivityCategory): Promise<MochiSettings>;
     setGmailAi(patch: Partial<GmailAiSettings>): Promise<MochiSettings>;
+    /** Permanently remove Mochi-owned local data and restart the app. */
+    deleteAllLocalData(
+      confirmation: string,
+    ): Promise<{ readonly ok: boolean; readonly error?: string }>;
     onChange(listener: (settings: MochiSettings) => void): () => void;
   };
 

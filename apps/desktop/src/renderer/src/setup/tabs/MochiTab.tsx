@@ -140,6 +140,9 @@ export function MochiTab(): JSX.Element {
   const [start, setStart] = useState('09:00');
   const [end, setEnd] = useState('17:00');
   const [hoursSaved, setHoursSaved] = useState(false);
+  const [deleteConfirmation, setDeleteConfirmation] = useState('');
+  const [deletingData, setDeletingData] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   useEffect(() => {
     void window.mochi.settings.get().then((s) => {
@@ -194,6 +197,21 @@ export function MochiTab(): JSX.Element {
   };
 
   const active = skins.find((s) => s.name === skinName);
+
+  const deleteAllLocalData = async (): Promise<void> => {
+    if (deleteConfirmation !== 'DELETE') return;
+    const confirmed = window.confirm(
+      'Permanently delete all Mochi projects, sessions, tasks, routines, settings, connections, email cache, and learned memory from this device?',
+    );
+    if (!confirmed) return;
+    setDeletingData(true);
+    setDeleteError(null);
+    const result = await window.mochi.settings.deleteAllLocalData(deleteConfirmation);
+    if (!result.ok) {
+      setDeletingData(false);
+      setDeleteError(result.error ?? 'Could not delete local data.');
+    }
+  };
 
   return (
     <div>
@@ -402,6 +420,50 @@ export function MochiTab(): JSX.Element {
           All of these pass an interruption budget first (at most 3 an hour, silent during quiet
           hours and while anything is fullscreen).
         </p>
+      </div>
+
+      <div
+        style={{
+          ...card,
+          marginBottom: 16,
+          border: '1px solid rgba(255, 100, 100, 0.28)',
+        }}
+      >
+        <div style={{ fontSize: 13, fontWeight: 600, color: C.warn, marginBottom: 6 }}>
+          Delete all local Mochi data
+        </div>
+        <p style={{ fontSize: 12, color: C.dim, margin: '0 0 12px', lineHeight: 1.55 }}>
+          Permanently removes time history, projects, tasks, routines, settings, connected
+          credentials, cached email data, generated drafts, and learned memory. Mochi will restart
+          as a new installation. This cannot be undone.
+        </p>
+        <span style={label}>Type DELETE to confirm</span>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <input
+            value={deleteConfirmation}
+            onChange={(event) => setDeleteConfirmation(event.target.value)}
+            placeholder="DELETE"
+            disabled={deletingData}
+            style={input}
+          />
+          <button
+            type="button"
+            onClick={() => void deleteAllLocalData()}
+            disabled={deleteConfirmation !== 'DELETE' || deletingData}
+            style={{
+              ...button('ghost'),
+              color: C.warn,
+              borderColor: 'rgba(255, 100, 100, 0.35)',
+              opacity: deleteConfirmation !== 'DELETE' || deletingData ? 0.45 : 1,
+              whiteSpace: 'nowrap',
+            }}
+          >
+            {deletingData ? 'Deleting…' : 'Delete everything'}
+          </button>
+        </div>
+        {deleteError !== null && (
+          <div style={{ color: C.warn, fontSize: 12, marginTop: 8 }}>{deleteError}</div>
+        )}
       </div>
     </div>
   );
