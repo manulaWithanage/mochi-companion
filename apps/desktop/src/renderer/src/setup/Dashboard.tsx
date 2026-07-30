@@ -98,8 +98,27 @@ export function Dashboard(): JSX.Element {
         }}
       >
         <div style={{ padding: '0 6px 16px', borderBottom: `1px solid ${C.border}`, marginBottom: 10 }}>
-          <div style={{ fontSize: 16, fontWeight: 700, letterSpacing: '-0.01em', color: C.text }}>
-            {settings?.assistantName ?? 'Mochi'}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
+            <div
+              style={{
+                width: 28,
+                height: 28,
+                borderRadius: '50%',
+                background: 'linear-gradient(135deg, rgba(242, 166, 179, 0.25), rgba(255, 140, 175, 0.4))',
+                border: `1px solid ${C.accent}`,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: 15,
+                boxShadow: `0 0 10px ${C.accent}55`,
+                flexShrink: 0,
+              }}
+            >
+              🍡
+            </div>
+            <div style={{ fontSize: 16, fontWeight: 700, letterSpacing: '-0.01em', color: C.text }}>
+              {settings?.assistantName ?? 'Mochi'}
+            </div>
           </div>
           <div
             style={{

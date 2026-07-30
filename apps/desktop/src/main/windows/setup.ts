@@ -27,6 +27,7 @@ export class SetupWindow {
       minimizable: true,
       maximizable: true,
       title: 'Mochi',
+      icon: join(import.meta.dirname, '../../assets/icon.png'),
       backgroundColor: '#1b1720',
       show: false,
       webPreferences: {
