@@ -269,7 +269,7 @@ export function SmokeEffect({ mode }: { readonly mode: SmokeMode }): JSX.Element
         height: H,
         pointerEvents: 'none',
         // Above the mascot: smoke passing in front is what conceals it.
-        zIndex: 6,
+        zIndex: 20,
       }}
     />
   );

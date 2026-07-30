@@ -117,14 +117,12 @@ export type SmokeMode = 'burst' | 'gather' | null;
 
 export function smokeMode(phase: MagicianPhase): SmokeMode {
   switch (phase) {
-    // Blowing outward: the mascot is being concealed or revealed.
+    // Blowing outward: the mascot is being concealed or revealed on every entrance and exit.
     case 'vanish':
     case 'appear':
-      return 'burst';
-    // Drawing inward, so the exit is an animation rather than the hard cut the
-    // first version had, where the canvas simply unmounted mid-particle.
     case 'depart':
-      return 'gather';
+    case 'restore':
+      return 'burst';
     default:
       return null;
   }

@@ -27,13 +27,10 @@ const BOTTOM_OFFSET = 164;
 /** Puts the tail over the mascot rather than off to one side. */
 const RIGHT_OFFSET = 58;
 const TAIL = 9;
-const BG = 'rgba(38, 30, 44, 0.95)';
 
 function formatConversationalText(raw: string | null): string | null {
   if (raw === null) return null;
-  // Replace em dashes and en dashes with simple conversational punctuation
   let text = raw.replace(/[—–]/g, ',');
-  // Remove trailing full stop at the end of Mochi's dialogue (keep ? and !)
   if (text.endsWith('.')) {
     text = text.slice(0, -1);
   }
@@ -42,10 +39,6 @@ function formatConversationalText(raw: string | null): string | null {
 
 export function SpeechBubble({ text, onDismiss, onHoverChange }: Props): JSX.Element | null {
   const [visible, setVisible] = useState(false);
-  /**
-   * Held one render longer than `text` so the fade-out actually plays.
-   * Unmounting the moment text goes null made the bubble vanish instantly.
-   */
   const [rendered, setRendered] = useState<string | null>(null);
   const exitTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
@@ -54,7 +47,6 @@ export function SpeechBubble({ text, onDismiss, onHoverChange }: Props): JSX.Ele
 
     if (text !== null) {
       setRendered(formatConversationalText(text));
-      // Next frame, so the transition runs instead of snapping in.
       const id = requestAnimationFrame(() => setVisible(true));
       return () => cancelAnimationFrame(id);
     }
@@ -78,20 +70,20 @@ export function SpeechBubble({ text, onDismiss, onHoverChange }: Props): JSX.Ele
         right: RIGHT_OFFSET,
         bottom: BOTTOM_OFFSET,
         maxWidth: 250,
-        // Short messages should hug the mascot, not stretch toward the corner.
         width: 'max-content',
-        padding: '10px 13px',
-        borderRadius: 15,
+        padding: '11px 15px',
+        borderRadius: 16,
         borderBottomRightRadius: 5,
-        background: BG,
-        color: '#fdf6f8',
-        font: '500 13px/1.4 system-ui, -apple-system, "Segoe UI", sans-serif',
-        boxShadow: '0 6px 20px rgba(0, 0, 0, 0.38)',
-        border: '1px solid rgba(255, 255, 255, 0.09)',
+        background: 'linear-gradient(145deg, rgba(48, 37, 58, 0.98) 0%, rgba(28, 21, 35, 0.98) 100%)',
+        color: '#ffffff',
+        font: '600 13px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif',
+        border: '1px solid rgba(242, 166, 179, 0.45)',
+        boxShadow:
+          '0 14px 36px rgba(0, 0, 0, 0.8), 0 0 24px rgba(242, 166, 179, 0.32), inset 0 1px 0 rgba(255, 255, 255, 0.18)',
+        backdropFilter: 'blur(16px)',
         overflowWrap: 'anywhere',
         cursor: 'pointer',
         opacity: visible ? 1 : 0,
-        // Scale from the corner nearest Mochi so it reads as coming from it.
         transformOrigin: '100% 100%',
         transform: visible ? 'translateY(0) scale(1)' : 'translateY(4px) scale(0.94)',
         transition: `opacity ${FADE_MS}ms ease, transform ${FADE_MS}ms cubic-bezier(0.2, 0.9, 0.3, 1.25)`,
@@ -110,7 +102,8 @@ export function SpeechBubble({ text, onDismiss, onHoverChange }: Props): JSX.Ele
           height: 0,
           borderLeft: `${TAIL}px solid transparent`,
           borderRight: `${TAIL - 4}px solid transparent`,
-          borderTop: `${TAIL + 1}px solid ${BG}`,
+          borderTop: `${TAIL + 1}px solid #1c1523`,
+          filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.6))',
         }}
       />
     </div>

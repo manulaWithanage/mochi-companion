@@ -14,6 +14,13 @@ const QUICK_PRESETS = [
 const EMOJI_OPTIONS = ['💼', '👤', '📚', '🎨', '🧘', '💻', '☕', '⚡', '🏋️', '🎧', '📝', '🎯', '🚀', '🛠️'];
 const SWATCH_OPTIONS = ['#6366f1', '#ec4899', '#10b981', '#f59e0b', '#8b5cf6', '#3b82f6', '#F2A6B3', '#A6D6F2'];
 
+function formatCategoryName(name: string): string {
+  if (name === 'General') {
+    return '🎯 General';
+  }
+  return name;
+}
+
 type TimeSubTab = 'categories' | 'performance' | 'history';
 type DateRangeFilter = 'today' | '7days' | '30days' | 'all';
 
@@ -530,7 +537,7 @@ export function TimeTab(): JSX.Element {
                           }}
                         />
                         <div style={{ fontSize: 13, fontWeight: 700, color: C.text, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                          {p.name}
+                          {formatCategoryName(p.name)}
                         </div>
                       </div>
                     ) : (
@@ -708,7 +715,7 @@ export function TimeTab(): JSX.Element {
                             boxShadow: `0 0 8px ${project.colour}`,
                           }}
                         />
-                        <span style={{ fontSize: 14, fontWeight: 700, color: C.text }}>{project.name}</span>
+                        <span style={{ fontSize: 14, fontWeight: 700, color: C.text }}>{formatCategoryName(project.name)}</span>
                         
                         {isRunningThis && (
                           <span
@@ -966,7 +973,7 @@ export function TimeTab(): JSX.Element {
                         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                           <span style={{ width: 9, height: 9, borderRadius: '50%', background: item.project.colour, boxShadow: `0 0 6px ${item.project.colour}` }} />
                           <span style={{ color: C.text, fontWeight: 650, maxWidth: 100, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                            {item.project.name}
+                            {formatCategoryName(item.project.name)}
                           </span>
                         </div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
@@ -1044,7 +1051,7 @@ export function TimeTab(): JSX.Element {
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                         <div style={{ width: 10, height: 10, borderRadius: '50%', background: item.project.colour, boxShadow: `0 0 6px ${item.project.colour}` }} />
-                        <span style={{ fontSize: 14, fontWeight: 700, color: C.text }}>{item.project.name}</span>
+                        <span style={{ fontSize: 14, fontWeight: 700, color: C.text }}>{formatCategoryName(item.project.name)}</span>
                       </div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
                         <span style={{ fontSize: 12, fontWeight: 700, color: item.project.colour, fontVariantNumeric: 'tabular-nums' }}>

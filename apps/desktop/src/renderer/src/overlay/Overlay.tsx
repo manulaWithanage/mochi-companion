@@ -284,12 +284,9 @@ export function Overlay(): JSX.Element {
 
   return (
     <div style={{ width: '100%', height: '100%', position: 'relative', pointerEvents: 'none' }}>
-      {/*
-       * During a performance the message is withheld until Mochi has arrived.
-       * The bubble and the entrance are triggered by the same event, so without
-       * this the bubble is already on screen at the docked position and gets
-       * carried across with the window — delivering the line before appearing.
-       */}
+      {/* Magician smoke and sparkles. Covers the window, above the mascot. */}
+      <SmokeEffect mode={smokeMode(phase)} />
+
       <SpeechBubble
         text={performing && !isAlertPhase(phase) ? null : bubble}
         onDismiss={dismissBubble}
@@ -317,9 +314,6 @@ export function Overlay(): JSX.Element {
             if (interactive) revealPills();
           }}
         />
-
-        {/* Magician smoke and sparkles. Covers the window, above the mascot. */}
-        <SmokeEffect mode={smokeMode(phase)} />
 
         {error !== null && (
           <div
@@ -384,8 +378,10 @@ export function Overlay(): JSX.Element {
               transform: 'translateX(-50%)',
               padding: '2px 9px',
               borderRadius: 999,
-              background: 'rgba(27, 23, 32, 0.82)',
-              color: '#f4eef6',
+              background: 'rgba(32, 24, 40, 0.95)',
+              color: '#ffffff',
+              border: '1px solid rgba(242, 166, 179, 0.4)',
+              boxShadow: '0 4px 14px rgba(0, 0, 0, 0.75), 0 0 12px rgba(242, 166, 179, 0.25)',
               font: '600 11px system-ui, sans-serif',
               pointerEvents: 'none',
               whiteSpace: 'nowrap',

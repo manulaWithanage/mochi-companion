@@ -52,20 +52,16 @@ describe('magicianPose', () => {
 });
 
 describe('smokeMode', () => {
-  it('bursts outward while concealing and revealing', () => {
+  it('bursts outward while concealing and revealing on every phase transition', () => {
     expect(smokeMode('vanish')).toBe('burst');
     expect(smokeMode('appear')).toBe('burst');
-  });
-
-  it('gathers inward on the way out, so the exit is animated', () => {
-    // The first version unmounted the canvas mid-particle: a hard cut.
-    expect(smokeMode('depart')).toBe('gather');
+    expect(smokeMode('depart')).toBe('burst');
+    expect(smokeMode('restore')).toBe('burst');
   });
 
   it('draws nothing when idle or merely holding', () => {
     expect(smokeMode('none')).toBeNull();
     expect(smokeMode('hold')).toBeNull();
-    expect(smokeMode('restore')).toBeNull();
   });
 });
 

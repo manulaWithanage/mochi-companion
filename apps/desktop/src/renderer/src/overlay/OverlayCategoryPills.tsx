@@ -69,7 +69,8 @@ export function OverlayCategoryPills({
         const isActive = activeProjectId === project.id;
         const isHovered = activeHoverId === project.id;
 
-        const iconChar = project.name.slice(0, 2).trim() || '⏱️';
+        const displayName = project.name === 'General' ? '🎯 General' : project.name;
+        const iconChar = displayName.slice(0, 2).trim() || '🎯';
 
         return (
           <button
