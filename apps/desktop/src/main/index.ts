@@ -156,9 +156,12 @@ async function bootstrap(): Promise<void> {
           system: 'You are Mochi, a small desktop companion. Reply in one short sentence.',
           prompt: 'Say hello and mention you are ready to help.',
         });
-        return result.ok
-          ? { ok: true, text: result.text, model: result.model, tokens: result.tokens }
-          : { ok: false, text: result.reason };
+        if (result.ok) {
+          return { ok: true, text: result.text, model: result.model, tokens: result.tokens };
+        }
+        // Test is a diagnostic, so it shows the provider's own error. Nothing
+        // else does — the mascot only ever gets `reason`.
+        return { ok: false, text: result.detail ?? result.reason };
       },
     },
     gmail: gmailManager,

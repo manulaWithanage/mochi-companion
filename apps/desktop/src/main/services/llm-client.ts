@@ -34,7 +34,19 @@ export interface GenerateRequest {
 
 export type GenerateResult =
   | { readonly ok: true; readonly text: string; readonly model: string; readonly tokens: number }
-  | { readonly ok: false; readonly reason: string };
+  | {
+      readonly ok: false;
+      readonly reason: string;
+      /**
+       * The provider's own error, for the Test button only.
+       *
+       * `reason` is what a speech bubble may show; this is not. It exists
+       * because a diagnostic the user pressed on purpose should say what
+       * actually failed, and "could not be reached" sent us hunting through
+       * terminal logs to find a 404.
+       */
+      readonly detail?: string;
+    };
 
 /**
  * Build a model handle for the chosen provider.
@@ -150,6 +162,7 @@ export class LlmClient {
         reason: /401|403|invalid.*key/i.test(message)
           ? `Your ${model.provider} key was rejected. Re-add it in Settings.`
           : 'That model could not be reached just now.',
+        detail: `${model.provider}/${model.id}: ${message.slice(0, 300)}`,
       };
     }
   }
