@@ -42,6 +42,7 @@ import { LlmClient } from './services/llm-client.js';
 import { GoogleService } from './services/google-service.js';
 import { GmailManager } from './services/gmail-manager.js';
 import { CalendarService } from './services/calendar-service.js';
+import { BriefingService } from './services/briefing-service.js';
 import { CalendarVault } from './storage/calendar-vault.js';
 import { registerIpc } from './ipc.js';
 
@@ -150,6 +151,26 @@ async function bootstrap(): Promise<void> {
   const calendar = new CalendarService(new CalendarVault());
   calendar.onChange((status) => setup.send('calendar:changed', status));
   calendar.start();
+
+  // The briefing speaks through the bus like everything else, so the governor
+  // still decides whether it reaches the user.
+  const briefing = new BriefingService(bus, {
+    getSettings: () => settings.get(),
+    listTasks: () => storage.listTasks(),
+    calendarEvents: () => calendar.cached,
+    hasCalendar: () => calendar.status().connected,
+    phrase: async (prompt) => {
+      const result = await llmClient.generate({
+        task: 'phrase',
+        system:
+          'You are Mochi, a small desktop companion. Warm and brief. Never add facts.',
+        prompt,
+      });
+      return result.ok ? result.text : null;
+    },
+    perform: (holdMs) => void overlay.performMagicianAlert(holdMs),
+  });
+  briefing.start();
   const gmailManager = new GmailManager(llmClient, settings, storage, bus);
   gmailManager.onInboxChanged((account, newEmails) => {
     setup.send('gmail:inboxChanged', {
@@ -215,6 +236,7 @@ async function bootstrap(): Promise<void> {
     },
     gmail: gmailManager,
     calendar,
+    briefing,
   });
 
   llm.onChange((status) => setup.send('llm:changed', status));

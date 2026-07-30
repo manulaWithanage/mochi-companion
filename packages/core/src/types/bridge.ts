@@ -9,6 +9,7 @@
  * is a compile error rather than a runtime `undefined is not a function`.
  */
 
+import type { Briefing } from '../briefing/briefing.js';
 import type { CalendarEvent } from '../calendar/calendar.js';
 import type { EmailCategory } from '../google/categories.js';
 import type {
@@ -247,6 +248,13 @@ export interface MochiBridge {
     /** Everything cached, read from memory in main. */
     events(): Promise<readonly CalendarEvent[]>;
     onChange(listener: (status: CalendarStatus) => void): () => void;
+    /**
+     * Run the morning briefing now.
+     *
+     * Skips the once-a-day guard, not the governor: a preview shows what will
+     * really happen, including being suppressed during quiet hours.
+     */
+    previewBriefing(): Promise<Briefing | null>;
   };
 
   readonly skin: {

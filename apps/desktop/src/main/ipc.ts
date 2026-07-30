@@ -67,6 +67,7 @@ export interface IpcContext {
   };
   gmail: GmailManager;
   calendar: import('./services/calendar-service.js').CalendarService;
+  briefing: import('./services/briefing-service.js').BriefingService;
   userRoutineScheduler: import('./services/user-routine-scheduler.js').UserRoutineScheduler;
 }
 
@@ -371,6 +372,10 @@ export function registerIpc(ctx: IpcContext): void {
   ipcMain.handle('calendar:disconnect', () => ctx.calendar.disconnect());
   ipcMain.handle('calendar:refresh', () => ctx.calendar.refresh());
   ipcMain.handle('calendar:events', () => ctx.calendar.cached);
+
+  // Preview skips the once-a-day guard but still passes the governor, so it
+  // demonstrates what will really happen rather than an idealised version.
+  ipcMain.handle('briefing:preview', () => ctx.briefing.deliver(new Date(), true));
 
   ipcMain.handle('gmail:status', () => ctx.gmail.status());
 

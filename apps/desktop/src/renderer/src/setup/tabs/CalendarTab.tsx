@@ -154,8 +154,22 @@ export function CalendarTab(): JSX.Element {
           background: 'rgba(242,166,179,0.06)',
         }}
       >
-        <div style={{ fontSize: 11, letterSpacing: 0.5, color: C.accent, marginBottom: 6 }}>
-          TODAY
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            marginBottom: 6,
+          }}
+        >
+          <span style={{ fontSize: 11, letterSpacing: 0.5, color: C.accent }}>TODAY</span>
+          <button
+            style={{ ...button('ghost'), fontSize: 11.5, padding: '4px 10px' }}
+            onClick={() => void window.mochi.calendar.previewBriefing()}
+            title="Runs the real briefing now, governor and all"
+          >
+            Show me
+          </button>
         </div>
         <div style={{ fontSize: 15, color: C.text, lineHeight: 1.5, marginBottom: 8 }}>
           {briefing.headline}

@@ -15,6 +15,7 @@
 
 import { contextBridge, ipcRenderer, type IpcRendererEvent } from 'electron';
 import type {
+  Briefing,
   BubbleMessage,
   CalendarConnectResult,
   CalendarEvent,
@@ -164,6 +165,7 @@ const bridge: MochiBridge = {
     refresh: () => ipcRenderer.invoke('calendar:refresh') as Promise<CalendarStatus>,
     events: () => ipcRenderer.invoke('calendar:events') as Promise<readonly CalendarEvent[]>,
     onChange: (listener) => subscribe<CalendarStatus>('calendar:changed', listener),
+    previewBriefing: () => ipcRenderer.invoke('briefing:preview') as Promise<Briefing | null>,
   },
 
   skin: {
