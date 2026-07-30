@@ -29,6 +29,12 @@ export interface GmailAiSettings {
   /** Zero disables the second urgent reminder. */
   readonly urgentFollowUpDelayMs: number;
   readonly defaultDraftTone: 'professional' | 'friendly' | 'brief';
+  /** How long email metadata, AI results and drafts may remain on this device. */
+  readonly localCacheRetentionDays: number;
+  /** Remove cached email data automatically when the Gmail account is disconnected. */
+  readonly deleteCachedDataOnDisconnect: boolean;
+  /** Explicit consent before complete message bodies are included in AI draft prompts. */
+  readonly allowEmailBodyForAiDrafts: boolean;
 }
 
 export type MascotSize = 'small' | 'medium' | 'large';
@@ -120,6 +126,9 @@ export const DEFAULT_SETTINGS: MochiSettings = {
     reviewReminderDelayMs: 4 * 60 * 60_000,
     urgentFollowUpDelayMs: 90 * 60_000,
     defaultDraftTone: 'professional',
+    localCacheRetentionDays: 30,
+    deleteCachedDataOnDisconnect: true,
+    allowEmailBodyForAiDrafts: false,
   },
 };
 
@@ -279,6 +288,13 @@ export function normalizeSettings(raw: unknown): {
         value.defaultDraftTone === 'friendly' || value.defaultDraftTone === 'brief'
           ? value.defaultDraftTone
           : 'professional',
+      localCacheRetentionDays:
+        typeof value.localCacheRetentionDays === 'number' &&
+        Number.isFinite(value.localCacheRetentionDays)
+          ? Math.min(90, Math.max(1, Math.floor(value.localCacheRetentionDays)))
+          : DEFAULT_SETTINGS.gmailAi.localCacheRetentionDays,
+      deleteCachedDataOnDisconnect: value.deleteCachedDataOnDisconnect !== false,
+      allowEmailBodyForAiDrafts: value.allowEmailBodyForAiDrafts === true,
     };
   }
 

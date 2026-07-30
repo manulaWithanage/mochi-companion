@@ -122,4 +122,8 @@ export interface EmailStore {
   listPendingEmailReminders(account: string): Promise<readonly EmailReminderState[]>;
   getGmailSyncState(account: string): Promise<GmailSyncState | null>;
   saveGmailSyncState(state: GmailSyncState): Promise<void>;
+  /** Delete every locally cached email artifact for one Gmail account. */
+  deleteEmailData(account: string): Promise<number>;
+  /** Delete cached messages older than the retention cutoff. */
+  deleteExpiredEmailData(account: string, receivedBefore: number): Promise<number>;
 }

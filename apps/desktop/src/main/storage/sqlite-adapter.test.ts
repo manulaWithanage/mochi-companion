@@ -193,4 +193,44 @@ describe('SqliteStorageAdapter sensitive email persistence', () => {
     expect(row['snippet']).toMatch(/^test:protected:/);
     expect(row['from_address']).toMatch(/^test:protected:/);
   });
+
+  it('deletes expired and account-scoped email rows with derived state', async () => {
+    const path = databasePath();
+    const store = new SqliteStorageAdapter(path, new TestCodec());
+    const old = { ...email(), receivedAt: 100 };
+    const recent = { ...email(), emailId: 'recent', receivedAt: 5_000 };
+    await store.replaceInboxSnapshot(old.account, [old, recent], 6_000);
+    await store.saveEmailDraft({
+      account: old.account,
+      emailId: old.emailId,
+      status: 'ready',
+      subject: 'private',
+      body: 'private',
+      error: null,
+    });
+    await store.saveGmailSyncState({
+      account: old.account,
+      uidValidity: '1',
+      lastSyncedAt: 6_000,
+      lastError: null,
+    });
+
+    expect(
+      (await store.listCachedEmails(old.account, { limit: 100 })).map((item) => ({
+        id: item.emailId,
+        receivedAt: item.receivedAt,
+      })),
+    ).toEqual([
+      { id: 'recent', receivedAt: 5_000 },
+      { id: old.emailId, receivedAt: 100 },
+    ]);
+    expect(await store.deleteExpiredEmailData(old.account, 1_000)).toBe(1);
+    expect(await store.getCachedEmail(old.account, old.emailId)).toBeNull();
+    expect(await store.getCachedEmail(old.account, recent.emailId)).not.toBeNull();
+
+    expect(await store.deleteEmailData(old.account)).toBe(1);
+    expect(await store.getCachedEmail(old.account, recent.emailId)).toBeNull();
+    expect(await store.getGmailSyncState(old.account)).toBeNull();
+    await store.close();
+  });
 });

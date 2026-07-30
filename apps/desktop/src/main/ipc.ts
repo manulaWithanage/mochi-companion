@@ -332,6 +332,18 @@ export function registerIpc(ctx: IpcContext): void {
             : input['defaultDraftTone'] === 'professional'
               ? 'professional'
               : current.defaultDraftTone,
+        localCacheRetentionDays:
+          typeof input['localCacheRetentionDays'] === 'number'
+            ? input['localCacheRetentionDays']
+            : current.localCacheRetentionDays,
+        deleteCachedDataOnDisconnect:
+          typeof input['deleteCachedDataOnDisconnect'] === 'boolean'
+            ? input['deleteCachedDataOnDisconnect']
+            : current.deleteCachedDataOnDisconnect,
+        allowEmailBodyForAiDrafts:
+          typeof input['allowEmailBodyForAiDrafts'] === 'boolean'
+            ? input['allowEmailBodyForAiDrafts']
+            : current.allowEmailBodyForAiDrafts,
       },
     });
     const rescorePriority =
@@ -484,6 +496,7 @@ export function registerIpc(ctx: IpcContext): void {
   });
 
   ipcMain.handle('gmail:disconnect', () => ctx.gmail.disconnect());
+  ipcMain.handle('gmail:clearLocalData', () => ctx.gmail.clearLocalData());
 
   ipcMain.handle('gmail:listCached', (_e, query: unknown) => {
     const input =

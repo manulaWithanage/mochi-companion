@@ -41,9 +41,7 @@ import {
   type EmailStore,
   type StoredEmailPriority,
 } from '@mochi/core';
-import type { GmailCredentials } from '../storage/gmail-vault.js';
 import type { SettingsStore } from '../storage/settings-store.js';
-import type { GmailImapService } from './gmail-imap.js';
 import type { LlmClient } from './llm-client.js';
 
 /**
@@ -68,10 +66,8 @@ function alreadyAsked(priority: StoredEmailPriority): boolean {
 export class EmailTriageService {
   constructor(
     private readonly llm: LlmClient,
-    private readonly imap: GmailImapService,
     private readonly store: EmailStore,
     private readonly settings: SettingsStore,
-    private readonly getCredentials: () => GmailCredentials | null,
   ) {}
 
   async classifyInbox(account: string, force = false): Promise<void> {
@@ -105,17 +101,14 @@ export class EmailTriageService {
       await this.store.saveEmailPriority(stored);
     }
 
-    const credentials = this.getCredentials();
-    if (credentials === null) return;
-
-    // Checked before the candidate list, because building the prompt costs ten
-    // full message downloads over IMAP. Observed on a real inbox with no model
-    // configured: those ten fetches happened every sync and were discarded the
-    // moment `generate` answered "No model is set up yet."
+    // Checked before the candidate list: asking a model that is not configured
+    // costs a full pass over the inbox and is discarded the moment `generate`
+    // answers "No model is set up yet."
     if (!this.llm.hasAnyModel) return;
 
     // Drawn from the whole inbox, not just what was rescored this pass — that
-    // narrowing is what made the cap permanent.
+    // narrowing is what made the cap permanent, and it is the exact bug this
+    // file's header describes. Do not narrow it back to `pending`.
     const candidates = inbox
       .filter((email) => {
         const priority = current.get(email.emailId);
@@ -137,17 +130,14 @@ export class EmailTriageService {
       );
     }
 
-    const promptItems: {
-      email: CachedInboxItem;
-      snippet: string;
-    }[] = [];
-    for (const email of batch) {
-      const full = await this.imap.fetchMessage(credentials, email.uid, email.category);
-      promptItems.push({
-        email,
-        snippet: full?.bodyText.slice(0, 150) ?? email.snippet,
-      });
-    }
+    // Mapped over `batch`, not the full candidate list, so the throttle above
+    // is what actually reaches the prompt.
+    const promptItems: { email: CachedInboxItem; snippet: string }[] = batch.map((email) => ({
+      email,
+      // Classification is metadata-only. Complete bodies are reserved for
+      // the separately consented draft-generation path.
+      snippet: email.snippet.slice(0, 150),
+    }));
 
     const prompt = buildEmailPriorityPrompt(promptItems);
     const response = await this.llm.generate({

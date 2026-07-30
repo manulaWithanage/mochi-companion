@@ -80,6 +80,9 @@ describe('normalizeSettings', () => {
         reviewReminderDelayMs: 60 * 60_000,
         urgentFollowUpDelayMs: 0,
         defaultDraftTone: 'friendly',
+        localCacheRetentionDays: 500,
+        deleteCachedDataOnDisconnect: false,
+        allowEmailBodyForAiDrafts: true,
       },
     });
     expect(settings.gmailAi).toEqual({
@@ -95,6 +98,9 @@ describe('normalizeSettings', () => {
       reviewReminderDelayMs: 60 * 60_000,
       urgentFollowUpDelayMs: 0,
       defaultDraftTone: 'friendly',
+      localCacheRetentionDays: 90,
+      deleteCachedDataOnDisconnect: false,
+      allowEmailBodyForAiDrafts: true,
     });
   });
 
@@ -115,5 +121,10 @@ describe('normalizeSettings', () => {
     );
     expect(settings.gmailAi.urgentFollowUpDelayMs).toBe(10_000);
     expect(settings.gmailAi.defaultDraftTone).toBe('professional');
+    expect(settings.gmailAi.localCacheRetentionDays).toBe(
+      DEFAULT_SETTINGS.gmailAi.localCacheRetentionDays,
+    );
+    expect(settings.gmailAi.deleteCachedDataOnDisconnect).toBe(true);
+    expect(settings.gmailAi.allowEmailBodyForAiDrafts).toBe(false);
   });
 });

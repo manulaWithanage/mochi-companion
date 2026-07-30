@@ -371,6 +371,9 @@ export class SqliteStorageAdapter implements StorageAdapter, EmailStore {
     listPendingEmailReminders: StatementSync;
     getGmailSyncState: StatementSync;
     upsertGmailSyncState: StatementSync;
+    deleteEmailData: StatementSync;
+    deleteGmailSyncState: StatementSync;
+    deleteExpiredEmailData: StatementSync;
   };
 
   constructor(
@@ -527,6 +530,11 @@ export class SqliteStorageAdapter implements StorageAdapter, EmailStore {
            uid_validity   = excluded.uid_validity,
            last_synced_at = excluded.last_synced_at,
            last_error     = excluded.last_error`,
+      ),
+      deleteEmailData: this.db.prepare(`DELETE FROM email_cache WHERE account = ?`),
+      deleteGmailSyncState: this.db.prepare(`DELETE FROM gmail_sync_state WHERE account = ?`),
+      deleteExpiredEmailData: this.db.prepare(
+        `DELETE FROM email_cache WHERE account = ? AND received_at < ?`,
       ),
     };
   }
@@ -980,6 +988,24 @@ export class SqliteStorageAdapter implements StorageAdapter, EmailStore {
       state.lastSyncedAt,
       state.lastError === null ? null : this.codec.protect(state.lastError),
     );
+  }
+
+  async deleteEmailData(account: string): Promise<number> {
+    this.db.exec('BEGIN');
+    try {
+      const result = this.statements.deleteEmailData.run(account);
+      this.statements.deleteGmailSyncState.run(account);
+      this.db.exec('COMMIT');
+      return Number(result.changes);
+    } catch (error) {
+      this.db.exec('ROLLBACK');
+      throw error;
+    }
+  }
+
+  async deleteExpiredEmailData(account: string, receivedBefore: number): Promise<number> {
+    const result = this.statements.deleteExpiredEmailData.run(account, receivedBefore);
+    return Number(result.changes);
   }
 
   async close(): Promise<void> {

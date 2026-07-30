@@ -52,6 +52,12 @@ export class EmailDraftService {
     tone: GmailTone,
     background: boolean,
   ): Promise<GmailDraftResult> {
+    if (!this.settings.get().gmailAi.allowEmailBodyForAiDrafts) {
+      return {
+        ok: false,
+        error: 'Enable “Allow email bodies in AI draft prompts” in Gmail settings first.',
+      };
+    }
     const credentials = this.getCredentials();
     const email = await this.store.getCachedEmail(account, emailId);
     if (credentials === null || email === null) {
@@ -115,7 +121,8 @@ export class EmailDraftService {
   }
 
   enqueueEligible(account: string): void {
-    if (!this.settings.get().gmailAi.backgroundDraftsEnabled) return;
+    const preferences = this.settings.get().gmailAi;
+    if (!preferences.backgroundDraftsEnabled || !preferences.allowEmailBodyForAiDrafts) return;
     void this.collect(account);
   }
 

@@ -110,4 +110,41 @@ describe('InMemoryStorageAdapter email cache', () => {
     const rows = await store.listCachedEmails(existing.account, { sort: 'priority' });
     expect(rows.map((row) => row.emailId)).toEqual(['arriving', 'existing']);
   });
+
+  it('expires old records and deletes all account-scoped email state', async () => {
+    const store = new InMemoryStorageAdapter();
+    const old = email({ emailId: 'old', receivedAt: 100 });
+    const recent = email({ emailId: 'recent', receivedAt: 1_000 });
+    const other = email({
+      account: 'other@example.com',
+      emailId: 'other',
+      receivedAt: 100,
+    });
+    await store.replaceInboxSnapshot(old.account, [old, recent], 2_000);
+    await store.replaceInboxSnapshot(other.account, [other], 2_000);
+    await store.saveEmailDraft({
+      account: old.account,
+      emailId: old.emailId,
+      status: 'ready',
+      subject: 'Re: old',
+      body: 'draft',
+      error: null,
+    });
+    await store.saveGmailSyncState({
+      account: old.account,
+      uidValidity: '1',
+      lastSyncedAt: 2_000,
+      lastError: null,
+    });
+
+    expect(await store.deleteExpiredEmailData(old.account, 500)).toBe(1);
+    expect(await store.getCachedEmail(old.account, old.emailId)).toBeNull();
+    expect(await store.getCachedEmail(old.account, recent.emailId)).not.toBeNull();
+    expect(await store.getCachedEmail(other.account, other.emailId)).not.toBeNull();
+
+    expect(await store.deleteEmailData(old.account)).toBe(1);
+    expect(await store.getCachedEmail(old.account, recent.emailId)).toBeNull();
+    expect(await store.getGmailSyncState(old.account)).toBeNull();
+    expect(await store.getCachedEmail(other.account, other.emailId)).not.toBeNull();
+  });
 });

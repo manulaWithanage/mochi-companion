@@ -5,6 +5,7 @@ import { button, C, card, input, label } from '../ui.js';
 interface GmailSettingsPanelProps {
   readonly value: GmailAiSettings;
   readonly onSave: (value: GmailAiSettings) => Promise<void>;
+  readonly onClearLocalData: () => Promise<number>;
 }
 
 const URGENT_DELAYS = [
@@ -136,11 +137,17 @@ function DurationSelect({
   );
 }
 
-export function GmailSettingsPanel({ value, onSave }: GmailSettingsPanelProps): JSX.Element {
+export function GmailSettingsPanel({
+  value,
+  onSave,
+  onClearLocalData,
+}: GmailSettingsPanelProps): JSX.Element {
   const [draft, setDraft] = useState(value);
   const [vipText, setVipText] = useState(value.vipSenders.join('\n'));
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [clearing, setClearing] = useState(false);
+  const [clearMessage, setClearMessage] = useState<string | null>(null);
 
   useEffect(() => {
     setDraft(value);
@@ -168,6 +175,23 @@ export function GmailSettingsPanel({ value, onSave }: GmailSettingsPanelProps): 
     // Save in the background — don't block the preview on IMAP reconcile.
     void save();
     await window.mochi.gmail.previewAlert();
+  };
+
+  const clearLocalData = async (): Promise<void> => {
+    const confirmed = window.confirm(
+      'Delete cached Gmail metadata, priority results, generated drafts, and reminders from this device? Gmail itself will not be changed.',
+    );
+    if (!confirmed) return;
+    setClearing(true);
+    setClearMessage(null);
+    try {
+      const count = await onClearLocalData();
+      setClearMessage(`Deleted ${count} cached email${count === 1 ? '' : 's'}.`);
+    } catch {
+      setClearMessage('Could not delete cached Gmail data.');
+    } finally {
+      setClearing(false);
+    }
   };
 
   return (
@@ -253,6 +277,14 @@ export function GmailSettingsPanel({ value, onSave }: GmailSettingsPanelProps): 
             title="Prepare urgent replies"
             description="Generate drafts only for confident urgent messages that need a reply."
           />
+          <Toggle
+            checked={draft.allowEmailBodyForAiDrafts}
+            onChange={(allowEmailBodyForAiDrafts) =>
+              setDraft({ ...draft, allowEmailBodyForAiDrafts })
+            }
+            title="Allow email bodies in AI draft prompts"
+            description="Required for drafts. The complete message is sent to your selected AI provider; leave this off for metadata-only triage."
+          />
           <div
             style={{
               display: 'grid',
@@ -337,6 +369,66 @@ export function GmailSettingsPanel({ value, onSave }: GmailSettingsPanelProps): 
           <div style={{ color: C.faint, fontSize: 11.5, marginTop: 6 }}>
             One address per line. Invalid addresses are ignored safely.
           </div>
+        </section>
+
+        <section style={card}>
+          <h3 style={{ margin: '0 0 4px', fontSize: 15, color: C.text }}>
+            Privacy & local storage
+          </h3>
+          <p style={{ margin: '0 0 14px', color: C.dim, fontSize: 12, lineHeight: 1.5 }}>
+            Cached message fields and generated drafts are protected with your operating
+            system&apos;s encrypted storage.
+          </p>
+          <div style={{ marginBottom: 14 }}>
+            <span style={label}>Keep cached email data</span>
+            <select
+              id="gmail-cache-retention"
+              value={draft.localCacheRetentionDays}
+              onChange={(event) =>
+                setDraft({
+                  ...draft,
+                  localCacheRetentionDays: Number(event.target.value),
+                })
+              }
+              style={{ ...input, cursor: 'pointer' }}
+            >
+              {[1, 7, 14, 30, 90].map((days) => (
+                <option key={days} value={days}>
+                  {days === 1 ? '1 day' : `${days} days`}
+                </option>
+              ))}
+            </select>
+          </div>
+          <Toggle
+            checked={draft.deleteCachedDataOnDisconnect}
+            onChange={(deleteCachedDataOnDisconnect) =>
+              setDraft({ ...draft, deleteCachedDataOnDisconnect })
+            }
+            title="Delete cache on disconnect"
+            description="Removes this account’s metadata, AI results, drafts, reminders, and sync state."
+          />
+          <div
+            style={{
+              color: C.faint,
+              fontSize: 11.5,
+              lineHeight: 1.55,
+              margin: '12px 0',
+            }}
+          >
+            Priority refinement sends sender, subject, category, and at most 150 characters of the
+            cached snippet to the selected AI provider. Complete bodies are never used for triage.
+          </div>
+          <button
+            type="button"
+            onClick={() => void clearLocalData()}
+            disabled={clearing}
+            style={{ ...button('ghost'), opacity: clearing ? 0.6 : 1 }}
+          >
+            {clearing ? 'Deleting…' : 'Delete cached Gmail data now'}
+          </button>
+          {clearMessage !== null && (
+            <div style={{ color: C.good, fontSize: 11.5, marginTop: 8 }}>{clearMessage}</div>
+          )}
         </section>
 
         <section style={card}>

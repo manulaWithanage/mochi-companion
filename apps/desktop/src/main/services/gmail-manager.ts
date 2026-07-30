@@ -54,13 +54,7 @@ export class GmailManager {
   ) {
     this.vault = vault ?? new GmailVault();
     this.imap = imap ?? new GmailImapService();
-    this.triage = new EmailTriageService(
-      this.llmClient,
-      this.imap,
-      this.emailStore,
-      this.settings,
-      () => this.vault.reveal(),
-    );
+    this.triage = new EmailTriageService(this.llmClient, this.emailStore, this.settings);
     this.drafts = new EmailDraftService(
       this.llmClient,
       this.imap,
@@ -93,6 +87,7 @@ export class GmailManager {
     );
     this.syncService = new GmailSyncService(() => this.vault.reveal(), this.imap, emailStore, {
       onInboxChanged: async (account, newEmails) => {
+        await this.enforceRetention(account);
         // Publish the durable metadata snapshot immediately. LLM triage can be
         // slower or unavailable and must never delay a newly arrived message
         // from appearing in the Gmail tab.
@@ -160,11 +155,29 @@ export class GmailManager {
   }
 
   async disconnect(): Promise<void> {
+    const account = this.vault.email;
     this.drafts.stop();
     this.reminders.stop();
     await this.syncService.stop();
-    this.vault.clear();
+    try {
+      if (account !== null && this.settings.get().gmailAi.deleteCachedDataOnDisconnect) {
+        await this.emailStore.deleteEmailData(account);
+      }
+    } finally {
+      this.vault.clear();
+      this.emailCache = [];
+    }
+  }
+
+  async clearLocalData(): Promise<number> {
+    const account = this.vault.email;
+    if (account === null) return 0;
+    this.drafts.stop();
+    this.reminders.stop();
+    const deleted = await this.emailStore.deleteEmailData(account);
     this.emailCache = [];
+    this.notifyInbox(account, []);
+    return deleted;
   }
 
   async refresh(): Promise<GmailSyncStatus> {
@@ -220,10 +233,17 @@ export class GmailManager {
   async applyPreferences(rescorePriority = false): Promise<void> {
     const account = this.vault.email;
     if (account === null) return;
+    await this.enforceRetention(account);
     if (rescorePriority) await this.triage.classifyInbox(account, true);
     await this.reminders.reconcile(account);
     this.drafts.enqueueEligible(account);
     this.notifyInbox(account, []);
+  }
+
+  private async enforceRetention(account: string, now = Date.now()): Promise<number> {
+    const days = this.settings.get().gmailAi.localCacheRetentionDays;
+    const cutoff = now - days * 24 * 60 * 60_000;
+    return this.emailStore.deleteExpiredEmailData(account, cutoff);
   }
 
   async fetchMessageBody(emailId: string): Promise<string | null> {
@@ -310,6 +330,12 @@ export class GmailManager {
     emailUid: number,
     tone: GmailTone = 'professional',
   ): Promise<GmailDraftResult> {
+    if (!this.settings.get().gmailAi.allowEmailBodyForAiDrafts) {
+      return {
+        ok: false,
+        error: 'Enable “Allow email bodies in AI draft prompts” in Gmail settings first.',
+      };
+    }
     const credentials = this.vault.reveal();
     if (!credentials) {
       return { ok: false, error: 'No Gmail account connected.' };

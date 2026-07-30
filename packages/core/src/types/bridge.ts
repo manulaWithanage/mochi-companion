@@ -383,6 +383,8 @@ export interface MochiBridge {
     connect(email: string, appPassword: string): Promise<GmailConnectResult>;
     /** Remove stored Gmail credentials. */
     disconnect(): Promise<void>;
+    /** Delete the connected account's cached metadata, AI results, drafts and reminders. */
+    clearLocalData(): Promise<number>;
     /** Current connection status. */
     status(): Promise<GmailStatus>;
     /** Read the durable local inbox immediately, without waiting for Gmail. */
