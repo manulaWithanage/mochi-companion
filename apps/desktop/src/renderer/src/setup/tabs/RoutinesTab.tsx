@@ -5,7 +5,7 @@ import type {
   UserRoutine,
   UserRoutineInput,
 } from '@mochi/core';
-import { ROUTINE_PRESETS } from '@mochi/core';
+import { EMOJI_OPTIONS, ROUTINE_PRESETS } from '@mochi/core';
 import { button, C, card, h2, input, label, sub } from '../ui.js';
 
 const DAYS_MAP: { key: RoutineDay; label: string }[] = [
@@ -18,11 +18,11 @@ const DAYS_MAP: { key: RoutineDay; label: string }[] = [
   { key: 'sun', label: 'S' },
 ];
 
-const CATEGORY_MAP: Record<RoutineCategory, { label: string; icon: string; color: string }> = {
-  health: { label: 'Health & Wellness', icon: '💧', color: '#10b981' },
-  focus: { label: 'Deep Work', icon: '🎯', color: '#6366f1' },
-  mindfulness: { label: 'Mindful Break', icon: '🧘', color: '#ec4899' },
-  custom: { label: 'Custom Habit', icon: '⚡', color: '#f59e0b' },
+const CATEGORY_MAP: Record<RoutineCategory, { label: string; defaultIcon: string; color: string }> = {
+  health: { label: 'Health & Wellness', defaultIcon: '💧', color: '#10b981' },
+  focus: { label: 'Deep Work', defaultIcon: '🎯', color: '#6366f1' },
+  mindfulness: { label: 'Mindful Break', defaultIcon: '🧘', color: '#ec4899' },
+  custom: { label: 'Custom Habit', defaultIcon: '⚡', color: '#f59e0b' },
 };
 
 const Toggle = ({
@@ -69,7 +69,9 @@ export function RoutinesTab(): JSX.Element {
 
   // Form State
   const [title, setTitle] = useState('');
-  const [time, setTime] = useState('10:00');
+  const [selectedIcon, setSelectedIcon] = useState('💧');
+  const [times, setTimes] = useState<string[]>(['10:00']);
+  const [newTimeInput, setNewTimeInput] = useState('14:00');
   const [selectedDays, setSelectedDays] = useState<RoutineDay[]>([
     'mon',
     'tue',
@@ -89,7 +91,9 @@ export function RoutinesTab(): JSX.Element {
   const openNewForm = (): void => {
     setEditingId(null);
     setTitle('');
-    setTime('10:00');
+    setSelectedIcon('💧');
+    setTimes(['10:00']);
+    setNewTimeInput('14:00');
     setSelectedDays(['mon', 'tue', 'wed', 'thu', 'fri']);
     setCategory('health');
     setMochiReminder(true);
@@ -100,12 +104,28 @@ export function RoutinesTab(): JSX.Element {
   const openEditForm = (r: UserRoutine): void => {
     setEditingId(r.id);
     setTitle(r.title);
-    setTime(r.time);
+    setSelectedIcon(r.icon || CATEGORY_MAP[r.category]?.defaultIcon || '💧');
+    const existingTimes = r.times && r.times.length > 0 ? [...r.times] : [r.time || '10:00'];
+    setTimes(existingTimes);
+    setNewTimeInput('14:00');
     setSelectedDays([...r.days]);
     setCategory(r.category);
     setMochiReminder(r.mochiReminder);
     setReminderMessage(r.reminderMessage ?? '');
     setIsEditing(true);
+  };
+
+  const addTimeSlot = (): void => {
+    if (newTimeInput && !times.includes(newTimeInput)) {
+      const updated = [...times, newTimeInput].sort();
+      setTimes(updated);
+    }
+  };
+
+  const removeTimeSlot = (timeToRemove: string): void => {
+    if (times.length > 1) {
+      setTimes(times.filter((t) => t !== timeToRemove));
+    }
   };
 
   const toggleDay = (dayKey: RoutineDay): void => {
@@ -119,11 +139,13 @@ export function RoutinesTab(): JSX.Element {
   };
 
   const saveForm = async (): Promise<void> => {
-    if (!title.trim()) return;
+    if (!title.trim() || times.length === 0) return;
     const inputPayload: UserRoutineInput & { id?: string } = {
       ...(editingId ? { id: editingId } : {}),
       title: title.trim(),
-      time,
+      icon: selectedIcon,
+      time: times[0] || '10:00',
+      times,
       days: selectedDays,
       category,
       mochiReminder,
@@ -135,9 +157,12 @@ export function RoutinesTab(): JSX.Element {
   };
 
   const addPreset = async (preset: (typeof ROUTINE_PRESETS)[number]): Promise<void> => {
+    const presetTimes = preset.times && preset.times.length > 0 ? [...preset.times] : [preset.time];
     const updated = await window.mochi.userRoutines.save({
       title: preset.title,
-      time: preset.time,
+      icon: preset.icon,
+      time: presetTimes[0] || preset.time,
+      times: presetTimes,
       days: [...preset.days],
       category: preset.category,
       mochiReminder: preset.mochiReminder,
@@ -161,7 +186,7 @@ export function RoutinesTab(): JSX.Element {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 }}>
         <div>
           <h2 style={h2}>Personal Routines</h2>
-          <p style={sub}>Schedule daily habits & health breaks. Mochi will remind you on time.</p>
+          <p style={sub}>Schedule daily habits & health breaks with multiple times. Mochi will remind you on time.</p>
         </div>
         {!isEditing && (
           <button style={button('primary')} onClick={openNewForm}>
@@ -176,9 +201,11 @@ export function RoutinesTab(): JSX.Element {
           <div style={{ fontSize: 12, fontWeight: 600, color: C.dim, marginBottom: 10 }}>
             ⚡ QUICK ADD PRESETS
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: 8 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 10 }}>
             {ROUTINE_PRESETS.map((preset) => {
               const catInfo = CATEGORY_MAP[preset.category];
+              const displayIcon = preset.icon || catInfo.defaultIcon;
+              const displayTimes = preset.times && preset.times.length > 0 ? preset.times.join(', ') : preset.time;
               return (
                 <button
                   key={preset.title}
@@ -196,11 +223,13 @@ export function RoutinesTab(): JSX.Element {
                   onMouseEnter={(e) => (e.currentTarget.style.borderColor = catInfo.color)}
                   onMouseLeave={(e) => (e.currentTarget.style.borderColor = C.border)}
                 >
-                  <div style={{ fontSize: 16, marginBottom: 4 }}>{catInfo.icon}</div>
+                  <div style={{ fontSize: 18, marginBottom: 4 }}>{displayIcon}</div>
                   <div style={{ fontSize: 12.5, fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                     {preset.title}
                   </div>
-                  <div style={{ fontSize: 11, color: C.dim, marginTop: 2 }}>{preset.time}</div>
+                  <div style={{ fontSize: 11, color: C.dim, marginTop: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                    🕒 {displayTimes}
+                  </div>
                 </button>
               );
             })}
@@ -215,32 +244,128 @@ export function RoutinesTab(): JSX.Element {
             {editingId ? 'Edit Routine' : 'Create New Routine'}
           </div>
 
-          <div style={{ marginBottom: 12 }}>
+          {/* Title & Icon Row */}
+          <div style={{ marginBottom: 14 }}>
             <span style={label}>Routine Title</span>
-            <input
-              style={input}
-              placeholder="e.g., Morning Water & Stretch"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-            />
+            <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+              <input
+                style={{ ...input, flex: 1 }}
+                placeholder="e.g., Water & Hydration Break"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+              />
+            </div>
           </div>
 
-          <div style={{ display: 'flex', gap: 14, marginBottom: 14 }}>
-            <div style={{ flex: 1 }}>
-              <span style={label}>Time</span>
-              <input style={input} type="time" value={time} onChange={(e) => setTime(e.target.value)} />
+          {/* Custom Emoji Selector */}
+          <div style={{ marginBottom: 14 }}>
+            <span style={label}>Choose Icon</span>
+            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+              {EMOJI_OPTIONS.map((emoji) => (
+                <button
+                  key={emoji}
+                  type="button"
+                  onClick={() => setSelectedIcon(emoji)}
+                  style={{
+                    width: 34,
+                    height: 34,
+                    borderRadius: 8,
+                    border: `1px solid ${selectedIcon === emoji ? C.accent : C.border}`,
+                    background: selectedIcon === emoji ? `${C.accent}33` : '#1c1724',
+                    fontSize: 16,
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                >
+                  {emoji}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Multiple Times Selector */}
+          <div style={{ marginBottom: 14 }}>
+            <span style={label}>Reminder Times (Add multiple times during the day)</span>
+            
+            {/* Active Time Chips */}
+            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 10 }}>
+              {times.map((t) => (
+                <div
+                  key={t}
+                  style={{
+                    background: '#2a2236',
+                    border: `1px solid ${C.border}`,
+                    borderRadius: 20,
+                    padding: '4px 10px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 6,
+                    fontSize: 12,
+                    fontWeight: 600,
+                    color: C.accent,
+                  }}
+                >
+                  <span>🕒 {t}</span>
+                  {times.length > 1 && (
+                    <button
+                      type="button"
+                      onClick={() => removeTimeSlot(t)}
+                      style={{
+                        background: 'none',
+                        border: 'none',
+                        color: C.warn,
+                        cursor: 'pointer',
+                        padding: 0,
+                        fontSize: 13,
+                        lineHeight: 1,
+                      }}
+                    >
+                      ×
+                    </button>
+                  )}
+                </div>
+              ))}
             </div>
 
-            <div style={{ flex: 1 }}>
-              <span style={label}>Category</span>
-              <select style={input} value={category} onChange={(e) => setCategory(e.target.value as RoutineCategory)}>
-                {Object.entries(CATEGORY_MAP).map(([catKey, info]) => (
-                  <option key={catKey} value={catKey}>
-                    {info.icon} {info.label}
-                  </option>
-                ))}
-              </select>
+            {/* Add New Time Input */}
+            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+              <input
+                style={{ ...input, width: 120, marginBottom: 0 }}
+                type="time"
+                value={newTimeInput}
+                onChange={(e) => setNewTimeInput(e.target.value)}
+              />
+              <button
+                type="button"
+                style={{ ...button('ghost'), padding: '7px 12px', fontSize: 12 }}
+                onClick={addTimeSlot}
+              >
+                + Add Time
+              </button>
             </div>
+          </div>
+
+          <div style={{ marginBottom: 14 }}>
+            <span style={label}>Category</span>
+            <select
+              style={input}
+              value={category}
+              onChange={(e) => {
+                const cat = e.target.value as RoutineCategory;
+                setCategory(cat);
+                if (CATEGORY_MAP[cat]) {
+                  setSelectedIcon(CATEGORY_MAP[cat].defaultIcon);
+                }
+              }}
+            >
+              {Object.entries(CATEGORY_MAP).map(([catKey, info]) => (
+                <option key={catKey} value={catKey}>
+                  {info.defaultIcon} {info.label}
+                </option>
+              ))}
+            </select>
           </div>
 
           <div style={{ marginBottom: 14 }}>
@@ -276,7 +401,7 @@ export function RoutinesTab(): JSX.Element {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <div>
                 <div style={{ fontSize: 13, fontWeight: 500 }}>Remind with Mochi</div>
-                <div style={{ fontSize: 12, color: C.dim }}>Mochi will popup a cute reminder bubble when it's time.</div>
+                <div style={{ fontSize: 12, color: C.dim }}>Mochi will popup a cute reminder bubble at each specified time.</div>
               </div>
               <Toggle on={mochiReminder} onChange={setMochiReminder} />
             </div>
@@ -287,7 +412,7 @@ export function RoutinesTab(): JSX.Element {
               <span style={label}>Custom Mochi Speech (Optional)</span>
               <input
                 style={input}
-                placeholder="e.g., Time for a quick break! Stand up and drink some water."
+                placeholder="e.g., Time for a glass of water! Stand up and stretch."
                 value={reminderMessage}
                 onChange={(e) => setReminderMessage(e.target.value)}
               />
@@ -298,7 +423,7 @@ export function RoutinesTab(): JSX.Element {
             <button style={button('ghost')} onClick={() => setIsEditing(false)}>
               Cancel
             </button>
-            <button style={button('primary')} disabled={!title.trim()} onClick={() => void saveForm()}>
+            <button style={button('primary')} disabled={!title.trim() || times.length === 0} onClick={() => void saveForm()}>
               Save Routine
             </button>
           </div>
@@ -319,6 +444,9 @@ export function RoutinesTab(): JSX.Element {
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             {routines.map((r) => {
               const catInfo = CATEGORY_MAP[r.category] ?? CATEGORY_MAP.custom;
+              const displayIcon = r.icon || catInfo.defaultIcon;
+              const displayTimes = r.times && r.times.length > 0 ? r.times : [r.time];
+
               return (
                 <div
                   key={r.id}
@@ -347,7 +475,7 @@ export function RoutinesTab(): JSX.Element {
                         flexShrink: 0,
                       }}
                     >
-                      {catInfo.icon}
+                      {displayIcon}
                     </div>
 
                     <div style={{ flex: 1 }}>
@@ -367,8 +495,28 @@ export function RoutinesTab(): JSX.Element {
                         </span>
                       </div>
 
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 4 }}>
-                        <span style={{ fontSize: 12, fontWeight: 600, color: C.accent }}>🕒 {r.time}</span>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 4, flexWrap: 'wrap' }}>
+                        {/* Render all scheduled times */}
+                        <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
+                          <span style={{ fontSize: 12 }}>🕒</span>
+                          {displayTimes.map((t) => (
+                            <span
+                              key={t}
+                              style={{
+                                fontSize: 11.5,
+                                fontWeight: 600,
+                                color: C.accent,
+                                background: '#251e30',
+                                padding: '1px 6px',
+                                borderRadius: 4,
+                              }}
+                            >
+                              {t}
+                            </span>
+                          ))}
+                        </div>
+
+                        {/* Render active days */}
                         <div style={{ display: 'flex', gap: 3 }}>
                           {DAYS_MAP.map(({ key, label: dLabel }) => (
                             <span
