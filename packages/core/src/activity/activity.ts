@@ -23,6 +23,7 @@ export type ActivityCategory =
   | 'meeting'
   | 'browsing'
   | 'terminal'
+  | 'gaming'
   | 'other';
 
 export interface ActivityCategoryInfo {
@@ -40,11 +41,17 @@ export const ACTIVITY_CATEGORIES: readonly ActivityCategoryInfo[] = [
   { id: 'meeting', label: 'Meetings', focused: false },
   { id: 'communication', label: 'Chat & mail', focused: false },
   { id: 'browsing', label: 'Browsing', focused: false },
+  { id: 'gaming', label: 'Gaming', focused: false },
   { id: 'other', label: 'Other', focused: false },
 ];
 
 export function activityCategoryInfo(id: ActivityCategory): ActivityCategoryInfo {
-  return ACTIVITY_CATEGORIES.find((c) => c.id === id) ?? ACTIVITY_CATEGORIES[7]!;
+  // Found by id, not by index: an index-based fallback silently returns the
+  // wrong category the moment a new one is added above it.
+  return (
+    ACTIVITY_CATEGORIES.find((c) => c.id === id) ??
+    ACTIVITY_CATEGORIES.find((c) => c.id === 'other')!
+  );
 }
 
 interface AppRule {
@@ -167,11 +174,26 @@ const APP_RULES: readonly AppRule[] = [
   { process: 'vivaldi', app: 'Vivaldi', category: 'browsing' },
   { process: 'chromium', app: 'Chromium', category: 'browsing' },
 
+  // Gaming. Launchers are named; individual titles are left to the model,
+  // since no table will ever hold them all.
+  { process: 'steam', app: 'Steam', category: 'gaming' },
+  { process: 'steamwebhelper', app: 'Steam', category: 'gaming' },
+  { process: 'epicgameslauncher', app: 'Epic Games', category: 'gaming' },
+  { process: 'battle.net', app: 'Battle.net', category: 'gaming' },
+  { process: 'galaxyclient', app: 'GOG Galaxy', category: 'gaming' },
+  { process: 'riotclientux', app: 'Riot Client', category: 'gaming' },
+  { process: 'xboxapp', app: 'Xbox', category: 'gaming' },
+  { process: 'gamingservices', app: 'Xbox', category: 'gaming' },
+  { process: 'ubisoftconnect', app: 'Ubisoft Connect', category: 'gaming' },
+  { process: 'eadesktop', app: 'EA App', category: 'gaming' },
+  { process: 'minecraft', app: 'Minecraft', category: 'gaming' },
+  { process: 'javaw', app: 'Java app', category: 'other' },
+
   // Explicitly 'other', so the LLM is never asked about them
   { process: 'explorer', app: 'File Explorer', category: 'other' },
   { process: 'spotify', app: 'Spotify', category: 'other' },
   { process: 'vlc', app: 'VLC', category: 'other' },
-  { process: 'steam', app: 'Steam', category: 'other' },
+
   { process: 'systemsettings', app: 'Settings', category: 'other' },
   { process: 'lockapp', app: 'Lock screen', category: 'other' },
   { process: 'searchhost', app: 'Search', category: 'other' },
@@ -443,7 +465,8 @@ export function appCategoryPrompt(apps: readonly string[]): string {
   return [
     'Categorise each desktop application by what a person uses it for.',
     `Allowed categories: ${allowed}.`,
-    'Use "other" when unsure, when it is a system utility, or when it is entertainment.',
+    'Use "gaming" for games and game launchers.',
+    'Use "other" when unsure, or when it is a system utility.',
     'Reply with JSON only: an object mapping each name exactly as given to one category.',
     'No prose, no code fences, no extra keys.',
     '',

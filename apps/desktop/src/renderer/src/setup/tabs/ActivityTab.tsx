@@ -36,6 +36,7 @@ const CATEGORY_COLOUR: Record<ActivityCategory, string> = {
   meeting: '#ffb3c1',
   communication: '#f2d3a6',
   browsing: '#8f8aa3',
+  gaming: '#7fd8c8',
   other: '#5a5364',
 };
 

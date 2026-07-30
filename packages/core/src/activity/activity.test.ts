@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   ACTIVITY_CATEGORIES,
+  activityCategoryInfo,
   appCategoryPrompt,
   appsNeedingCategory,
   classifyProcess,
@@ -363,5 +364,35 @@ describe('appsNeedingCategory', () => {
   it('caps how many go in one request', () => {
     const spans = Array.from({ length: 40 }, (_, i) => longSpan(`App${i}`, 30));
     expect(appsNeedingCategory(spans, {}).length).toBeLessThanOrEqual(MAX_APPS_PER_REQUEST);
+  });
+});
+
+describe('gaming', () => {
+  it('recognises the launchers', () => {
+    expect(classifyProcess('Steam')).toEqual({ app: 'Steam', category: 'gaming' });
+    expect(classifyProcess('EpicGamesLauncher').category).toBe('gaming');
+    expect(classifyProcess('Battle.net').category).toBe('gaming');
+  });
+
+  it('leaves individual titles to the model', () => {
+    // No table will ever hold every game, which is what the learned map is for.
+    expect(classifyProcess('witcher3.exe').category).toBe('other');
+    expect(classifyProcess('witcher3.exe', { Witcher3: 'gaming' }).category).toBe('gaming');
+  });
+
+  it('offers gaming as a category the model may choose', () => {
+    expect(appCategoryPrompt(['Witcher3'])).toContain('gaming');
+  });
+
+  it('does not count as focused work', () => {
+    expect(activityCategoryInfo('gaming').focused).toBe(false);
+  });
+
+  it('resolves every category by id, not by position', () => {
+    // An index-based fallback silently returns the wrong category the moment a
+    // new one is added above it.
+    for (const c of ACTIVITY_CATEGORIES) {
+      expect(activityCategoryInfo(c.id).id).toBe(c.id);
+    }
   });
 });
