@@ -359,6 +359,13 @@ export function Overlay(): JSX.Element {
           onPointerMove={handlePointerMove}
           onPointerDown={handlePointerDown}
           onPointerUp={handlePointerUp}
+          onPointerCancel={(e) => {
+            drag.current.active = false;
+            if (e.currentTarget.hasPointerCapture(e.pointerId)) {
+              e.currentTarget.releasePointerCapture(e.pointerId);
+            }
+            setClickScale(1);
+          }}
           onPointerLeave={() => setInteractive(false)}
           onContextMenu={(e) => {
             e.preventDefault();

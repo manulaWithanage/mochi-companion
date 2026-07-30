@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   clampPosition,
+  clampToDisplays,
   defaultPosition,
   displayContaining,
   resolvePlacement,
@@ -49,8 +50,8 @@ describe('clampPosition', () => {
 });
 
 describe('defaultPosition', () => {
-  it('rests in the bottom-right with a margin', () => {
-    expect(defaultPosition(SIZE, laptop.workArea)).toEqual({ x: 1696, y: 816 });
+  it('rests in the top-right with a margin', () => {
+    expect(defaultPosition(SIZE, laptop.workArea)).toEqual({ x: 1696, y: 24 });
   });
 });
 
@@ -109,5 +110,26 @@ describe('displayContaining', () => {
 
   it('returns null for a point in no display', () => {
     expect(displayContaining({ x: 99_999, y: 0 }, [laptop])).toBeNull();
+  });
+});
+
+describe('clampToDisplays', () => {
+  it('allows smooth cross-boundary movement across multi-monitors', () => {
+    const rightMonitor: DisplayInfo = {
+      id: 2,
+      workArea: { x: 1920, y: 0, width: 1920, height: 1080 },
+    };
+    const res = clampToDisplays({ x: 1800, y: 100 }, SIZE, [laptop, rightMonitor], 1);
+    expect(res.position.x).toBe(1800);
+  });
+
+  it('clamps correctly when dragged past the far right of the multi-monitor setup', () => {
+    const res = clampToDisplays({ x: 5000, y: 100 }, SIZE, [laptop], 1);
+    expect(res.position).toEqual({ x: 1720, y: 100 });
+  });
+
+  it('clamps correctly when dragged past the top edge', () => {
+    const res = clampToDisplays({ x: 500, y: -500 }, SIZE, [laptop], 1);
+    expect(res.position.y).toBe(0);
   });
 });

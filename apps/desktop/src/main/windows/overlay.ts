@@ -14,6 +14,7 @@
 import { BrowserWindow, screen, powerMonitor, type Display } from 'electron';
 import { join } from 'node:path';
 import {
+  clampToDisplays,
   displayContaining,
   magicianDuration,
   magicianSequence,
@@ -63,7 +64,9 @@ export class OverlayWindow {
       y: placement.position.y,
       transparent: true,
       backgroundColor: '#00000000',
+      type: 'toolbar',
       frame: false,
+      thickFrame: false,
       resizable: false,
       maximizable: false,
       minimizable: false,
@@ -81,6 +84,8 @@ export class OverlayWindow {
         nodeIntegration: false,
       },
     });
+
+    this.win.setBackgroundColor('#00000000');
 
     // Respect alwaysOnTop setting
     if (alwaysOnTop) {
@@ -172,8 +177,8 @@ export class OverlayWindow {
   }
 
   /**
-   * Move by a delta in screen pixels, clamped to whichever display the mascot
-   * currently sits on. Called from the renderer while dragging.
+   * Move by a delta in screen pixels, clamped smoothly across active displays.
+   * Called from the renderer while dragging.
    */
   moveBy(dx: number, dy: number): void {
     const win = this.win;
@@ -183,16 +188,11 @@ export class OverlayWindow {
     const target: Point = { x: x + Math.round(dx), y: y + Math.round(dy) };
 
     const displays = screen.getAllDisplays().map(toDisplayInfo);
-    const host = displayContaining(target, displays) ?? displayContaining({ x, y }, displays);
+    const primaryId = screen.getPrimaryDisplay().id;
 
-    const placement = resolvePlacement(
-      { ...target, displayId: host?.id ?? screen.getPrimaryDisplay().id },
-      { width, height },
-      displays,
-      screen.getPrimaryDisplay().id,
-    );
+    const result = clampToDisplays(target, { width, height }, displays, primaryId);
 
-    win.setPosition(placement.position.x, placement.position.y);
+    win.setPosition(result.position.x, result.position.y);
     this.schedulePersist();
   }
 
