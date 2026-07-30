@@ -202,22 +202,24 @@ export function Dashboard(): JSX.Element {
       </nav>
 
       {/* ---- content ---- */}
-      <main style={{ flex: 1, overflowY: 'auto', padding: '24px 26px' }}>
-        {tab === 'today' && <TodayTab />}
-        {tab === 'time' && <TimeTab />}
-        {tab === 'routines' && <RoutinesTab />}
-        {tab === 'mochi' && <MochiTab />}
-        {tab === 'connections' && <ConnectionsTab />}
-        {tab === 'gmail' && <GmailTab />}
-        {tab === 'ai' && (
-          <div>
-            <h2 style={{ margin: '0 0 2px', fontSize: 19, fontWeight: 650 }}>AI</h2>
-            <p style={{ margin: '0 0 18px', fontSize: 13, color: C.dim }}>
-              Bring your own key, or run a local model. Mochi never sees your bill.
-            </p>
-            <AiSection />
-          </div>
-        )}
+      <main style={{ flex: 1, overflowY: 'auto', padding: '24px 28px', boxSizing: 'border-box' }}>
+        <div style={{ maxWidth: 960, margin: '0 auto' }}>
+          {tab === 'today' && <TodayTab />}
+          {tab === 'time' && <TimeTab />}
+          {tab === 'routines' && <RoutinesTab />}
+          {tab === 'mochi' && <MochiTab />}
+          {tab === 'connections' && <ConnectionsTab />}
+          {tab === 'gmail' && <GmailTab />}
+          {tab === 'ai' && (
+            <div>
+              <h2 style={{ margin: '0 0 2px', fontSize: 19, fontWeight: 650 }}>AI</h2>
+              <p style={{ margin: '0 0 18px', fontSize: 13, color: C.dim }}>
+                Bring your own key, or run a local model. Mochi never sees your bill.
+              </p>
+              <AiSection />
+            </div>
+          )}
+        </div>
       </main>
     </div>
   );

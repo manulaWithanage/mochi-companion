@@ -19,13 +19,13 @@ export class SetupWindow {
     }
 
     this.win = new BrowserWindow({
-      width: 780,
-      height: 620,
+      width: 960,
+      height: 680,
       resizable: true,
-      minWidth: 720,
-      minHeight: 560,
+      minWidth: 840,
+      minHeight: 600,
       minimizable: true,
-      maximizable: false,
+      maximizable: true,
       title: 'Mochi',
       backgroundColor: '#1b1720',
       show: false,
