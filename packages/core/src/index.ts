@@ -21,6 +21,7 @@ export * from './brain/graph.js';
 export * from './brain/confidence.js';
 export * from './brain/stats.js';
 export * from './brain/context.js';
+export * from './brain/eval.js';
 export * from './google/oauth.js';
 export * from './google/email-prompt.js';
 export * from './google/categories.js';
