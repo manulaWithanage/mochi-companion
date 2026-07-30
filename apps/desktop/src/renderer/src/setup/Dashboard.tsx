@@ -1,5 +1,5 @@
 import { useEffect, useState, type JSX } from 'react';
-import { elapsedMs, type MochiSettings, type TimerSnapshot, type WorkSession } from '@mochi/core';
+import { elapsedMs, formatDuration, type MochiSettings, type Project, type TimerSnapshot, type WorkSession } from '@mochi/core';
 import { C, humanDuration } from './ui.js';
 import { TodayTab } from './tabs/TodayTab.js';
 import { TimeTab } from './tabs/TimeTab.js';
@@ -34,11 +34,13 @@ export function Dashboard(): JSX.Element {
   const [tab, setTab] = useState<TabId>('today');
   const [settings, setSettings] = useState<MochiSettings | null>(null);
   const [timer, setTimer] = useState<TimerSnapshot | null>(null);
+  const [projects, setProjects] = useState<readonly Project[]>([]);
   const [todayMs, setTodayMs] = useState(0);
 
   useEffect(() => {
     void window.mochi.settings.get().then(setSettings);
     void window.mochi.timer.current().then(setTimer);
+    void window.mochi.projects.list().then(setProjects);
 
     const recalc = (sessions: readonly WorkSession[]): void => {
       const now = Date.now();
@@ -56,6 +58,7 @@ export function Dashboard(): JSX.Element {
     const offTimer = window.mochi.timer.onChange((snapshot) => {
       setTimer(snapshot);
       void window.mochi.timer.listSessions().then(recalc);
+      void window.mochi.projects.list().then(setProjects);
     });
     return () => {
       offSettings();
@@ -63,7 +66,18 @@ export function Dashboard(): JSX.Element {
     };
   }, []);
 
+  // Ticking live timer for sidebar card
+  useEffect(() => {
+    if (timer === null || !timer.running) return;
+    const id = setInterval(() => {
+      void window.mochi.timer.current().then(setTimer);
+    }, 1000);
+    return () => clearInterval(id);
+  }, [timer]);
+
   const running = timer?.running === true;
+  const activeProject = projects.find((p) => p.id === timer?.projectId);
+  const activeProjectName = activeProject?.name ?? 'General Focus';
 
   return (
     <div style={{ display: 'flex', height: '100vh', overflow: 'hidden', background: C.bg }}>
@@ -101,13 +115,21 @@ export function Dashboard(): JSX.Element {
                   padding: '6px 8px',
                   display: 'flex',
                   flexDirection: 'column',
-                  gap: 4,
+                  gap: 3,
                 }}
               >
-                <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, fontWeight: 600, color: C.text }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 10, fontWeight: 700, color: C.accent, textTransform: 'uppercase' }}>
                   <span style={{ width: 6, height: 6, borderRadius: '50%', background: C.accent, display: 'inline-block' }} />
                   <span>Tracking Active</span>
                 </div>
+                <div style={{ fontSize: 12, fontWeight: 700, color: C.text, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                  {activeProjectName}
+                </div>
+                {timer !== null && (
+                  <div style={{ fontSize: 11, fontWeight: 600, color: C.accent, fontVariantNumeric: 'tabular-nums' }}>
+                    {formatDuration(timer.elapsedMs)}
+                  </div>
+                )}
                 <button
                   onClick={() => void window.mochi.timer.stop().then(setTimer)}
                   style={{
@@ -123,6 +145,7 @@ export function Dashboard(): JSX.Element {
                     alignItems: 'center',
                     justifyContent: 'center',
                     gap: 3,
+                    marginTop: 2,
                   }}
                 >
                   ⏹ Stop Session
