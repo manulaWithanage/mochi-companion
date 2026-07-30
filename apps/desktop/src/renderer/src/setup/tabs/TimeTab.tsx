@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState, type JSX } from 'react';
-import { elapsedMs, type MochiSettings, type Project, type WorkSession } from '@mochi/core';
+import { elapsedMs, formatDuration, type MochiSettings, type Project, type TimerSnapshot, type WorkSession } from '@mochi/core';
 import { button, C, card, h2, humanDuration, input, label, sub } from '../ui.js';
 
 const QUICK_PRESETS = [
@@ -18,6 +18,7 @@ export function TimeTab(): JSX.Element {
   const [sessions, setSessions] = useState<readonly WorkSession[]>([]);
   const [projects, setProjects] = useState<readonly Project[]>([]);
   const [settings, setSettings] = useState<MochiSettings | null>(null);
+  const [timer, setTimer] = useState<TimerSnapshot | null>(null);
 
   // Form state
   const [newName, setNewName] = useState('');
@@ -30,10 +31,12 @@ export function TimeTab(): JSX.Element {
     const sList = await window.mochi.timer.listSessions();
     const pList = await window.mochi.projects.list();
     const setObj = await window.mochi.settings.get();
+    const tSnapshot = await window.mochi.timer.current();
 
     setSessions(sList);
     setProjects(pList);
     setSettings(setObj);
+    setTimer(tSnapshot);
 
     // Auto-seed top 3 unique projects as primary if none set
     if (setObj.primaryProjectIds.length === 0 && pList.length > 0) {
@@ -45,7 +48,8 @@ export function TimeTab(): JSX.Element {
   useEffect(() => {
     void reload();
     const offTimer = window.mochi.timer.onChange((s) => {
-      if (!s.running) void reload();
+      setTimer(s);
+      void reload();
     });
     const offSettings = window.mochi.settings.onChange(setSettings);
     return () => {
@@ -53,6 +57,15 @@ export function TimeTab(): JSX.Element {
       offSettings();
     };
   }, [reload]);
+
+  // Keep ticking while timer is running
+  useEffect(() => {
+    if (timer === null || !timer.running) return;
+    const id = setInterval(() => {
+      void window.mochi.timer.current().then(setTimer);
+    }, 1000);
+    return () => clearInterval(id);
+  }, [timer]);
 
   const togglePrimaryProject = useCallback(
     async (projectId: string) => {
@@ -76,6 +89,28 @@ export function TimeTab(): JSX.Element {
     [settings],
   );
 
+  const startOrStopSession = useCallback(
+    async (projectId: string) => {
+      if (timer?.running && timer.projectId === projectId) {
+        // Stop current session
+        const next = await window.mochi.timer.stop();
+        setTimer(next);
+      } else {
+        // Toggle/switch to this project (enforcing 1 active session at a time)
+        const next = await window.mochi.timer.toggle(projectId);
+        setTimer(next);
+      }
+      await reload();
+    },
+    [timer, reload],
+  );
+
+  const stopCurrentSession = useCallback(async () => {
+    const next = await window.mochi.timer.stop();
+    setTimer(next);
+    await reload();
+  }, [reload]);
+
   const createCategory = useCallback(
     async (nameOverride?: string, colourOverride?: string, iconOverride?: string) => {
       const rawName = (nameOverride || newName).trim();
@@ -84,7 +119,6 @@ export function TimeTab(): JSX.Element {
       const icon = iconOverride || selectedIcon;
       const fullDisplayName = `${icon} ${rawName}`;
 
-      // Deduplication check
       const existing = projects.find(
         (p) =>
           p.name.toLowerCase() === fullDisplayName.toLowerCase() ||
@@ -151,6 +185,11 @@ export function TimeTab(): JSX.Element {
     return { rows, grand };
   }, [sessions, projects]);
 
+  const activeProject = useMemo(() => {
+    if (!timer?.running) return null;
+    return projects.find((p) => p.id === timer.projectId) ?? null;
+  }, [timer, projects]);
+
   const primaryCount = settings?.primaryProjectIds.length ?? 0;
 
   return (
@@ -171,11 +210,80 @@ export function TimeTab(): JSX.Element {
         </button>
       </div>
 
+      {/* LIVE ACTIVE SESSION BAR (If session is running) */}
+      {timer?.running && activeProject && (
+        <div
+          style={{
+            background: `linear-gradient(135deg, ${activeProject.colour}22, rgba(25, 20, 32, 0.95))`,
+            border: `2px solid ${activeProject.colour}`,
+            boxShadow: `0 0 16px ${activeProject.colour}44`,
+            borderRadius: 14,
+            padding: '16px 20px',
+            marginBottom: 20,
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+            <div
+              style={{
+                width: 44,
+                height: 44,
+                borderRadius: 12,
+                background: `${activeProject.colour}33`,
+                border: `1px solid ${activeProject.colour}`,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: 22,
+              }}
+            >
+              {activeProject.name.slice(0, 2)}
+            </div>
+            <div>
+              <div style={{ fontSize: 11, fontWeight: 700, color: activeProject.colour, textTransform: 'uppercase', letterSpacing: '0.8px' }}>
+                🟢 CURRENTLY TRACKING SESSION (1 Active Max)
+              </div>
+              <div style={{ fontSize: 16, fontWeight: 700, color: C.text, marginTop: 2 }}>
+                {activeProject.name}
+              </div>
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+            <div style={{ fontVariantNumeric: 'tabular-nums', fontSize: 20, fontWeight: 700, color: C.accent }}>
+              {formatDuration(timer.elapsedMs)}
+            </div>
+            <button
+              onClick={() => void stopCurrentSession()}
+              style={{
+                background: C.warn,
+                color: '#ffffff',
+                border: 'none',
+                borderRadius: 8,
+                padding: '8px 16px',
+                fontSize: 13,
+                fontWeight: 700,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 6,
+                boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
+              }}
+            >
+              <span>⏹</span>
+              <span>Stop Session</span>
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Floating Mascot Badges Banner */}
       <div
         style={{
           background: 'linear-gradient(135deg, rgba(35, 27, 48, 0.9), rgba(22, 17, 30, 0.9))',
-          border: `1px solid ${C.accent}`,
+          border: `1px solid ${C.border}`,
           borderRadius: 14,
           padding: '14px 18px',
           marginBottom: 20,
@@ -193,7 +301,7 @@ export function TimeTab(): JSX.Element {
             </span>
           </div>
           <div style={{ fontSize: 12, color: C.dim, marginTop: 4 }}>
-            Click the star <strong>★</strong> on any category below to float its icon directly above Mochi on your desktop!
+            Pin up to 3 categories to float on Mochi's overlay. Clicking Mochi pops out these quick-tracker icons at the bottom!
           </div>
         </div>
 
@@ -356,16 +464,18 @@ export function TimeTab(): JSX.Element {
           totals.rows.map(({ project, ms, count }) => {
             const pct = totals.grand > 0 ? (ms / totals.grand) * 100 : 0;
             const isPrimary = settings?.primaryProjectIds.includes(project.id) === true;
+            const isRunningThis = timer?.running === true && timer.projectId === project.id;
 
             return (
               <div
                 key={project.id}
                 style={{
-                  background: '#181422',
-                  border: `1px solid ${isPrimary ? `${project.colour}66` : C.border}`,
+                  background: isRunningThis ? `${project.colour}18` : '#181422',
+                  border: `1px solid ${isRunningThis ? project.colour : isPrimary ? `${project.colour}55` : C.border}`,
                   borderRadius: 10,
                   padding: '12px 14px',
                   marginBottom: 10,
+                  transition: 'all 160ms ease',
                 }}
               >
                 <div
@@ -376,7 +486,7 @@ export function TimeTab(): JSX.Element {
                     marginBottom: 8,
                   }}
                 >
-                  {/* Category Name & Indicator */}
+                  {/* Category Name & Indicators */}
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                     <div
                       style={{
@@ -387,11 +497,32 @@ export function TimeTab(): JSX.Element {
                       }}
                     />
                     <span style={{ fontSize: 14, fontWeight: 600, color: C.text }}>{project.name}</span>
-                    {isPrimary && (
+                    
+                    {isRunningThis && (
                       <span
                         style={{
                           fontSize: 10.5,
-                          background: `${project.colour}33`,
+                          background: `${project.colour}44`,
+                          color: '#ffffff',
+                          border: `1px solid ${project.colour}`,
+                          padding: '2px 8px',
+                          borderRadius: 999,
+                          fontWeight: 700,
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 4,
+                        }}
+                      >
+                        <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#fff' }} />
+                        Tracking Active
+                      </span>
+                    )}
+
+                    {isPrimary && !isRunningThis && (
+                      <span
+                        style={{
+                          fontSize: 10.5,
+                          background: `${project.colour}22`,
                           color: project.colour,
                           padding: '1px 7px',
                           borderRadius: 999,
@@ -403,30 +534,46 @@ export function TimeTab(): JSX.Element {
                     )}
                   </div>
 
-                  {/* Actions */}
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                  {/* Actions & Start/Stop Button */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                     <span style={{ fontSize: 12, color: C.dim, fontVariantNumeric: 'tabular-nums' }}>
                       {humanDuration(ms)} · {count} session{count === 1 ? '' : 's'}
                     </span>
 
+                    {/* Start / Stop Tracking Button for this Category */}
                     <button
-                      onClick={() => void togglePrimaryProject(project.id)}
+                      onClick={() => void startOrStopSession(project.id)}
                       style={{
-                        background: isPrimary ? `${project.colour}33` : 'transparent',
-                        border: `1px solid ${isPrimary ? project.colour : C.border}`,
-                        color: isPrimary ? C.text : C.dim,
+                        background: isRunningThis ? C.warn : `${project.colour}22`,
+                        border: `1px solid ${isRunningThis ? C.warn : project.colour}`,
+                        color: isRunningThis ? '#ffffff' : C.text,
                         borderRadius: 6,
-                        padding: '4px 10px',
+                        padding: '4px 12px',
                         fontSize: 12,
                         fontWeight: 600,
                         cursor: 'pointer',
                         display: 'flex',
                         alignItems: 'center',
-                        gap: 4,
+                        gap: 5,
                       }}
                     >
-                      <span>{isPrimary ? '★' : '☆'}</span>
-                      <span>{isPrimary ? 'Pinned' : 'Pin to Mochi'}</span>
+                      <span>{isRunningThis ? '⏹ Stop' : '▶ Track'}</span>
+                    </button>
+
+                    <button
+                      onClick={() => void togglePrimaryProject(project.id)}
+                      style={{
+                        background: 'transparent',
+                        border: `1px solid ${isPrimary ? project.colour : C.border}`,
+                        color: isPrimary ? C.text : C.dim,
+                        borderRadius: 6,
+                        padding: '4px 8px',
+                        fontSize: 11,
+                        fontWeight: 600,
+                        cursor: 'pointer',
+                      }}
+                    >
+                      {isPrimary ? '★ Pinned' : '☆ Pin'}
                     </button>
 
                     {project.name !== 'General' && (

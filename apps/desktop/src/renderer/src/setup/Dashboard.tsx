@@ -80,30 +80,57 @@ export function Dashboard(): JSX.Element {
           background: '#191521',
         }}
       >
-        <div style={{ padding: '0 10px 14px' }}>
+        <div style={{ padding: '0 10px 14px', borderBottom: `1px solid ${C.border}`, marginBottom: 8 }}>
           <div style={{ fontSize: 15, fontWeight: 650 }}>{settings?.assistantName ?? 'Mochi'}</div>
           <div
             style={{
               fontSize: 11.5,
               color: running ? C.accent : C.faint,
-              marginTop: 3,
+              marginTop: 4,
               display: 'flex',
-              alignItems: 'center',
-              gap: 5,
+              flexDirection: 'column',
+              gap: 4,
             }}
           >
-            {running && (
-              <span
+            {running ? (
+              <div
                 style={{
-                  width: 6,
-                  height: 6,
-                  borderRadius: '50%',
-                  background: C.accent,
-                  display: 'inline-block',
+                  background: 'rgba(242, 166, 179, 0.15)',
+                  border: `1px solid ${C.accent}`,
+                  borderRadius: 8,
+                  padding: '6px 8px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: 4,
                 }}
-              />
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, fontWeight: 600, color: C.text }}>
+                  <span style={{ width: 6, height: 6, borderRadius: '50%', background: C.accent, display: 'inline-block' }} />
+                  <span>Tracking Active</span>
+                </div>
+                <button
+                  onClick={() => void window.mochi.timer.stop().then(setTimer)}
+                  style={{
+                    background: C.warn,
+                    color: '#fff',
+                    border: 'none',
+                    borderRadius: 5,
+                    padding: '3px 6px',
+                    fontSize: 10.5,
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: 3,
+                  }}
+                >
+                  ⏹ Stop Session
+                </button>
+              </div>
+            ) : (
+              <div>{humanDuration(todayMs)} today</div>
             )}
-            {running ? 'tracking now' : `${humanDuration(todayMs)} today`}
           </div>
         </div>
 
