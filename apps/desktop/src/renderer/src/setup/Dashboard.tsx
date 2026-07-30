@@ -8,6 +8,7 @@ import { MochiTab } from './tabs/MochiTab.js';
 import { ConnectionsTab } from './tabs/ConnectionsTab.js';
 import { AiSection } from './AiSection.js';
 import { GmailTab } from './tabs/GmailTab.js';
+import { CalendarTab } from './tabs/CalendarTab.js';
 
 /**
  * The dashboard shell.
@@ -18,10 +19,19 @@ import { GmailTab } from './tabs/GmailTab.js';
  * Connections had not even been built yet.
  */
 
-type TabId = 'today' | 'time' | 'routines' | 'mochi' | 'ai' | 'connections' | 'gmail';
+type TabId =
+  | 'today'
+  | 'calendar'
+  | 'time'
+  | 'routines'
+  | 'mochi'
+  | 'ai'
+  | 'connections'
+  | 'gmail';
 
 const TABS: readonly { id: TabId; label: string; icon: string }[] = [
   { id: 'today', label: 'Today', icon: '◔' },
+  { id: 'calendar', label: 'Calendar', icon: '▦' },
   { id: 'time', label: 'Time', icon: '▤' },
   { id: 'routines', label: 'Routines', icon: '◑' },
   { id: 'mochi', label: 'Mochi', icon: '✿' },
@@ -268,6 +278,7 @@ export function Dashboard(): JSX.Element {
           {tab === 'routines' && <RoutinesTab />}
           {tab === 'mochi' && <MochiTab />}
           {tab === 'connections' && <ConnectionsTab />}
+          {tab === 'calendar' && <CalendarTab />}
           {tab === 'gmail' && <GmailTab />}
           {tab === 'ai' && (
             <div>
