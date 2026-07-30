@@ -63,6 +63,7 @@ export class OverlayWindow {
       x: placement.position.x,
       y: placement.position.y,
       transparent: true,
+      backgroundColor: '#00000000',
       frame: false,
       resizable: false,
       maximizable: false,
