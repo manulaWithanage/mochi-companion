@@ -607,20 +607,63 @@ export function GmailTab(): JSX.Element {
                     {new Date(email.receivedAt).toLocaleString()}
                   </div>
                 </div>
-                <button
-                  id={`gmail-draft-btn-${email.uid}`}
-                  onClick={() => void handleGenerate(email)}
+                <div
                   style={{
-                    ...button('primary'),
-                    flexShrink: 0,
-                    fontSize: 12,
-                    padding: '7px 14px',
-                    whiteSpace: 'nowrap',
+                    display: 'flex',
+                    alignItems: 'flex-end',
+                    flexDirection: 'column',
+                    gap: 7,
                   }}
                 >
-                  ✦ Draft Reply
-                </button>
+                  <span
+                    style={{
+                      borderRadius: 999,
+                      padding: '3px 8px',
+                      fontSize: 10.5,
+                      fontWeight: 650,
+                      color:
+                        email.priority?.tier === 'urgent'
+                          ? '#ff8e8e'
+                          : email.priority?.tier === 'review'
+                            ? '#f0bd67'
+                            : C.faint,
+                      background:
+                        email.priority?.tier === 'urgent'
+                          ? 'rgba(255,80,80,0.12)'
+                          : email.priority?.tier === 'review'
+                            ? 'rgba(240,180,70,0.12)'
+                            : 'rgba(255,255,255,0.04)',
+                    }}
+                  >
+                    {email.priority?.tier === 'urgent'
+                      ? '🔴 Urgent'
+                      : email.priority?.tier === 'review'
+                        ? '🟡 Review'
+                        : email.priority === null
+                          ? 'Scoring…'
+                          : '⚪ Low'}
+                  </span>
+                  <button
+                    id={`gmail-draft-btn-${email.uid}`}
+                    onClick={() => void handleGenerate(email)}
+                    style={{
+                      ...button('primary'),
+                      flexShrink: 0,
+                      fontSize: 12,
+                      padding: '7px 14px',
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
+                    ✦ Draft Reply
+                  </button>
+                </div>
               </div>
+
+              {email.priority !== null && (
+                <div style={{ fontSize: 11.5, color: C.faint, fontStyle: 'italic' }}>
+                  {email.priority.reason}
+                </div>
+              )}
 
               {email.snippet.length > 0 && (
                 <div

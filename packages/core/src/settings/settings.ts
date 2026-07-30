@@ -14,6 +14,14 @@ export interface OverlayPosition {
   readonly displayId: number;
 }
 
+export interface GmailAiSettings {
+  readonly priorityEnabled: boolean;
+  readonly backgroundDraftsEnabled: boolean;
+  readonly vipSenders: readonly string[];
+  readonly defaultSort: 'priority' | 'recent';
+  readonly maxBackgroundDraftsPerSync: number;
+}
+
 export interface MochiSettings {
   readonly assistantName: string;
   readonly skinName: string;
@@ -41,6 +49,7 @@ export interface MochiSettings {
    * "use the documented default".
    */
   readonly localEndpoints: Readonly<Record<string, string>>;
+  readonly gmailAi: GmailAiSettings;
 }
 
 export const DEFAULT_SETTINGS: MochiSettings = {
@@ -54,6 +63,13 @@ export const DEFAULT_SETTINGS: MochiSettings = {
   centerScreenAlerts: true,
   primaryProjectIds: [],
   localEndpoints: {},
+  gmailAi: {
+    priorityEnabled: true,
+    backgroundDraftsEnabled: false,
+    vipSenders: [],
+    defaultSort: 'priority',
+    maxBackgroundDraftsPerSync: 3,
+  },
 };
 
 export const MAX_NAME_LENGTH = 24;
@@ -148,6 +164,30 @@ export function normalizeSettings(raw: unknown): {
     }
   }
 
+  let gmailAi = DEFAULT_SETTINGS.gmailAi;
+  const rawGmailAi = input.gmailAi;
+  if (typeof rawGmailAi === 'object' && rawGmailAi !== null) {
+    const value = rawGmailAi as Partial<Record<keyof GmailAiSettings, unknown>>;
+    const vipSenders = Array.isArray(value.vipSenders)
+      ? value.vipSenders
+          .filter((sender): sender is string => typeof sender === 'string')
+          .map((sender) => sender.trim().toLowerCase())
+          .filter((sender) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(sender))
+          .slice(0, 100)
+      : [];
+    gmailAi = {
+      priorityEnabled: value.priorityEnabled !== false,
+      backgroundDraftsEnabled: value.backgroundDraftsEnabled === true,
+      vipSenders,
+      defaultSort: value.defaultSort === 'recent' ? 'recent' : 'priority',
+      maxBackgroundDraftsPerSync:
+        typeof value.maxBackgroundDraftsPerSync === 'number' &&
+        Number.isFinite(value.maxBackgroundDraftsPerSync)
+          ? Math.min(10, Math.max(0, Math.floor(value.maxBackgroundDraftsPerSync)))
+          : DEFAULT_SETTINGS.gmailAi.maxBackgroundDraftsPerSync,
+    };
+  }
+
   return {
     settings: {
       assistantName,
@@ -160,6 +200,7 @@ export function normalizeSettings(raw: unknown): {
       centerScreenAlerts: input.centerScreenAlerts !== false,
       primaryProjectIds,
       localEndpoints,
+      gmailAi,
     },
     issues,
   };

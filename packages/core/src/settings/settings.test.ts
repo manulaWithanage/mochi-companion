@@ -64,4 +64,23 @@ describe('normalizeSettings', () => {
     expect(settings.setupCompleted).toBe(false);
     expect(settings.paused).toBe(false);
   });
+
+  it('normalizes Gmail AI preferences and VIP senders', () => {
+    const { settings } = normalizeSettings({
+      gmailAi: {
+        priorityEnabled: true,
+        backgroundDraftsEnabled: true,
+        vipSenders: [' VIP@Example.com ', 'not-an-email'],
+        defaultSort: 'recent',
+        maxBackgroundDraftsPerSync: 50,
+      },
+    });
+    expect(settings.gmailAi).toEqual({
+      priorityEnabled: true,
+      backgroundDraftsEnabled: true,
+      vipSenders: ['vip@example.com'],
+      defaultSort: 'recent',
+      maxBackgroundDraftsPerSync: 10,
+    });
+  });
 });

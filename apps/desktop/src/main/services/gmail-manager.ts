@@ -24,11 +24,13 @@ import { GmailVault } from '../storage/gmail-vault.js';
 import { GmailImapService } from './gmail-imap.js';
 import type { LlmClient } from './llm-client.js';
 import type { SettingsStore } from '../storage/settings-store.js';
+import { EmailTriageService } from './email-triage-service.js';
 import { GmailSyncService } from './gmail-sync-service.js';
 
 export class GmailManager {
   private readonly vault: GmailVault;
   private readonly imap: GmailImapService;
+  private readonly triage: EmailTriageService;
   private readonly syncService: GmailSyncService;
   private readonly inboxListeners = new Set<
     (account: string, newEmails: readonly CachedEmail[]) => void
@@ -46,8 +48,16 @@ export class GmailManager {
   ) {
     this.vault = vault ?? new GmailVault();
     this.imap = imap ?? new GmailImapService();
+    this.triage = new EmailTriageService(
+      this.llmClient,
+      this.imap,
+      this.emailStore,
+      this.settings,
+      () => this.vault.reveal(),
+    );
     this.syncService = new GmailSyncService(() => this.vault.reveal(), this.imap, emailStore, {
-      onInboxChanged: (account, newEmails) => {
+      onInboxChanged: async (account, newEmails) => {
+        await this.triage.classifyInbox(account);
         for (const listener of this.inboxListeners) listener(account, newEmails);
       },
       onStatus: (status) => {
