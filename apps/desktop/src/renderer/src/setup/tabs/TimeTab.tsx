@@ -231,6 +231,7 @@ export function TimeTab(): JSX.Element {
         }}
       >
         <button
+          type="button"
           onClick={() => setSubTab('categories')}
           style={{
             background: subTab === 'categories' ? C.accent : 'transparent',
@@ -251,6 +252,7 @@ export function TimeTab(): JSX.Element {
           <span>Categories & Mascot Badges</span>
         </button>
         <button
+          type="button"
           onClick={() => setSubTab('history')}
           style={{
             background: subTab === 'history' ? C.accent : 'transparent',
@@ -283,6 +285,7 @@ export function TimeTab(): JSX.Element {
               </p>
             </div>
             <button
+              type="button"
               style={button(showCreateForm ? 'ghost' : 'primary')}
               onClick={() => setShowCreateForm(!showCreateForm)}
             >
@@ -352,6 +355,7 @@ export function TimeTab(): JSX.Element {
                       {p && (
                         <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                           <button
+                            type="button"
                             title="Move Left"
                             disabled={slotIdx === 0}
                             onClick={() => void movePrimaryProject(slotIdx, 'left')}
@@ -372,6 +376,7 @@ export function TimeTab(): JSX.Element {
                             ◀
                           </button>
                           <button
+                            type="button"
                             title="Move Right"
                             disabled={slotIdx === (settings?.primaryProjectIds?.length ?? 0) - 1}
                             onClick={() => void movePrimaryProject(slotIdx, 'right')}
@@ -392,6 +397,7 @@ export function TimeTab(): JSX.Element {
                             ▶
                           </button>
                           <button
+                            type="button"
                             title="Unpin"
                             onClick={() => void togglePrimaryProject(p.id)}
                             style={{
@@ -457,6 +463,7 @@ export function TimeTab(): JSX.Element {
                     return (
                       <button
                         key={preset.name}
+                        type="button"
                         disabled={busy}
                         onClick={() => void createCategory(preset.name, preset.colour, preset.icon)}
                         style={{
@@ -538,6 +545,7 @@ export function TimeTab(): JSX.Element {
                     }}
                   />
                   <button
+                    type="button"
                     style={{ ...button('primary'), whiteSpace: 'nowrap' }}
                     disabled={busy || newName.trim().length === 0}
                     onClick={() => void createCategory()}
@@ -566,6 +574,7 @@ export function TimeTab(): JSX.Element {
               </div>
             ) : (
               totals.rows.map(({ project, ms, count }) => {
+                const pct = totals.grand > 0 ? (ms / totals.grand) * 100 : 0;
                 const primaryIndex = settings?.primaryProjectIds?.indexOf(project.id) ?? -1;
                 const isPrimary = primaryIndex !== -1;
                 const currentProjectId = timer?.projectId || timer?.session?.projectId || null;
@@ -632,6 +641,7 @@ export function TimeTab(): JSX.Element {
                         </span>
 
                         <button
+                          type="button"
                           onClick={() => void togglePrimaryProject(project.id)}
                           style={{
                             background: 'transparent',
@@ -649,6 +659,7 @@ export function TimeTab(): JSX.Element {
 
                         {/* Start / Stop Tracking Button */}
                         <button
+                          type="button"
                           onClick={() => void startOrStopSession(project.id)}
                           style={{
                             background: isRunningThis ? 'linear-gradient(135deg, #ff5e7e, #e63956)' : `${project.colour}22`,
@@ -670,6 +681,7 @@ export function TimeTab(): JSX.Element {
 
                         {project.name !== 'General' && (
                           <button
+                            type="button"
                             onClick={() => void archiveCategory(project.id)}
                             title="Delete category"
                             style={{
