@@ -308,7 +308,7 @@ export function TimeTab(): JSX.Element {
 
         {/* Selected Primary Pills Preview */}
         <div style={{ display: 'flex', gap: 8 }}>
-          {settings?.primaryProjectIds.map((id) => {
+          {(settings?.primaryProjectIds ?? []).map((id) => {
             const p = projects.find((x) => x.id === id);
             if (!p) return null;
             return (
@@ -464,6 +464,7 @@ export function TimeTab(): JSX.Element {
         ) : (
           totals.rows.map(({ project, ms, count }) => {
             const pct = totals.grand > 0 ? (ms / totals.grand) * 100 : 0;
+            const isPrimary = Boolean(settings?.primaryProjectIds?.includes(project.id));
             const currentProjectId = timer?.projectId || timer?.session?.projectId || null;
             const isRunningThis = timer?.running === true && currentProjectId === project.id;
 
