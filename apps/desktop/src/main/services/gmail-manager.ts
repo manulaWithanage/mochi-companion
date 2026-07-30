@@ -11,6 +11,7 @@ import type {
   CachedInboxItem,
   EmailStore,
   EmailCategory,
+  EventBus,
   GmailConnectResult,
   GmailDraftResult,
   GmailFetchResult,
@@ -25,12 +26,14 @@ import { GmailImapService } from './gmail-imap.js';
 import type { LlmClient } from './llm-client.js';
 import type { SettingsStore } from '../storage/settings-store.js';
 import { EmailTriageService } from './email-triage-service.js';
+import { EmailReminderService } from './email-reminder-service.js';
 import { GmailSyncService } from './gmail-sync-service.js';
 
 export class GmailManager {
   private readonly vault: GmailVault;
   private readonly imap: GmailImapService;
   private readonly triage: EmailTriageService;
+  private readonly reminders: EmailReminderService;
   private readonly syncService: GmailSyncService;
   private readonly inboxListeners = new Set<
     (account: string, newEmails: readonly CachedEmail[]) => void
@@ -43,6 +46,7 @@ export class GmailManager {
     private readonly llmClient: LlmClient,
     private readonly settings: SettingsStore,
     private readonly emailStore: EmailStore,
+    bus: EventBus,
     vault?: GmailVault,
     imap?: GmailImapService,
   ) {
@@ -55,9 +59,13 @@ export class GmailManager {
       this.settings,
       () => this.vault.reveal(),
     );
+    this.reminders = new EmailReminderService(bus, this.emailStore, this.imap, () =>
+      this.vault.reveal(),
+    );
     this.syncService = new GmailSyncService(() => this.vault.reveal(), this.imap, emailStore, {
       onInboxChanged: async (account, newEmails) => {
         await this.triage.classifyInbox(account);
+        await this.reminders.reconcile(account);
         for (const listener of this.inboxListeners) listener(account, newEmails);
       },
       onStatus: (status) => {
@@ -71,6 +79,7 @@ export class GmailManager {
   }
 
   async stop(): Promise<void> {
+    this.reminders.stop();
     await this.syncService.stop();
   }
 
@@ -115,6 +124,7 @@ export class GmailManager {
   }
 
   async disconnect(): Promise<void> {
+    this.reminders.stop();
     await this.syncService.stop();
     this.vault.clear();
     this.emailCache = [];

@@ -55,6 +55,11 @@ export type GmailInboxSnapshotResult =
     }
   | { readonly ok: false; readonly error: string };
 
+export interface SentThreadActivity {
+  readonly threadId: string;
+  readonly sentAt: number;
+}
+
 /**
  * Strip HTML tags and collapse whitespace for a clean plain-text body.
  */
@@ -307,6 +312,71 @@ export class GmailImapService {
         }
       }
       return null;
+    }
+  }
+
+  /** Retrieve recent sent-thread timestamps without downloading sent bodies. */
+  async fetchSentThreadActivity(
+    credentials: GmailCredentials,
+    since: Date,
+    limit = 200,
+  ): Promise<readonly SentThreadActivity[]> {
+    let client: import('imapflow').ImapFlow | null = null;
+    try {
+      const { ImapFlow } = await import('imapflow');
+      client = new ImapFlow({
+        host: 'imap.gmail.com',
+        port: 993,
+        secure: true,
+        auth: {
+          user: credentials.email,
+          pass: credentials.appPassword,
+        },
+        logger: false,
+      });
+      await client.connect();
+      const mailboxes = await client.list();
+      const sentPath =
+        mailboxes.find((mailbox) => mailbox.specialUse === '\\Sent')?.path ?? '[Gmail]/Sent Mail';
+      await client.mailboxOpen(sentPath);
+      const found = await client.search({ since }, { uid: true });
+      const uids = (found === false ? [] : found)
+        .sort((a, b) => b - a)
+        .slice(0, Math.min(500, Math.max(1, limit)));
+      const latest = new Map<string, number>();
+
+      if (uids.length > 0) {
+        for await (const message of client.fetch(
+          uids,
+          { uid: true, threadId: true, envelope: true, internalDate: true },
+          { uid: true },
+        )) {
+          if (message.threadId === undefined) continue;
+          const sentAt =
+            message.envelope?.date instanceof Date
+              ? message.envelope.date.getTime()
+              : message.internalDate instanceof Date
+                ? message.internalDate.getTime()
+                : 0;
+          if (sentAt > (latest.get(message.threadId) ?? 0)) {
+            latest.set(message.threadId, sentAt);
+          }
+        }
+      }
+
+      await client.logout();
+      return [...latest].map(([threadId, sentAt]) => ({ threadId, sentAt }));
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      console.error('[gmail-imap] sent-thread sync failed:', message);
+      if (client) {
+        try {
+          await client.logout();
+        } catch {
+          /* ignore logout errors */
+        }
+      }
+      return [];
     }
   }
 

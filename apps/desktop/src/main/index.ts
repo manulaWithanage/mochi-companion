@@ -142,7 +142,7 @@ async function bootstrap(): Promise<void> {
     },
   });
   const llmClient = new LlmClient(llm);
-  const gmailManager = new GmailManager(llmClient, settings, storage);
+  const gmailManager = new GmailManager(llmClient, settings, storage, bus);
   gmailManager.onInboxChanged((account, newEmails) => {
     setup.send('gmail:inboxChanged', {
       account,
