@@ -272,7 +272,7 @@ export class OverlayWindow {
 
   private isAnimatingToCenter = false;
 
-  async animateToCenterAndBack(durationMs = 7000): Promise<void> {
+  async animateToCenterAndBack(durationMs = 7500): Promise<void> {
     const win = this.win;
     if (win === null || win.isDestroyed() || this.isAnimatingToCenter) return;
     this.isAnimatingToCenter = true;
@@ -285,34 +285,15 @@ export class OverlayWindow {
       const targetX = Math.round(workArea.x + (workArea.width - OVERLAY_SIZE.width) / 2);
       const targetY = Math.round(workArea.y + (workArea.height - OVERLAY_SIZE.height) / 2);
 
-      const steps = 18;
-      const intervalMs = 18;
+      // Magician entrance: instant pop-in to center of screen (no sliding)
+      win.setPosition(targetX, targetY);
 
-      // Smooth glide to center
-      for (let i = 1; i <= steps; i++) {
-        if (win.isDestroyed()) break;
-        const progress = i / steps;
-        const ease = 1 - Math.pow(1 - progress, 3);
-        const currX = Math.round(origBounds.x + (targetX - origBounds.x) * ease);
-        const currY = Math.round(origBounds.y + (targetY - origBounds.y) * ease);
-        win.setPosition(currX, currY);
-        await new Promise((r) => setTimeout(r, intervalMs));
-      }
-
-      // Hold at center for reminder duration
+      // Hold at center for reminder alert duration
       await new Promise((r) => setTimeout(r, durationMs));
 
-      // Smooth glide back to original docked position
+      // Magician vanish: return to original position
       if (!win.isDestroyed()) {
-        for (let i = 1; i <= steps; i++) {
-          if (win.isDestroyed()) break;
-          const progress = i / steps;
-          const ease = 1 - Math.pow(1 - progress, 3);
-          const currX = Math.round(targetX + (origBounds.x - targetX) * ease);
-          const currY = Math.round(targetY + (origBounds.y - targetY) * ease);
-          win.setPosition(currX, currY);
-          await new Promise((r) => setTimeout(r, intervalMs));
-        }
+        win.setPosition(origBounds.x, origBounds.y);
       }
     } finally {
       this.isAnimatingToCenter = false;

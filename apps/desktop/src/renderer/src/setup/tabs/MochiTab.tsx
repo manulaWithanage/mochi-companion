@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, type JSX } from 'react';
 import { parseHhMm, type LoadedSkin, type MascotState, type MochiSettings, type SkinSummary } from '@mochi/core';
 import { button, C, card, h2, input, label, sub } from '../ui.js';
 
-const STATES: readonly MascotState[] = ['idle', 'working', 'resting'];
+const STATES: readonly MascotState[] = ['idle', 'working', 'resting', 'alert'];
 
 const Toggle = ({
   on,
