@@ -27,6 +27,7 @@ import {
 
 import { SqliteStorageAdapter } from './storage/sqlite-adapter.js';
 import { SettingsStore } from './storage/settings-store.js';
+import { UserRoutinesVault } from './storage/user-routines-vault.js';
 import { TimerService } from './services/timer-service.js';
 import { MascotService } from './services/mascot-service.js';
 import { OverlayWindow } from './windows/overlay.js';
@@ -81,6 +82,7 @@ function openStorage(): StorageAdapter {
 
 async function bootstrap(): Promise<void> {
   const settings = new SettingsStore();
+  const userRoutines = new UserRoutinesVault();
   const storage = openStorage();
   const timer = new TimerService(storage);
 
@@ -151,6 +153,7 @@ async function bootstrap(): Promise<void> {
     timer,
     mascot,
     settings,
+    userRoutines,
     storage,
     overlay,
     setup,

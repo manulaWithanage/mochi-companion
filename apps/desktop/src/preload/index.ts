@@ -33,6 +33,7 @@ import type {
   SkinSummary,
   Task,
   TimerSnapshot,
+  UserRoutine,
   WorkSession,
 } from '@mochi/core';
 
@@ -84,6 +85,17 @@ const bridge: MochiBridge = {
     setDoNotDisturb: (dnd) =>
       ipcRenderer.invoke('settings:setDoNotDisturb', dnd) as Promise<MochiSettings>,
     onChange: (listener) => subscribe<MochiSettings>('settings:changed', listener),
+  },
+
+  userRoutines: {
+    list: () => ipcRenderer.invoke('userRoutines:list') as Promise<readonly UserRoutine[]>,
+    save: (input) =>
+      ipcRenderer.invoke('userRoutines:save', input) as Promise<readonly UserRoutine[]>,
+    toggle: (id) =>
+      ipcRenderer.invoke('userRoutines:toggle', id) as Promise<readonly UserRoutine[]>,
+    remove: (id) =>
+      ipcRenderer.invoke('userRoutines:remove', id) as Promise<readonly UserRoutine[]>,
+    onChange: (listener) => subscribe<readonly UserRoutine[]>('userRoutines:changed', listener),
   },
 
   llm: {

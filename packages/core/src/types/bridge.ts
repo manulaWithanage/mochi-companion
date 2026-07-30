@@ -13,6 +13,7 @@ import type { EmailCategory } from '../google/categories.js';
 import type { DiscoveredModel, ProviderId } from '../llm/providers.js';
 import type { MascotState, WorkHours } from '../mascot/state.js';
 import type { MochiSettings } from '../settings/settings.js';
+import type { UserRoutine, UserRoutineInput } from '../routines/user-routines.js';
 import type { Project } from '../storage/adapter.js';
 import type { Task } from '../tasks/tasks.js';
 import type { WorkSession } from '../timer/session.js';
@@ -130,6 +131,14 @@ export interface MochiBridge {
     setPaused(paused: boolean): Promise<MochiSettings>;
     setDoNotDisturb(dnd: boolean): Promise<MochiSettings>;
     onChange(listener: (settings: MochiSettings) => void): () => void;
+  };
+
+  readonly userRoutines: {
+    list(): Promise<readonly UserRoutine[]>;
+    save(input: UserRoutineInput & { id?: string }): Promise<readonly UserRoutine[]>;
+    toggle(id: string): Promise<readonly UserRoutine[]>;
+    remove(id: string): Promise<readonly UserRoutine[]>;
+    onChange(listener: (routines: readonly UserRoutine[]) => void): () => void;
   };
 
   readonly llm: {

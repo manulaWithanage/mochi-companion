@@ -25,11 +25,13 @@ import type { OverlayWindow } from './windows/overlay.js';
 import type { SetupWindow } from './windows/setup.js';
 import { listSkins, loadSkin } from './services/skin-loader.js';
 import type { GmailManager } from './services/gmail-manager.js';
+import type { UserRoutinesVault } from './storage/user-routines-vault.js';
 
 export interface IpcContext {
   timer: TimerService;
   mascot: MascotService;
   settings: SettingsStore;
+  userRoutines: UserRoutinesVault;
   storage: StorageAdapter;
   overlay: OverlayWindow;
   setup: SetupWindow;
@@ -268,5 +270,29 @@ export function registerIpc(ctx: IpcContext): void {
   ipcMain.handle('gmail:saveDraft', (_e, request: unknown) => {
     const req = (request ?? {}) as import('@mochi/core').GmailSaveDraftRequest;
     return ctx.gmail.saveDraft(req);
+  });
+
+  // ---- user routines ----------------------------------------------------
+  ipcMain.handle('userRoutines:list', () => ctx.userRoutines.list());
+
+  ipcMain.handle('userRoutines:save', (_e, input: unknown) => {
+    const data = (input ?? {}) as import('@mochi/core').UserRoutineInput & { id?: string };
+    const result = ctx.userRoutines.save(data);
+    ctx.setup.send('userRoutines:changed', result);
+    return result;
+  });
+
+  ipcMain.handle('userRoutines:toggle', (_e, id: unknown) => {
+    const idStr = typeof id === 'string' ? id : '';
+    const result = ctx.userRoutines.toggle(idStr);
+    ctx.setup.send('userRoutines:changed', result);
+    return result;
+  });
+
+  ipcMain.handle('userRoutines:remove', (_e, id: unknown) => {
+    const idStr = typeof id === 'string' ? id : '';
+    const result = ctx.userRoutines.remove(idStr);
+    ctx.setup.send('userRoutines:changed', result);
+    return result;
   });
 }
