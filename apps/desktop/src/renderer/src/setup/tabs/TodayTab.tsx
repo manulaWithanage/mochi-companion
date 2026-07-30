@@ -5,10 +5,12 @@ import {
   dueToday,
   elapsedMs,
   inProgress,
+  needsReplyReminder,
   upcoming,
   progressForToday,
   sortForDisplay,
   taskDay,
+  type CachedInboxItem,
   type CalendarEvent,
   type CalendarStatus,
   type Project,
@@ -186,6 +188,111 @@ function ComingUp(): JSX.Element {
   );
 }
 
+/**
+ * Mail that is actually waiting on you.
+ *
+ * Filtered by needsReplyReminder, the same predicate the governor uses to
+ * decide whether an email is worth interrupting for — so this card and Mochi
+ * never disagree about what counts as urgent.
+ */
+function NeedsReply(): JSX.Element {
+  const [connected, setConnected] = useState<boolean | null>(null);
+  const [items, setItems] = useState<readonly CachedInboxItem[]>([]);
+
+  const reload = useCallback(() => {
+    void window.mochi.gmail
+      .listCached({ sort: 'priority', limit: 25 })
+      .then((all) => setItems(all.filter(needsReplyReminder).slice(0, 3)))
+      .catch(() => setItems([]));
+  }, []);
+
+  useEffect(() => {
+    void window.mochi.gmail.status().then((s) => {
+      setConnected(s.connected);
+      if (s.connected) reload();
+    });
+    return window.mochi.gmail.onInboxChanged(() => reload());
+  }, [reload]);
+
+  if (connected !== true) {
+    return (
+      <LockedCard
+        title="Needs a reply"
+        needs="EMAIL"
+        examples="Threads Mochi thinks are urgent, so the rest of the inbox can wait."
+      />
+    );
+  }
+
+  return (
+    <div style={{ ...card, flex: 1 }}>
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          marginBottom: 8,
+        }}
+      >
+        <strong style={{ fontSize: 13 }}>Needs a reply</strong>
+        {items.length > 0 && (
+          <span style={{ fontSize: 10.5, color: C.faint, letterSpacing: 0.4 }}>
+            {items.length} WAITING
+          </span>
+        )}
+      </div>
+
+      {items.length === 0 ? (
+        <div style={{ fontSize: 12, color: C.dim, lineHeight: 1.5 }}>
+          Nothing urgent. The rest of the inbox can wait.
+        </div>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          {items.map((email) => (
+            <div key={email.emailId} style={{ display: 'flex', gap: 8, alignItems: 'baseline' }}>
+              <span
+                style={{
+                  width: 5,
+                  height: 5,
+                  borderRadius: 5,
+                  flexShrink: 0,
+                  transform: 'translateY(-1px)',
+                  background: email.priority?.tier === 'urgent' ? C.warn : C.accent,
+                }}
+              />
+              <div style={{ minWidth: 0, flex: 1 }}>
+                <div
+                  style={{
+                    fontSize: 12.5,
+                    color: C.text,
+                    lineHeight: 1.35,
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  {email.subject}
+                </div>
+                <div
+                  style={{
+                    fontSize: 11,
+                    color: C.faint,
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  {email.fromName || email.fromAddress}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function TodayTab(): JSX.Element {
   const [sessions, setSessions] = useState<readonly WorkSession[]>([]);
   const [projects, setProjects] = useState<readonly Project[]>([]);
@@ -243,6 +350,7 @@ export function TodayTab(): JSX.Element {
   const open = sortForDisplay(dueToday(tasks, now), now);
   const progress = progressForToday(tasks, now);
   const peak = Math.max(1, ...last7.map((d) => d.ms));
+  const weekTotal = last7.reduce((sum, d) => sum + d.ms, 0);
 
   return (
     <div>
@@ -255,8 +363,12 @@ export function TodayTab(): JSX.Element {
 
       <div style={{ display: 'flex', gap: 10, marginBottom: 14 }}>
         <Stat value={humanDuration(todayMs)} caption="tracked today" accent />
+        {/*
+          An em-dash for "no tasks yet" read as a rendering fault rather than a
+          zero state. A plain 0 cannot be mistaken for something broken.
+        */}
         <Stat
-          value={progress.total === 0 ? '—' : `${progress.done}/${progress.total}`}
+          value={progress.total === 0 ? '0' : `${progress.done}/${progress.total}`}
           caption="tasks done"
         />
         <Stat
@@ -384,34 +496,86 @@ export function TodayTab(): JSX.Element {
         </div>
       </div>
 
-      {/* ---- not yet connected ---- */}
-      <div style={{ display: 'flex', gap: 10, marginBottom: 14 }}>
+      {/* ---- what is waiting ---- */}
+      <div style={{ display: 'flex', gap: 10, marginBottom: 14, alignItems: 'stretch' }}>
         <ComingUp />
-        <LockedCard
-          title="Needs a reply"
-          needs="EMAIL"
-          examples="Threads Mochi thinks are urgent, so the rest of the inbox can wait."
-        />
+        <NeedsReply />
       </div>
 
       {/* ---- week ---- */}
       <div style={card}>
-        <div style={{ fontSize: 12, color: C.dim, marginBottom: 12 }}>Last 7 days</div>
-        <div style={{ display: 'flex', alignItems: 'flex-end', gap: 8, height: 74 }}>
-          {last7.map((d, i) => (
-            <div key={d.key} style={{ flex: 1, textAlign: 'center' }}>
-              <div
-                title={humanDuration(d.ms)}
-                style={{
-                  height: Math.max(3, (d.ms / peak) * 52),
-                  borderRadius: 5,
-                  background: i === last7.length - 1 ? C.accent : C.borderStrong,
-                  transition: 'height 240ms ease',
-                }}
-              />
-              <div style={{ fontSize: 10, color: C.faint, marginTop: 6 }}>{d.label}</div>
-            </div>
-          ))}
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'baseline',
+            marginBottom: 14,
+          }}
+        >
+          <span style={{ fontSize: 12, color: C.dim }}>Last 7 days</span>
+          <span style={{ fontSize: 11.5, color: C.faint }}>
+            {weekTotal > 0 ? `${humanDuration(weekTotal)} total` : 'nothing tracked yet'}
+          </span>
+        </div>
+
+        <div style={{ display: 'flex', alignItems: 'flex-end', gap: 8, height: 96 }}>
+          {last7.map((d, i) => {
+            const isToday = i === last7.length - 1;
+            const filled = d.ms > 0 ? Math.max(4, (d.ms / peak) * 56) : 0;
+            return (
+              <div key={d.key} style={{ flex: 1, textAlign: 'center' }}>
+                <div
+                  style={{
+                    fontSize: 10,
+                    color: d.ms > 0 ? C.dim : 'transparent',
+                    marginBottom: 4,
+                    fontVariantNumeric: 'tabular-nums',
+                  }}
+                >
+                  {humanDuration(d.ms)}
+                </div>
+
+                {/*
+                  A track behind every bar. Previously an empty day rendered as
+                  a 3px sliver, which read as a rendering fault rather than as
+                  "nothing here" — the one thing a chart of mostly-empty days
+                  has to get right.
+                */}
+                <div
+                  title={`${d.label}: ${d.ms > 0 ? humanDuration(d.ms) : 'nothing tracked'}`}
+                  style={{
+                    height: 56,
+                    borderRadius: 6,
+                    background: 'rgba(255,255,255,0.035)',
+                    display: 'flex',
+                    alignItems: 'flex-end',
+                    overflow: 'hidden',
+                  }}
+                >
+                  <div
+                    style={{
+                      width: '100%',
+                      height: filled,
+                      borderRadius: 6,
+                      background: isToday ? C.accent : C.borderStrong,
+                      transition: 'height 240ms ease',
+                    }}
+                  />
+                </div>
+
+                <div
+                  style={{
+                    fontSize: 10,
+                    color: isToday ? C.accent : C.faint,
+                    marginTop: 6,
+                    fontWeight: isToday ? 600 : 400,
+                  }}
+                >
+                  {d.label}
+                </div>
+              </div>
+            );
+          })}
         </div>
       </div>
     </div>
