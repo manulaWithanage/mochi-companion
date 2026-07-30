@@ -16,6 +16,9 @@
 import { contextBridge, ipcRenderer, type IpcRendererEvent } from 'electron';
 import type {
   BubbleMessage,
+  CalendarConnectResult,
+  CalendarEvent,
+  CalendarStatus,
   CachedEmailQuery,
   CachedInboxItem,
   GoogleStatus,
@@ -150,6 +153,17 @@ const bridge: MochiBridge = {
       ipcRenderer.invoke('google:connect', clientId) as Promise<{ ok: boolean; error?: string }>,
     disconnect: () => ipcRenderer.invoke('google:disconnect') as Promise<GoogleStatus>,
     onChange: (listener) => subscribe<GoogleStatus>('google:changed', listener),
+  },
+
+  calendar: {
+    status: () => ipcRenderer.invoke('calendar:status') as Promise<CalendarStatus>,
+    // The feed URL goes to main and never comes back (RULE 1).
+    connect: (url, selfEmail) =>
+      ipcRenderer.invoke('calendar:connect', url, selfEmail) as Promise<CalendarConnectResult>,
+    disconnect: () => ipcRenderer.invoke('calendar:disconnect') as Promise<CalendarStatus>,
+    refresh: () => ipcRenderer.invoke('calendar:refresh') as Promise<CalendarStatus>,
+    events: () => ipcRenderer.invoke('calendar:events') as Promise<readonly CalendarEvent[]>,
+    onChange: (listener) => subscribe<CalendarStatus>('calendar:changed', listener),
   },
 
   skin: {

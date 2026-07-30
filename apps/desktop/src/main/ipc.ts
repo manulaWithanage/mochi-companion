@@ -66,6 +66,7 @@ export interface IpcContext {
     test(): Promise<{ ok: boolean; text: string; model?: string; tokens?: number }>;
   };
   gmail: GmailManager;
+  calendar: import('./services/calendar-service.js').CalendarService;
   userRoutineScheduler: import('./services/user-routine-scheduler.js').UserRoutineScheduler;
 }
 
@@ -356,6 +357,21 @@ export function registerIpc(ctx: IpcContext): void {
   ipcMain.on('window:closeSetup', () => ctx.setup.close());
 
   // ---- gmail -------------------------------------------------------------
+  // ---- calendar -----------------------------------------------------------
+  ipcMain.handle('calendar:status', () => ctx.calendar.status());
+
+  // The feed URL arrives here and stops here. Nothing returned contains it.
+  ipcMain.handle('calendar:connect', (_e, url: unknown, selfEmail: unknown) =>
+    ctx.calendar.connect(
+      typeof url === 'string' ? url : '',
+      typeof selfEmail === 'string' && selfEmail.length > 0 ? selfEmail : undefined,
+    ),
+  );
+
+  ipcMain.handle('calendar:disconnect', () => ctx.calendar.disconnect());
+  ipcMain.handle('calendar:refresh', () => ctx.calendar.refresh());
+  ipcMain.handle('calendar:events', () => ctx.calendar.cached);
+
   ipcMain.handle('gmail:status', () => ctx.gmail.status());
 
   ipcMain.handle('gmail:connect', async (_e, email: unknown, appPassword: unknown) => {

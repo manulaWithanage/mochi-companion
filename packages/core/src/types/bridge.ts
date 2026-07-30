@@ -9,6 +9,7 @@
  * is a compile error rather than a runtime `undefined is not a function`.
  */
 
+import type { CalendarEvent } from '../calendar/calendar.js';
 import type { EmailCategory } from '../google/categories.js';
 import type {
   CachedEmailQuery,
@@ -231,6 +232,23 @@ export interface MochiBridge {
     onChange(listener: (status: GoogleStatus) => void): () => void;
   };
 
+  readonly calendar: {
+    status(): Promise<CalendarStatus>;
+    /**
+     * Store a calendar feed URL after proving it works.
+     *
+     * The URL is a bearer credential — it grants read access to the whole
+     * calendar — so it crosses to main and never comes back (RULE 1).
+     */
+    connect(url: string, selfEmail?: string): Promise<CalendarConnectResult>;
+    disconnect(): Promise<CalendarStatus>;
+    /** Fetch now rather than waiting for the timer. */
+    refresh(): Promise<CalendarStatus>;
+    /** Everything cached, read from memory in main. */
+    events(): Promise<readonly CalendarEvent[]>;
+    onChange(listener: (status: CalendarStatus) => void): () => void;
+  };
+
   readonly skin: {
     load(name: string): Promise<LoadedSkin>;
     listAvailable(): Promise<readonly SkinSummary[]>;
@@ -338,6 +356,31 @@ export interface GmailStatus {
 export interface GmailConnectResult {
   readonly ok: boolean;
   readonly error?: string;
+}
+
+export interface CalendarStatus {
+  readonly connected: boolean;
+  /** Host only. The feed URL is a bearer credential and never crosses here. */
+  readonly redacted: string;
+  /** Epoch ms of the last successful fetch, or null if none has succeeded. */
+  readonly lastSyncAt: number | null;
+  /**
+   * Why the last fetch failed, if it did.
+   *
+   * Present alongside events from an earlier successful sync: a network blip
+   * should surface as a warning, not as an empty calendar.
+   */
+  readonly error?: string;
+  readonly eventCount: number;
+  /** True while a fetch is in flight, so the UI can show it rather than guess. */
+  readonly syncing: boolean;
+}
+
+export interface CalendarConnectResult {
+  readonly ok: boolean;
+  readonly error?: string;
+  /** How many events the first fetch found, so connecting confirms itself. */
+  readonly eventCount?: number;
 }
 
 export interface GmailEmailSummary {

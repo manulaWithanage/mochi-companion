@@ -41,6 +41,8 @@ import { ProviderService } from './services/provider-service.js';
 import { LlmClient } from './services/llm-client.js';
 import { GoogleService } from './services/google-service.js';
 import { GmailManager } from './services/gmail-manager.js';
+import { CalendarService } from './services/calendar-service.js';
+import { CalendarVault } from './storage/calendar-vault.js';
 import { registerIpc } from './ipc.js';
 
 interface SayOptions {
@@ -145,6 +147,9 @@ async function bootstrap(): Promise<void> {
     },
   });
   const llmClient = new LlmClient(llm);
+  const calendar = new CalendarService(new CalendarVault());
+  calendar.onChange((status) => setup.send('calendar:changed', status));
+  calendar.start();
   const gmailManager = new GmailManager(llmClient, settings, storage, bus);
   gmailManager.onInboxChanged((account, newEmails) => {
     setup.send('gmail:inboxChanged', {
@@ -209,6 +214,7 @@ async function bootstrap(): Promise<void> {
       },
     },
     gmail: gmailManager,
+    calendar,
   });
 
   llm.onChange((status) => setup.send('llm:changed', status));
