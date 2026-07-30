@@ -1,15 +1,42 @@
 import { useEffect, useRef, type JSX } from 'react';
+import { OVERLAY_SIZE, type SmokeMode } from '@mochi/core';
+
+/**
+ * The puff of smoke and the sparkles.
+ *
+ * Three things the first version got wrong, all of which read as "not smooth":
+ *
+ * 1. **Frame-rate-dependent physics.** `p.x += p.vx` every frame means the
+ *    whole effect runs 2.4x faster on a 144Hz display than on 60Hz. Everything
+ *    here integrates against elapsed milliseconds instead, so it looks the same
+ *    on any monitor.
+ * 2. **A clipped canvas.** It was 170x170 pinned to the bottom-right of a
+ *    340x300 window while the mascot sits centred in its own box, so smoke was
+ *    cut off on two sides and off-centre. It now covers the whole window and is
+ *    centred on the mascot.
+ * 3. **No exit.** The canvas unmounted mid-particle — a hard cut. `gather`
+ *    reverses the flow so the smoke draws back in before it goes.
+ *
+ * The rAF loop only runs while a phase is actually blowing smoke, and the
+ * component unmounts otherwise, so this costs nothing when idle (RULE 4).
+ */
 
 interface Particle {
+  /** Position, in canvas pixels. */
   x: number;
   y: number;
+  /** Velocity, in canvas pixels per second. */
   vx: number;
   vy: number;
   radius: number;
   maxRadius: number;
-  alpha: number;
-  decay: number;
-  color: string;
+  /** Seconds this particle lives for. */
+  life: number;
+  age: number;
+  hue: string;
+  /** Where it started, so `gather` can pull it back. */
+  originX: number;
+  originY: number;
 }
 
 interface Sparkle {
@@ -18,160 +45,231 @@ interface Sparkle {
   vx: number;
   vy: number;
   size: number;
-  alpha: number;
+  life: number;
+  age: number;
   spin: number;
-  color: string;
+  rotation: number;
+  colour: string;
 }
 
-interface SmokeEffectProps {
-  active: boolean;
+/** The canvas is the whole window so nothing clips at the edges. */
+const W = OVERLAY_SIZE.width;
+const H = OVERLAY_SIZE.height;
+
+/**
+ * Where the mascot's middle is.
+ *
+ * The mascot box is bottom-right anchored and 200x200, drawn at 170x170, so its
+ * centre is 85px in from each of those edges. Smoke centred anywhere else looks
+ * like it is happening next to Mochi rather than around Mochi.
+ */
+const CX = W - 100;
+const CY = H - 100;
+
+const SMOKE_TINTS = ['232, 219, 255', '255, 236, 246', '246, 240, 255'];
+const SPARKLE_COLOURS = ['#ffd76a', '#ff94e8', '#9fd8ff', '#fff6c9'];
+
+const rand = (min: number, max: number): number => min + Math.random() * (max - min);
+
+/** Ease-out: fast to begin, settling at the end. Smoke decelerates as it spreads. */
+const easeOut = (t: number): number => 1 - Math.pow(1 - t, 3);
+
+function makeParticles(mode: SmokeMode): Particle[] {
+  // More, smaller puffs read as a cloud; the original 18 large circles read as
+  // overlapping blobs.
+  const count = mode === 'gather' ? 22 : 30;
+  return Array.from({ length: count }, () => {
+    const angle = rand(0, Math.PI * 2);
+    // A ring rather than a point: smoke that all starts at one pixel looks like
+    // an explosion, not a puff.
+    const spread = rand(6, 26);
+    const speed = rand(26, 74);
+    const x = CX + Math.cos(angle) * spread;
+    const y = CY + Math.sin(angle) * spread;
+    return {
+      x,
+      y,
+      originX: x,
+      originY: y,
+      vx: Math.cos(angle) * speed,
+      // Biased upward: smoke rises, and it stops the cloud looking like a disc.
+      vy: Math.sin(angle) * speed - rand(14, 34),
+      radius: rand(7, 15),
+      maxRadius: rand(30, 54),
+      life: rand(0.62, 1.0),
+      age: 0,
+      hue: SMOKE_TINTS[Math.floor(rand(0, SMOKE_TINTS.length))] ?? SMOKE_TINTS[0]!,
+    };
+  });
 }
 
-export function SmokeEffect({ active }: SmokeEffectProps): JSX.Element | null {
+function makeSparkles(mode: SmokeMode): Sparkle[] {
+  const count = mode === 'gather' ? 10 : 18;
+  return Array.from({ length: count }, () => {
+    const angle = rand(0, Math.PI * 2);
+    const speed = rand(60, 150);
+    return {
+      x: CX + Math.cos(angle) * rand(0, 12),
+      y: CY + Math.sin(angle) * rand(0, 12),
+      vx: Math.cos(angle) * speed,
+      vy: Math.sin(angle) * speed - rand(30, 70),
+      size: rand(3, 7),
+      life: rand(0.55, 0.95),
+      age: 0,
+      spin: rand(-5, 5),
+      rotation: rand(0, Math.PI),
+      colour: SPARKLE_COLOURS[Math.floor(rand(0, SPARKLE_COLOURS.length))] ?? '#ffd76a',
+    };
+  });
+}
+
+function drawStar(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  outer: number,
+  rotation: number,
+  colour: string,
+  alpha: number,
+): void {
+  const inner = outer / 2.6;
+  ctx.save();
+  ctx.globalAlpha = alpha;
+  ctx.translate(x, y);
+  ctx.rotate(rotation);
+  ctx.beginPath();
+  // Four points: a twinkle, not a pentagram.
+  for (let i = 0; i < 8; i++) {
+    const r = i % 2 === 0 ? outer : inner;
+    const a = (Math.PI / 4) * i - Math.PI / 2;
+    const px = Math.cos(a) * r;
+    const py = Math.sin(a) * r;
+    if (i === 0) ctx.moveTo(px, py);
+    else ctx.lineTo(px, py);
+  }
+  ctx.closePath();
+  ctx.fillStyle = colour;
+  // The glow is what makes a flat polygon look like light.
+  ctx.shadowColor = colour;
+  ctx.shadowBlur = outer * 2.2;
+  ctx.fill();
+  ctx.restore();
+}
+
+export function SmokeEffect({ mode }: { readonly mode: SmokeMode }): JSX.Element | null {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
   useEffect(() => {
-    if (!active) return;
-
+    if (mode === null) return;
     const canvas = canvasRef.current;
     if (canvas === null) return;
     const ctx = canvas.getContext('2d');
     if (ctx === null) return;
 
-    const width = canvas.width;
-    const height = canvas.height;
-    const centerX = width / 2;
-    const centerY = height / 2 + 10;
+    const particles = makeParticles(mode);
+    const sparkles = makeSparkles(mode);
+    const gathering = mode === 'gather';
 
-    // Generate magician smoke clouds
-    const particles: Particle[] = Array.from({ length: 18 }, () => {
-      const angle = Math.random() * Math.PI * 2;
-      const speed = 0.8 + Math.random() * 1.8;
-      return {
-        x: centerX + (Math.random() - 0.5) * 20,
-        y: centerY + (Math.random() - 0.5) * 20,
-        vx: Math.cos(angle) * speed,
-        vy: Math.sin(angle) * speed - 0.5,
-        radius: 8 + Math.random() * 12,
-        maxRadius: 28 + Math.random() * 22,
-        alpha: 0.75,
-        decay: 0.015 + Math.random() * 0.015,
-        color: Math.random() > 0.4 ? 'rgba(230, 215, 255,' : 'rgba(255, 235, 245,',
-      };
-    });
+    let raf = 0;
+    let last = performance.now();
+    let running = true;
 
-    // Generate magician sparkles ✨
-    const sparkles: Sparkle[] = Array.from({ length: 14 }, () => {
-      const angle = Math.random() * Math.PI * 2;
-      const speed = 1.2 + Math.random() * 2.5;
-      return {
-        x: centerX,
-        y: centerY,
-        vx: Math.cos(angle) * speed,
-        vy: Math.sin(angle) * speed - 0.8,
-        size: 3 + Math.random() * 5,
-        alpha: 1,
-        spin: (Math.random() - 0.5) * 0.2,
-        color: Math.random() > 0.5 ? '#ffd700' : '#ff94e8',
-      };
-    });
+    const render = (now: number): void => {
+      // Clamped: a backgrounded window can hand back a delta of seconds, which
+      // would teleport every particle off screen in one step.
+      const dt = Math.min((now - last) / 1000, 1 / 20);
+      last = now;
 
-    let animationId: number;
-    const startTime = performance.now();
+      ctx.clearRect(0, 0, W, H);
+      let alive = false;
 
-    const drawStar = (cx: number, cy: number, spikes: number, outerRadius: number, innerRadius: number, color: string, alpha: number) => {
-      ctx.save();
-      ctx.globalAlpha = alpha;
-      ctx.beginPath();
-      let rot = (Math.PI / 2) * 3;
-      let x = cx;
-      let y = cy;
-      const step = Math.PI / spikes;
-
-      ctx.moveTo(cx, cy - outerRadius);
-      for (let i = 0; i < spikes; i++) {
-        x = cx + Math.cos(rot) * outerRadius;
-        y = cy + Math.sin(rot) * outerRadius;
-        ctx.lineTo(x, y);
-        rot += step;
-
-        x = cx + Math.cos(rot) * innerRadius;
-        y = cy + Math.sin(rot) * innerRadius;
-        ctx.lineTo(x, y);
-        rot += step;
-      }
-      ctx.lineTo(cx, cy - outerRadius);
-      ctx.closePath();
-      ctx.fillStyle = color;
-      ctx.fill();
-      ctx.restore();
-    };
-
-    const render = (now: number) => {
-      const elapsed = now - startTime;
-      ctx.clearRect(0, 0, width, height);
-
-      // Render magician smoke puff
       for (const p of particles) {
-        p.x += p.vx;
-        p.y += p.vy;
-        p.radius = Math.min(p.maxRadius, p.radius + 0.8);
-        p.alpha = Math.max(0, p.alpha - p.decay);
+        p.age += dt;
+        const t = Math.min(1, p.age / p.life);
+        if (t >= 1) continue;
+        alive = true;
 
-        if (p.alpha > 0) {
-          const gradient = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.radius);
-          gradient.addColorStop(0, `${p.color}${p.alpha})`);
-          gradient.addColorStop(0.6, `${p.color}${p.alpha * 0.5})`);
-          gradient.addColorStop(1, `${p.color}0)`);
-
-          ctx.fillStyle = gradient;
-          ctx.beginPath();
-          ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
-          ctx.fill();
+        if (gathering) {
+          // Pull back toward the origin and shrink, so the cloud closes up.
+          p.x = p.originX + (p.x - p.originX) * (1 - dt * 3.4);
+          p.y = p.originY + (p.y - p.originY) * (1 - dt * 3.4);
+          p.radius = Math.max(1, p.radius - dt * 44);
+        } else {
+          // Drag, so the spread decelerates instead of drifting at constant speed.
+          p.vx *= 1 - dt * 1.7;
+          p.vy *= 1 - dt * 1.7;
+          p.x += p.vx * dt;
+          p.y += p.vy * dt;
+          p.radius = p.radius + (p.maxRadius - p.radius) * easeOut(dt * 3.2);
         }
+
+        // Fade in briefly then out, so particles do not pop into existence at
+        // full strength.
+        const fadeIn = Math.min(1, p.age / 0.09);
+        const alpha = 0.72 * fadeIn * (1 - easeOut(t));
+        if (alpha <= 0.004) continue;
+
+        const g = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.radius);
+        g.addColorStop(0, `rgba(${p.hue}, ${alpha})`);
+        g.addColorStop(0.55, `rgba(${p.hue}, ${alpha * 0.45})`);
+        g.addColorStop(1, `rgba(${p.hue}, 0)`);
+        ctx.fillStyle = g;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+        ctx.fill();
       }
 
-      // Render sparkles ✨
       for (const s of sparkles) {
-        s.x += s.vx;
-        s.y += s.vy;
-        s.alpha = Math.max(0, s.alpha - 0.022);
+        s.age += dt;
+        const t = Math.min(1, s.age / s.life);
+        if (t >= 1) continue;
+        alive = true;
 
-        if (s.alpha > 0) {
-          drawStar(s.x, s.y, 4, s.size, s.size / 2.5, s.color, s.alpha);
+        if (gathering) {
+          s.x += (CX - s.x) * dt * 3.2;
+          s.y += (CY - s.y) * dt * 3.2;
+        } else {
+          s.vx *= 1 - dt * 1.2;
+          // Gravity, so sparkles arc and fall rather than flying away flat.
+          s.vy += 150 * dt;
+          s.x += s.vx * dt;
+          s.y += s.vy * dt;
         }
+        s.rotation += s.spin * dt;
+
+        // Twinkle rather than a linear fade — sparkles that dim evenly look
+        // like dots, not light.
+        const twinkle = 0.65 + 0.35 * Math.sin(s.age * 22);
+        drawStar(ctx, s.x, s.y, s.size * (1 - t * 0.45), s.rotation, s.colour, (1 - t) * twinkle);
       }
 
-      if (elapsed < 1800) {
-        animationId = requestAnimationFrame(render);
-      } else {
-        ctx.clearRect(0, 0, width, height);
-      }
+      if (running && alive) raf = requestAnimationFrame(render);
+      else ctx.clearRect(0, 0, W, H);
     };
 
-    animationId = requestAnimationFrame(render);
-
+    raf = requestAnimationFrame(render);
     return () => {
-      cancelAnimationFrame(animationId);
-      if (ctx) ctx.clearRect(0, 0, width, height);
+      running = false;
+      cancelAnimationFrame(raf);
+      ctx.clearRect(0, 0, W, H);
     };
-  }, [active]);
+  }, [mode]);
 
-  if (!active) return null;
+  if (mode === null) return null;
 
   return (
     <canvas
       ref={canvasRef}
-      width={220}
-      height={220}
+      width={W}
+      height={H}
       style={{
         position: 'absolute',
-        bottom: 0,
-        right: 0,
-        width: 170,
-        height: 170,
+        inset: 0,
+        width: W,
+        height: H,
         pointerEvents: 'none',
-        zIndex: 5,
+        // Above the mascot: smoke passing in front is what conceals it.
+        zIndex: 6,
       }}
     />
   );

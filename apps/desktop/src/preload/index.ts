@@ -25,6 +25,7 @@ import type {
   KeyResult,
   LlmStatus,
   LoadedSkin,
+  MagicianPhase,
   MascotState,
   MochiBridge,
   MochiSettings,
@@ -155,6 +156,7 @@ const bridge: MochiBridge = {
     setInteractive: (interactive) => ipcRenderer.send('overlay:setInteractive', interactive),
     dragBy: (dx, dy) => ipcRenderer.send('overlay:dragBy', dx, dy),
     onVisibilityChange: (listener) => subscribe<boolean>('overlay:visibility', listener),
+    onMagicianPhase: (listener) => subscribe<MagicianPhase>('overlay:magician', listener),
   },
 
   window: {

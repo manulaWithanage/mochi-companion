@@ -52,7 +52,7 @@ export class UserRoutineScheduler {
     );
 
     if (this.settings.get().centerScreenAlerts !== false) {
-      void this.overlay.animateToCenterAndBack(8000);
+      void this.overlay.performMagicianAlert(6000);
     }
   }
 

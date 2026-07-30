@@ -15,6 +15,8 @@ import { BrowserWindow, screen, powerMonitor, type Display } from 'electron';
 import { join } from 'node:path';
 import {
   displayContaining,
+  magicianDuration,
+  magicianSequence,
   OVERLAY_SIZE,
   resolvePlacement,
   type DisplayInfo,
@@ -201,6 +203,10 @@ export class OverlayWindow {
   }
 
   private schedulePersist(): void {
+    // Never save a position the performance put us in. The debounce is shorter
+    // than the centre-screen hold, so without this an alert wrote centre screen
+    // as the mascot's home and a crash mid-performance stranded it there.
+    if (this.performing) return;
     if (this.saveTimer !== null) clearTimeout(this.saveTimer);
     this.saveTimer = setTimeout(() => {
       this.saveTimer = null;
@@ -270,52 +276,60 @@ export class OverlayWindow {
     else win.show();
   }
 
-  private isAnimatingToCenter = false;
+  private performing = false;
 
-  async animateToCenterAndBack(durationMs = 8000): Promise<void> {
+  /**
+   * The magician entrance: vanish here, reappear centre screen, deliver the
+   * reminder, vanish again.
+   *
+   * The window is only ever repositioned during a phase in which the renderer
+   * has faded the mascot to zero opacity — `magicianSequence` encodes that, and
+   * a test asserts it. The previous version interpolated `setPosition` over 14
+   * steps with the mascot fully visible, which cannot be smooth: each call is a
+   * synchronous OS window move, none of them are vsync-aligned, and crossing a
+   * wide screen in 14 steps is ~100px per jump.
+   *
+   * Phases are pushed to the renderer rather than inferred there. Both sides
+   * previously ran their own timers off the same trigger, so the smoke fired
+   * while the window was still travelling instead of on arrival.
+   */
+  async performMagicianAlert(holdMs = 6000): Promise<void> {
     const win = this.win;
-    if (win === null || win.isDestroyed() || this.isAnimatingToCenter) return;
-    this.isAnimatingToCenter = true;
+    // Overlapping performances would fight over the window position and leave
+    // the mascot stranded centre screen.
+    if (win === null || win.isDestroyed() || this.performing) return;
+    this.performing = true;
+
+    const home = win.getBounds();
+    const { workArea } = screen.getPrimaryDisplay();
+    const centre = {
+      x: Math.round(workArea.x + (workArea.width - OVERLAY_SIZE.width) / 2),
+      y: Math.round(workArea.y + (workArea.height - OVERLAY_SIZE.height) / 2),
+    };
+
+    console.log(
+      `[magician] performing: ${magicianDuration(holdMs)}ms total, ` +
+        `home ${home.x},${home.y} -> centre ${centre.x},${centre.y}`,
+    );
 
     try {
-      const origBounds = win.getBounds();
-      const primaryDisplay = screen.getPrimaryDisplay();
-      const workArea = primaryDisplay.workArea;
+      for (const step of magicianSequence(holdMs)) {
+        if (win.isDestroyed()) return;
 
-      const targetX = Math.round(workArea.x + (workArea.width - OVERLAY_SIZE.width) / 2);
-      const targetY = Math.round(workArea.y + (workArea.height - OVERLAY_SIZE.height) / 2);
+        if (step.moveTo === 'centre') win.setPosition(centre.x, centre.y);
+        else if (step.moveTo === 'home') win.setPosition(home.x, home.y);
 
-      const steps = 14;
-      const intervalMs = 22;
-
-      // Balanced smooth float to center
-      for (let i = 1; i <= steps; i++) {
-        if (win.isDestroyed()) break;
-        const progress = i / steps;
-        const ease = 1 - Math.pow(1 - progress, 3);
-        const currX = Math.round(origBounds.x + (targetX - origBounds.x) * ease);
-        const currY = Math.round(origBounds.y + (targetY - origBounds.y) * ease);
-        win.setPosition(currX, currY);
-        await new Promise((r) => setTimeout(r, intervalMs));
-      }
-
-      // Hold at center during reminder alert duration
-      await new Promise((r) => setTimeout(r, durationMs));
-
-      // Balanced smooth float back to original docked position
-      if (!win.isDestroyed()) {
-        for (let i = 1; i <= steps; i++) {
-          if (win.isDestroyed()) break;
-          const progress = i / steps;
-          const ease = 1 - Math.pow(1 - progress, 3);
-          const currX = Math.round(targetX + (origBounds.x - targetX) * ease);
-          const currY = Math.round(targetY + (origBounds.y - targetY) * ease);
-          win.setPosition(currX, currY);
-          await new Promise((r) => setTimeout(r, intervalMs));
-        }
+        this.send('overlay:magician', step.phase);
+        if (step.durationMs > 0) await new Promise((r) => setTimeout(r, step.durationMs));
       }
     } finally {
-      this.isAnimatingToCenter = false;
+      this.performing = false;
+      // Whatever happened, the mascot must not be left mid-fade or parked in
+      // the middle of the screen.
+      if (!win.isDestroyed()) {
+        win.setPosition(home.x, home.y);
+        this.send('overlay:magician', 'none');
+      }
     }
   }
 

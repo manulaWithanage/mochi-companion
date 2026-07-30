@@ -10,6 +10,7 @@
  */
 
 import type { EmailCategory } from '../google/categories.js';
+import type { MagicianPhase } from '../mascot/magician.js';
 import type { DiscoveredModel, ProviderId } from '../llm/providers.js';
 import type { MascotState, WorkHours } from '../mascot/state.js';
 import type { MochiSettings } from '../settings/settings.js';
@@ -246,6 +247,16 @@ export interface MochiBridge {
     dragBy(dx: number, dy: number): void;
     /** True while the window is hidden/occluded so the renderer stops drawing. */
     onVisibilityChange(listener: (visible: boolean) => void): () => void;
+    /**
+     * Which stage of the magician entrance is running.
+     *
+     * Pushed from main, never inferred here. Both sides used to run their own
+     * timers from the same trigger, so the smoke fired while the window was
+     * still travelling; and the renderer decided whether to perform at all by
+     * substring-matching the bubble subject for "routine", which fired the whole
+     * production for ordinary nudges.
+     */
+    onMagicianPhase(listener: (phase: MagicianPhase) => void): () => void;
   };
 
   readonly window: {

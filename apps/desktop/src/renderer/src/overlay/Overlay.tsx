@@ -1,9 +1,13 @@
 import { useCallback, useEffect, useRef, useState, type JSX } from 'react';
 import {
   formatDuration,
+  isAlertPhase,
+  magicianPose,
   MASCOT_BOX,
+  smokeMode,
   type BubbleMessage,
   type LoadedSkin,
+  type MagicianPhase,
   type MascotState,
   type TimerSnapshot,
 } from '@mochi/core';
@@ -26,7 +30,12 @@ export function Overlay(): JSX.Element {
   const [timer, setTimer] = useState<TimerSnapshot | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [bubble, setBubble] = useState<string | null>(null);
-  const [showSmoke, setShowSmoke] = useState(false);
+  /**
+   * Driven entirely by main. The renderer has no business deciding when a
+   * performance happens — it used to infer it by looking for "routine" in the
+   * bubble subject, which fired the whole entrance for ordinary nudges.
+   */
+  const [phase, setPhase] = useState<MagicianPhase>('none');
   const bubbleSubject = useRef<string | null>(null);
   const bubbleTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
@@ -60,10 +69,6 @@ export function Overlay(): JSX.Element {
     if (bubbleTimer.current !== undefined) clearTimeout(bubbleTimer.current);
     bubbleTimer.current = undefined;
     setBubble(null);
-    setShowSmoke(false);
-
-    // Restore normal facial expression after alert
-    void window.mochi.mascot.current().then(setMascotState);
 
     if (bubbleSubject.current !== null) {
       window.mochi.bubble.dismiss(bubbleSubject.current);
@@ -77,46 +82,55 @@ export function Overlay(): JSX.Element {
       bubbleSubject.current = message.subject;
       setBubble(message.text);
 
-      const isRoutineAlert = message.subject.includes('routine');
-
-      if (isRoutineAlert) {
-        // Magician entrance smoke cloud & alert face ONLY for routine reminders!
-        setShowSmoke(true);
-        setMascotState('alert');
-      }
-
-      const smokeTimeout = setTimeout(() => setShowSmoke(false), 2000);
-
       bubbleTimer.current = setTimeout(() => {
-        clearTimeout(smokeTimeout);
         bubbleSubject.current = null;
         setBubble(null);
-        setShowSmoke(false);
-        if (isRoutineAlert) {
-          void window.mochi.mascot.current().then(setMascotState);
-        }
       }, message.ttlMs);
     });
     return () => {
       off();
       if (bubbleTimer.current !== undefined) clearTimeout(bubbleTimer.current);
     };
-  }, [dismissBubble]);
+  }, []);
+
+  // ---- magician phase ----------------------------------------------------
+  useEffect(() => window.mochi.overlay.onMagicianPhase(setPhase), []);
+
+  // A ref as well as state: the subscription callbacks below are registered
+  // once and would otherwise close over the phase from first render.
+  const performingRef = useRef(false);
+  useEffect(() => {
+    performingRef.current = phase !== 'none';
+  }, [phase]);
+
+  /**
+   * The alert face follows the phase, not the bubble.
+   *
+   * Asking main for the derived state on the way out is what previously left
+   * the face out of step: the reply arrived a tick after the phase changed, so
+   * the mascot flickered back to alert for a frame.
+   */
+  useEffect(() => {
+    if (isAlertPhase(phase)) {
+      setMascotState('alert');
+    } else if (phase === 'none') {
+      void window.mochi.mascot.current().then(setMascotState);
+    }
+  }, [phase]);
 
   // ---- subscriptions -----------------------------------------------------
   useEffect(() => {
+    // A performance owns the face while it runs, so derived state updates are
+    // held back until it finishes. Previously this was gated on the bubble
+    // subject containing "routine", which is the same guess that made ordinary
+    // nudges puff smoke.
     const offState = window.mochi.mascot.onStateChange((state) => {
-      // Only hold back state update if a high-priority routine alert bubble is active
-      if (bubbleSubject.current === null || !bubbleSubject.current.includes('routine')) {
-        setMascotState(state);
-      }
+      if (!performingRef.current) setMascotState(state);
     });
     const offTimer = window.mochi.timer.onChange((s) => {
       setTimer(s);
       void window.mochi.mascot.current().then((st) => {
-        if (bubbleSubject.current === null || !bubbleSubject.current.includes('routine')) {
-          setMascotState(st);
-        }
+        if (!performingRef.current) setMascotState(st);
       });
     });
     const offVisible = window.mochi.overlay.onVisibilityChange(setVisible);
@@ -241,10 +255,22 @@ export function Overlay(): JSX.Element {
   );
 
   const running = timer?.running === true;
+  const performing = phase !== 'none';
+  const pose = magicianPose(phase);
 
   return (
     <div style={{ width: '100%', height: '100%', position: 'relative', pointerEvents: 'none' }}>
-      <SpeechBubble text={bubble} onDismiss={dismissBubble} onHoverChange={setInteractive} />
+      {/*
+       * During a performance the message is withheld until Mochi has arrived.
+       * The bubble and the entrance are triggered by the same event, so without
+       * this the bubble is already on screen at the docked position and gets
+       * carried across with the window — delivering the line before appearing.
+       */}
+      <SpeechBubble
+        text={performing && !isAlertPhase(phase) ? null : bubble}
+        onDismiss={dismissBubble}
+        onHoverChange={setInteractive}
+      />
 
       <div
         style={{
@@ -268,8 +294,8 @@ export function Overlay(): JSX.Element {
           }}
         />
 
-        {/* Magician entrance smoke cloud & sparkles */}
-        <SmokeEffect active={showSmoke} />
+        {/* Magician smoke and sparkles. Covers the window, above the mascot. */}
+        <SmokeEffect mode={smokeMode(phase)} />
 
         {error !== null && (
           <div
@@ -295,9 +321,16 @@ export function Overlay(): JSX.Element {
             width: '170px',
             height: '170px',
             display: 'block',
-            pointerEvents: 'auto',
-            transform: `scale(${clickScale})`,
-            transition: 'transform 160ms cubic-bezier(0.34, 1.56, 0.64, 1)',
+            // Nothing to click while a performance is running: a click would
+            // stop the timer or open the pills mid-vanish.
+            pointerEvents: performing ? 'none' : 'auto',
+            // One transform, one transition. Scale and opacity are the only two
+            // properties the compositor can animate without touching layout,
+            // which is why this is smooth where moving the window was not.
+            transform: `scale(${pose.scale * clickScale})`,
+            opacity: pose.opacity,
+            transition: `transform ${pose.durationMs}ms ${pose.easing}, opacity ${pose.durationMs}ms ${pose.easing}`,
+            willChange: performing ? 'transform, opacity' : 'auto',
           }}
           onPointerMove={handlePointerMove}
           onPointerDown={handlePointerDown}
@@ -309,7 +342,9 @@ export function Overlay(): JSX.Element {
           }}
         />
 
-        {running && timer !== null && (
+        {/* The stopwatch badge would otherwise hang in the air through the
+            vanish, since it is not inside the mascot's transform. */}
+        {running && timer !== null && !performing && (
           <div
             style={{
               position: 'absolute',
