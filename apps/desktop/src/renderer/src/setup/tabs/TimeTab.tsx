@@ -42,7 +42,7 @@ export function TimeTab(): JSX.Element {
     setTimer(tSnapshot);
 
     // Auto-seed top 3 unique projects as primary if none set
-    if (setObj.primaryProjectIds.length === 0 && pList.length > 0) {
+    if ((setObj.primaryProjectIds?.length ?? 0) === 0 && pList.length > 0) {
       const defaultPrimary = pList.slice(0, 3).map((p) => p.id);
       void window.mochi.settings.setPrimaryProjects(defaultPrimary);
     }
@@ -73,7 +73,7 @@ export function TimeTab(): JSX.Element {
   const togglePrimaryProject = useCallback(
     async (projectId: string) => {
       if (settings === null) return;
-      const current = [...settings.primaryProjectIds];
+      const current = [...(settings.primaryProjectIds ?? [])];
       let updated: string[];
 
       if (current.includes(projectId)) {
@@ -146,9 +146,10 @@ export function TimeTab(): JSX.Element {
           p.name.toLowerCase().endsWith(rawName.toLowerCase()),
       );
 
+      const pIds = settings?.primaryProjectIds ?? [];
       if (existing) {
-        if (settings && !settings.primaryProjectIds.includes(existing.id) && settings.primaryProjectIds.length < 3) {
-          void window.mochi.settings.setPrimaryProjects([...settings.primaryProjectIds, existing.id]);
+        if (settings && !pIds.includes(existing.id) && pIds.length < 3) {
+          void window.mochi.settings.setPrimaryProjects([...pIds, existing.id]);
         }
         setNewName('');
         setShowCreateForm(false);
@@ -162,8 +163,8 @@ export function TimeTab(): JSX.Element {
         setNewName('');
         setShowCreateForm(false);
 
-        if (settings && settings.primaryProjectIds.length < 3) {
-          void window.mochi.settings.setPrimaryProjects([...settings.primaryProjectIds, created.id]);
+        if (settings && pIds.length < 3) {
+          void window.mochi.settings.setPrimaryProjects([...pIds, created.id]);
         }
 
         await reload();
@@ -176,8 +177,9 @@ export function TimeTab(): JSX.Element {
 
   const archiveCategory = useCallback(
     async (projectId: string) => {
-      if (settings && settings.primaryProjectIds.includes(projectId)) {
-        const updatedPrimary = settings.primaryProjectIds.filter((id) => id !== projectId);
+      const pIds = settings?.primaryProjectIds ?? [];
+      if (settings && pIds.includes(projectId)) {
+        const updatedPrimary = pIds.filter((id) => id !== projectId);
         void window.mochi.settings.setPrimaryProjects(updatedPrimary);
       }
       const updatedProjects = await window.mochi.projects.archive(projectId);
@@ -211,7 +213,7 @@ export function TimeTab(): JSX.Element {
     return projects.find((p) => p.id === currentId) ?? null;
   }, [timer, projects]);
 
-  const primaryCount = settings?.primaryProjectIds.length ?? 0;
+  const primaryCount = settings?.primaryProjectIds?.length ?? 0;
 
   return (
     <div>
