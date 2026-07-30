@@ -26,9 +26,7 @@ export class UserRoutineScheduler {
 
   start(): void {
     if (this.timer !== null) return;
-    // Check local time every 10 seconds
     this.timer = setInterval(() => this.check(), 10_000);
-    // Initial immediate check
     this.check();
   }
 
@@ -54,7 +52,7 @@ export class UserRoutineScheduler {
     );
 
     if (this.settings.get().centerScreenAlerts !== false) {
-      void this.overlay.animateToCenterAndBack(7500);
+      void this.overlay.animateToCenterAndBack(8000);
     }
   }
 
@@ -65,7 +63,6 @@ export class UserRoutineScheduler {
     const currentHHMM = `${hours}:${mins}`;
     const dayKey = DAY_MAP[now.getDay()]!;
 
-    // Use local year-month-day for dateKey to prevent timezone skew
     const yyyy = now.getFullYear();
     const mm = String(now.getMonth() + 1).padStart(2, '0');
     const dd = String(now.getDate()).padStart(2, '0');
@@ -78,7 +75,6 @@ export class UserRoutineScheduler {
       if (!routine.days.includes(dayKey)) continue;
 
       const rawTimes = routine.times && routine.times.length > 0 ? routine.times : [routine.time];
-      // Normalize times (e.g. "9:05" -> "09:05")
       const normalizedTimes = rawTimes.map((t) => {
         const parts = t.split(':');
         if (parts.length !== 2) return t;
@@ -93,7 +89,10 @@ export class UserRoutineScheduler {
       this.firedKeys.add(firedKey);
 
       const icon = routine.icon || '⏰';
-      const text = routine.reminderMessage || `${icon} ${routine.title}: Time for your routine!`;
+      const customMsg = routine.reminderMessage?.trim();
+      const text = customMsg
+        ? `${icon} ${routine.title}: ${customMsg}`
+        : `${icon} ${routine.title}: Time for your routine!`;
 
       console.log(`[user-routine] Firing routine alert for "${routine.title}" at ${currentHHMM}`);
       this.triggerAlert(routine.title, text);
