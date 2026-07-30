@@ -257,11 +257,40 @@ export function TimeTab(): JSX.Element {
     const sessionCount = filteredSessions.length;
     const avgSessionMs = sessionCount > 0 ? totalMs / sessionCount : 0;
 
+    // Peak hour calculation
+    const hourBuckets = new Array(24).fill(0);
+    for (const s of filteredSessions) {
+      const h = new Date(s.startedAt).getHours();
+      hourBuckets[h] += elapsedMs(s, now);
+    }
+    const maxMs = Math.max(...hourBuckets, 0);
+    const peakHour = maxMs > 0 ? hourBuckets.indexOf(maxMs) : -1;
+    let peakPeriod = 'No data yet';
+    if (peakHour >= 0) {
+      if (peakHour >= 12 && peakHour < 17) {
+        peakPeriod = 'Afternoon (12 PM - 5 PM)';
+      } else if (peakHour >= 17 && peakHour < 22) {
+        peakPeriod = 'Evening (5 PM - 10 PM)';
+      } else if (peakHour >= 22 || peakHour < 6) {
+        peakPeriod = 'Night Focus (10 PM - 6 AM)';
+      } else {
+        peakPeriod = 'Morning (6 AM - 12 PM)';
+      }
+    }
+
+    // Work / Study vs Rest Ratio
+    const workStudyMs = categoryBreakdown
+      .filter((c) => !c.project.name.toLowerCase().includes('rest') && !c.project.name.toLowerCase().includes('wellness'))
+      .reduce((sum, c) => sum + c.ms, 0);
+    const focusRatioPct = totalMs > 0 ? Math.round((workStudyMs / totalMs) * 100) : 0;
+
     return {
       totalMs,
       sessionCount,
       avgSessionMs,
       topCategory,
+      peakPeriod,
+      focusRatioPct,
       categoryBreakdown,
     };
   }, [filteredSessions, projects]);
@@ -837,7 +866,7 @@ export function TimeTab(): JSX.Element {
           </div>
 
           {/* KPI Stat Cards Grid */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 14, marginBottom: 20 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 14, marginBottom: 20 }}>
             {/* Total Focus Time */}
             <div style={{ ...card, display: 'flex', flexDirection: 'column', gap: 6 }}>
               <div style={{ fontSize: 11, fontWeight: 700, color: C.dim, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
@@ -868,44 +897,144 @@ export function TimeTab(): JSX.Element {
               </div>
             </div>
 
-            {/* Top Category */}
+            {/* Peak Focus Window */}
             <div style={{ ...card, display: 'flex', flexDirection: 'column', gap: 6 }}>
               <div style={{ fontSize: 11, fontWeight: 700, color: C.dim, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                🏆 Top Category
+                🧠 Peak Focus Window
               </div>
-              <div style={{ fontSize: 16, fontWeight: 750, color: performanceStats.topCategory?.project.colour ?? C.text, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                {performanceStats.topCategory ? performanceStats.topCategory.project.name : 'No data'}
+              <div style={{ fontSize: 14, fontWeight: 750, color: C.accent, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                {performanceStats.peakPeriod}
               </div>
             </div>
           </div>
 
-          {/* Proportional Category Distribution Bar */}
-          {performanceStats.categoryBreakdown.length > 0 && (
-            <div style={{ ...card, marginBottom: 20 }}>
-              <div style={{ fontSize: 12, fontWeight: 700, color: C.dim, textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: 12 }}>
-                Category Time Distribution
+          {/* SVG Donut Pie Chart & Smart User Insights Grid */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 16, marginBottom: 20 }}>
+            {/* SVG Donut Pie Chart Card */}
+            <div style={card}>
+              <div style={{ fontSize: 12, fontWeight: 700, color: C.dim, textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: 16 }}>
+                🎨 Category Time Breakdown (Pie Chart)
               </div>
-              <div style={{ height: 12, borderRadius: 6, display: 'flex', overflow: 'hidden', gap: 2, background: '#1c1724' }}>
-                {performanceStats.categoryBreakdown.map((item) => (
-                  <div
-                    key={item.project.id}
-                    title={`${item.project.name}: ${item.pct.toFixed(1)}%`}
-                    style={{
-                      width: `${item.pct}%`,
-                      height: '100%',
-                      background: item.project.colour,
-                      transition: 'width 250ms ease',
-                    }}
-                  />
-                ))}
+
+              {performanceStats.categoryBreakdown.length === 0 ? (
+                <div style={{ fontSize: 13, color: C.faint, padding: '24px 0', textAlign: 'center' }}>
+                  No sessions recorded for this timeframe to render chart.
+                </div>
+              ) : (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 24, flexWrap: 'wrap' }}>
+                  {/* SVG Donut Ring */}
+                  <div style={{ position: 'relative', width: 140, height: 140, flexShrink: 0 }}>
+                    <svg width="140" height="140" viewBox="0 0 140 140" style={{ transform: 'rotate(-90deg)' }}>
+                      {(() => {
+                        const radius = 50;
+                        const circumference = 2 * Math.PI * radius; // ~314.15
+                        let accumPct = 0;
+
+                        return performanceStats.categoryBreakdown.map((item) => {
+                          const strokeDash = (item.pct / 100) * circumference;
+                          const strokeOffset = -(accumPct / 100) * circumference;
+                          accumPct += item.pct;
+
+                          return (
+                            <circle
+                              key={item.project.id}
+                              cx="70"
+                              cy="70"
+                              r={radius}
+                              fill="transparent"
+                              stroke={item.project.colour}
+                              strokeWidth="20"
+                              strokeDasharray={`${strokeDash} ${circumference}`}
+                              strokeDashoffset={strokeOffset}
+                              style={{ transition: 'all 300ms ease' }}
+                            />
+                          );
+                        });
+                      })()}
+                    </svg>
+                    {/* Donut Hole Text */}
+                    <div
+                      style={{
+                        position: 'absolute',
+                        inset: 0,
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        textAlign: 'center',
+                      }}
+                    >
+                      <span style={{ fontSize: 14, fontWeight: 800, color: C.text }}>
+                        {performanceStats.categoryBreakdown.length}
+                      </span>
+                      <span style={{ fontSize: 9.5, color: C.dim, textTransform: 'uppercase' }}>Categories</span>
+                    </div>
+                  </div>
+
+                  {/* Donut Legend Items */}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8, flex: 1, minWidth: 140 }}>
+                    {performanceStats.categoryBreakdown.map((item) => (
+                      <div key={item.project.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: 12 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                          <span style={{ width: 9, height: 9, borderRadius: '50%', background: item.project.colour, boxShadow: `0 0 6px ${item.project.colour}` }} />
+                          <span style={{ color: C.text, fontWeight: 650, maxWidth: 100, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                            {item.project.name}
+                          </span>
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                          <span style={{ color: item.project.colour, fontWeight: 750, fontVariantNumeric: 'tabular-nums' }}>
+                            {item.pct.toFixed(1)}%
+                          </span>
+                          <span style={{ color: C.dim, fontSize: 11, fontVariantNumeric: 'tabular-nums' }}>
+                            ({humanDuration(item.ms)})
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Smart Focus Insights & Ratio Card */}
+            <div style={{ ...card, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+              <div>
+                <div style={{ fontSize: 12, fontWeight: 700, color: C.dim, textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: 14 }}>
+                  🧠 Productivity & Focus Insights
+                </div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                  {/* Focus Ratio Indicator */}
+                  <div style={{ background: '#181422', border: `1px solid ${C.border}`, borderRadius: 10, padding: '12px 14px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+                      <span style={{ fontSize: 12.5, fontWeight: 650, color: C.text }}>🎯 Deep Work Focus Ratio</span>
+                      <span style={{ fontSize: 13, fontWeight: 800, color: C.accent }}>{performanceStats.focusRatioPct}%</span>
+                    </div>
+                    <div style={{ height: 6, borderRadius: 3, background: '#262033', overflow: 'hidden' }}>
+                      <div style={{ width: `${performanceStats.focusRatioPct}%`, height: '100%', background: C.accent, borderRadius: 3 }} />
+                    </div>
+                  </div>
+
+                  {/* Smart Tip */}
+                  <div style={{ background: 'rgba(242, 166, 179, 0.1)', border: `1px solid ${C.accent}44`, borderRadius: 10, padding: '12px 14px' }}>
+                    <div style={{ fontSize: 12, fontWeight: 700, color: C.accent, marginBottom: 4, display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <span>💡 Mochi Productivity Coach</span>
+                    </div>
+                    <div style={{ fontSize: 12, color: C.text, lineHeight: 1.45 }}>
+                      {performanceStats.topCategory
+                        ? `You perform strongest in "${performanceStats.topCategory.project.name}". Your average session length is ${humanDuration(performanceStats.avgSessionMs)}, keeping you in a prime focus flow!`
+                        : 'Track a session to unlock personalized Mochi focus recommendations!'}
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
-          )}
+          </div>
 
           {/* Detailed Category Performance Table */}
           <div style={card}>
             <div style={{ fontSize: 12, fontWeight: 700, color: C.dim, textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: 14 }}>
-              Category Breakdown ({performanceStats.categoryBreakdown.length})
+              Category Performance Table ({performanceStats.categoryBreakdown.length})
             </div>
 
             {performanceStats.categoryBreakdown.length === 0 ? (
