@@ -422,6 +422,11 @@ export function registerIpc(ctx: IpcContext): void {
     ctx.gmail.previewAlert();
   });
 
+  ipcMain.handle('gmail:fetchMessageBody', (_e, emailId: unknown) => {
+    const id = typeof emailId === 'string' ? emailId : '';
+    return id.length === 0 ? null : ctx.gmail.fetchMessageBody(id);
+  });
+
   ipcMain.handle('gmail:generateDraft', (_e, emailId: unknown, tone: unknown) => {
     const id = typeof emailId === 'string' ? emailId : '';
     const validTone = tone === 'friendly' || tone === 'brief' ? tone : 'professional';

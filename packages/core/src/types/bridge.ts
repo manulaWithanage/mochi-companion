@@ -306,6 +306,7 @@ export interface MochiBridge {
     onSyncStatus(listener: (status: GmailSyncStatus) => void): () => void;
     /** Preview the governed email reminder presentation without scheduling mail. */
     previewAlert(): Promise<void>;
+    fetchMessageBody(emailId: string): Promise<string | null>;
     snoozeReminder(emailId: string, minutes?: number): Promise<boolean>;
     dismissReminder(emailId: string): Promise<boolean>;
     /** Generate and persist a local draft without writing to Gmail. */

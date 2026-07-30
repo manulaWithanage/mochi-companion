@@ -192,6 +192,8 @@ const bridge: MochiBridge = {
     onInboxChanged: (listener) => subscribe<GmailInboxChanged>('gmail:inboxChanged', listener),
     onSyncStatus: (listener) => subscribe<GmailSyncStatus>('gmail:syncStatus', listener),
     previewAlert: () => ipcRenderer.invoke('gmail:previewAlert') as Promise<void>,
+    fetchMessageBody: (emailId) =>
+      ipcRenderer.invoke('gmail:fetchMessageBody', emailId) as Promise<string | null>,
     snoozeReminder: (emailId, minutes) =>
       ipcRenderer.invoke('gmail:snoozeReminder', emailId, minutes) as Promise<boolean>,
     dismissReminder: (emailId) =>

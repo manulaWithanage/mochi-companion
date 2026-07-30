@@ -59,6 +59,31 @@ export function GmailTab(): JSX.Element {
   const [savingDraft, setSavingDraft] = useState(false);
   const [savedOk, setSavedOk] = useState(false);
 
+  const [expandedEmailId, setExpandedEmailId] = useState<string | null>(null);
+  const [emailBodies, setEmailBodies] = useState<Record<string, string>>({});
+  const [loadingBodyId, setLoadingBodyId] = useState<string | null>(null);
+
+  const toggleExpand = async (email: CachedInboxItem): Promise<void> => {
+    if (expandedEmailId === email.emailId) {
+      setExpandedEmailId(null);
+      return;
+    }
+    setExpandedEmailId(email.emailId);
+    if (!emailBodies[email.emailId]) {
+      setLoadingBodyId(email.emailId);
+      try {
+        const body = await window.mochi.gmail.fetchMessageBody(email.emailId);
+        if (body) {
+          setEmailBodies((prev) => ({ ...prev, [email.emailId]: body }));
+        }
+      } catch {
+        /* fallback to snippet */
+      } finally {
+        setLoadingBodyId(null);
+      }
+    }
+  };
+
   const loadCached = useCallback(
     async (category: EmailCategory, sort: 'priority' | 'recent'): Promise<void> => {
       const all = await window.mochi.gmail.listCached({ sort, limit: 100 });
@@ -636,161 +661,256 @@ export function GmailTab(): JSX.Element {
 
       {emails.length > 0 && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-          {emails.map((email) => (
-            <div
-              key={email.uid}
-              style={{
-                ...card,
-                display: 'flex',
-                flexDirection: 'column',
-                gap: 6,
-              }}
-            >
+          {emails.map((email) => {
+            const isExpanded = expandedEmailId === email.emailId;
+            const fullBody = emailBodies[email.emailId];
+            const isLoadingBody = loadingBodyId === email.emailId;
+
+            return (
               <div
+                key={email.uid}
                 style={{
+                  ...card,
                   display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'flex-start',
-                  gap: 12,
+                  flexDirection: 'column',
+                  gap: 8,
+                  border: `1px solid ${isExpanded ? C.accent : C.border}`,
+                  transition: 'all 160ms ease',
                 }}
               >
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div
-                    style={{
-                      fontSize: 13.5,
-                      fontWeight: 650,
-                      color: C.text,
-                      marginBottom: 3,
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                      whiteSpace: 'nowrap',
-                    }}
-                  >
-                    {email.subject || '(no subject)'}
-                  </div>
-                  <div style={{ fontSize: 12, color: C.dim }}>
-                    From:{' '}
-                    {email.fromName.length > 0
-                      ? `${email.fromName} <${email.fromAddress}>`
-                      : email.fromAddress}
-                  </div>
-                  <div style={{ fontSize: 11.5, color: C.faint, marginTop: 2 }}>
-                    {new Date(email.receivedAt).toLocaleString()}
-                  </div>
-                </div>
                 <div
                   style={{
                     display: 'flex',
-                    alignItems: 'flex-end',
-                    flexDirection: 'column',
-                    gap: 7,
+                    justifyContent: 'space-between',
+                    alignItems: 'flex-start',
+                    gap: 12,
+                    cursor: 'pointer',
                   }}
+                  onClick={() => void toggleExpand(email)}
                 >
-                  <span
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div
+                      style={{
+                        fontSize: 13.5,
+                        fontWeight: 650,
+                        color: C.text,
+                        marginBottom: 3,
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: isExpanded ? 'normal' : 'nowrap',
+                      }}
+                    >
+                      {email.subject || '(no subject)'}
+                    </div>
+                    <div style={{ fontSize: 12, color: C.dim }}>
+                      From:{' '}
+                      {email.fromName.length > 0
+                        ? `${email.fromName} <${email.fromAddress}>`
+                        : email.fromAddress}
+                    </div>
+                    <div style={{ fontSize: 11.5, color: C.faint, marginTop: 2 }}>
+                      {new Date(email.receivedAt).toLocaleString()}
+                    </div>
+                  </div>
+                  <div
                     style={{
-                      borderRadius: 999,
-                      padding: '3px 8px',
-                      fontSize: 10.5,
-                      fontWeight: 650,
-                      color:
-                        email.priority?.tier === 'urgent'
-                          ? '#ff8e8e'
-                          : email.priority?.tier === 'review'
-                            ? '#f0bd67'
-                            : C.faint,
-                      background:
-                        email.priority?.tier === 'urgent'
-                          ? 'rgba(255,80,80,0.12)'
-                          : email.priority?.tier === 'review'
-                            ? 'rgba(240,180,70,0.12)'
-                            : 'rgba(255,255,255,0.04)',
+                      display: 'flex',
+                      alignItems: 'flex-end',
+                      flexDirection: 'column',
+                      gap: 7,
                     }}
                   >
-                    {email.priority?.tier === 'urgent'
-                      ? '🔴 Urgent'
-                      : email.priority?.tier === 'review'
-                        ? '🟡 Review'
-                        : email.priority === null
-                          ? 'Scoring…'
-                          : '⚪ Low'}
-                  </span>
-                  <button
-                    id={`gmail-draft-btn-${email.uid}`}
-                    onClick={() => openDraft(email)}
-                    disabled={
-                      email.draft?.status === 'queued' || email.draft?.status === 'generating'
-                    }
-                    style={{
-                      ...button('primary'),
-                      flexShrink: 0,
-                      fontSize: 12,
-                      padding: '7px 14px',
-                      whiteSpace: 'nowrap',
-                      opacity:
-                        email.draft?.status === 'queued' || email.draft?.status === 'generating'
-                          ? 0.6
-                          : 1,
-                    }}
-                  >
-                    {email.draft?.status === 'ready'
-                      ? '✦ Draft ready'
-                      : email.draft?.status === 'queued' || email.draft?.status === 'generating'
-                        ? 'Preparing…'
-                        : '✦ Draft Reply'}
-                  </button>
-                </div>
-              </div>
-
-              {email.priority !== null && (
-                <div style={{ fontSize: 11.5, color: C.faint, fontStyle: 'italic' }}>
-                  {email.priority.reason}
-                </div>
-              )}
-
-              {email.priority?.replyLikely === true &&
-                email.priority.confidence >= 0.75 &&
-                email.priority.tier !== 'low' &&
-                email.reminder?.state !== 'replied' &&
-                email.reminder?.state !== 'dismissed' && (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <span style={{ fontSize: 11, color: C.faint }}>
-                      {email.reminder?.snoozedUntil
-                        ? `Snoozed until ${new Date(email.reminder.snoozedUntil).toLocaleTimeString()}`
-                        : 'Reply reminder active'}
+                    <span
+                      style={{
+                        borderRadius: 999,
+                        padding: '3px 8px',
+                        fontSize: 10.5,
+                        fontWeight: 650,
+                        color:
+                          email.priority?.tier === 'urgent'
+                            ? '#ff8e8e'
+                            : email.priority?.tier === 'review'
+                              ? '#f0bd67'
+                              : C.faint,
+                        background:
+                          email.priority?.tier === 'urgent'
+                            ? 'rgba(255,80,80,0.12)'
+                            : email.priority?.tier === 'review'
+                              ? 'rgba(240,180,70,0.12)'
+                              : 'rgba(255,255,255,0.04)',
+                      }}
+                    >
+                      {email.priority?.tier === 'urgent'
+                        ? '🔴 Urgent'
+                        : email.priority?.tier === 'review'
+                          ? '🟡 Review'
+                          : email.priority === null
+                            ? 'Scoring…'
+                            : '⚪ Low'}
                     </span>
-                    <button
-                      onClick={() => void handleSnoozeReminder(email.emailId)}
-                      style={{ ...button('ghost'), padding: '4px 8px', fontSize: 10.5 }}
-                    >
-                      Snooze 1h
-                    </button>
-                    <button
-                      onClick={() => void handleDismissReminder(email.emailId)}
-                      style={{ ...button('ghost'), padding: '4px 8px', fontSize: 10.5 }}
-                    >
-                      Dismiss
-                    </button>
+                    <div style={{ display: 'flex', gap: 6 }}>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          void toggleExpand(email);
+                        }}
+                        style={{ ...button('ghost'), fontSize: 11.5, padding: '5px 9px' }}
+                      >
+                        {isExpanded ? '▲ Hide body' : '👁 Read body'}
+                      </button>
+                      <button
+                        id={`gmail-draft-btn-${email.uid}`}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          openDraft(email);
+                        }}
+                        disabled={
+                          email.draft?.status === 'queued' || email.draft?.status === 'generating'
+                        }
+                        style={{
+                          ...button('primary'),
+                          flexShrink: 0,
+                          fontSize: 12,
+                          padding: '6px 12px',
+                          whiteSpace: 'nowrap',
+                          opacity:
+                            email.draft?.status === 'queued' || email.draft?.status === 'generating'
+                              ? 0.6
+                              : 1,
+                        }}
+                      >
+                        {email.draft?.status === 'ready'
+                          ? '✦ Draft ready'
+                          : email.draft?.status === 'queued' || email.draft?.status === 'generating'
+                            ? 'Preparing…'
+                            : '✦ Draft Reply'}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                {email.priority !== null && (
+                  <div style={{ fontSize: 11.5, color: C.faint, fontStyle: 'italic' }}>
+                    {email.priority.reason}
                   </div>
                 )}
 
-              {email.snippet.length > 0 && (
-                <div
-                  style={{
-                    fontSize: 12,
-                    color: C.dim,
-                    borderTop: `1px solid ${C.border}`,
-                    paddingTop: 8,
-                    maxHeight: 60,
-                    overflow: 'hidden',
-                    lineHeight: 1.5,
-                  }}
-                >
-                  {email.snippet.slice(0, 200)}
-                  {email.snippet.length > 200 ? '…' : ''}
-                </div>
-              )}
-            </div>
-          ))}
+                {email.priority?.replyLikely === true &&
+                  email.priority.confidence >= 0.75 &&
+                  email.priority.tier !== 'low' &&
+                  email.reminder?.state !== 'replied' &&
+                  email.reminder?.state !== 'dismissed' && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <span style={{ fontSize: 11, color: C.faint }}>
+                        {email.reminder?.snoozedUntil
+                          ? `Snoozed until ${new Date(email.reminder.snoozedUntil).toLocaleTimeString()}`
+                          : 'Reply reminder active'}
+                      </span>
+                      <button
+                        onClick={() => void handleSnoozeReminder(email.emailId)}
+                        style={{ ...button('ghost'), padding: '4px 8px', fontSize: 10.5 }}
+                      >
+                        Snooze 1h
+                      </button>
+                      <button
+                        onClick={() => void handleDismissReminder(email.emailId)}
+                        style={{ ...button('ghost'), padding: '4px 8px', fontSize: 10.5 }}
+                      >
+                        Dismiss
+                      </button>
+                    </div>
+                  )}
+
+                {/* Collapsed Snippet View */}
+                {!isExpanded && email.snippet.length > 0 && (
+                  <div
+                    onClick={() => void toggleExpand(email)}
+                    style={{
+                      fontSize: 12,
+                      color: C.dim,
+                      borderTop: `1px solid ${C.border}`,
+                      paddingTop: 8,
+                      cursor: 'pointer',
+                      lineHeight: 1.5,
+                    }}
+                  >
+                    {email.snippet.slice(0, 180)}
+                    {email.snippet.length > 180 ? '… (click to read full message)' : ''}
+                  </div>
+                )}
+
+                {/* Expanded Full Email Body View */}
+                {isExpanded && (
+                  <div
+                    style={{
+                      borderTop: `1px solid ${C.border}`,
+                      paddingTop: 12,
+                      marginTop: 4,
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: 12,
+                    }}
+                  >
+                    <div>
+                      <div style={{ fontSize: 11, color: C.faint, fontWeight: 650, marginBottom: 6 }}>
+                        📩 EMAIL BODY CONTENT
+                      </div>
+                      {isLoadingBody ? (
+                        <div style={{ fontSize: 12, color: C.dim, fontStyle: 'italic', padding: '10px 0' }}>
+                          ⚡ Fetching message body from Gmail…
+                        </div>
+                      ) : (
+                        <div
+                          style={{
+                            background: '#16121e',
+                            border: `1px solid ${C.border}`,
+                            borderRadius: 8,
+                            padding: '12px 14px',
+                            fontSize: 12.5,
+                            color: C.text,
+                            lineHeight: 1.6,
+                            whiteSpace: 'pre-wrap',
+                            wordBreak: 'break-word',
+                            maxHeight: 350,
+                            overflowY: 'auto',
+                            fontFamily: 'inherit',
+                          }}
+                        >
+                          {fullBody || email.snippet || '(No body content)'}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* AI Prepared Draft Preview (if available) */}
+                    {email.draft?.status === 'ready' && email.draft.body && (
+                      <div
+                        style={{
+                          background: 'rgba(255, 140, 170, 0.08)',
+                          border: `1px solid ${C.accent}`,
+                          borderRadius: 8,
+                          padding: '12px 14px',
+                        }}
+                      >
+                        <div style={{ fontSize: 11, fontWeight: 650, color: C.accent, marginBottom: 4 }}>
+                          ✦ MOCHI PREPARED DRAFT REPLY
+                        </div>
+                        <div style={{ fontSize: 12, color: C.text, fontStyle: 'italic', lineHeight: 1.5, marginBottom: 8 }}>
+                          "{email.draft.body}"
+                        </div>
+                        <button
+                          onClick={() => openDraft(email)}
+                          style={{ ...button('primary'), fontSize: 11.5, padding: '5px 11px' }}
+                        >
+                          ✦ Open & Edit Draft
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </div>
       )}
     </div>

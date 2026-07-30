@@ -226,6 +226,16 @@ export class GmailManager {
     this.notifyInbox(account, []);
   }
 
+  async fetchMessageBody(emailId: string): Promise<string | null> {
+    const credentials = this.vault.reveal();
+    const account = this.vault.email;
+    if (credentials === null || account === null) return null;
+    const email = await this.emailStore.getCachedEmail(account, emailId);
+    if (email === null) return null;
+    const full = await this.imap.fetchMessage(credentials, email.uid, email.category);
+    return full?.bodyText ?? (email.snippet.length > 0 ? email.snippet : null);
+  }
+
   previewAlert(): void {
     this.bus.emit(
       makeEvent({
