@@ -75,21 +75,9 @@ export function Dashboard(): JSX.Element {
     return () => clearInterval(id);
   }, [timer]);
 
-  const [activeProjectName, setActiveProjectName] = useState<string>('');
-
-  useEffect(() => {
-    if (!timer?.running || !timer.projectId) {
-      setActiveProjectName('');
-      return;
-    }
-    void window.mochi.projects.list().then((pList) => {
-      setProjects(pList);
-      const match = pList.find((p) => p.id === timer.projectId);
-      if (match) {
-        setActiveProjectName(match.name);
-      }
-    });
-  }, [timer]);
+  const activeProjectId = timer?.projectId || timer?.session?.projectId || null;
+  const activeProject = projects.find((p) => p.id === activeProjectId);
+  const activeProjectName = activeProject ? activeProject.name : 'Focus Session';
 
   const running = timer?.running === true;
 

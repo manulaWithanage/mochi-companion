@@ -44,6 +44,7 @@ export class TimerService {
     return {
       running: active !== null,
       session: active,
+      projectId: active?.projectId ?? null,
       elapsedMs: active === null ? 0 : elapsedMs(active, now),
     };
   }

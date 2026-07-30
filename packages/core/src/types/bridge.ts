@@ -61,6 +61,7 @@ export interface BubbleMessage {
 export interface TimerSnapshot {
   readonly running: boolean;
   readonly session: WorkSession | null;
+  readonly projectId: string | null;
   readonly elapsedMs: number;
 }
 

@@ -187,7 +187,8 @@ export function TimeTab(): JSX.Element {
 
   const activeProject = useMemo(() => {
     if (!timer?.running) return null;
-    return projects.find((p) => p.id === timer.projectId) ?? null;
+    const currentId = timer.projectId || timer.session?.projectId || null;
+    return projects.find((p) => p.id === currentId) ?? null;
   }, [timer, projects]);
 
   const primaryCount = settings?.primaryProjectIds.length ?? 0;
@@ -463,8 +464,8 @@ export function TimeTab(): JSX.Element {
         ) : (
           totals.rows.map(({ project, ms, count }) => {
             const pct = totals.grand > 0 ? (ms / totals.grand) * 100 : 0;
-            const isPrimary = settings?.primaryProjectIds.includes(project.id) === true;
-            const isRunningThis = timer?.running === true && timer.projectId === project.id;
+            const currentProjectId = timer?.projectId || timer?.session?.projectId || null;
+            const isRunningThis = timer?.running === true && currentProjectId === project.id;
 
             return (
               <div
