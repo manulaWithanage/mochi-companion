@@ -13,7 +13,9 @@ import type { GmailImapService } from './gmail-imap.js';
 
 const RECONCILE_INTERVAL_MS = 15 * 60_000;
 const IDLE_RESTART_MS = 25 * 60_000;
-const CHANGE_DEBOUNCE_MS = 3_000;
+// Gmail's EXISTS notification arrives while the watcher is in IMAP IDLE.
+// Coalesce only a short burst so new messages and replies reach the UI quickly.
+const CHANGE_DEBOUNCE_MS = 500;
 const RECONNECT_DELAY_MS = 30_000;
 const SNAPSHOT_LIMIT = 100;
 

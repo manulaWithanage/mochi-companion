@@ -11,6 +11,7 @@ import {
   planEmailReminder,
   Scheduler,
   type CachedInboxItem,
+  type EmailReminderTiming,
   type EmailReminderState,
   type EmailStore,
   type EventBus,
@@ -36,6 +37,7 @@ export class EmailReminderService {
     private readonly store: EmailStore,
     private readonly imap: GmailImapService,
     private readonly getCredentials: () => GmailCredentials | null,
+    private readonly timing?: EmailReminderTiming,
   ) {
     this.scheduler = new Scheduler({
       onFire: (event, reason) => {
@@ -86,7 +88,7 @@ export class EmailReminderService {
         continue;
       }
 
-      const planned = planEmailReminder(email, email.reminder, now);
+      const planned = planEmailReminder(email, email.reminder, now, this.timing);
       if (planned === null) continue;
       await this.store.saveEmailReminder(planned.state);
       const item = this.scheduledItem(email, planned.state, planned.at);

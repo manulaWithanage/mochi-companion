@@ -5,6 +5,7 @@
  * Main process only. Never imported by the renderer.
  */
 
+import { app } from 'electron';
 import type {
   CachedEmail,
   CachedEmailQuery,
@@ -69,8 +70,18 @@ export class GmailManager {
       () => this.vault.reveal(),
       (account) => this.notifyInbox(account, []),
     );
-    this.reminders = new EmailReminderService(bus, this.emailStore, this.imap, () =>
-      this.vault.reveal(),
+    this.reminders = new EmailReminderService(
+      bus,
+      this.emailStore,
+      this.imap,
+      () => this.vault.reveal(),
+      app.isPackaged
+        ? undefined
+        : {
+            urgentFirstReminderMs: 10_000,
+            reviewFirstReminderMs: 4 * 60 * 60_000,
+            replanGraceMs: 1_000,
+          },
     );
     this.syncService = new GmailSyncService(() => this.vault.reveal(), this.imap, emailStore, {
       onInboxChanged: async (account, newEmails) => {

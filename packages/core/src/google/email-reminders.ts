@@ -7,6 +7,18 @@ export const REVIEW_FIRST_REMINDER_MS = 4 * 60 * 60_000;
 export const EMAIL_REMINDER_STALE_MS = 3 * 24 * 60 * 60_000;
 const REPLAN_GRACE_MS = 60_000;
 
+export interface EmailReminderTiming {
+  readonly urgentFirstReminderMs: number;
+  readonly reviewFirstReminderMs: number;
+  readonly replanGraceMs: number;
+}
+
+export const DEFAULT_EMAIL_REMINDER_TIMING: EmailReminderTiming = {
+  urgentFirstReminderMs: URGENT_FIRST_REMINDER_MS,
+  reviewFirstReminderMs: REVIEW_FIRST_REMINDER_MS,
+  replanGraceMs: REPLAN_GRACE_MS,
+};
+
 export interface PlannedEmailReminder {
   readonly at: number;
   readonly state: EmailReminderState;
@@ -26,6 +38,7 @@ export function planEmailReminder(
   email: CachedInboxItem,
   existing: EmailReminderState | null,
   now: number,
+  timing: EmailReminderTiming = DEFAULT_EMAIL_REMINDER_TIMING,
 ): PlannedEmailReminder | null {
   if (!needsReplyReminder(email)) return null;
   if (existing?.state === 'dismissed' || existing?.state === 'replied') return null;
@@ -36,7 +49,7 @@ export function planEmailReminder(
   if (reminderCount >= maxReminders) return null;
 
   const initialDelay =
-    email.priority?.tier === 'urgent' ? URGENT_FIRST_REMINDER_MS : REVIEW_FIRST_REMINDER_MS;
+    email.priority?.tier === 'urgent' ? timing.urgentFirstReminderMs : timing.reviewFirstReminderMs;
   let at = email.receivedAt + initialDelay;
   if (existing?.nextReminderAt !== null && existing?.nextReminderAt !== undefined) {
     at = existing.nextReminderAt;
@@ -46,7 +59,7 @@ export function planEmailReminder(
   }
   // A reminder missed during sleep is re-planned gently instead of firing in
   // a burst the moment the machine wakes.
-  if (at <= now) at = now + REPLAN_GRACE_MS;
+  if (at <= now) at = now + timing.replanGraceMs;
 
   return {
     at,

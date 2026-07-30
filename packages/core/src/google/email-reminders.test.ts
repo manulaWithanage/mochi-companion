@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { CachedInboxItem, EmailPriorityTier, EmailReminderState } from './email-state.js';
 import {
   afterEmailReminderFired,
+  DEFAULT_EMAIL_REMINDER_TIMING,
   planEmailReminder,
   REVIEW_FIRST_REMINDER_MS,
   URGENT_FIRST_REMINDER_MS,
@@ -67,6 +68,18 @@ describe('planEmailReminder', () => {
       1_000 + URGENT_FIRST_REMINDER_MS,
     );
     expect(planEmailReminder(email('review'), null, 1_000)?.at).toBe(
+      1_000 + REVIEW_FIRST_REMINDER_MS,
+    );
+  });
+
+  it('supports a short urgent delay for development testing', () => {
+    const timing = {
+      ...DEFAULT_EMAIL_REMINDER_TIMING,
+      urgentFirstReminderMs: 10_000,
+      replanGraceMs: 1_000,
+    };
+    expect(planEmailReminder(email('urgent'), null, 1_000, timing)?.at).toBe(11_000);
+    expect(planEmailReminder(email('review'), null, 1_000, timing)?.at).toBe(
       1_000 + REVIEW_FIRST_REMINDER_MS,
     );
   });
