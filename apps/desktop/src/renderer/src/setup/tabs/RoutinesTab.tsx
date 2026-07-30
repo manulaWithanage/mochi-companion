@@ -1,5 +1,6 @@
 import { useEffect, useState, type JSX } from 'react';
 import type {
+  MochiSettings,
   RoutineCategory,
   RoutineDay,
   UserRoutine,
@@ -64,6 +65,7 @@ const Toggle = ({
 
 export function RoutinesTab(): JSX.Element {
   const [routines, setRoutines] = useState<readonly UserRoutine[]>([]);
+  const [settings, setSettings] = useState<MochiSettings | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
 
@@ -85,7 +87,15 @@ export function RoutinesTab(): JSX.Element {
 
   useEffect(() => {
     void window.mochi.userRoutines.list().then(setRoutines);
-    return window.mochi.userRoutines.onChange(setRoutines);
+    void window.mochi.settings.get().then(setSettings);
+
+    const offRoutines = window.mochi.userRoutines.onChange(setRoutines);
+    const offSettings = window.mochi.settings.onChange(setSettings);
+
+    return () => {
+      offRoutines();
+      offSettings();
+    };
   }, []);
 
   const openNewForm = (): void => {
@@ -181,19 +191,47 @@ export function RoutinesTab(): JSX.Element {
     setRoutines(updated);
   };
 
+  const handleTestAlert = (): void => {
+    void window.mochi.userRoutines.triggerTestAlert(
+      'Hydration Break',
+      'Time for a glass of water! Staying hydrated keeps your energy steady.',
+    );
+  };
+
   return (
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 }}>
         <div>
           <h2 style={h2}>Personal Routines</h2>
-          <p style={sub}>Schedule daily habits & health breaks with multiple times. Mochi will remind you on time.</p>
+          <p style={sub}>Schedule daily habits & health breaks with local clock sync. Mochi will remind you on time.</p>
         </div>
         {!isEditing && (
-          <button style={button('primary')} onClick={openNewForm}>
-            + Add Routine
-          </button>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button style={{ ...button('ghost'), fontSize: 12.5 }} onClick={handleTestAlert}>
+              ⚡ Test Center Alert
+            </button>
+            <button style={button('primary')} onClick={openNewForm}>
+              + Add Routine
+            </button>
+          </div>
         )}
       </div>
+
+      {/* Center Screen Animation Setting Toggle */}
+      {settings !== null && (
+        <div style={{ ...card, marginBottom: 16, padding: '12px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div>
+            <div style={{ fontSize: 13, fontWeight: 600, color: C.text }}>Center-Screen Reminder Animation</div>
+            <div style={{ fontSize: 11.5, color: C.dim, marginTop: 2 }}>
+              When a routine triggers, Mochi glides smoothly to the center of your screen to deliver the reminder.
+            </div>
+          </div>
+          <Toggle
+            on={settings.centerScreenAlerts}
+            onChange={(v) => void window.mochi.settings.setCenterScreenAlerts(v)}
+          />
+        </div>
+      )}
 
       {/* Preset Quick-Add Banner */}
       {!isEditing && (
@@ -244,17 +282,15 @@ export function RoutinesTab(): JSX.Element {
             {editingId ? 'Edit Routine' : 'Create New Routine'}
           </div>
 
-          {/* Title & Icon Row */}
+          {/* Title Row */}
           <div style={{ marginBottom: 14 }}>
             <span style={label}>Routine Title</span>
-            <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-              <input
-                style={{ ...input, flex: 1 }}
-                placeholder="e.g., Water & Hydration Break"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-              />
-            </div>
+            <input
+              style={input}
+              placeholder="e.g., Water & Hydration Break"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+            />
           </div>
 
           {/* Custom Emoji Selector */}

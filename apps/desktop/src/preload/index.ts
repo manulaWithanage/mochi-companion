@@ -84,6 +84,8 @@ const bridge: MochiBridge = {
       ipcRenderer.invoke('settings:setPaused', paused) as Promise<MochiSettings>,
     setDoNotDisturb: (dnd) =>
       ipcRenderer.invoke('settings:setDoNotDisturb', dnd) as Promise<MochiSettings>,
+    setCenterScreenAlerts: (enabled) =>
+      ipcRenderer.invoke('settings:setCenterScreenAlerts', enabled) as Promise<MochiSettings>,
     onChange: (listener) => subscribe<MochiSettings>('settings:changed', listener),
   },
 
@@ -95,6 +97,8 @@ const bridge: MochiBridge = {
       ipcRenderer.invoke('userRoutines:toggle', id) as Promise<readonly UserRoutine[]>,
     remove: (id) =>
       ipcRenderer.invoke('userRoutines:remove', id) as Promise<readonly UserRoutine[]>,
+    triggerTestAlert: (title, message) =>
+      ipcRenderer.invoke('userRoutines:triggerTestAlert', title, message) as Promise<void>,
     onChange: (listener) => subscribe<readonly UserRoutine[]>('userRoutines:changed', listener),
   },
 

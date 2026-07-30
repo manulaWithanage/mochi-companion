@@ -34,6 +34,7 @@ import { OverlayWindow } from './windows/overlay.js';
 import { SetupWindow } from './windows/setup.js';
 import { MochiTray } from './tray.js';
 import { RoutineService } from './services/routine-service.js';
+import { UserRoutineScheduler } from './services/user-routine-scheduler.js';
 import { LlmService } from './services/llm-service.js';
 import { LlmClient } from './services/llm-client.js';
 import { GoogleService } from './services/google-service.js';
@@ -126,6 +127,9 @@ async function bootstrap(): Promise<void> {
     listTasks: () => storage.listTasks(),
   });
 
+  const userRoutineScheduler = new UserRoutineScheduler(bus, userRoutines, settings, overlay);
+  userRoutineScheduler.start();
+
   const google = new GoogleService(join(app.getPath('userData'), 'google.enc.json'));
   const llm = new LlmService();
   const llmClient = new LlmClient(llm);
@@ -154,6 +158,7 @@ async function bootstrap(): Promise<void> {
     mascot,
     settings,
     userRoutines,
+    userRoutineScheduler,
     storage,
     overlay,
     setup,
@@ -307,6 +312,7 @@ async function bootstrap(): Promise<void> {
   app.on('second-instance', () => setup.open());
 
   app.on('before-quit', () => {
+    userRoutineScheduler.stop();
     routines.stop();
     mascot.stop();
     tray.destroy();

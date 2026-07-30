@@ -28,6 +28,8 @@ export interface MochiSettings {
    * animates and the stopwatch still works, it just never speaks unprompted.
    */
   readonly doNotDisturb: boolean;
+  /** When a routine reminder triggers, float to center of screen with smooth animation. */
+  readonly centerScreenAlerts: boolean;
 }
 
 export const DEFAULT_SETTINGS: MochiSettings = {
@@ -38,6 +40,7 @@ export const DEFAULT_SETTINGS: MochiSettings = {
   setupCompleted: false,
   paused: false,
   doNotDisturb: false,
+  centerScreenAlerts: true,
 };
 
 export const MAX_NAME_LENGTH = 24;
@@ -118,6 +121,7 @@ export function normalizeSettings(raw: unknown): {
       setupCompleted: input.setupCompleted === true,
       paused: input.paused === true,
       doNotDisturb: input.doNotDisturb === true,
+      centerScreenAlerts: input.centerScreenAlerts !== false,
     },
     issues,
   };

@@ -54,6 +54,7 @@ export interface IpcContext {
     test(): Promise<{ ok: boolean; text: string; model?: string; tokens?: number }>;
   };
   gmail: GmailManager;
+  userRoutineScheduler: import('./services/user-routine-scheduler.js').UserRoutineScheduler;
 }
 
 const asString = (value: unknown, fallback: string): string =>
@@ -156,6 +157,10 @@ export function registerIpc(ctx: IpcContext): void {
     const next = ctx.settings.update({ doNotDisturb: dnd === true });
     ctx.governor.configure({ doNotDisturb: next.doNotDisturb });
     return next;
+  });
+
+  ipcMain.handle('settings:setCenterScreenAlerts', (_e, enabled: unknown) => {
+    return ctx.settings.update({ centerScreenAlerts: enabled === true });
   });
 
   // Dismissing a bubble dismisses the subject, not just the message, so a
@@ -294,5 +299,11 @@ export function registerIpc(ctx: IpcContext): void {
     const result = ctx.userRoutines.remove(idStr);
     ctx.setup.send('userRoutines:changed', result);
     return result;
+  });
+
+  ipcMain.handle('userRoutines:triggerTestAlert', (_e, title: unknown, message: unknown) => {
+    const titleStr = typeof title === 'string' ? title : 'Hydration Break';
+    const msgStr = typeof message === 'string' ? message : 'Time for a glass of water! Staying hydrated keeps your energy steady.';
+    ctx.userRoutineScheduler.triggerAlert(titleStr, msgStr);
   });
 }

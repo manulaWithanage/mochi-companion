@@ -288,6 +288,12 @@ export function MochiTab(): JSX.Element {
           desc="Mochi stays on screen and keeps tracking time, but never speaks unprompted."
         />
         <Toggle
+          on={settings.centerScreenAlerts}
+          onChange={(v) => void window.mochi.settings.setCenterScreenAlerts(v)}
+          title="Center-Screen Routine Alerts"
+          desc="When a routine triggers, Mochi smoothly glides to the center of your screen to deliver the reminder."
+        />
+        <Toggle
           on={settings.paused}
           onChange={(v) => void window.mochi.settings.setPaused(v)}
           title={`Hide ${settings.assistantName}`}

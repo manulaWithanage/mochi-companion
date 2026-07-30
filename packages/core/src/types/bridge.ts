@@ -130,6 +130,7 @@ export interface MochiBridge {
     completeSetup(payload: SetupPayload): Promise<MochiSettings>;
     setPaused(paused: boolean): Promise<MochiSettings>;
     setDoNotDisturb(dnd: boolean): Promise<MochiSettings>;
+    setCenterScreenAlerts(enabled: boolean): Promise<MochiSettings>;
     onChange(listener: (settings: MochiSettings) => void): () => void;
   };
 
@@ -138,6 +139,7 @@ export interface MochiBridge {
     save(input: UserRoutineInput & { id?: string }): Promise<readonly UserRoutine[]>;
     toggle(id: string): Promise<readonly UserRoutine[]>;
     remove(id: string): Promise<readonly UserRoutine[]>;
+    triggerTestAlert(title?: string, message?: string): Promise<void>;
     onChange(listener: (routines: readonly UserRoutine[]) => void): () => void;
   };
 
