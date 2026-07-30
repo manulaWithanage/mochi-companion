@@ -149,13 +149,22 @@ export function RoutinesTab(): JSX.Element {
   };
 
   const saveForm = async (): Promise<void> => {
-    if (!title.trim() || times.length === 0) return;
+    if (!title.trim()) return;
+
+    let finalTimes = [...times];
+    if (newTimeInput && !finalTimes.includes(newTimeInput)) {
+      finalTimes.push(newTimeInput);
+      finalTimes.sort();
+    }
+
+    if (finalTimes.length === 0) return;
+
     const inputPayload: UserRoutineInput & { id?: string } = {
       ...(editingId ? { id: editingId } : {}),
       title: title.trim(),
       icon: selectedIcon,
-      time: times[0] || '10:00',
-      times,
+      time: finalTimes[0] || '10:00',
+      times: finalTimes,
       days: selectedDays,
       category,
       mochiReminder,
@@ -459,7 +468,11 @@ export function RoutinesTab(): JSX.Element {
             <button style={button('ghost')} onClick={() => setIsEditing(false)}>
               Cancel
             </button>
-            <button style={button('primary')} disabled={!title.trim() || times.length === 0} onClick={() => void saveForm()}>
+            <button
+              style={button('primary')}
+              disabled={!title.trim() || (times.length === 0 && !newTimeInput.trim())}
+              onClick={() => void saveForm()}
+            >
               Save Routine
             </button>
           </div>

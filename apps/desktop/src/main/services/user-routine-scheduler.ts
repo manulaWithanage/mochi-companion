@@ -1,7 +1,7 @@
 /**
  * User Routine Scheduler Engine
  *
- * Runs on a 15-second local system clock ticker. Compares current local time
+ * Runs on a 10-second local system clock ticker. Compares current local time
  * (HH:MM) and local day of week against user routines in UserRoutinesVault.
  * Emits speech bubble events and glides Mochi to center screen if enabled.
  */
@@ -26,8 +26,8 @@ export class UserRoutineScheduler {
 
   start(): void {
     if (this.timer !== null) return;
-    // Check local time every 15 seconds
-    this.timer = setInterval(() => this.check(), 15_000);
+    // Check local time every 10 seconds
+    this.timer = setInterval(() => this.check(), 10_000);
     // Initial immediate check
     this.check();
   }
@@ -46,7 +46,7 @@ export class UserRoutineScheduler {
         source: 'routine',
         kind: 'break',
         at: Date.now(),
-        subject: `user-routine-test:${Date.now()}`,
+        subject: `user-routine-alert:${Date.now()}`,
         priority: 'high',
         text,
         userInitiated: true,
@@ -64,7 +64,12 @@ export class UserRoutineScheduler {
     const mins = String(now.getMinutes()).padStart(2, '0');
     const currentHHMM = `${hours}:${mins}`;
     const dayKey = DAY_MAP[now.getDay()]!;
-    const dateKey = now.toISOString().slice(0, 10);
+
+    // Use local year-month-day for dateKey to prevent timezone skew
+    const yyyy = now.getFullYear();
+    const mm = String(now.getMonth() + 1).padStart(2, '0');
+    const dd = String(now.getDate()).padStart(2, '0');
+    const localDateKey = `${yyyy}-${mm}-${dd}`;
 
     const routines = this.userRoutines.list();
 
@@ -72,10 +77,17 @@ export class UserRoutineScheduler {
       if (!routine.enabled) continue;
       if (!routine.days.includes(dayKey)) continue;
 
-      const scheduledTimes = routine.times && routine.times.length > 0 ? routine.times : [routine.time];
-      if (!scheduledTimes.includes(currentHHMM)) continue;
+      const rawTimes = routine.times && routine.times.length > 0 ? routine.times : [routine.time];
+      // Normalize times (e.g. "9:05" -> "09:05")
+      const normalizedTimes = rawTimes.map((t) => {
+        const parts = t.split(':');
+        if (parts.length !== 2) return t;
+        return `${parts[0]!.padStart(2, '0')}:${parts[1]!.padStart(2, '0')}`;
+      });
 
-      const firedKey = `${routine.id}:${dateKey}:${currentHHMM}`;
+      if (!normalizedTimes.includes(currentHHMM)) continue;
+
+      const firedKey = `${routine.id}:${localDateKey}:${currentHHMM}`;
       if (this.firedKeys.has(firedKey)) continue;
 
       this.firedKeys.add(firedKey);
@@ -83,6 +95,7 @@ export class UserRoutineScheduler {
       const icon = routine.icon || '⏰';
       const text = routine.reminderMessage || `${icon} ${routine.title}: Time for your routine!`;
 
+      console.log(`[user-routine] Firing routine alert for "${routine.title}" at ${currentHHMM}`);
       this.triggerAlert(routine.title, text);
     }
   }
