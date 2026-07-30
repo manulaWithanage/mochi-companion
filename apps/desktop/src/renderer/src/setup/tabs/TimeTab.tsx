@@ -196,11 +196,11 @@ export function TimeTab(): JSX.Element {
   return (
     <div>
       {/* Header Bar */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
         <div>
           <h2 style={h2}>Time & Categories</h2>
           <p style={sub}>
-            {sessions.length} session{sessions.length === 1 ? '' : 's'} · {humanDuration(totals.grand)} total focus tracked.
+            {sessions.length} session{sessions.length === 1 ? '' : 's'} · {humanDuration(totals.grand)} total focus tracked. Pin up to 3 categories to float on Mochi!
           </p>
         </div>
         <button
@@ -273,157 +273,6 @@ export function TimeTab(): JSX.Element {
           </div>
         </div>
       )}
-
-      {/* Floating Mascot Badges Banner */}
-      <div
-        style={{
-          background: 'linear-gradient(135deg, rgba(35, 27, 48, 0.9), rgba(22, 17, 30, 0.95))',
-          border: `1px solid ${C.border}`,
-          borderRadius: 14,
-          padding: '18px 20px',
-          marginBottom: 20,
-        }}
-      >
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
-          <div>
-            <div style={{ fontSize: 14, fontWeight: 700, color: C.text, display: 'flex', alignItems: 'center', gap: 8 }}>
-              <span>⭐ Mascot Quick-Track Icons</span>
-              <span style={{ fontSize: 11, background: `${C.accent}33`, color: C.accent, padding: '2px 8px', borderRadius: 999, fontWeight: 700 }}>
-                {primaryCount} / 3 Active
-              </span>
-            </div>
-            <div style={{ fontSize: 12, color: C.dim, marginTop: 3 }}>
-              Assigned quick-tracker categories floating on Mochi's overlay. Use ◀ ▶ to reorder positions!
-            </div>
-          </div>
-        </div>
-
-        {/* 3 Slot Position Grid */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 12 }}>
-          {[0, 1, 2].map((slotIdx) => {
-            const id = settings?.primaryProjectIds?.[slotIdx];
-            const p = id ? projects.find((x) => x.id === id) : null;
-
-            return (
-              <div
-                key={slotIdx}
-                style={{
-                  background: p ? `${p.colour}16` : 'rgba(255, 255, 255, 0.02)',
-                  border: `1px solid ${p ? p.colour : C.border}`,
-                  borderRadius: 12,
-                  padding: '12px 14px',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: 10,
-                  transition: 'all 160ms ease',
-                }}
-              >
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span
-                    style={{
-                      fontSize: 10,
-                      fontWeight: 750,
-                      color: p ? p.colour : C.faint,
-                      textTransform: 'uppercase',
-                      letterSpacing: '0.04em',
-                      background: 'rgba(0, 0, 0, 0.25)',
-                      padding: '2px 7px',
-                      borderRadius: 6,
-                    }}
-                  >
-                    Slot #{slotIdx + 1} Position
-                  </span>
-                  {p && (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                      <button
-                        title="Move Left"
-                        disabled={slotIdx === 0}
-                        onClick={() => void movePrimaryProject(slotIdx, 'left')}
-                        style={{
-                          background: 'rgba(255, 255, 255, 0.06)',
-                          border: `1px solid ${C.border}`,
-                          color: slotIdx === 0 ? C.faint : C.text,
-                          borderRadius: 6,
-                          width: 24,
-                          height: 24,
-                          cursor: slotIdx === 0 ? 'not-allowed' : 'pointer',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          fontSize: 11,
-                        }}
-                      >
-                        ◀
-                      </button>
-                      <button
-                        title="Move Right"
-                        disabled={slotIdx === (settings?.primaryProjectIds?.length ?? 0) - 1}
-                        onClick={() => void movePrimaryProject(slotIdx, 'right')}
-                        style={{
-                          background: 'rgba(255, 255, 255, 0.06)',
-                          border: `1px solid ${C.border}`,
-                          color: slotIdx === (settings?.primaryProjectIds?.length ?? 0) - 1 ? C.faint : C.text,
-                          borderRadius: 6,
-                          width: 24,
-                          height: 24,
-                          cursor: slotIdx === (settings?.primaryProjectIds?.length ?? 0) - 1 ? 'not-allowed' : 'pointer',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          fontSize: 11,
-                        }}
-                      >
-                        ▶
-                      </button>
-                      <button
-                        title="Unpin"
-                        onClick={() => void togglePrimaryProject(p.id)}
-                        style={{
-                          background: 'rgba(255, 255, 255, 0.06)',
-                          border: `1px solid ${C.border}`,
-                          color: C.dim,
-                          borderRadius: 6,
-                          width: 24,
-                          height: 24,
-                          cursor: 'pointer',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          fontSize: 12,
-                        }}
-                      >
-                        ×
-                      </button>
-                    </div>
-                  )}
-                </div>
-
-                {p ? (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                    <div
-                      style={{
-                        width: 10,
-                        height: 10,
-                        borderRadius: '50%',
-                        background: p.colour,
-                        boxShadow: `0 0 8px ${p.colour}`,
-                        flexShrink: 0,
-                      }}
-                    />
-                    <div style={{ fontSize: 13, fontWeight: 700, color: C.text, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                      {p.name}
-                    </div>
-                  </div>
-                ) : (
-                  <div style={{ fontSize: 11.5, color: C.faint, fontStyle: 'italic', padding: '4px 0' }}>
-                    + Pin a category from below to assign to Slot #{slotIdx + 1}
-                  </div>
-                )}
-              </div>
-            );
-          })}
-        </div>
-      </div>
 
       {/* Inline Create Category Form */}
       {showCreateForm && (
@@ -535,8 +384,13 @@ export function TimeTab(): JSX.Element {
 
       {/* Main Tracked Categories List */}
       <div style={{ ...card, marginBottom: 20 }}>
-        <div style={{ fontSize: 12.5, fontWeight: 600, color: C.dim, marginBottom: 14, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-          TRACKED CATEGORIES ({projects.length})
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+          <div style={{ fontSize: 12.5, fontWeight: 700, color: C.dim, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+            TRACKED CATEGORIES ({projects.length})
+          </div>
+          <div style={{ fontSize: 11.5, color: C.dim }}>
+            ⭐ {primaryCount} / 3 Mascot Quick-Trackers Pinned
+          </div>
         </div>
 
         {totals.rows.length === 0 ? (
@@ -546,7 +400,8 @@ export function TimeTab(): JSX.Element {
         ) : (
           totals.rows.map(({ project, ms, count }) => {
             const pct = totals.grand > 0 ? (ms / totals.grand) * 100 : 0;
-            const isPrimary = Boolean(settings?.primaryProjectIds?.includes(project.id));
+            const primaryIndex = settings?.primaryProjectIds?.indexOf(project.id) ?? -1;
+            const isPrimary = primaryIndex !== -1;
             const currentProjectId = timer?.projectId || timer?.session?.projectId || null;
             const isRunningThis = timer?.running === true && currentProjectId === project.id;
 
@@ -556,8 +411,8 @@ export function TimeTab(): JSX.Element {
                 style={{
                   background: isRunningThis ? `${project.colour}18` : '#181422',
                   border: `1px solid ${isRunningThis ? project.colour : isPrimary ? `${project.colour}55` : C.border}`,
-                  borderRadius: 10,
-                  padding: '12px 14px',
+                  borderRadius: 12,
+                  padding: '12px 16px',
                   marginBottom: 10,
                   transition: 'all 160ms ease',
                 }}
@@ -567,7 +422,7 @@ export function TimeTab(): JSX.Element {
                     display: 'flex',
                     justifyContent: 'space-between',
                     alignItems: 'center',
-                    marginBottom: 8,
+                    marginBottom: 6,
                   }}
                 >
                   {/* Category Name & Indicators */}
@@ -576,18 +431,19 @@ export function TimeTab(): JSX.Element {
                       style={{
                         width: 10,
                         height: 10,
-                        borderRadius: 3,
+                        borderRadius: '50%',
                         background: project.colour,
+                        boxShadow: `0 0 8px ${project.colour}`,
                       }}
                     />
-                    <span style={{ fontSize: 14, fontWeight: 600, color: C.text }}>{project.name}</span>
+                    <span style={{ fontSize: 14, fontWeight: 700, color: C.text }}>{project.name}</span>
                     
                     {isRunningThis && (
                       <span
                         style={{
                           fontSize: 10.5,
-                          background: `${project.colour}44`,
-                          color: '#ffffff',
+                          background: `${project.colour}33`,
+                          color: project.colour,
                           border: `1px solid ${project.colour}`,
                           padding: '2px 8px',
                           borderRadius: 999,
@@ -597,23 +453,8 @@ export function TimeTab(): JSX.Element {
                           gap: 4,
                         }}
                       >
-                        <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#fff' }} />
+                        <span style={{ width: 6, height: 6, borderRadius: '50%', background: project.colour }} />
                         Tracking Active
-                      </span>
-                    )}
-
-                    {isPrimary && !isRunningThis && (
-                      <span
-                        style={{
-                          fontSize: 10.5,
-                          background: `${project.colour}22`,
-                          color: project.colour,
-                          padding: '1px 7px',
-                          borderRadius: 999,
-                          fontWeight: 600,
-                        }}
-                      >
-                        Floating on Mochi
                       </span>
                     )}
                   </div>
@@ -624,40 +465,107 @@ export function TimeTab(): JSX.Element {
                       {humanDuration(ms)} · {count} session{count === 1 ? '' : 's'}
                     </span>
 
-                    {/* Start / Stop Tracking Button for this Category */}
+                    {/* Mascot Quick-Track Pin & Reorder Controls */}
+                    {isPrimary ? (
+                      <div
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 4,
+                          background: 'rgba(0, 0, 0, 0.25)',
+                          border: `1px solid ${project.colour}66`,
+                          borderRadius: 8,
+                          padding: '2px 6px',
+                        }}
+                      >
+                        <span style={{ fontSize: 11, fontWeight: 700, color: project.colour, marginRight: 2 }}>
+                          ★ Slot #{primaryIndex + 1}
+                        </span>
+                        <button
+                          title="Move Left on Mascot"
+                          disabled={primaryIndex === 0}
+                          onClick={() => void movePrimaryProject(primaryIndex, 'left')}
+                          style={{
+                            background: 'none',
+                            border: 'none',
+                            color: primaryIndex === 0 ? C.faint : C.text,
+                            cursor: primaryIndex === 0 ? 'not-allowed' : 'pointer',
+                            fontSize: 10,
+                            padding: '1px 3px',
+                          }}
+                        >
+                          ◀
+                        </button>
+                        <button
+                          title="Move Right on Mascot"
+                          disabled={primaryIndex === (settings?.primaryProjectIds?.length ?? 0) - 1}
+                          onClick={() => void movePrimaryProject(primaryIndex, 'right')}
+                          style={{
+                            background: 'none',
+                            border: 'none',
+                            color: primaryIndex === (settings?.primaryProjectIds?.length ?? 0) - 1 ? C.faint : C.text,
+                            cursor: primaryIndex === (settings?.primaryProjectIds?.length ?? 0) - 1 ? 'not-allowed' : 'pointer',
+                            fontSize: 10,
+                            padding: '1px 3px',
+                          }}
+                        >
+                          ▶
+                        </button>
+                        <button
+                          title="Unpin from Mascot"
+                          onClick={() => void togglePrimaryProject(project.id)}
+                          style={{
+                            background: 'none',
+                            border: 'none',
+                            color: C.dim,
+                            cursor: 'pointer',
+                            fontSize: 11,
+                            padding: '1px 3px',
+                            marginLeft: 2,
+                          }}
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        onClick={() => void togglePrimaryProject(project.id)}
+                        disabled={primaryCount >= 3}
+                        title={primaryCount >= 3 ? '3 slots already pinned. Unpin one to pin this.' : 'Pin to Mascot Overlay'}
+                        style={{
+                          background: 'transparent',
+                          border: `1px solid ${C.border}`,
+                          color: primaryCount >= 3 ? C.faint : C.dim,
+                          borderRadius: 6,
+                          padding: '4px 8px',
+                          fontSize: 11,
+                          fontWeight: 600,
+                          cursor: primaryCount >= 3 ? 'not-allowed' : 'pointer',
+                        }}
+                      >
+                        ☆ Pin to Mascot
+                      </button>
+                    )}
+
+                    {/* Start / Stop Tracking Button */}
                     <button
                       onClick={() => void startOrStopSession(project.id)}
                       style={{
-                        background: isRunningThis ? C.warn : `${project.colour}22`,
-                        border: `1px solid ${isRunningThis ? C.warn : project.colour}`,
+                        background: isRunningThis ? 'linear-gradient(135deg, #ff5e7e, #e63956)' : `${project.colour}22`,
+                        border: `1px solid ${isRunningThis ? '#e63956' : project.colour}`,
                         color: isRunningThis ? '#ffffff' : C.text,
                         borderRadius: 6,
-                        padding: '4px 12px',
+                        padding: '5px 14px',
                         fontSize: 12,
-                        fontWeight: 600,
+                        fontWeight: 700,
                         cursor: 'pointer',
                         display: 'flex',
                         alignItems: 'center',
                         gap: 5,
+                        boxShadow: isRunningThis ? '0 2px 8px rgba(230, 57, 86, 0.35)' : 'none',
                       }}
                     >
                       <span>{isRunningThis ? '⏹ Stop' : '▶ Track'}</span>
-                    </button>
-
-                    <button
-                      onClick={() => void togglePrimaryProject(project.id)}
-                      style={{
-                        background: 'transparent',
-                        border: `1px solid ${isPrimary ? project.colour : C.border}`,
-                        color: isPrimary ? C.text : C.dim,
-                        borderRadius: 6,
-                        padding: '4px 8px',
-                        fontSize: 11,
-                        fontWeight: 600,
-                        cursor: 'pointer',
-                      }}
-                    >
-                      {isPrimary ? '★ Pinned' : '☆ Pin'}
                     </button>
 
                     {project.name !== 'General' && (
@@ -669,7 +577,7 @@ export function TimeTab(): JSX.Element {
                           border: 'none',
                           color: C.dim,
                           cursor: 'pointer',
-                          fontSize: 14,
+                          fontSize: 13,
                           padding: '2px 4px',
                         }}
                         onMouseEnter={(e) => (e.currentTarget.style.color = C.warn)}
