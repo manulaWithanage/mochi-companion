@@ -163,6 +163,7 @@ export function registerIpc(ctx: IpcContext): void {
       hours.start !== hours.end;
 
     const updated = ctx.settings.update({
+      userName: asString(input.userName, 'Manula'),
       assistantName: asString(input.assistantName, 'Mochi'),
       skinName: asString(input.skinName, 'default'),
       ...(validHours ? { workHours: hours } : {}),
@@ -178,8 +179,19 @@ export function registerIpc(ctx: IpcContext): void {
     return next;
   });
 
+  ipcMain.handle('settings:setAlwaysOnTop', (_e, alwaysOnTop: unknown) => {
+    const next = ctx.settings.update({ alwaysOnTop: alwaysOnTop !== false });
+    ctx.overlay.setAlwaysOnTop(next.alwaysOnTop);
+    return next;
+  });
+
   ipcMain.handle('settings:setCenterScreenAlerts', (_e, enabled: unknown) => {
     return ctx.settings.update({ centerScreenAlerts: enabled === true });
+  });
+
+  ipcMain.handle('settings:setMascotSize', (_e, size: unknown) => {
+    const mascotSize = size === 'small' || size === 'large' ? size : 'medium';
+    return ctx.settings.update({ mascotSize });
   });
 
   ipcMain.handle('settings:setPrimaryProjects', (_e, ids: unknown) => {

@@ -237,10 +237,9 @@ async function bootstrap(): Promise<void> {
 
     if (decision.kind === 'allow') {
       const mailPreferences = settings.get().gmailAi;
-      const useCenterEntrance =
-        isMailReminder &&
-        settings.get().centerScreenAlerts &&
-        mailPreferences.centerScreenAlertsEnabled;
+      // For mail reminders, the Gmail-specific toggle is the sole decider.
+      // The global centerScreenAlerts flag controls routine/timer alerts only.
+      const useCenterEntrance = isMailReminder && mailPreferences.centerScreenAlertsEnabled;
       overlay.send('bubble:show', {
         text: event.text,
         ttlMs: event.userInitiated === true ? BUBBLE_TTL_LONG_MS : BUBBLE_TTL_MS,
@@ -332,7 +331,7 @@ async function bootstrap(): Promise<void> {
   // wait on a network call to appear.
   void llm.initialize();
 
-  overlay.create(settings.get().overlayPosition);
+  overlay.create(settings.get().overlayPosition, settings.get().alwaysOnTop);
   if (settings.get().paused) overlay.setPaused(true);
   tray.create();
 

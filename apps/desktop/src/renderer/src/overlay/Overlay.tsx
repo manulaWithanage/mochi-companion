@@ -9,8 +9,15 @@ import {
   type LoadedSkin,
   type MagicianPhase,
   type MascotState,
+  type MascotSize,
   type TimerSnapshot,
 } from '@mochi/core';
+
+const MASCOT_SIZE_MAP: Record<MascotSize, string> = {
+  small: '130px',
+  medium: '170px',
+  large: '210px',
+};
 import { useSpriteAnimation } from './useSpriteAnimation.js';
 import { SpeechBubble } from './SpeechBubble.js';
 import { SmokeEffect } from './SmokeEffect.js';
@@ -27,6 +34,7 @@ export function Overlay(): JSX.Element {
   const [canvas, setCanvas] = useState<HTMLCanvasElement | null>(null);
   const [skin, setSkin] = useState<LoadedSkin | null>(null);
   const [mascotState, setMascotState] = useState<MascotState>('idle');
+  const [mascotSize, setMascotSize] = useState<MascotSize>('medium');
   const [visible, setVisible] = useState(true);
   const [timer, setTimer] = useState<TimerSnapshot | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -59,6 +67,7 @@ export function Overlay(): JSX.Element {
         const settings = await window.mochi.settings.get();
         setSkin(await window.mochi.skin.load(settings.skinName));
         setMascotState(await window.mochi.mascot.current());
+        setMascotSize(settings.mascotSize ?? 'medium');
         setTimer(await window.mochi.timer.current());
       } catch (cause) {
         setError(cause instanceof Error ? cause.message : 'failed to load skin');
@@ -149,6 +158,7 @@ export function Overlay(): JSX.Element {
     });
     const offVisible = window.mochi.overlay.onVisibilityChange(setVisible);
     const offSettings = window.mochi.settings.onChange((next) => {
+      setMascotSize(next.mascotSize ?? 'medium');
       void window.mochi.skin
         .load(next.skinName)
         .then(setSkin)
@@ -332,8 +342,8 @@ export function Overlay(): JSX.Element {
           width={200}
           height={200}
           style={{
-            width: '170px',
-            height: '170px',
+            width: MASCOT_SIZE_MAP[mascotSize] ?? '170px',
+            height: MASCOT_SIZE_MAP[mascotSize] ?? '170px',
             display: 'block',
             // Nothing to click while a performance is running: a click would
             // stop the timer or open the pills mid-vanish.

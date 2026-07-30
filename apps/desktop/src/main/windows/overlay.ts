@@ -48,7 +48,7 @@ export class OverlayWindow {
 
   constructor(private readonly callbacks: OverlayCallbacks) {}
 
-  create(saved: OverlayPosition | null): BrowserWindow {
+  create(saved: OverlayPosition | null, alwaysOnTop = true): BrowserWindow {
     const placement = resolvePlacement(
       saved,
       OVERLAY_SIZE,
@@ -81,9 +81,12 @@ export class OverlayWindow {
       },
     });
 
-    // 'screen-saver' is the level that survives fullscreen apps on macOS;
-    // plain alwaysOnTop is not enough.
-    this.win.setAlwaysOnTop(true, 'screen-saver');
+    // Respect alwaysOnTop setting
+    if (alwaysOnTop) {
+      this.win.setAlwaysOnTop(true, 'screen-saver');
+    } else {
+      this.win.setAlwaysOnTop(false);
+    }
     this.win.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
 
     // Click-through by default. `forward: true` keeps mousemove flowing so the
@@ -274,6 +277,16 @@ export class OverlayWindow {
     if (win === null || win.isDestroyed()) return;
     if (paused) win.hide();
     else win.show();
+  }
+
+  setAlwaysOnTop(alwaysOnTop: boolean): void {
+    const win = this.win;
+    if (win === null || win.isDestroyed()) return;
+    if (alwaysOnTop) {
+      win.setAlwaysOnTop(true, 'screen-saver');
+    } else {
+      win.setAlwaysOnTop(false);
+    }
   }
 
   private performing = false;

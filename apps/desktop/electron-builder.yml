@@ -53,6 +53,8 @@ artifactName: ${productName}-${version}-${os}-${arch}.${ext}
 # ---------------------------------------------------------------------------
 # Windows
 # ---------------------------------------------------------------------------
+forceCodeSigning: false
+
 win:
   target:
     - target: nsis
@@ -70,6 +72,7 @@ nsis:
   # unsigned app deserve to see what is happening and choose the location.
   oneClick: false
   perMachine: false
+  allowElevation: false
   allowToChangeInstallationDirectory: true
   createDesktopShortcut: true
   createStartMenuShortcut: true

@@ -30,9 +30,13 @@ export interface GmailAiSettings {
   readonly defaultDraftTone: 'professional' | 'friendly' | 'brief';
 }
 
+export type MascotSize = 'small' | 'medium' | 'large';
+
 export interface MochiSettings {
+  readonly userName: string;
   readonly assistantName: string;
   readonly skinName: string;
+  readonly mascotSize: MascotSize;
   readonly workHours: WorkHours;
   readonly overlayPosition: OverlayPosition | null;
   /** False until the 3-step window is finished; drives first-run detection. */
@@ -44,6 +48,8 @@ export interface MochiSettings {
    * animates and the stopwatch still works, it just never speaks unprompted.
    */
   readonly doNotDisturb: boolean;
+  /** Mochi floats on top of all application windows. */
+  readonly alwaysOnTop: boolean;
   /** When a routine reminder triggers, float to center of screen with smooth animation. */
   readonly centerScreenAlerts: boolean;
   /** IDs of up to 3 primary quick-select time tracking projects shown above Mochi. */
@@ -61,13 +67,16 @@ export interface MochiSettings {
 }
 
 export const DEFAULT_SETTINGS: MochiSettings = {
+  userName: 'Manula',
   assistantName: 'Mochi',
   skinName: 'default',
+  mascotSize: 'medium',
   workHours: DEFAULT_WORK_HOURS,
   overlayPosition: null,
   setupCompleted: false,
   paused: false,
   doNotDisturb: false,
+  alwaysOnTop: true,
   centerScreenAlerts: true,
   primaryProjectIds: [],
   localEndpoints: {},
@@ -107,6 +116,12 @@ export function normalizeSettings(raw: unknown): {
   }
   const input = raw as Partial<Record<keyof MochiSettings, unknown>>;
 
+  let userName = DEFAULT_SETTINGS.userName;
+  if (typeof input.userName === 'string') {
+    const trimmed = input.userName.trim();
+    if (trimmed.length > 0) userName = trimmed.slice(0, MAX_NAME_LENGTH);
+  }
+
   let assistantName = DEFAULT_SETTINGS.assistantName;
   if (typeof input.assistantName === 'string') {
     const trimmed = input.assistantName.trim();
@@ -121,6 +136,9 @@ export function normalizeSettings(raw: unknown): {
     typeof input.skinName === 'string' && input.skinName.length > 0
       ? input.skinName
       : DEFAULT_SETTINGS.skinName;
+
+  const mascotSize: MascotSize =
+    input.mascotSize === 'small' || input.mascotSize === 'large' ? input.mascotSize : 'medium';
 
   let workHours = DEFAULT_SETTINGS.workHours;
   const rawHours = input.workHours;
@@ -227,13 +245,16 @@ export function normalizeSettings(raw: unknown): {
 
   return {
     settings: {
+      userName,
       assistantName,
       skinName,
+      mascotSize,
       workHours,
       overlayPosition,
       setupCompleted: input.setupCompleted === true,
       paused: input.paused === true,
       doNotDisturb: input.doNotDisturb === true,
+      alwaysOnTop: input.alwaysOnTop !== false,
       centerScreenAlerts: input.centerScreenAlerts !== false,
       primaryProjectIds,
       localEndpoints,

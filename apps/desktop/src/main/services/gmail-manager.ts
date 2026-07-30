@@ -320,7 +320,7 @@ export class GmailManager {
       };
     }
 
-    const userName = this.settings.get().assistantName ?? 'Mochi User';
+    const userName = this.settings.get().userName || 'User';
     const promptInput = buildEmailReplyPrompt({
       fromEmail: email.from,
       subject: email.subject,

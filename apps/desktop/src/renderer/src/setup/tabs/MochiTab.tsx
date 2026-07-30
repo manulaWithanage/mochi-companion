@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type JSX } from 'react';
-import { parseHhMm, type LoadedSkin, type MascotState, type MochiSettings, type SkinSummary } from '@mochi/core';
+import { parseHhMm, type LoadedSkin, type MascotSize, type MascotState, type MochiSettings, type SkinSummary } from '@mochi/core';
 import { button, C, card, h2, input, label, sub } from '../ui.js';
 
 const STATES: readonly MascotState[] = ['idle', 'working', 'resting', 'alert'];
@@ -123,8 +123,10 @@ function SkinPreview({ skinName, state }: { skinName: string; state: MascotState
 export function MochiTab(): JSX.Element {
   const [settings, setSettings] = useState<MochiSettings | null>(null);
   const [skins, setSkins] = useState<readonly SkinSummary[]>([]);
+  const [userName, setUserName] = useState('');
   const [name, setName] = useState('');
   const [skinName, setSkinName] = useState('default');
+  const [mascotSize, setMascotSize] = useState<MascotSize>('medium');
   const [preview, setPreview] = useState<MascotState>('idle');
   const [saved, setSaved] = useState(false);
 
@@ -135,14 +137,19 @@ export function MochiTab(): JSX.Element {
   useEffect(() => {
     void window.mochi.settings.get().then((s) => {
       setSettings(s);
+      setUserName(s.userName ?? 'Manula');
       setName(s.assistantName);
       setSkinName(s.skinName);
+      setMascotSize(s.mascotSize ?? 'medium');
       setStart(s.workHours.start);
       setEnd(s.workHours.end);
     });
     void window.mochi.skin.listAvailable().then(setSkins);
     return window.mochi.settings.onChange((s) => {
       setSettings(s);
+      setUserName(s.userName ?? 'Manula');
+      setName(s.assistantName);
+      setMascotSize(s.mascotSize ?? 'medium');
       setStart(s.workHours.start);
       setEnd(s.workHours.end);
     });
@@ -150,10 +157,14 @@ export function MochiTab(): JSX.Element {
 
   if (settings === null) return <div style={card}>Loading…</div>;
 
-  const dirty = name !== settings.assistantName || skinName !== settings.skinName;
+  const dirty =
+    userName !== settings.userName ||
+    name !== settings.assistantName ||
+    skinName !== settings.skinName;
 
   const saveIdentity = async (): Promise<void> => {
     await window.mochi.settings.completeSetup({
+      userName: userName.trim() || 'Manula',
       assistantName: name.trim() || 'Mochi',
       skinName,
       workHours: settings.workHours,
@@ -223,16 +234,38 @@ export function MochiTab(): JSX.Element {
       </div>
 
       <div style={{ ...card, marginBottom: 16 }}>
-        <span style={label}>Name</span>
-        <input
-          style={{ ...input, marginBottom: 14 }}
-          value={name}
-          maxLength={24}
-          onChange={(e) => setName(e.target.value)}
-        />
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+            gap: 12,
+            marginBottom: 14,
+          }}
+        >
+          <div>
+            <span style={label}>Your Name</span>
+            <input
+              style={input}
+              placeholder="e.g. Manula"
+              value={userName}
+              maxLength={24}
+              onChange={(e) => setUserName(e.target.value)}
+            />
+          </div>
+          <div>
+            <span style={label}>Assistant Name</span>
+            <input
+              style={input}
+              placeholder="e.g. Mochi"
+              value={name}
+              maxLength={24}
+              onChange={(e) => setName(e.target.value)}
+            />
+          </div>
+        </div>
 
         <span style={label}>Skin</span>
-        <select style={input} value={skinName} onChange={(e) => setSkinName(e.target.value)}>
+        <select style={{ ...input, marginBottom: 14 }} value={skinName} onChange={(e) => setSkinName(e.target.value)}>
           {skins.map((s) => (
             <option key={s.name} value={s.name}>
               {s.name}
@@ -240,6 +273,30 @@ export function MochiTab(): JSX.Element {
             </option>
           ))}
         </select>
+
+        <span style={label}>Mochi Size</span>
+        <div style={{ display: 'flex', gap: 8, marginBottom: 14 }}>
+          {(['small', 'medium', 'large'] as const).map((sz) => {
+            const isSelected = mascotSize === sz;
+            const labels = { small: 'Small (130px)', medium: 'Medium (170px)', large: 'Large (210px)' };
+            return (
+              <button
+                key={sz}
+                type="button"
+                onClick={() => void window.mochi.settings.setMascotSize(sz)}
+                style={{
+                  ...button(isSelected ? 'primary' : 'ghost'),
+                  flex: 1,
+                  padding: '8px 12px',
+                  fontSize: 12.5,
+                  textTransform: 'capitalize',
+                }}
+              >
+                {labels[sz]}
+              </button>
+            );
+          })}
+        </div>
 
         <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 14 }}>
           <button style={button('primary')} disabled={!dirty} onClick={() => void saveIdentity()}>
@@ -286,6 +343,12 @@ export function MochiTab(): JSX.Element {
           onChange={(v) => void window.mochi.settings.setDoNotDisturb(v)}
           title="Do not disturb"
           desc="Mochi stays on screen and keeps tracking time, but never speaks unprompted."
+        />
+        <Toggle
+          on={settings.alwaysOnTop}
+          onChange={(v) => void window.mochi.settings.setAlwaysOnTop(v)}
+          title="Always on top"
+          desc="Keep Mochi floating on top of all application windows. Turn off to let Mochi sit behind active windows on your desktop."
         />
         <Toggle
           on={settings.centerScreenAlerts}

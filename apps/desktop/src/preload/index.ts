@@ -90,8 +90,12 @@ const bridge: MochiBridge = {
       ipcRenderer.invoke('settings:setPaused', paused) as Promise<MochiSettings>,
     setDoNotDisturb: (dnd) =>
       ipcRenderer.invoke('settings:setDoNotDisturb', dnd) as Promise<MochiSettings>,
+    setAlwaysOnTop: (alwaysOnTop) =>
+      ipcRenderer.invoke('settings:setAlwaysOnTop', alwaysOnTop) as Promise<MochiSettings>,
     setCenterScreenAlerts: (enabled) =>
       ipcRenderer.invoke('settings:setCenterScreenAlerts', enabled) as Promise<MochiSettings>,
+    setMascotSize: (size) =>
+      ipcRenderer.invoke('settings:setMascotSize', size) as Promise<MochiSettings>,
     setPrimaryProjects: (ids) =>
       ipcRenderer.invoke('settings:setPrimaryProjects', ids) as Promise<MochiSettings>,
     setGmailAi: (patch) =>

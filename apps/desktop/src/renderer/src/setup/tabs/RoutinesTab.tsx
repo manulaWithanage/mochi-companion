@@ -26,6 +26,79 @@ const CATEGORY_MAP: Record<RoutineCategory, { label: string; defaultIcon: string
   custom: { label: 'Custom Habit', defaultIcon: '⚡', color: '#f59e0b' },
 };
 
+/** Parses inputs like "14:00", "2:00 PM", "9:30", "930", "9am", "11pm", "1430" -> "14:00" */
+function parseFlexibleTime(inputStr: string): string | null {
+  const str = inputStr.trim().toLowerCase();
+  if (!str) return null;
+
+  // Match 12-hour with am/pm: "2:30 pm", "2:30pm", "9am", "11:15pm", "2pm"
+  const ampmMatch = /^(\d{1,2})(?::(\d{2}))?\s*(am|pm)$/i.exec(str);
+  if (ampmMatch && ampmMatch[1] && ampmMatch[3]) {
+    let hours = parseInt(ampmMatch[1], 10);
+    const minutes = ampmMatch[2] ? parseInt(ampmMatch[2], 10) : 0;
+    const isPm = ampmMatch[3].toLowerCase() === 'pm';
+    if (hours < 1 || hours > 12 || minutes < 0 || minutes > 59) return null;
+    if (isPm && hours < 12) hours += 12;
+    if (!isPm && hours === 12) hours = 0;
+    return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+  }
+
+  // Match 24-hour with colon: "14:30", "9:00", "09:15"
+  const colonMatch = /^(\d{1,2}):(\d{2})$/.exec(str);
+  if (colonMatch && colonMatch[1] && colonMatch[2]) {
+    const hours = parseInt(colonMatch[1], 10);
+    const minutes = parseInt(colonMatch[2], 10);
+    if (hours < 0 || hours > 23 || minutes < 0 || minutes > 59) return null;
+    return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+  }
+
+  // Match 3 or 4 digit numbers or single/double hour: "930" -> 09:30, "1430" -> 14:30, "9" -> 09:00
+  const numMatch = /^(\d{1,4})$/.exec(str);
+  if (numMatch && numMatch[1]) {
+    const raw = numMatch[1];
+    let hours = 0;
+    let minutes = 0;
+    if (raw.length <= 2) {
+      hours = parseInt(raw, 10);
+      minutes = 0;
+    } else if (raw.length === 3) {
+      hours = parseInt(raw.slice(0, 1), 10);
+      minutes = parseInt(raw.slice(1), 10);
+    } else {
+      hours = parseInt(raw.slice(0, 2), 10);
+      minutes = parseInt(raw.slice(2), 10);
+    }
+    if (hours < 0 || hours > 23 || minutes < 0 || minutes > 59) return null;
+    return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+  }
+
+  return null;
+}
+
+/** Formats "14:00" -> "2:00 PM", "09:30" -> "9:30 AM" */
+function formatTime12h(time24: string): string {
+  const parts = time24.split(':');
+  let h = parseInt(parts[0] || '0', 10);
+  const m = parts[1] || '00';
+  const ampm = h >= 12 ? 'PM' : 'AM';
+  h = h % 12 || 12;
+  return `${h}:${m} ${ampm}`;
+}
+
+const TIME_SUGGESTIONS = [
+  { label: '08:00 AM', value: '08:00' },
+  { label: '09:00 AM', value: '09:00' },
+  { label: '10:00 AM', value: '10:00' },
+  { label: '11:30 AM', value: '11:30' },
+  { label: '12:30 PM', value: '12:30' },
+  { label: '02:00 PM', value: '14:00' },
+  { label: '03:30 PM', value: '15:30' },
+  { label: '05:00 PM', value: '17:00' },
+  { label: '06:30 PM', value: '18:30' },
+  { label: '08:00 PM', value: '20:00' },
+  { label: '09:30 PM', value: '21:30' },
+] as const;
+
 const Toggle = ({
   on,
   onChange,
@@ -125,10 +198,12 @@ export function RoutinesTab(): JSX.Element {
     setIsEditing(true);
   };
 
-  const addTimeSlot = (): void => {
-    if (newTimeInput && !times.includes(newTimeInput)) {
-      const updated = [...times, newTimeInput].sort();
+  const addTimeSlot = (timeToAdd?: string): void => {
+    const target = timeToAdd || parseFlexibleTime(newTimeInput);
+    if (target && !times.includes(target)) {
+      const updated = [...times, target].sort();
       setTimes(updated);
+      setNewTimeInput('');
     }
   };
 
@@ -152,8 +227,9 @@ export function RoutinesTab(): JSX.Element {
     if (!title.trim()) return;
 
     const finalTimes = [...times];
-    if (newTimeInput && !finalTimes.includes(newTimeInput)) {
-      finalTimes.push(newTimeInput);
+    const parsedNew = parseFlexibleTime(newTimeInput);
+    if (parsedNew && !finalTimes.includes(parsedNew)) {
+      finalTimes.push(parsedNew);
       finalTimes.sort();
     }
 
@@ -341,18 +417,18 @@ export function RoutinesTab(): JSX.Element {
                   key={t}
                   style={{
                     background: '#2a2236',
-                    border: `1px solid ${C.border}`,
+                    border: `1px solid ${C.accent}`,
                     borderRadius: 20,
-                    padding: '4px 10px',
+                    padding: '5px 12px',
                     display: 'flex',
                     alignItems: 'center',
-                    gap: 6,
-                    fontSize: 12,
-                    fontWeight: 600,
+                    gap: 8,
+                    fontSize: 12.5,
+                    fontWeight: 650,
                     color: C.accent,
                   }}
                 >
-                  <span>🕒 {t}</span>
+                  <span>🕒 {formatTime12h(t)} <span style={{ opacity: 0.6, fontSize: 11 }}>({t})</span></span>
                   {times.length > 1 && (
                     <button
                       type="button"
@@ -363,8 +439,9 @@ export function RoutinesTab(): JSX.Element {
                         color: C.warn,
                         cursor: 'pointer',
                         padding: 0,
-                        fontSize: 13,
+                        fontSize: 14,
                         lineHeight: 1,
+                        marginLeft: 2,
                       }}
                     >
                       ×
@@ -375,20 +452,85 @@ export function RoutinesTab(): JSX.Element {
             </div>
 
             {/* Add New Time Input */}
-            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-              <input
-                style={{ ...input, width: 120, marginBottom: 0 }}
-                type="time"
-                value={newTimeInput}
-                onChange={(e) => setNewTimeInput(e.target.value)}
-              />
+            <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap', marginBottom: 8 }}>
+              <div style={{ position: 'relative', flex: 1, minWidth: 220 }}>
+                <input
+                  style={{ ...input, marginBottom: 0, paddingRight: 90 }}
+                  type="text"
+                  placeholder="Type e.g., 2:30 PM, 14:00, 9am"
+                  value={newTimeInput}
+                  onChange={(e) => setNewTimeInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      addTimeSlot();
+                    }
+                  }}
+                />
+                {newTimeInput.trim().length > 0 && (
+                  <div
+                    style={{
+                      position: 'absolute',
+                      right: 10,
+                      top: '50%',
+                      transform: 'translateY(-50%)',
+                      fontSize: 11,
+                      fontWeight: 600,
+                      color: parseFlexibleTime(newTimeInput) ? C.good : C.warn,
+                      pointerEvents: 'none',
+                    }}
+                  >
+                    {parseFlexibleTime(newTimeInput)
+                      ? `✓ ${formatTime12h(parseFlexibleTime(newTimeInput)!)}`
+                      : 'Invalid format'}
+                  </div>
+                )}
+              </div>
               <button
                 type="button"
-                style={{ ...button('ghost'), padding: '7px 12px', fontSize: 12 }}
-                onClick={addTimeSlot}
+                disabled={!parseFlexibleTime(newTimeInput)}
+                style={{
+                  ...button('primary'),
+                  padding: '8px 14px',
+                  fontSize: 12,
+                  opacity: parseFlexibleTime(newTimeInput) ? 1 : 0.5,
+                }}
+                onClick={() => addTimeSlot()}
               >
                 + Add Time
               </button>
+            </div>
+
+            {/* Quick Time Suggestion Chips */}
+            <div>
+              <div style={{ fontSize: 11, color: C.dim, marginBottom: 6, fontWeight: 500 }}>
+                Quick suggestions:
+              </div>
+              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                {TIME_SUGGESTIONS.map((sug) => {
+                  const alreadyAdded = times.includes(sug.value);
+                  return (
+                    <button
+                      key={sug.value}
+                      type="button"
+                      onClick={() => addTimeSlot(sug.value)}
+                      disabled={alreadyAdded}
+                      style={{
+                        background: alreadyAdded ? '#1e1828' : '#251e30',
+                        border: `1px solid ${alreadyAdded ? C.border : 'rgba(255,255,255,0.12)'}`,
+                        borderRadius: 6,
+                        padding: '4px 8px',
+                        fontSize: 11.5,
+                        color: alreadyAdded ? C.faint : C.text,
+                        cursor: alreadyAdded ? 'default' : 'pointer',
+                        opacity: alreadyAdded ? 0.5 : 1,
+                      }}
+                    >
+                      + {sug.label}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
           </div>
 
@@ -560,7 +702,7 @@ export function RoutinesTab(): JSX.Element {
                                 borderRadius: 4,
                               }}
                             >
-                              {t}
+                              {formatTime12h(t)}
                             </span>
                           ))}
                         </div>

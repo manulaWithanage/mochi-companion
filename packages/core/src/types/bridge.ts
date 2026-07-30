@@ -19,7 +19,7 @@ import type {
 import type { MagicianPhase } from '../mascot/magician.js';
 import type { DiscoveredModel, ProviderId } from '../llm/providers.js';
 import type { MascotState, WorkHours } from '../mascot/state.js';
-import type { MochiSettings } from '../settings/settings.js';
+import type { MascotSize, MochiSettings } from '../settings/settings.js';
 import type { GmailAiSettings } from '../settings/settings.js';
 import type { UserRoutine, UserRoutineInput } from '../routines/user-routines.js';
 import type { Project } from '../storage/adapter.js';
@@ -101,9 +101,11 @@ export interface TimerSnapshot {
 }
 
 export interface SetupPayload {
+  readonly userName?: string;
   readonly assistantName: string;
   readonly skinName: string;
-  readonly workHours: WorkHours;
+  readonly mascotSize?: MascotSize;
+  readonly workHours?: WorkHours;
 }
 
 export interface SkinSummary {
@@ -167,7 +169,9 @@ export interface MochiBridge {
     completeSetup(payload: SetupPayload): Promise<MochiSettings>;
     setPaused(paused: boolean): Promise<MochiSettings>;
     setDoNotDisturb(dnd: boolean): Promise<MochiSettings>;
+    setAlwaysOnTop(alwaysOnTop: boolean): Promise<MochiSettings>;
     setCenterScreenAlerts(enabled: boolean): Promise<MochiSettings>;
+    setMascotSize(size: MascotSize): Promise<MochiSettings>;
     setPrimaryProjects(ids: readonly string[]): Promise<MochiSettings>;
     setGmailAi(patch: Partial<GmailAiSettings>): Promise<MochiSettings>;
     onChange(listener: (settings: MochiSettings) => void): () => void;

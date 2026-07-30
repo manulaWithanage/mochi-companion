@@ -165,7 +165,8 @@ export function GmailSettingsPanel({ value, onSave }: GmailSettingsPanelProps): 
   };
 
   const preview = async (): Promise<void> => {
-    await save();
+    // Save in the background — don't block the preview on IMAP reconcile.
+    void save();
     await window.mochi.gmail.previewAlert();
   };
 
