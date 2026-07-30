@@ -19,7 +19,7 @@ import {
   type ProviderId,
 } from '@mochi/core';
 import { KeyVault } from '../storage/key-vault.js';
-import { ProviderService, validateKey } from './provider-service.js';
+import { ProviderService, validateKey, validateAzureKey } from './provider-service.js';
 
 export class LlmService {
   private readonly vault: KeyVault;
@@ -49,6 +49,23 @@ export class LlmService {
   private async refreshProvider(provider: ProviderId): Promise<void> {
     const key = this.vault.reveal(provider);
     if (key === null) return;
+
+    if (provider === 'azure' && key.startsWith('azure::')) {
+      const parts = key.split('::');
+      const resourceName = parts[1] ?? '';
+      const deploymentName = parts[2] ?? '';
+      const apiKey = parts[3] ?? '';
+      const result = await validateAzureKey({ resourceName, deploymentName, apiKey });
+      if (result.ok) {
+        this.remoteModels.set('azure', result.models);
+        this.providers.markConfigured('azure');
+      } else {
+        this.remoteModels.delete('azure');
+        console.warn(`[llm] azure key did not validate: ${result.error ?? 'unknown'}`);
+      }
+      return;
+    }
+
     const result = await validateKey(key);
     if (result.ok) {
       this.remoteModels.set(provider, result.models);
