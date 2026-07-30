@@ -21,6 +21,7 @@ import { C, card, label, input, button, h2, sub } from '../ui.js';
 type View = 'inbox' | 'draft';
 
 interface DraftState {
+  emailId: string;
   emailUid: number;
   subject: string;
   from: string;
@@ -40,6 +41,7 @@ export function GmailTab(): JSX.Element {
   const [fetchError, setFetchError] = useState<string | null>(null);
   const [syncStatus, setSyncStatus] = useState<GmailSyncStatus | null>(null);
   const [sortMode, setSortMode] = useState<'priority' | 'recent'>('priority');
+  const [backgroundDraftsEnabled, setBackgroundDraftsEnabled] = useState(false);
 
   // Primary only by default. Most unread mail is promotions, and every message
   // shown costs a full body download, so the default both looks better and is
@@ -87,6 +89,13 @@ export function GmailTab(): JSX.Element {
       disposed = true;
     };
   }, [loadCached]);
+
+  useEffect(() => {
+    void window.mochi.settings.get().then((settings) => {
+      setBackgroundDraftsEnabled(settings.gmailAi.backgroundDraftsEnabled);
+      setSortMode(settings.gmailAi.defaultSort);
+    });
+  }, []);
 
   useEffect(() => {
     const stopInbox = window.mochi.gmail.onInboxChanged(() => {
@@ -150,6 +159,7 @@ export function GmailTab(): JSX.Element {
     setGenerateError(null);
     setView('draft');
     setDraft({
+      emailId: email.emailId,
       emailUid: email.uid,
       subject: email.subject,
       from: email.replyToAddress || email.fromAddress,
@@ -157,18 +167,18 @@ export function GmailTab(): JSX.Element {
       suggestedSubject: `Re: ${email.subject}`,
     });
 
-    const result = await window.mochi.gmail.generateAndSaveDraft(email.uid, tone);
+    const result = await window.mochi.gmail.generateDraft(email.emailId, tone);
     setGenerating(false);
     if (result.ok && result.draftReply) {
       setDraft({
+        emailId: email.emailId,
         emailUid: email.uid,
         subject: email.subject,
         from: email.replyToAddress || email.fromAddress,
         draftReply: result.draftReply,
         suggestedSubject: result.suggestedSubject ?? `Re: ${email.subject}`,
       });
-      setSavedOk(true);
-      setTimeout(() => setSavedOk(false), 4000);
+      await loadCached(active, sortMode);
     } else {
       setGenerateError(result.error ?? 'Failed to generate draft.');
     }
@@ -177,11 +187,11 @@ export function GmailTab(): JSX.Element {
   const handleSaveDraft = async (): Promise<void> => {
     if (!draft) return;
     setSavingDraft(true);
-    const result = await window.mochi.gmail.saveDraft({
-      toEmail: draft.from,
-      subject: draft.suggestedSubject,
-      body: draft.draftReply,
-    });
+    const result = await window.mochi.gmail.saveGeneratedDraft(
+      draft.emailId,
+      draft.suggestedSubject,
+      draft.draftReply,
+    );
     setSavingDraft(false);
     if (result.ok) {
       setSavedOk(true);
@@ -199,6 +209,28 @@ export function GmailTab(): JSX.Element {
   const handleDismissReminder = async (emailId: string): Promise<void> => {
     await window.mochi.gmail.dismissReminder(emailId);
     await loadCached(active, sortMode);
+  };
+
+  const openDraft = (email: CachedInboxItem): void => {
+    if (
+      email.draft?.status === 'ready' &&
+      email.draft.body !== null &&
+      email.draft.subject !== null
+    ) {
+      setDraft({
+        emailId: email.emailId,
+        emailUid: email.uid,
+        subject: email.subject,
+        from: email.replyToAddress || email.fromAddress,
+        draftReply: email.draft.body,
+        suggestedSubject: email.draft.subject,
+      });
+      setGenerateError(null);
+      setSavedOk(false);
+      setView('draft');
+      return;
+    }
+    void handleGenerate(email);
   };
 
   // ---- Not connected ----
@@ -447,6 +479,29 @@ export function GmailTab(): JSX.Element {
           </p>
         </div>
         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+          <label
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 5,
+              color: C.dim,
+              fontSize: 11.5,
+              whiteSpace: 'nowrap',
+            }}
+          >
+            <input
+              type="checkbox"
+              checked={backgroundDraftsEnabled}
+              onChange={(event) => {
+                const enabled = event.target.checked;
+                setBackgroundDraftsEnabled(enabled);
+                void window.mochi.settings
+                  .setGmailAi({ backgroundDraftsEnabled: enabled })
+                  .then(() => (enabled ? window.mochi.gmail.refresh() : null));
+              }}
+            />
+            Background drafts
+          </label>
           <select
             id="gmail-sort-select"
             value={sortMode}
@@ -655,16 +710,27 @@ export function GmailTab(): JSX.Element {
                   </span>
                   <button
                     id={`gmail-draft-btn-${email.uid}`}
-                    onClick={() => void handleGenerate(email)}
+                    onClick={() => openDraft(email)}
+                    disabled={
+                      email.draft?.status === 'queued' || email.draft?.status === 'generating'
+                    }
                     style={{
                       ...button('primary'),
                       flexShrink: 0,
                       fontSize: 12,
                       padding: '7px 14px',
                       whiteSpace: 'nowrap',
+                      opacity:
+                        email.draft?.status === 'queued' || email.draft?.status === 'generating'
+                          ? 0.6
+                          : 1,
                     }}
                   >
-                    ✦ Draft Reply
+                    {email.draft?.status === 'ready'
+                      ? '✦ Draft ready'
+                      : email.draft?.status === 'queued' || email.draft?.status === 'generating'
+                        ? 'Preparing…'
+                        : '✦ Draft Reply'}
                   </button>
                 </div>
               </div>

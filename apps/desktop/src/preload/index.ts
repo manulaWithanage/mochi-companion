@@ -94,6 +94,8 @@ const bridge: MochiBridge = {
       ipcRenderer.invoke('settings:setCenterScreenAlerts', enabled) as Promise<MochiSettings>,
     setPrimaryProjects: (ids) =>
       ipcRenderer.invoke('settings:setPrimaryProjects', ids) as Promise<MochiSettings>,
+    setGmailAi: (patch) =>
+      ipcRenderer.invoke('settings:setGmailAi', patch) as Promise<MochiSettings>,
     onChange: (listener) => subscribe<MochiSettings>('settings:changed', listener),
   },
 
@@ -189,6 +191,13 @@ const bridge: MochiBridge = {
       ipcRenderer.invoke('gmail:snoozeReminder', emailId, minutes) as Promise<boolean>,
     dismissReminder: (emailId) =>
       ipcRenderer.invoke('gmail:dismissReminder', emailId) as Promise<boolean>,
+    generateDraft: (emailId, tone) =>
+      ipcRenderer.invoke('gmail:generateDraft', emailId, tone) as Promise<GmailDraftResult>,
+    saveGeneratedDraft: (emailId, subject, body) =>
+      ipcRenderer.invoke('gmail:saveGeneratedDraft', emailId, subject, body) as Promise<{
+        ok: boolean;
+        error?: string;
+      }>,
     generateAndSaveDraft: (emailUid, tone) =>
       ipcRenderer.invoke('gmail:generateAndSaveDraft', emailUid, tone) as Promise<GmailDraftResult>,
     saveDraft: (request: GmailSaveDraftRequest) =>

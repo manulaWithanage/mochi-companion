@@ -26,6 +26,7 @@ import { GmailImapService } from './gmail-imap.js';
 import type { LlmClient } from './llm-client.js';
 import type { SettingsStore } from '../storage/settings-store.js';
 import { EmailTriageService } from './email-triage-service.js';
+import { EmailDraftService } from './email-draft-service.js';
 import { EmailReminderService } from './email-reminder-service.js';
 import { GmailSyncService } from './gmail-sync-service.js';
 
@@ -33,6 +34,7 @@ export class GmailManager {
   private readonly vault: GmailVault;
   private readonly imap: GmailImapService;
   private readonly triage: EmailTriageService;
+  private readonly drafts: EmailDraftService;
   private readonly reminders: EmailReminderService;
   private readonly syncService: GmailSyncService;
   private readonly inboxListeners = new Set<
@@ -59,6 +61,14 @@ export class GmailManager {
       this.settings,
       () => this.vault.reveal(),
     );
+    this.drafts = new EmailDraftService(
+      this.llmClient,
+      this.imap,
+      this.emailStore,
+      this.settings,
+      () => this.vault.reveal(),
+      (account) => this.notifyInbox(account, []),
+    );
     this.reminders = new EmailReminderService(bus, this.emailStore, this.imap, () =>
       this.vault.reveal(),
     );
@@ -66,6 +76,7 @@ export class GmailManager {
       onInboxChanged: async (account, newEmails) => {
         await this.triage.classifyInbox(account);
         await this.reminders.reconcile(account);
+        this.drafts.enqueueEligible(account);
         this.notifyInbox(account, newEmails);
       },
       onStatus: (status) => {
@@ -79,6 +90,7 @@ export class GmailManager {
   }
 
   async stop(): Promise<void> {
+    this.drafts.stop();
     this.reminders.stop();
     await this.syncService.stop();
   }
@@ -124,6 +136,7 @@ export class GmailManager {
   }
 
   async disconnect(): Promise<void> {
+    this.drafts.stop();
     this.reminders.stop();
     await this.syncService.stop();
     this.vault.clear();
@@ -178,6 +191,38 @@ export class GmailManager {
     if (account === null) return;
     await this.reminders.dismissThread(account, threadId);
     this.notifyInbox(account, []);
+  }
+
+  async generateDraft(
+    emailId: string,
+    tone: GmailTone = 'professional',
+  ): Promise<GmailDraftResult> {
+    const account = this.vault.email;
+    if (account === null) return { ok: false, error: 'No Gmail account connected.' };
+    return this.drafts.generate(account, emailId, tone, false);
+  }
+
+  async saveGeneratedDraft(
+    emailId: string,
+    subject: string,
+    body: string,
+  ): Promise<{ ok: boolean; error?: string }> {
+    const credentials = this.vault.reveal();
+    const account = this.vault.email;
+    if (credentials === null || account === null) {
+      return { ok: false, error: 'No Gmail account connected.' };
+    }
+    const email = await this.emailStore.getCachedEmail(account, emailId);
+    if (email === null) return { ok: false, error: 'Email is no longer in the local inbox.' };
+    const full = await this.imap.fetchMessage(credentials, email.uid, email.category);
+    if (full === null) return { ok: false, error: 'Could not download the source email.' };
+    return this.imap.saveDraft(credentials, {
+      toEmail: email.replyToAddress || email.fromAddress,
+      subject,
+      body,
+      inReplyTo: full.messageId,
+      references: full.threadReferences,
+    });
   }
 
   private notifyInbox(account: string, newEmails: readonly CachedEmail[]): void {

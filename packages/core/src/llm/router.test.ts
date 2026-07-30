@@ -52,6 +52,13 @@ describe('selectModel', () => {
     expect(r.model.provider).toBe('anthropic');
   });
 
+  it('uses the cheapest route for background drafts', () => {
+    const r = selectModel(TASKS['background-draft'], [LOCAL, GOOGLE, ANTHROPIC]);
+    expect(r.kind).toBe('use');
+    if (r.kind !== 'use') return;
+    expect(r.model.provider).toBe('ollama');
+  });
+
   it('filters on capability before preference', () => {
     // Screen Helper needs vision; the cheap local model cannot do it.
     const r = selectModel(TASKS.screen, [LOCAL, VISION]);

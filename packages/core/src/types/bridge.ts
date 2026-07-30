@@ -20,6 +20,7 @@ import type { MagicianPhase } from '../mascot/magician.js';
 import type { DiscoveredModel, ProviderId } from '../llm/providers.js';
 import type { MascotState, WorkHours } from '../mascot/state.js';
 import type { MochiSettings } from '../settings/settings.js';
+import type { GmailAiSettings } from '../settings/settings.js';
 import type { UserRoutine, UserRoutineInput } from '../routines/user-routines.js';
 import type { Project } from '../storage/adapter.js';
 import type { Task } from '../tasks/tasks.js';
@@ -164,6 +165,7 @@ export interface MochiBridge {
     setDoNotDisturb(dnd: boolean): Promise<MochiSettings>;
     setCenterScreenAlerts(enabled: boolean): Promise<MochiSettings>;
     setPrimaryProjects(ids: readonly string[]): Promise<MochiSettings>;
+    setGmailAi(patch: Partial<GmailAiSettings>): Promise<MochiSettings>;
     onChange(listener: (settings: MochiSettings) => void): () => void;
   };
 
@@ -296,6 +298,14 @@ export interface MochiBridge {
     onSyncStatus(listener: (status: GmailSyncStatus) => void): () => void;
     snoozeReminder(emailId: string, minutes?: number): Promise<boolean>;
     dismissReminder(emailId: string): Promise<boolean>;
+    /** Generate and persist a local draft without writing to Gmail. */
+    generateDraft(emailId: string, tone?: GmailTone): Promise<GmailDraftResult>;
+    /** Explicitly save a reviewed local draft into Gmail Drafts. */
+    saveGeneratedDraft(
+      emailId: string,
+      subject: string,
+      body: string,
+    ): Promise<{ ok: boolean; error?: string }>;
     /**
      * Generate an LLM draft reply for the given email and save it to
      * [Gmail]/Drafts. Returns the generated draft text on success.

@@ -18,7 +18,8 @@
 import type { Capability, DiscoveredModel, ProviderId } from './providers.js';
 import { isLocalProvider, supports } from './providers.js';
 
-export type TaskId = 'phrase' | 'briefing' | 'triage' | 'chat' | 'draft' | 'screen';
+export type TaskId =
+  'phrase' | 'briefing' | 'triage' | 'chat' | 'draft' | 'background-draft' | 'screen';
 
 export interface TaskSpec {
   readonly id: TaskId;
@@ -63,6 +64,13 @@ export const TASKS: Record<TaskId, TaskSpec> = {
     requires: ['text'],
     maxTokens: 1500,
     prefer: 'best',
+  },
+  'background-draft': {
+    id: 'background-draft',
+    label: 'Preparing an email draft',
+    requires: ['text'],
+    maxTokens: 700,
+    prefer: 'cheap',
   },
   screen: {
     id: 'screen',

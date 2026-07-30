@@ -169,7 +169,7 @@ export class InMemoryStorageAdapter implements StorageAdapter {
     account: string,
     query: CachedEmailQuery = {},
   ): Promise<readonly CachedInboxItem[]> {
-    let rows = [...this.emails.values()].filter(
+    const rows = [...this.emails.values()].filter(
       (email) =>
         email.account === account &&
         email.inInbox &&

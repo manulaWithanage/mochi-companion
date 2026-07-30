@@ -189,6 +189,35 @@ export function registerIpc(ctx: IpcContext): void {
     return ctx.settings.update({ primaryProjectIds: list });
   });
 
+  ipcMain.handle('settings:setGmailAi', (_e, patch: unknown) => {
+    const input =
+      typeof patch === 'object' && patch !== null ? (patch as Record<string, unknown>) : {};
+    const current = ctx.settings.get().gmailAi;
+    return ctx.settings.update({
+      gmailAi: {
+        priorityEnabled:
+          typeof input['priorityEnabled'] === 'boolean'
+            ? input['priorityEnabled']
+            : current.priorityEnabled,
+        backgroundDraftsEnabled:
+          typeof input['backgroundDraftsEnabled'] === 'boolean'
+            ? input['backgroundDraftsEnabled']
+            : current.backgroundDraftsEnabled,
+        vipSenders: Array.isArray(input['vipSenders'])
+          ? input['vipSenders'].filter((value): value is string => typeof value === 'string')
+          : current.vipSenders,
+        defaultSort:
+          input['defaultSort'] === 'recent' || input['defaultSort'] === 'priority'
+            ? input['defaultSort']
+            : current.defaultSort,
+        maxBackgroundDraftsPerSync:
+          typeof input['maxBackgroundDraftsPerSync'] === 'number'
+            ? input['maxBackgroundDraftsPerSync']
+            : current.maxBackgroundDraftsPerSync,
+      },
+    });
+  });
+
   // Dismissing a bubble dismisses the subject, not just the message, so a
   // re-poll producing a fresh event id cannot resurrect it.
   ipcMain.on('bubble:dismiss', (_e, subject: unknown) => {
@@ -341,6 +370,27 @@ export function registerIpc(ctx: IpcContext): void {
     const id = typeof emailId === 'string' ? emailId : '';
     return id.length === 0 ? false : ctx.gmail.dismissReminder(id);
   });
+
+  ipcMain.handle('gmail:generateDraft', (_e, emailId: unknown, tone: unknown) => {
+    const id = typeof emailId === 'string' ? emailId : '';
+    const validTone = tone === 'friendly' || tone === 'brief' ? tone : 'professional';
+    return id.length === 0
+      ? { ok: false, error: 'Invalid email id.' }
+      : ctx.gmail.generateDraft(id, validTone);
+  });
+
+  ipcMain.handle(
+    'gmail:saveGeneratedDraft',
+    (_e, emailId: unknown, subject: unknown, body: unknown) => {
+      const id = typeof emailId === 'string' ? emailId : '';
+      const subjectText = typeof subject === 'string' ? subject.slice(0, 500) : '';
+      const bodyText = typeof body === 'string' ? body.slice(0, 50_000) : '';
+      if (id.length === 0 || subjectText.length === 0 || bodyText.length === 0) {
+        return { ok: false, error: 'Draft subject and body are required.' };
+      }
+      return ctx.gmail.saveGeneratedDraft(id, subjectText, bodyText);
+    },
+  );
 
   ipcMain.handle('gmail:generateAndSaveDraft', (_e, uid: unknown, tone: unknown) => {
     const emailUid = typeof uid === 'number' ? uid : Number(uid);
