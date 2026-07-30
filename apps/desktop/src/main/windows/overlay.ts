@@ -65,6 +65,7 @@ export class OverlayWindow {
       transparent: true,
       backgroundColor: '#00000000',
       frame: false,
+      thickFrame: false,
       resizable: false,
       maximizable: false,
       minimizable: false,
@@ -82,6 +83,8 @@ export class OverlayWindow {
         nodeIntegration: false,
       },
     });
+
+    this.win.setBackgroundColor('#00000000');
 
     // Respect alwaysOnTop setting
     if (alwaysOnTop) {
