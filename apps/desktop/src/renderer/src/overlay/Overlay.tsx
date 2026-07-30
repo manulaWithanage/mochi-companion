@@ -210,6 +210,7 @@ export function Overlay(): JSX.Element {
   const [clickScale, setClickScale] = useState(1);
 
   const handlePointerDown = useCallback((event: React.PointerEvent<HTMLCanvasElement>) => {
+    if (event.button !== 0) return;
     drag.current = { active: true, moved: false, x: event.screenX, y: event.screenY };
     event.currentTarget.setPointerCapture(event.pointerId);
     setClickScale(0.90);
@@ -217,6 +218,7 @@ export function Overlay(): JSX.Element {
 
   const handlePointerUp = useCallback(
     (event: React.PointerEvent<HTMLCanvasElement>) => {
+      if (event.button !== 0) return;
       const wasDrag = drag.current.moved;
       drag.current.active = false;
       event.currentTarget.releasePointerCapture(event.pointerId);
@@ -226,11 +228,11 @@ export function Overlay(): JSX.Element {
 
       if (!wasDrag) {
         if (timer?.running) {
-          // Single-click while running -> STOP tracking session cleanly
+          // Single left-click while running -> STOP tracking session cleanly
           void window.mochi.timer.stop().then(setTimer);
           setShowPills(false);
         } else {
-          // Single-click while stopped -> Reveal Category Quick-Trackers at bottom
+          // Single left-click while stopped -> Reveal Category Quick-Trackers at bottom
           revealPills();
         }
       }
