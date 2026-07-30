@@ -73,6 +73,11 @@ describe('normalizeSettings', () => {
         vipSenders: [' VIP@Example.com ', 'not-an-email'],
         defaultSort: 'recent',
         maxBackgroundDraftsPerSync: 50,
+        remindersEnabled: true,
+        urgentReminderDelayMs: 5_000,
+        reviewReminderDelayMs: 60 * 60_000,
+        urgentFollowUpDelayMs: 0,
+        defaultDraftTone: 'friendly',
       },
     });
     expect(settings.gmailAi).toEqual({
@@ -81,6 +86,30 @@ describe('normalizeSettings', () => {
       vipSenders: ['vip@example.com'],
       defaultSort: 'recent',
       maxBackgroundDraftsPerSync: 10,
+      remindersEnabled: true,
+      urgentReminderDelayMs: 10_000,
+      reviewReminderDelayMs: 60 * 60_000,
+      urgentFollowUpDelayMs: 0,
+      defaultDraftTone: 'friendly',
     });
+  });
+
+  it('falls back from invalid Gmail reminder and draft preferences', () => {
+    const { settings } = normalizeSettings({
+      gmailAi: {
+        urgentReminderDelayMs: 'soon',
+        reviewReminderDelayMs: Number.POSITIVE_INFINITY,
+        urgentFollowUpDelayMs: -1,
+        defaultDraftTone: 'dramatic',
+      },
+    });
+    expect(settings.gmailAi.urgentReminderDelayMs).toBe(
+      DEFAULT_SETTINGS.gmailAi.urgentReminderDelayMs,
+    );
+    expect(settings.gmailAi.reviewReminderDelayMs).toBe(
+      DEFAULT_SETTINGS.gmailAi.reviewReminderDelayMs,
+    );
+    expect(settings.gmailAi.urgentFollowUpDelayMs).toBe(10_000);
+    expect(settings.gmailAi.defaultDraftTone).toBe('professional');
   });
 });

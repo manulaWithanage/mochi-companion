@@ -125,4 +125,22 @@ describe('afterEmailReminderFired', () => {
     expect(review.reminderCount).toBe(1);
     expect(review.nextReminderAt).toBeNull();
   });
+
+  it('supports a custom follow-up delay and disabling follow-ups', () => {
+    const custom = {
+      ...DEFAULT_EMAIL_REMINDER_TIMING,
+      urgentFollowUpMs: 30_000,
+    };
+    expect(afterEmailReminderFired(reminder(), 'urgent', 10_000, custom).nextReminderAt).toBe(
+      40_000,
+    );
+
+    const disabled = { ...custom, urgentFollowUpMs: 0 };
+    expect(
+      afterEmailReminderFired(reminder(), 'urgent', 10_000, disabled).nextReminderAt,
+    ).toBeNull();
+    expect(
+      planEmailReminder(email('urgent'), reminder({ reminderCount: 1 }), 2_000, disabled),
+    ).toBeNull();
+  });
 });

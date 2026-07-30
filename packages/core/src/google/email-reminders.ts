@@ -10,12 +10,15 @@ const REPLAN_GRACE_MS = 60_000;
 export interface EmailReminderTiming {
   readonly urgentFirstReminderMs: number;
   readonly reviewFirstReminderMs: number;
+  /** Zero disables the second urgent reminder. */
+  readonly urgentFollowUpMs: number;
   readonly replanGraceMs: number;
 }
 
 export const DEFAULT_EMAIL_REMINDER_TIMING: EmailReminderTiming = {
   urgentFirstReminderMs: URGENT_FIRST_REMINDER_MS,
   reviewFirstReminderMs: REVIEW_FIRST_REMINDER_MS,
+  urgentFollowUpMs: URGENT_FOLLOW_UP_MS,
   replanGraceMs: REPLAN_GRACE_MS,
 };
 
@@ -44,7 +47,7 @@ export function planEmailReminder(
   if (existing?.state === 'dismissed' || existing?.state === 'replied') return null;
   if (now - email.receivedAt > EMAIL_REMINDER_STALE_MS) return null;
 
-  const maxReminders = email.priority?.tier === 'urgent' ? 2 : 1;
+  const maxReminders = email.priority?.tier === 'urgent' && timing.urgentFollowUpMs > 0 ? 2 : 1;
   const reminderCount = existing?.reminderCount ?? 0;
   if (reminderCount >= maxReminders) return null;
 
@@ -82,14 +85,15 @@ export function afterEmailReminderFired(
   state: EmailReminderState,
   tier: 'urgent' | 'review' | 'low',
   now: number,
+  timing: EmailReminderTiming = DEFAULT_EMAIL_REMINDER_TIMING,
 ): EmailReminderState {
   const reminderCount = state.reminderCount + 1;
-  const hasFollowUp = tier === 'urgent' && reminderCount < 2;
+  const hasFollowUp = tier === 'urgent' && reminderCount < 2 && timing.urgentFollowUpMs > 0;
   return {
     ...state,
     lastRemindedAt: now,
     reminderCount,
-    nextReminderAt: hasFollowUp ? now + URGENT_FOLLOW_UP_MS : null,
+    nextReminderAt: hasFollowUp ? now + timing.urgentFollowUpMs : null,
     snoozedUntil: null,
   };
 }

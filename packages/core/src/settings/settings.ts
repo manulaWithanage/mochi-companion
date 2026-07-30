@@ -20,6 +20,12 @@ export interface GmailAiSettings {
   readonly vipSenders: readonly string[];
   readonly defaultSort: 'priority' | 'recent';
   readonly maxBackgroundDraftsPerSync: number;
+  readonly remindersEnabled: boolean;
+  readonly urgentReminderDelayMs: number;
+  readonly reviewReminderDelayMs: number;
+  /** Zero disables the second urgent reminder. */
+  readonly urgentFollowUpDelayMs: number;
+  readonly defaultDraftTone: 'professional' | 'friendly' | 'brief';
 }
 
 export interface MochiSettings {
@@ -69,6 +75,11 @@ export const DEFAULT_SETTINGS: MochiSettings = {
     vipSenders: [],
     defaultSort: 'priority',
     maxBackgroundDraftsPerSync: 3,
+    remindersEnabled: true,
+    urgentReminderDelayMs: 10 * 60_000,
+    reviewReminderDelayMs: 4 * 60 * 60_000,
+    urgentFollowUpDelayMs: 90 * 60_000,
+    defaultDraftTone: 'professional',
   },
 };
 
@@ -185,6 +196,26 @@ export function normalizeSettings(raw: unknown): {
         Number.isFinite(value.maxBackgroundDraftsPerSync)
           ? Math.min(10, Math.max(0, Math.floor(value.maxBackgroundDraftsPerSync)))
           : DEFAULT_SETTINGS.gmailAi.maxBackgroundDraftsPerSync,
+      remindersEnabled: value.remindersEnabled !== false,
+      urgentReminderDelayMs: normalizeGmailDuration(
+        value.urgentReminderDelayMs,
+        DEFAULT_SETTINGS.gmailAi.urgentReminderDelayMs,
+      ),
+      reviewReminderDelayMs: normalizeGmailDuration(
+        value.reviewReminderDelayMs,
+        DEFAULT_SETTINGS.gmailAi.reviewReminderDelayMs,
+      ),
+      urgentFollowUpDelayMs:
+        value.urgentFollowUpDelayMs === 0
+          ? 0
+          : normalizeGmailDuration(
+              value.urgentFollowUpDelayMs,
+              DEFAULT_SETTINGS.gmailAi.urgentFollowUpDelayMs,
+            ),
+      defaultDraftTone:
+        value.defaultDraftTone === 'friendly' || value.defaultDraftTone === 'brief'
+          ? value.defaultDraftTone
+          : 'professional',
     };
   }
 
@@ -204,4 +235,9 @@ export function normalizeSettings(raw: unknown): {
     },
     issues,
   };
+}
+
+function normalizeGmailDuration(value: unknown, fallback: number): number {
+  if (typeof value !== 'number' || !Number.isFinite(value)) return fallback;
+  return Math.min(7 * 24 * 60 * 60_000, Math.max(10_000, Math.floor(value)));
 }
