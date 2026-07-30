@@ -86,6 +86,8 @@ const bridge: MochiBridge = {
       ipcRenderer.invoke('settings:setDoNotDisturb', dnd) as Promise<MochiSettings>,
     setCenterScreenAlerts: (enabled) =>
       ipcRenderer.invoke('settings:setCenterScreenAlerts', enabled) as Promise<MochiSettings>,
+    setPrimaryProjects: (ids) =>
+      ipcRenderer.invoke('settings:setPrimaryProjects', ids) as Promise<MochiSettings>,
     onChange: (listener) => subscribe<MochiSettings>('settings:changed', listener),
   },
 

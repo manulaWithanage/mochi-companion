@@ -131,6 +131,7 @@ export interface MochiBridge {
     setPaused(paused: boolean): Promise<MochiSettings>;
     setDoNotDisturb(dnd: boolean): Promise<MochiSettings>;
     setCenterScreenAlerts(enabled: boolean): Promise<MochiSettings>;
+    setPrimaryProjects(ids: readonly string[]): Promise<MochiSettings>;
     onChange(listener: (settings: MochiSettings) => void): () => void;
   };
 

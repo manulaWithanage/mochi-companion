@@ -10,6 +10,7 @@ import {
 import { useSpriteAnimation } from './useSpriteAnimation.js';
 import { SpeechBubble } from './SpeechBubble.js';
 import { SmokeEffect } from './SmokeEffect.js';
+import { OverlayCategoryPills } from './OverlayCategoryPills.js';
 
 /** Pointer travel beyond this counts as a drag, not a click. */
 const DRAG_THRESHOLD_PX = 4;
@@ -227,6 +228,9 @@ export function Overlay(): JSX.Element {
           justifyContent: 'center',
         }}
       >
+        {/* 3 Primary Floating Category Quick-Tracker Pills */}
+        <OverlayCategoryPills timer={timer} onHoverChange={setInteractive} />
+
         {/* Magician entrance smoke cloud & sparkles */}
         <SmokeEffect active={showSmoke} />
 

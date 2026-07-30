@@ -30,6 +30,8 @@ export interface MochiSettings {
   readonly doNotDisturb: boolean;
   /** When a routine reminder triggers, float to center of screen with smooth animation. */
   readonly centerScreenAlerts: boolean;
+  /** IDs of up to 3 primary quick-select time tracking projects shown above Mochi. */
+  readonly primaryProjectIds: readonly string[];
 }
 
 export const DEFAULT_SETTINGS: MochiSettings = {
@@ -41,6 +43,7 @@ export const DEFAULT_SETTINGS: MochiSettings = {
   paused: false,
   doNotDisturb: false,
   centerScreenAlerts: true,
+  primaryProjectIds: [],
 };
 
 export const MAX_NAME_LENGTH = 24;
@@ -112,6 +115,13 @@ export function normalizeSettings(raw: unknown): {
     }
   }
 
+  let primaryProjectIds: string[] = [];
+  if (Array.isArray(input.primaryProjectIds)) {
+    primaryProjectIds = input.primaryProjectIds
+      .filter((id): id is string => typeof id === 'string' && id.length > 0)
+      .slice(0, 3);
+  }
+
   return {
     settings: {
       assistantName,
@@ -122,6 +132,7 @@ export function normalizeSettings(raw: unknown): {
       paused: input.paused === true,
       doNotDisturb: input.doNotDisturb === true,
       centerScreenAlerts: input.centerScreenAlerts !== false,
+      primaryProjectIds,
     },
     issues,
   };

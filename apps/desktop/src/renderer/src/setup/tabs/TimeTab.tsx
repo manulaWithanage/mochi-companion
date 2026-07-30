@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState, type JSX } from 'react';
-import { elapsedMs, type Project, type WorkSession } from '@mochi/core';
+import { elapsedMs, type MochiSettings, type Project, type WorkSession } from '@mochi/core';
 import { button, C, card, h2, humanDuration, input, label, sub } from '../ui.js';
 
 const CATEGORY_PRESETS = [
@@ -17,22 +17,62 @@ const SWATCHES = ['#6366f1', '#ec4899', '#10b981', '#f59e0b', '#8b5cf6', '#3b82f
 export function TimeTab(): JSX.Element {
   const [sessions, setSessions] = useState<readonly WorkSession[]>([]);
   const [projects, setProjects] = useState<readonly Project[]>([]);
+  const [settings, setSettings] = useState<MochiSettings | null>(null);
   const [newName, setNewName] = useState('');
   const [selectedIcon, setSelectedIcon] = useState('💼');
   const [selectedColour, setSelectedColour] = useState('#6366f1');
   const [busy, setBusy] = useState(false);
 
   const reload = useCallback(async () => {
-    setSessions(await window.mochi.timer.listSessions());
-    setProjects(await window.mochi.projects.list());
+    const sList = await window.mochi.timer.listSessions();
+    const pList = await window.mochi.projects.list();
+    const setObj = await window.mochi.settings.get();
+
+    setSessions(sList);
+    setProjects(pList);
+    setSettings(setObj);
+
+    // Auto-seed top 3 projects as primary if none selected yet
+    if (setObj.primaryProjectIds.length === 0 && pList.length > 0) {
+      const defaultPrimary = pList.slice(0, 3).map((p) => p.id);
+      void window.mochi.settings.setPrimaryProjects(defaultPrimary);
+    }
   }, []);
 
   useEffect(() => {
     void reload();
-    return window.mochi.timer.onChange((s) => {
+    const offTimer = window.mochi.timer.onChange((s) => {
       if (!s.running) void reload();
     });
+    const offSettings = window.mochi.settings.onChange(setSettings);
+    return () => {
+      offTimer();
+      offSettings();
+    };
   }, [reload]);
+
+  const togglePrimaryProject = useCallback(
+    async (projectId: string) => {
+      if (settings === null) return;
+      const current = [...settings.primaryProjectIds];
+      let updated: string[];
+
+      if (current.includes(projectId)) {
+        updated = current.filter((id) => id !== projectId);
+      } else {
+        if (current.length >= 3) {
+          // Replace last one if already at 3 max
+          updated = [current[0]!, current[1]!, projectId].filter(Boolean);
+        } else {
+          updated = [...current, projectId];
+        }
+      }
+
+      const nextSettings = await window.mochi.settings.setPrimaryProjects(updated);
+      setSettings(nextSettings);
+    },
+    [settings],
+  );
 
   const createProject = useCallback(
     async (nameOverride?: string, colourOverride?: string, iconOverride?: string) => {
@@ -43,14 +83,20 @@ export function TimeTab(): JSX.Element {
         const icon = iconOverride || selectedIcon;
         const displayName = `${icon} ${name}`;
         const colour = colourOverride || selectedColour;
-        await window.mochi.projects.create(displayName, colour);
+        const created = await window.mochi.projects.create(displayName, colour);
         setNewName('');
+
+        // If primary projects is less than 3, auto-add this new project as primary!
+        if (settings && settings.primaryProjectIds.length < 3) {
+          void window.mochi.settings.setPrimaryProjects([...settings.primaryProjectIds, created.id]);
+        }
+
         await reload();
       } finally {
         setBusy(false);
       }
     },
-    [newName, selectedIcon, selectedColour, reload],
+    [newName, selectedIcon, selectedColour, settings, reload],
   );
 
   const totals = useMemo(() => {
@@ -71,6 +117,13 @@ export function TimeTab(): JSX.Element {
     return { rows, grand };
   }, [sessions, projects]);
 
+  const primaryProjects = useMemo(() => {
+    if (settings === null) return [];
+    return settings.primaryProjectIds
+      .map((id) => projects.find((p) => p.id === id))
+      .filter((p): p is Project => p !== undefined);
+  }, [settings, projects]);
+
   return (
     <div>
       <h2 style={h2}>Time & Categories</h2>
@@ -79,10 +132,96 @@ export function TimeTab(): JSX.Element {
         tracked across categories.
       </p>
 
+      {/* 3 Main Primary Quick-Tracker Display Banner */}
+      <div style={{ ...card, marginBottom: 16, border: `1px solid ${C.accent}` }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+          <div>
+            <div style={{ fontSize: 13, fontWeight: 600, color: C.text }}>
+              ⭐ 3 Primary Category Quick-Trackers (Floating on Mochi)
+            </div>
+            <div style={{ fontSize: 11.5, color: C.dim, marginTop: 2 }}>
+              These 3 icons float above Mochi on your desktop. Click any icon on Mochi to switch categories instantly!
+            </div>
+          </div>
+        </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10 }}>
+          {[0, 1, 2].map((idx) => {
+            const proj = primaryProjects[idx];
+            return (
+              <div
+                key={idx}
+                style={{
+                  background: '#1c1724',
+                  border: `1px dashed ${proj ? proj.colour : C.border}`,
+                  borderRadius: 10,
+                  padding: '12px 14px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 10,
+                }}
+              >
+                {proj ? (
+                  <>
+                    <div
+                      style={{
+                        width: 34,
+                        height: 34,
+                        borderRadius: 8,
+                        background: `${proj.colour}22`,
+                        border: `1px solid ${proj.colour}`,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontSize: 16,
+                      }}
+                    >
+                      {proj.name.slice(0, 2)}
+                    </div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div
+                        style={{
+                          fontSize: 12.5,
+                          fontWeight: 600,
+                          whiteSpace: 'nowrap',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          color: C.text,
+                        }}
+                      >
+                        {proj.name}
+                      </div>
+                      <div style={{ fontSize: 10.5, color: C.accent }}>Slot #{idx + 1} Active</div>
+                    </div>
+                    <button
+                      onClick={() => void togglePrimaryProject(proj.id)}
+                      title="Remove from primary slot"
+                      style={{
+                        background: 'none',
+                        border: 'none',
+                        color: C.warn,
+                        cursor: 'pointer',
+                        fontSize: 14,
+                      }}
+                    >
+                      ×
+                    </button>
+                  </>
+                ) : (
+                  <div style={{ fontSize: 12, color: C.faint, fontStyle: 'italic', textAlign: 'center', width: '100%' }}>
+                    + Slot #{idx + 1} Empty
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
       {/* Quick Add Preset Categories */}
       <div style={{ ...card, marginBottom: 16 }}>
         <div style={{ fontSize: 12, fontWeight: 600, color: C.dim, marginBottom: 10 }}>
-          ⚡ QUICK CATEGORIES
+          ⚡ QUICK CATEGORY PRESETS
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: 8 }}>
           {CATEGORY_PRESETS.map((preset) => (
@@ -115,7 +254,7 @@ export function TimeTab(): JSX.Element {
       {/* Project Totals & Custom Category Creator */}
       <div style={{ ...card, marginBottom: 16 }}>
         <div style={{ fontSize: 12, fontWeight: 600, color: C.dim, marginBottom: 12 }}>
-          TRACKED CATEGORIES
+          TRACKED CATEGORIES ({projects.length})
         </div>
         {totals.rows.length === 0 && (
           <div style={{ fontSize: 13, color: C.faint, marginBottom: 14 }}>
@@ -124,12 +263,15 @@ export function TimeTab(): JSX.Element {
         )}
         {totals.rows.map(({ project, ms, count }) => {
           const pct = totals.grand > 0 ? (ms / totals.grand) * 100 : 0;
+          const isPrimary = settings?.primaryProjectIds.includes(project.id) === true;
+
           return (
             <div key={project.id} style={{ marginBottom: 12 }}>
               <div
                 style={{
                   display: 'flex',
                   justifyContent: 'space-between',
+                  alignItems: 'center',
                   fontSize: 13,
                   marginBottom: 5,
                 }}
@@ -146,10 +288,24 @@ export function TimeTab(): JSX.Element {
                   />
                   <span style={{ fontWeight: 600 }}>{project.name}</span>
                 </span>
-                <span style={{ color: C.dim, fontVariantNumeric: 'tabular-nums' }}>
-                  {humanDuration(ms)} · {count} session{count === 1 ? '' : 's'}
-                </span>
+
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <span style={{ color: C.dim, fontVariantNumeric: 'tabular-nums', fontSize: 12 }}>
+                    {humanDuration(ms)} · {count} session{count === 1 ? '' : 's'}
+                  </span>
+                  <button
+                    onClick={() => void togglePrimaryProject(project.id)}
+                    style={{
+                      ...button(isPrimary ? 'primary' : 'ghost'),
+                      padding: '3px 8px',
+                      fontSize: 11,
+                    }}
+                  >
+                    {isPrimary ? '★ Primary' : '☆ Set Primary'}
+                  </button>
+                </div>
               </div>
+
               <div
                 style={{ height: 6, borderRadius: 3, background: '#332c3d', overflow: 'hidden' }}
               >

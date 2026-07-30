@@ -163,6 +163,13 @@ export function registerIpc(ctx: IpcContext): void {
     return ctx.settings.update({ centerScreenAlerts: enabled === true });
   });
 
+  ipcMain.handle('settings:setPrimaryProjects', (_e, ids: unknown) => {
+    const list = Array.isArray(ids)
+      ? ids.filter((id): id is string => typeof id === 'string' && id.length > 0).slice(0, 3)
+      : [];
+    return ctx.settings.update({ primaryProjectIds: list });
+  });
+
   // Dismissing a bubble dismisses the subject, not just the message, so a
   // re-poll producing a fresh event id cannot resurrect it.
   ipcMain.on('bubble:dismiss', (_e, subject: unknown) => {
