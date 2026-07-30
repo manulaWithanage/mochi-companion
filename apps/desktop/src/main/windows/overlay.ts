@@ -64,6 +64,7 @@ export class OverlayWindow {
       y: placement.position.y,
       transparent: true,
       backgroundColor: '#00000000',
+      type: 'toolbar',
       frame: false,
       thickFrame: false,
       resizable: false,
