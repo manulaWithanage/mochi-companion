@@ -85,7 +85,7 @@ export function AiSection(): JSX.Element {
       if (result.ok && result.provider !== null) {
         setMessage({
           ok: true,
-          text: `${PROVIDER_LABEL[result.provider]} connected — ${result.modelCount} models available.`,
+          text: `${PROVIDER_LABEL[result.provider]} connected (${result.modelCount} models available)`,
         });
         setKeyInput('');
       } else {
@@ -112,7 +112,7 @@ export function AiSection(): JSX.Element {
       if (result.ok) {
         setAzureMessage({
           ok: true,
-          text: `Azure OpenAI connected — deployment "${deployment}" ready.`,
+          text: `Azure OpenAI connected, deployment "${deployment}" ready`,
         });
         setAzureKey('');
       } else {
@@ -154,14 +154,14 @@ export function AiSection(): JSX.Element {
 
       {status.ollamaAvailable && (
         <div style={{ fontSize: 13, color: '#a8e6b8', lineHeight: 1.5 }}>
-          ✓ <strong>Ollama detected.</strong> Everything works already — no key, no account. Add a
+          ✓ <strong>Ollama detected.</strong> Everything works already, no key, no account. Add a
           cloud key below only if you want a stronger model.
         </div>
       )}
 
       {!status.ollamaAvailable && status.configured.length === 0 && (
         <div style={{ fontSize: 13, opacity: 0.75, lineHeight: 1.5 }}>
-          Paste any OpenAI, Anthropic or Google key — Mochi works out which is which. Or{' '}
+          Paste any OpenAI, Anthropic or Google key, Mochi works out which is which. Or{' '}
           <a
             href="https://ollama.com"
             style={{ color: '#f2a6b3' }}

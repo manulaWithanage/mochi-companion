@@ -176,14 +176,14 @@ export const WIZARD_STEPS: readonly WizardStep[] = [
   {
     n: 1,
     title: 'Create a Google Cloud project',
-    body: 'Free, and takes a moment. Any name will do — it is only ever used by you.',
+    body: 'Free, and takes a moment. Any name will do, it is only ever used by you.',
     link: 'https://console.cloud.google.com/projectcreate',
     linkLabel: 'Open project creation',
   },
   {
     n: 2,
     title: 'Turn on the Calendar API',
-    body: 'Press Enable. This is the only API Mochi asks for — no Gmail, no Drive.',
+    body: 'Press Enable. This is the only API Mochi asks for (no Gmail, no Drive).',
     link: 'https://console.cloud.google.com/apis/library/calendar-json.googleapis.com',
     linkLabel: 'Open Calendar API',
   },
@@ -197,7 +197,7 @@ export const WIZARD_STEPS: readonly WizardStep[] = [
   {
     n: 4,
     title: 'Publish the app',
-    body: 'Press "Publish app" so the status reads In production. Leaving it in Testing makes Google expire your login every 7 days, with no warning and no obvious cause. You will see an "unverified app" notice once when you connect — that is expected, and it is your own project.',
+    body: 'Press "Publish app" so the status reads In production. Leaving it in Testing makes Google expire your login every 7 days, with no warning and no obvious cause. You will see an "unverified app" notice once when you connect, that is expected, and it is your own project.',
     link: 'https://console.cloud.google.com/auth/audience',
     linkLabel: 'Open audience settings',
     critical: true,

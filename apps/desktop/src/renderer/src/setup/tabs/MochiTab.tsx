@@ -236,7 +236,7 @@ export function MochiTab(): JSX.Element {
           {skins.map((s) => (
             <option key={s.name} value={s.name}>
               {s.name}
-              {s.license !== undefined ? ` — ${s.license}` : ''}
+              {s.license !== undefined ? ` (${s.license})` : ''}
             </option>
           ))}
         </select>
@@ -320,7 +320,7 @@ export function MochiTab(): JSX.Element {
           </div>
         ))}
         <p style={{ fontSize: 12, color: C.faint, margin: '12px 0 0', lineHeight: 1.5 }}>
-          All of these pass an interruption budget first — at most 3 an hour, silent during quiet hours and while anything is fullscreen.
+          All of these pass an interruption budget first (at most 3 an hour, silent during quiet hours and while anything is fullscreen).
         </p>
       </div>
     </div>

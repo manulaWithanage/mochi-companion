@@ -103,7 +103,7 @@ export function GoogleWizard({ onDone, onCancel }: Props): JSX.Element {
           />
           {clientId.length > 0 && !idValid && (
             <p style={{ color: C.warn, fontSize: 12, margin: '6px 0 0' }}>
-              That should end in <code>.apps.googleusercontent.com</code> — make sure it is the
+              That should end in <code>.apps.googleusercontent.com</code>, make sure it is the
               Client ID, not the secret.
             </p>
           )}
@@ -145,7 +145,7 @@ export function GoogleWizard({ onDone, onCancel }: Props): JSX.Element {
           </button>
         ) : (
           <button style={button('primary')} onClick={() => setIndex(index + 1)}>
-            {critical ? 'Done — I published it' : 'Next'}
+            {critical ? 'Done (I published it)' : 'Next'}
           </button>
         )}
       </div>

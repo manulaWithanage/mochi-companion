@@ -77,7 +77,7 @@ export function ConnectionsTab(): JSX.Element {
           </div>
           <div style={{ fontSize: 12, color: C.dim, lineHeight: 1.55, marginBottom: 12 }}>
             Read-only, and only your calendar. You create your own Google Cloud project, so nothing
-            is shared with Mochi as a project — you are your own developer, which is why this needs
+            is shared with Mochi as a project, you are your own developer, which is why this needs
             no verification and costs nothing.
           </div>
 
@@ -87,7 +87,7 @@ export function ConnectionsTab(): JSX.Element {
             </button>
           ) : (
             <button style={button('primary')} onClick={() => setWizard(true)}>
-              Connect — about 10 minutes
+              Connect (about 10 minutes)
             </button>
           )}
         </div>
