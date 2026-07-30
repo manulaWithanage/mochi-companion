@@ -69,16 +69,29 @@ export class BrainService {
   private load(): void {
     try {
       const raw = readFileSync(this.filePath);
-      // Encrypted at rest, so this is a decrypt then a parse. A file written by
-      // an older build, or on a machine where encryption was unavailable, is
-      // plain JSON — try that rather than discarding the user's history.
+      if (!safeStorage.isEncryptionAvailable()) {
+        console.warn('[brain] encrypted storage unavailable; private memory will stay in RAM');
+        this.graph = emptyGraph;
+        return;
+      }
+
       let text: string;
+      let legacyPlaintext = false;
       try {
         text = safeStorage.decryptString(raw);
       } catch {
+        // Older builds could write plain JSON. Accept that exact legacy shape
+        // once, then immediately replace it with an encrypted file. Arbitrary
+        // undecryptable bytes are never interpreted as user data.
         text = raw.toString('utf8');
+        if (!text.trimStart().startsWith('{')) throw new Error('Unrecognised brain envelope');
+        legacyPlaintext = true;
       }
       this.graph = parseGraph(JSON.parse(text));
+      if (legacyPlaintext) {
+        this.flush();
+        console.log('[brain] migrated legacy plaintext memory to protected storage');
+      }
       console.log(
         `[brain] loaded ${this.graph.nodes.length} nodes, ${this.graph.edges.length} edges`,
       );
@@ -103,15 +116,17 @@ export class BrainService {
   /** Write now. Called on the debounce and before quit. */
   flush(): void {
     try {
+      if (!safeStorage.isEncryptionAvailable()) {
+        console.warn('[brain] encrypted storage unavailable; refusing plaintext persistence');
+        return;
+      }
       if (this.graph.nodes.length === 0 && this.graph.edges.length === 0) {
         if (existsSync(this.filePath)) rmSync(this.filePath, { force: true });
         return;
       }
       mkdirSync(dirname(this.filePath), { recursive: true });
       const text = JSON.stringify(this.graph);
-      const payload = safeStorage.isEncryptionAvailable()
-        ? safeStorage.encryptString(text)
-        : Buffer.from(text, 'utf8');
+      const payload = safeStorage.encryptString(text);
 
       // Temp-then-rename: a crash mid-write must not leave a truncated brain.
       const tmp = `${this.filePath}.tmp`;

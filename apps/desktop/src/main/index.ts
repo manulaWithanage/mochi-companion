@@ -28,6 +28,7 @@ import {
 } from '@mochi/core';
 
 import { SqliteStorageAdapter } from './storage/sqlite-adapter.js';
+import { SafeStorageValueCodec } from './storage/safe-storage-value-codec.js';
 import { SettingsStore } from './storage/settings-store.js';
 import { UserRoutinesVault } from './storage/user-routines-vault.js';
 import { TimerService } from './services/timer-service.js';
@@ -100,7 +101,10 @@ function logDataLocation(): void {
 
 function openStorage(): StorageAdapter {
   try {
-    return new SqliteStorageAdapter(join(app.getPath('userData'), 'mochi.db'));
+    return new SqliteStorageAdapter(
+      join(app.getPath('userData'), 'mochi.db'),
+      new SafeStorageValueCodec(),
+    );
   } catch (error) {
     // Degrade to this-session-only tracking rather than refusing to start.
     console.error('[storage] SQLite unavailable, falling back to memory:', error);
