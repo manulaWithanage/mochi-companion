@@ -76,9 +76,13 @@ export function Overlay(): JSX.Element {
       bubbleSubject.current = message.subject;
       setBubble(message.text);
 
-      // Trigger Magician entrance smoke puff & switch face to alert status!
-      setShowSmoke(true);
-      setMascotState('alert');
+      const isRoutineAlert = message.subject.includes('routine');
+
+      if (isRoutineAlert) {
+        // Magician entrance smoke cloud & alert face ONLY for routine reminders!
+        setShowSmoke(true);
+        setMascotState('alert');
+      }
 
       const smokeTimeout = setTimeout(() => setShowSmoke(false), 2000);
 
@@ -87,8 +91,9 @@ export function Overlay(): JSX.Element {
         bubbleSubject.current = null;
         setBubble(null);
         setShowSmoke(false);
-        // Restore default facial state
-        void window.mochi.mascot.current().then(setMascotState);
+        if (isRoutineAlert) {
+          void window.mochi.mascot.current().then(setMascotState);
+        }
       }, message.ttlMs);
     });
     return () => {
