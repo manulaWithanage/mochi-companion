@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState, type JSX } from 'react';
 import { elapsedMs, type MochiSettings, type Project, type WorkSession } from '@mochi/core';
 import { button, C, card, h2, humanDuration, input, label, sub } from '../ui.js';
 
-const CATEGORY_PRESETS = [
+const QUICK_PRESETS = [
   { name: 'Work Time', colour: '#6366f1', icon: '💼' },
   { name: 'Personal Time', colour: '#ec4899', icon: '👤' },
   { name: 'Study & Research', colour: '#10b981', icon: '📚' },
@@ -11,17 +11,20 @@ const CATEGORY_PRESETS = [
   { name: 'Side Project', colour: '#3b82f6', icon: '⚡' },
 ];
 
-const ICON_OPTIONS = ['💼', '👤', '📚', '🎨', '🧘', '💻', '☕', '⚡', '🏋️', '🎧', '📝', '🎯', '🚀', '🛠️'];
-const SWATCHES = ['#6366f1', '#ec4899', '#10b981', '#f59e0b', '#8b5cf6', '#3b82f6', '#F2A6B3', '#A6D6F2'];
+const EMOJI_OPTIONS = ['💼', '👤', '📚', '🎨', '🧘', '💻', '☕', '⚡', '🏋️', '🎧', '📝', '🎯', '🚀', '🛠️'];
+const SWATCH_OPTIONS = ['#6366f1', '#ec4899', '#10b981', '#f59e0b', '#8b5cf6', '#3b82f6', '#F2A6B3', '#A6D6F2'];
 
 export function TimeTab(): JSX.Element {
   const [sessions, setSessions] = useState<readonly WorkSession[]>([]);
   const [projects, setProjects] = useState<readonly Project[]>([]);
   const [settings, setSettings] = useState<MochiSettings | null>(null);
+
+  // Form state
   const [newName, setNewName] = useState('');
   const [selectedIcon, setSelectedIcon] = useState('💼');
   const [selectedColour, setSelectedColour] = useState('#6366f1');
   const [busy, setBusy] = useState(false);
+  const [showCreateForm, setShowCreateForm] = useState(false);
 
   const reload = useCallback(async () => {
     const sList = await window.mochi.timer.listSessions();
@@ -32,7 +35,7 @@ export function TimeTab(): JSX.Element {
     setProjects(pList);
     setSettings(setObj);
 
-    // Auto-seed top 3 unique projects as primary if none selected yet
+    // Auto-seed top 3 unique projects as primary if none set
     if (setObj.primaryProjectIds.length === 0 && pList.length > 0) {
       const defaultPrimary = pList.slice(0, 3).map((p) => p.id);
       void window.mochi.settings.setPrimaryProjects(defaultPrimary);
@@ -73,28 +76,28 @@ export function TimeTab(): JSX.Element {
     [settings],
   );
 
-  const createProject = useCallback(
+  const createCategory = useCallback(
     async (nameOverride?: string, colourOverride?: string, iconOverride?: string) => {
-      const targetName = (nameOverride || newName).trim();
-      if (targetName.length === 0) return;
+      const rawName = (nameOverride || newName).trim();
+      if (rawName.length === 0) return;
 
       const icon = iconOverride || selectedIcon;
-      const fullDisplayName = `${icon} ${targetName}`;
+      const fullDisplayName = `${icon} ${rawName}`;
 
-      // DEDUPLICATION CHECK: Check if project with this name already exists
+      // Deduplication check
       const existing = projects.find(
         (p) =>
           p.name.toLowerCase() === fullDisplayName.toLowerCase() ||
-          p.name.toLowerCase() === targetName.toLowerCase() ||
-          p.name.toLowerCase().endsWith(targetName.toLowerCase()),
+          p.name.toLowerCase() === rawName.toLowerCase() ||
+          p.name.toLowerCase().endsWith(rawName.toLowerCase()),
       );
 
       if (existing) {
-        // Project already exists, don't duplicate! Auto-set as primary if slot available.
         if (settings && !settings.primaryProjectIds.includes(existing.id) && settings.primaryProjectIds.length < 3) {
           void window.mochi.settings.setPrimaryProjects([...settings.primaryProjectIds, existing.id]);
         }
         setNewName('');
+        setShowCreateForm(false);
         return;
       }
 
@@ -103,6 +106,7 @@ export function TimeTab(): JSX.Element {
         const colour = colourOverride || selectedColour;
         const created = await window.mochi.projects.create(fullDisplayName, colour);
         setNewName('');
+        setShowCreateForm(false);
 
         if (settings && settings.primaryProjectIds.length < 3) {
           void window.mochi.settings.setPrimaryProjects([...settings.primaryProjectIds, created.id]);
@@ -118,7 +122,6 @@ export function TimeTab(): JSX.Element {
 
   const archiveCategory = useCallback(
     async (projectId: string) => {
-      // Remove from primary list if present
       if (settings && settings.primaryProjectIds.includes(projectId)) {
         const updatedPrimary = settings.primaryProjectIds.filter((id) => id !== projectId);
         void window.mochi.settings.setPrimaryProjects(updatedPrimary);
@@ -148,305 +151,322 @@ export function TimeTab(): JSX.Element {
     return { rows, grand };
   }, [sessions, projects]);
 
-  const primaryProjects = useMemo(() => {
-    if (settings === null) return [];
-    return settings.primaryProjectIds
-      .map((id) => projects.find((p) => p.id === id))
-      .filter((p): p is Project => p !== undefined);
-  }, [settings, projects]);
+  const primaryCount = settings?.primaryProjectIds.length ?? 0;
 
   return (
     <div>
-      <h2 style={h2}>Time & Categories</h2>
-      <p style={sub}>
-        {sessions.length} session{sessions.length === 1 ? '' : 's'} · {humanDuration(totals.grand)}{' '}
-        tracked across categories.
-      </p>
+      {/* Header Bar */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 }}>
+        <div>
+          <h2 style={h2}>Time & Categories</h2>
+          <p style={sub}>
+            {sessions.length} session{sessions.length === 1 ? '' : 's'} · {humanDuration(totals.grand)} total focus tracked.
+          </p>
+        </div>
+        <button
+          style={button(showCreateForm ? 'ghost' : 'primary')}
+          onClick={() => setShowCreateForm(!showCreateForm)}
+        >
+          {showCreateForm ? 'Cancel' : '+ New Category'}
+        </button>
+      </div>
 
-      {/* 3 Main Primary Quick-Tracker Display Banner */}
-      <div style={{ ...card, marginBottom: 16, border: `1px solid ${C.accent}` }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-          <div>
-            <div style={{ fontSize: 13, fontWeight: 600, color: C.text }}>
-              ⭐ 3 Primary Category Quick-Trackers (Floating on Mochi)
-            </div>
-            <div style={{ fontSize: 11.5, color: C.dim, marginTop: 2 }}>
-              These 3 icons pop out at the bottom when you click Mochi. Click any icon to switch categories!
-            </div>
+      {/* Floating Mascot Badges Banner */}
+      <div
+        style={{
+          background: 'linear-gradient(135deg, rgba(35, 27, 48, 0.9), rgba(22, 17, 30, 0.9))',
+          border: `1px solid ${C.accent}`,
+          borderRadius: 14,
+          padding: '14px 18px',
+          marginBottom: 20,
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          gap: 16,
+        }}
+      >
+        <div>
+          <div style={{ fontSize: 13.5, fontWeight: 700, color: C.text, display: 'flex', alignItems: 'center', gap: 6 }}>
+            <span>⭐ Mascot Quick-Track Icons</span>
+            <span style={{ fontSize: 11, background: `${C.accent}33`, color: C.accent, padding: '2px 8px', borderRadius: 999 }}>
+              {primaryCount} / 3 Active
+            </span>
+          </div>
+          <div style={{ fontSize: 12, color: C.dim, marginTop: 4 }}>
+            Click the star <strong>★</strong> on any category below to float its icon directly above Mochi on your desktop!
           </div>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10 }}>
-          {[0, 1, 2].map((idx) => {
-            const proj = primaryProjects[idx];
+        {/* Selected Primary Pills Preview */}
+        <div style={{ display: 'flex', gap: 8 }}>
+          {settings?.primaryProjectIds.map((id) => {
+            const p = projects.find((x) => x.id === id);
+            if (!p) return null;
             return (
               <div
-                key={idx}
+                key={id}
                 style={{
-                  background: '#1c1724',
-                  border: `1px dashed ${proj ? proj.colour : C.border}`,
-                  borderRadius: 10,
-                  padding: '12px 14px',
+                  background: `${p.colour}22`,
+                  border: `1px solid ${p.colour}`,
+                  borderRadius: 999,
+                  padding: '4px 10px',
                   display: 'flex',
                   alignItems: 'center',
-                  gap: 10,
-                }}
-              >
-                {proj ? (
-                  <>
-                    <div
-                      style={{
-                        width: 34,
-                        height: 34,
-                        borderRadius: 8,
-                        background: `${proj.colour}22`,
-                        border: `1px solid ${proj.colour}`,
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        fontSize: 16,
-                      }}
-                    >
-                      {proj.name.slice(0, 2)}
-                    </div>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div
-                        style={{
-                          fontSize: 12.5,
-                          fontWeight: 600,
-                          whiteSpace: 'nowrap',
-                          overflow: 'hidden',
-                          textOverflow: 'ellipsis',
-                          color: C.text,
-                        }}
-                      >
-                        {proj.name}
-                      </div>
-                      <div style={{ fontSize: 10.5, color: C.accent }}>Slot #{idx + 1} Active</div>
-                    </div>
-                    <button
-                      onClick={() => void togglePrimaryProject(proj.id)}
-                      title="Remove from primary slot"
-                      style={{
-                        background: 'none',
-                        border: 'none',
-                        color: C.warn,
-                        cursor: 'pointer',
-                        fontSize: 14,
-                      }}
-                    >
-                      ×
-                    </button>
-                  </>
-                ) : (
-                  <div style={{ fontSize: 12, color: C.faint, fontStyle: 'italic', textAlign: 'center', width: '100%' }}>
-                    + Slot #{idx + 1} Empty
-                  </div>
-                )}
-              </div>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* Quick Add Preset Categories */}
-      <div style={{ ...card, marginBottom: 16 }}>
-        <div style={{ fontSize: 12, fontWeight: 600, color: C.dim, marginBottom: 10 }}>
-          ⚡ QUICK CATEGORY PRESETS
-        </div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: 8 }}>
-          {CATEGORY_PRESETS.map((preset) => {
-            const alreadyExists = projects.some((p) => p.name.toLowerCase().includes(preset.name.toLowerCase()));
-
-            return (
-              <button
-                key={preset.name}
-                disabled={busy}
-                onClick={() => void createProject(preset.name, preset.colour, preset.icon)}
-                style={{
-                  background: '#191522',
-                  border: `1px solid ${alreadyExists ? preset.colour : C.border}`,
-                  borderRadius: 10,
-                  padding: '10px 12px',
-                  textAlign: 'left',
-                  cursor: 'pointer',
-                  transition: 'all 160ms ease',
+                  gap: 6,
+                  fontSize: 12,
+                  fontWeight: 600,
                   color: C.text,
-                  position: 'relative',
                 }}
-                onMouseEnter={(e) => (e.currentTarget.style.borderColor = preset.colour)}
-                onMouseLeave={(e) => (e.currentTarget.style.borderColor = alreadyExists ? preset.colour : C.border)}
               >
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
-                  <span style={{ fontSize: 18 }}>{preset.icon}</span>
-                  {alreadyExists && <span style={{ fontSize: 10, color: C.accent, fontWeight: 600 }}>Active</span>}
-                </div>
-                <div style={{ fontSize: 12.5, fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                  {preset.name}
-                </div>
-              </button>
+                <span>{p.name.slice(0, 2)}</span>
+                <span style={{ maxWidth: 80, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {p.name.slice(2).trim()}
+                </span>
+                <button
+                  onClick={() => void togglePrimaryProject(p.id)}
+                  style={{ background: 'none', border: 'none', color: C.dim, cursor: 'pointer', fontSize: 12 }}
+                >
+                  ×
+                </button>
+              </div>
             );
           })}
         </div>
       </div>
 
-      {/* Project Totals & Custom Category Creator */}
-      <div style={{ ...card, marginBottom: 16 }}>
-        <div style={{ fontSize: 12, fontWeight: 600, color: C.dim, marginBottom: 12 }}>
-          TRACKED CATEGORIES ({projects.length})
-        </div>
-        {totals.rows.length === 0 && (
-          <div style={{ fontSize: 13, color: C.faint, marginBottom: 14 }}>
-            No category projects yet. Click a quick category above or add a custom one below!
+      {/* Inline Create Category Form */}
+      {showCreateForm && (
+        <div style={{ ...card, marginBottom: 20, border: `1px solid ${C.accent}` }}>
+          <div style={{ fontSize: 13, fontWeight: 600, color: C.text, marginBottom: 12 }}>
+            ✨ Create New Category
           </div>
-        )}
-        {totals.rows.map(({ project, ms, count }) => {
-          const pct = totals.grand > 0 ? (ms / totals.grand) * 100 : 0;
-          const isPrimary = settings?.primaryProjectIds.includes(project.id) === true;
 
-          return (
-            <div key={project.id} style={{ marginBottom: 12 }}>
-              <div
-                style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  fontSize: 13,
-                  marginBottom: 5,
-                }}
-              >
-                <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <span
-                    style={{
-                      width: 9,
-                      height: 9,
-                      borderRadius: 3,
-                      background: project.colour,
-                      display: 'inline-block',
-                    }}
-                  />
-                  <span style={{ fontWeight: 600 }}>{project.name}</span>
-                </span>
-
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <span style={{ color: C.dim, fontVariantNumeric: 'tabular-nums', fontSize: 12 }}>
-                    {humanDuration(ms)} · {count} session{count === 1 ? '' : 's'}
-                  </span>
-
+          {/* Quick Presets */}
+          <div style={{ marginBottom: 14 }}>
+            <span style={label}>Or Pick a Quick Preset</span>
+            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 6 }}>
+              {QUICK_PRESETS.map((preset) => {
+                const exists = projects.some((p) => p.name.toLowerCase().includes(preset.name.toLowerCase()));
+                return (
                   <button
-                    onClick={() => void togglePrimaryProject(project.id)}
+                    key={preset.name}
+                    disabled={busy}
+                    onClick={() => void createCategory(preset.name, preset.colour, preset.icon)}
                     style={{
-                      ...button(isPrimary ? 'primary' : 'ghost'),
-                      padding: '3px 8px',
-                      fontSize: 11,
-                    }}
-                  >
-                    {isPrimary ? '★ Primary' : '☆ Set Primary'}
-                  </button>
-
-                  <button
-                    onClick={() => void archiveCategory(project.id)}
-                    title="Delete category"
-                    style={{
-                      background: 'none',
-                      border: 'none',
-                      color: C.dim,
+                      background: exists ? `${preset.colour}22` : '#1c1724',
+                      border: `1px solid ${exists ? preset.colour : C.border}`,
+                      borderRadius: 8,
+                      padding: '6px 12px',
+                      fontSize: 12,
+                      fontWeight: 500,
+                      color: C.text,
                       cursor: 'pointer',
-                      fontSize: 14,
-                      padding: '2px 4px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 6,
                     }}
-                    onMouseEnter={(e) => (e.currentTarget.style.color = C.warn)}
-                    onMouseLeave={(e) => (e.currentTarget.style.color = C.dim)}
                   >
-                    🗑️
+                    <span>{preset.icon}</span>
+                    <span>{preset.name}</span>
+                    {exists && <span style={{ fontSize: 10, color: C.accent }}>✓</span>}
                   </button>
-                </div>
-              </div>
-
-              <div
-                style={{ height: 6, borderRadius: 3, background: '#332c3d', overflow: 'hidden' }}
-              >
-                <div style={{ width: `${pct}%`, height: '100%', background: project.colour }} />
-              </div>
+                );
+              })}
             </div>
-          );
-        })}
-
-        {/* Custom Category Form */}
-        <div style={{ marginTop: 16, paddingTop: 14, borderTop: `1px solid ${C.border}` }}>
-          <span style={label}>Add Custom Category</span>
-          
-          {/* Icon Selector */}
-          <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', marginBottom: 10 }}>
-            {ICON_OPTIONS.map((ico) => (
-              <button
-                key={ico}
-                type="button"
-                onClick={() => setSelectedIcon(ico)}
-                style={{
-                  width: 32,
-                  height: 32,
-                  borderRadius: 6,
-                  border: `1px solid ${selectedIcon === ico ? C.accent : C.border}`,
-                  background: selectedIcon === ico ? `${C.accent}33` : '#1c1724',
-                  fontSize: 15,
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                }}
-              >
-                {ico}
-              </button>
-            ))}
           </div>
 
-          {/* Color Swatch Picker */}
-          <div style={{ display: 'flex', gap: 6, marginBottom: 12 }}>
-            {SWATCHES.map((sw) => (
-              <button
-                key={sw}
-                type="button"
-                onClick={() => setSelectedColour(sw)}
-                style={{
-                  width: 24,
-                  height: 24,
-                  borderRadius: '50%',
-                  background: sw,
-                  border: `2px solid ${selectedColour === sw ? C.text : 'transparent'}`,
-                  cursor: 'pointer',
+          <div style={{ borderTop: `1px solid ${C.border}`, paddingTop: 14 }}>
+            <span style={label}>Icon & Colour</span>
+            
+            {/* Icon Row */}
+            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 10 }}>
+              {EMOJI_OPTIONS.map((ico) => (
+                <button
+                  key={ico}
+                  type="button"
+                  onClick={() => setSelectedIcon(ico)}
+                  style={{
+                    width: 32,
+                    height: 32,
+                    borderRadius: 6,
+                    border: `1px solid ${selectedIcon === ico ? C.accent : C.border}`,
+                    background: selectedIcon === ico ? `${C.accent}33` : '#1c1724',
+                    fontSize: 15,
+                    cursor: 'pointer',
+                  }}
+                >
+                  {ico}
+                </button>
+              ))}
+            </div>
+
+            {/* Colour Swatches */}
+            <div style={{ display: 'flex', gap: 8, marginBottom: 14 }}>
+              {SWATCH_OPTIONS.map((sw) => (
+                <button
+                  key={sw}
+                  type="button"
+                  onClick={() => setSelectedColour(sw)}
+                  style={{
+                    width: 24,
+                    height: 24,
+                    borderRadius: '50%',
+                    background: sw,
+                    border: `2px solid ${selectedColour === sw ? C.text : 'transparent'}`,
+                    cursor: 'pointer',
+                  }}
+                />
+              ))}
+            </div>
+
+            <div style={{ display: 'flex', gap: 10 }}>
+              <input
+                style={{ ...input, flex: 1 }}
+                placeholder="Category name (e.g. Deep Work, Reading, Gym)"
+                value={newName}
+                maxLength={60}
+                onChange={(e) => setNewName(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') void createCategory();
                 }}
               />
-            ))}
-          </div>
-
-          <div style={{ display: 'flex', gap: 8 }}>
-            <input
-              style={{ ...input, flex: 1 }}
-              placeholder="Custom Category Name (e.g. Deep Coding, Reading)"
-              value={newName}
-              maxLength={60}
-              onChange={(e) => setNewName(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') void createProject();
-              }}
-            />
-            <button
-              style={{ ...button('primary'), whiteSpace: 'nowrap' }}
-              disabled={busy || newName.trim().length === 0}
-              onClick={() => void createProject()}
-            >
-              + Add Category
-            </button>
+              <button
+                style={{ ...button('primary'), whiteSpace: 'nowrap' }}
+                disabled={busy || newName.trim().length === 0}
+                onClick={() => void createCategory()}
+              >
+                Save Category
+              </button>
+            </div>
           </div>
         </div>
+      )}
+
+      {/* Main Tracked Categories List */}
+      <div style={{ ...card, marginBottom: 20 }}>
+        <div style={{ fontSize: 12.5, fontWeight: 600, color: C.dim, marginBottom: 14, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+          TRACKED CATEGORIES ({projects.length})
+        </div>
+
+        {totals.rows.length === 0 ? (
+          <div style={{ fontSize: 13, color: C.faint, padding: '12px 0' }}>
+            No categories yet. Click "+ New Category" above to get started!
+          </div>
+        ) : (
+          totals.rows.map(({ project, ms, count }) => {
+            const pct = totals.grand > 0 ? (ms / totals.grand) * 100 : 0;
+            const isPrimary = settings?.primaryProjectIds.includes(project.id) === true;
+
+            return (
+              <div
+                key={project.id}
+                style={{
+                  background: '#181422',
+                  border: `1px solid ${isPrimary ? `${project.colour}66` : C.border}`,
+                  borderRadius: 10,
+                  padding: '12px 14px',
+                  marginBottom: 10,
+                }}
+              >
+                <div
+                  style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    marginBottom: 8,
+                  }}
+                >
+                  {/* Category Name & Indicator */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <div
+                      style={{
+                        width: 10,
+                        height: 10,
+                        borderRadius: 3,
+                        background: project.colour,
+                      }}
+                    />
+                    <span style={{ fontSize: 14, fontWeight: 600, color: C.text }}>{project.name}</span>
+                    {isPrimary && (
+                      <span
+                        style={{
+                          fontSize: 10.5,
+                          background: `${project.colour}33`,
+                          color: project.colour,
+                          padding: '1px 7px',
+                          borderRadius: 999,
+                          fontWeight: 600,
+                        }}
+                      >
+                        Floating on Mochi
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Actions */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                    <span style={{ fontSize: 12, color: C.dim, fontVariantNumeric: 'tabular-nums' }}>
+                      {humanDuration(ms)} · {count} session{count === 1 ? '' : 's'}
+                    </span>
+
+                    <button
+                      onClick={() => void togglePrimaryProject(project.id)}
+                      style={{
+                        background: isPrimary ? `${project.colour}33` : 'transparent',
+                        border: `1px solid ${isPrimary ? project.colour : C.border}`,
+                        color: isPrimary ? C.text : C.dim,
+                        borderRadius: 6,
+                        padding: '4px 10px',
+                        fontSize: 12,
+                        fontWeight: 600,
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 4,
+                      }}
+                    >
+                      <span>{isPrimary ? '★' : '☆'}</span>
+                      <span>{isPrimary ? 'Pinned' : 'Pin to Mochi'}</span>
+                    </button>
+
+                    {project.name !== 'General' && (
+                      <button
+                        onClick={() => void archiveCategory(project.id)}
+                        title="Delete category"
+                        style={{
+                          background: 'none',
+                          border: 'none',
+                          color: C.dim,
+                          cursor: 'pointer',
+                          fontSize: 14,
+                          padding: '2px 4px',
+                        }}
+                        onMouseEnter={(e) => (e.currentTarget.style.color = C.warn)}
+                        onMouseLeave={(e) => (e.currentTarget.style.color = C.dim)}
+                      >
+                        🗑️
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                {/* Progress Bar */}
+                <div style={{ height: 5, borderRadius: 3, background: '#262033', overflow: 'hidden' }}>
+                  <div style={{ width: `${pct}%`, height: '100%', background: project.colour }} />
+                </div>
+              </div>
+            );
+          })
+        )}
       </div>
 
-      {/* History */}
-      <div style={{ ...card, maxHeight: 220, overflowY: 'auto' }}>
-        <div style={{ fontSize: 12, fontWeight: 600, color: C.dim, marginBottom: 10 }}>HISTORY</div>
+      {/* History Card */}
+      <div style={{ ...card, maxHeight: 240, overflowY: 'auto' }}>
+        <div style={{ fontSize: 12, fontWeight: 600, color: C.dim, marginBottom: 10, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+          SESSION HISTORY ({sessions.length})
+        </div>
         {sessions.length === 0 ? (
-          <div style={{ fontSize: 13, color: C.faint }}>Nothing tracked yet.</div>
+          <div style={{ fontSize: 13, color: C.faint, padding: '8px 0' }}>Nothing tracked yet.</div>
         ) : (
           sessions.map((s) => {
             const p = projects.find((x) => x.id === s.projectId);
@@ -456,7 +476,7 @@ export function TimeTab(): JSX.Element {
                 style={{
                   display: 'flex',
                   justifyContent: 'space-between',
-                  padding: '6px 0',
+                  padding: '8px 0',
                   borderTop: `1px solid ${C.border}`,
                   fontSize: 12.5,
                 }}
@@ -469,8 +489,8 @@ export function TimeTab(): JSX.Element {
                     minute: '2-digit',
                   })}
                 </span>
-                <span style={{ fontWeight: 500 }}>{p?.name ?? 'General'}</span>
-                <span style={{ fontVariantNumeric: 'tabular-nums', color: C.accent }}>
+                <span style={{ fontWeight: 500, color: C.text }}>{p?.name ?? 'General'}</span>
+                <span style={{ fontVariantNumeric: 'tabular-nums', color: C.accent, fontWeight: 600 }}>
                   {humanDuration(elapsedMs(s, Date.now()))}
                 </span>
               </div>
