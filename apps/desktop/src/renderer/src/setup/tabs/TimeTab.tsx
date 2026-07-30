@@ -229,22 +229,16 @@ export function TimeTab(): JSX.Element {
           <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
             <div
               style={{
-                width: 44,
-                height: 44,
-                borderRadius: 12,
-                background: `${activeProject.colour}33`,
-                border: `1px solid ${activeProject.colour}`,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: 22,
+                width: 12,
+                height: 12,
+                borderRadius: '50%',
+                background: activeProject.colour,
+                boxShadow: `0 0 12px ${activeProject.colour}`,
               }}
-            >
-              {activeProject.name.slice(0, 2)}
-            </div>
+            />
             <div>
-              <div style={{ fontSize: 11, fontWeight: 700, color: activeProject.colour, textTransform: 'uppercase', letterSpacing: '0.8px' }}>
-                🟢 CURRENTLY TRACKING SESSION (1 Active Max)
+              <div style={{ fontSize: 11, fontWeight: 700, color: C.accent, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                🟢 CURRENTLY TRACKING SESSION
               </div>
               <div style={{ fontSize: 16, fontWeight: 700, color: C.text, marginTop: 2 }}>
                 {activeProject.name}
@@ -283,60 +277,148 @@ export function TimeTab(): JSX.Element {
       {/* Floating Mascot Badges Banner */}
       <div
         style={{
-          background: 'linear-gradient(135deg, rgba(35, 27, 48, 0.9), rgba(22, 17, 30, 0.9))',
+          background: 'linear-gradient(135deg, rgba(35, 27, 48, 0.9), rgba(22, 17, 30, 0.95))',
           border: `1px solid ${C.border}`,
           borderRadius: 14,
-          padding: '14px 18px',
+          padding: '18px 20px',
           marginBottom: 20,
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          gap: 16,
         }}
       >
-        <div>
-          <div style={{ fontSize: 13.5, fontWeight: 700, color: C.text, display: 'flex', alignItems: 'center', gap: 6 }}>
-            <span>⭐ Mascot Quick-Track Icons</span>
-            <span style={{ fontSize: 11, background: `${C.accent}33`, color: C.accent, padding: '2px 8px', borderRadius: 999 }}>
-              {primaryCount} / 3 Active
-            </span>
-          </div>
-          <div style={{ fontSize: 12, color: C.dim, marginTop: 4 }}>
-            Pin up to 3 categories to float on Mochi's overlay. Clicking Mochi pops out these quick-tracker icons at the bottom!
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+          <div>
+            <div style={{ fontSize: 14, fontWeight: 700, color: C.text, display: 'flex', alignItems: 'center', gap: 8 }}>
+              <span>⭐ Mascot Quick-Track Icons</span>
+              <span style={{ fontSize: 11, background: `${C.accent}33`, color: C.accent, padding: '2px 8px', borderRadius: 999, fontWeight: 700 }}>
+                {primaryCount} / 3 Active
+              </span>
+            </div>
+            <div style={{ fontSize: 12, color: C.dim, marginTop: 3 }}>
+              Assigned quick-tracker categories floating on Mochi's overlay. Use ◀ ▶ to reorder positions!
+            </div>
           </div>
         </div>
 
-        {/* Selected Primary Pills Preview */}
-        <div style={{ display: 'flex', gap: 8 }}>
-          {(settings?.primaryProjectIds ?? []).map((id) => {
-            const p = projects.find((x) => x.id === id);
-            if (!p) return null;
+        {/* 3 Slot Position Grid */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 12 }}>
+          {[0, 1, 2].map((slotIdx) => {
+            const id = settings?.primaryProjectIds?.[slotIdx];
+            const p = id ? projects.find((x) => x.id === id) : null;
+
             return (
               <div
-                key={id}
+                key={slotIdx}
                 style={{
-                  background: `${p.colour}22`,
-                  border: `1px solid ${p.colour}`,
-                  borderRadius: 999,
-                  padding: '4px 10px',
+                  background: p ? `${p.colour}16` : 'rgba(255, 255, 255, 0.02)',
+                  border: `1px solid ${p ? p.colour : C.border}`,
+                  borderRadius: 12,
+                  padding: '12px 14px',
                   display: 'flex',
-                  alignItems: 'center',
-                  gap: 6,
-                  fontSize: 12,
-                  fontWeight: 600,
-                  color: C.text,
+                  flexDirection: 'column',
+                  gap: 10,
+                  transition: 'all 160ms ease',
                 }}
               >
-                <span>{p.name.slice(0, 2)}</span>
-                <span style={{ maxWidth: 80, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                  {p.name.slice(2).trim()}
-                </span>
-                <button
-                  onClick={() => void togglePrimaryProject(p.id)}
-                  style={{ background: 'none', border: 'none', color: C.dim, cursor: 'pointer', fontSize: 12 }}
-                >
-                  ×
-                </button>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span
+                    style={{
+                      fontSize: 10,
+                      fontWeight: 750,
+                      color: p ? p.colour : C.faint,
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.04em',
+                      background: 'rgba(0, 0, 0, 0.25)',
+                      padding: '2px 7px',
+                      borderRadius: 6,
+                    }}
+                  >
+                    Slot #{slotIdx + 1} Position
+                  </span>
+                  {p && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                      <button
+                        title="Move Left"
+                        disabled={slotIdx === 0}
+                        onClick={() => void movePrimaryProject(slotIdx, 'left')}
+                        style={{
+                          background: 'rgba(255, 255, 255, 0.06)',
+                          border: `1px solid ${C.border}`,
+                          color: slotIdx === 0 ? C.faint : C.text,
+                          borderRadius: 6,
+                          width: 24,
+                          height: 24,
+                          cursor: slotIdx === 0 ? 'not-allowed' : 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          fontSize: 11,
+                        }}
+                      >
+                        ◀
+                      </button>
+                      <button
+                        title="Move Right"
+                        disabled={slotIdx === (settings?.primaryProjectIds?.length ?? 0) - 1}
+                        onClick={() => void movePrimaryProject(slotIdx, 'right')}
+                        style={{
+                          background: 'rgba(255, 255, 255, 0.06)',
+                          border: `1px solid ${C.border}`,
+                          color: slotIdx === (settings?.primaryProjectIds?.length ?? 0) - 1 ? C.faint : C.text,
+                          borderRadius: 6,
+                          width: 24,
+                          height: 24,
+                          cursor: slotIdx === (settings?.primaryProjectIds?.length ?? 0) - 1 ? 'not-allowed' : 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          fontSize: 11,
+                        }}
+                      >
+                        ▶
+                      </button>
+                      <button
+                        title="Unpin"
+                        onClick={() => void togglePrimaryProject(p.id)}
+                        style={{
+                          background: 'rgba(255, 255, 255, 0.06)',
+                          border: `1px solid ${C.border}`,
+                          color: C.dim,
+                          borderRadius: 6,
+                          width: 24,
+                          height: 24,
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          fontSize: 12,
+                        }}
+                      >
+                        ×
+                      </button>
+                    </div>
+                  )}
+                </div>
+
+                {p ? (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <div
+                      style={{
+                        width: 10,
+                        height: 10,
+                        borderRadius: '50%',
+                        background: p.colour,
+                        boxShadow: `0 0 8px ${p.colour}`,
+                        flexShrink: 0,
+                      }}
+                    />
+                    <div style={{ fontSize: 13, fontWeight: 700, color: C.text, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      {p.name}
+                    </div>
+                  </div>
+                ) : (
+                  <div style={{ fontSize: 11.5, color: C.faint, fontStyle: 'italic', padding: '4px 0' }}>
+                    + Pin a category from below to assign to Slot #{slotIdx + 1}
+                  </div>
+                )}
               </div>
             );
           })}
