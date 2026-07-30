@@ -207,7 +207,11 @@ export function clampToDisplays(
     }
   }
 
-  const host = bestDisplay ?? displays[0];
+  // Non-null is provable: the empty case returned at the top of the function.
+  // noUncheckedIndexedAccess cannot see that, and leaving it unasserted made
+  // every use of `host` below an error, which took the whole package's
+  // typecheck down with it.
+  const host = bestDisplay ?? displays[0]!;
 
   // 2. Allow cross-display movement to adjacent displays:
   // Calculate allowable bounds based on displays that neighbor host

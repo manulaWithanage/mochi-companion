@@ -116,12 +116,17 @@ export class OverlayWindow {
     } else {
       await this.win.loadFile(join(import.meta.dirname, '../renderer/overlay.html'));
     }
-    this.win.show();
   }
 
   private wireEvents(): void {
     const win = this.win;
     if (win === null) return;
+
+    win.once('ready-to-show', () => {
+      if (!win.isDestroyed() && !win.isVisible()) {
+        win.showInactive();
+      }
+    });
 
     win.on('moved', () => this.schedulePersist());
 
