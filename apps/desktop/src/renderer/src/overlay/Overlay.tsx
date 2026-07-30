@@ -224,14 +224,18 @@ export function Overlay(): JSX.Element {
       setClickScale(1.14);
       setTimeout(() => setClickScale(1), 160);
 
-      // Reveal category pills at bottom on click!
-      revealPills();
-
       if (!wasDrag) {
-        void window.mochi.timer.toggle('default').then(setTimer);
+        if (timer?.running) {
+          // Single-click while running -> STOP tracking session cleanly
+          void window.mochi.timer.stop().then(setTimer);
+          setShowPills(false);
+        } else {
+          // Single-click while stopped -> Reveal Category Quick-Trackers at bottom
+          revealPills();
+        }
       }
     },
-    [revealPills],
+    [timer, revealPills],
   );
 
   const running = timer?.running === true;
