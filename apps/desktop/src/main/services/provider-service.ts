@@ -160,9 +160,13 @@ export async function validateKey(rawKey: string): Promise<KeyValidation> {
  */
 export function cleanAzureResourceName(input: string): string {
   let s = input.trim().replace(/^https?:\/\//i, '');
-  const match = /^([^./]+)\.openai\.azure\.com/i.exec(s);
+  const match = /^([^./]+)\.(openai|cognitiveservices|api\.cognitive)\.(azure|microsoft)\.com/i.exec(s);
   if (match) {
     return match[1];
+  }
+  const dotMatch = /^([^./]+)\.openai\.azure\.com/i.exec(s);
+  if (dotMatch) {
+    return dotMatch[1];
   }
   return s.split('/')[0].split('.')[0].trim();
 }
@@ -185,33 +189,46 @@ export async function validateAzureKey(opts: {
     return { ok: false, provider: 'azure', redacted, models: [], error: 'Resource name, deployment name and API key are all required.' };
   }
 
-  // Azure deployments endpoint: list deployed models
-  const url = `https://${resource}.openai.azure.com/openai/deployments?api-version=${apiVersion}`;
+  const model: import('@mochi/core').DiscoveredModel = {
+    id: deploymentName,
+    provider: 'azure',
+    capabilities: ['text', 'tools'],
+  };
+
+  // Validate by probing the deployment's /chat/completions endpoint directly.
+  // This avoids 404 errors on Azure accounts that restrict listing deployments.
+  const url = `https://${resource}.openai.azure.com/openai/deployments/${deploymentName}/chat/completions?api-version=${apiVersion}`;
   try {
-    const payload = await fetchJson(url, { headers: { 'api-key': apiKey } }, REMOTE_TIMEOUT_MS);
-    const obj = payload as Record<string, unknown>;
-    // Parse Azure deployments list: { data: [{ id, model }] }
-    const data = Array.isArray(obj['data']) ? (obj['data'] as Record<string, unknown>[]) : [];
-    // Always include the user's named deployment even if listing fails
-    const deployments: import('@mochi/core').DiscoveredModel[] = data
-      .map((d) => ({ id: String(d['id'] ?? d['model'] ?? ''), provider: 'azure' as const, capabilities: ['text', 'tools'] as import('@mochi/core').Capability[] }))
-      .filter((d) => d.id.length > 0);
-
-    if (!deployments.find((d) => d.id === deploymentName)) {
-      deployments.unshift({ id: deploymentName, provider: 'azure', capabilities: ['text', 'tools'] });
-    }
-
-    return { ok: true, provider: 'azure', redacted, models: deployments };
+    await fetchJson(
+      url,
+      {
+        method: 'POST',
+        headers: {
+          'api-key': apiKey,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          messages: [{ role: 'user', content: 'hi' }],
+          max_tokens: 1,
+        }),
+      },
+      REMOTE_TIMEOUT_MS,
+    );
+    return { ok: true, provider: 'azure', redacted, models: [model] };
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
+    // 400 or 422 means the server, deployment, and auth worked (it just didn't like the prompt/params)
+    if (message.includes('400') || message.includes('422')) {
+      return { ok: true, provider: 'azure', redacted, models: [model] };
+    }
     if (message.includes('401') || message.includes('403')) {
       return { ok: false, provider: 'azure', redacted, models: [], error: 'Azure API key rejected. Check your key and resource name.' };
     }
     if (message.includes('404')) {
-      return { ok: false, provider: 'azure', redacted, models: [], error: `Azure resource "${resource}" or deployment not found (404).` };
+      return { ok: false, provider: 'azure', redacted, models: [], error: `Azure deployment "${deploymentName}" not found on resource "${resource}" (404).` };
     }
     if (message.includes('ENOTFOUND') || message.includes('getaddrinfo') || message.includes('fetch failed')) {
-      return { ok: false, provider: 'azure', redacted, models: [], error: `Could not reach "${resource}.openai.azure.com". Check your resource name.` };
+      return { ok: false, provider: 'azure', redacted, models: [], error: `Could not reach "${resource}.openai.azure.com". Check your Resource Name.` };
     }
     return { ok: false, provider: 'azure', redacted, models: [], error: `Azure connection failed: ${message}` };
   }

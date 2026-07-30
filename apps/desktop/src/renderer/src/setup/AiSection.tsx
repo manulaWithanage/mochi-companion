@@ -98,8 +98,10 @@ export function AiSection(): JSX.Element {
 
 function cleanAzureResource(input: string): string {
   let s = input.trim().replace(/^https?:\/\//i, '');
-  const match = /^([^./]+)\.openai\.azure\.com/i.exec(s);
+  const match = /^([^./]+)\.(openai|cognitiveservices|api\.cognitive)\.(azure|microsoft)\.com/i.exec(s);
   if (match) return match[1];
+  const dotMatch = /^([^./]+)\.openai\.azure\.com/i.exec(s);
+  if (dotMatch) return dotMatch[1];
   return s.split('/')[0].split('.')[0].trim();
 }
 
