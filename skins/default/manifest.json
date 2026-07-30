@@ -5,10 +5,10 @@
   "frameHeight": 192,
   "defaultState": "idle",
   "states": {
-    "idle": { "file": "idle.png", "frames": 8, "fps": 12, "loop": true },
-    "working": { "file": "working.png", "frames": 8, "fps": 12, "loop": true },
-    "resting": { "file": "resting.png", "frames": 8, "fps": 12, "loop": true },
-    "alert": { "file": "alert.png", "frames": 8, "fps": 12, "loop": true }
+    "idle":    { "file": "idle.png",    "frames": 12, "fps": 12, "loop": true },
+    "working": { "file": "working.png", "frames": 12, "fps": 12, "loop": true },
+    "resting": { "file": "resting.png", "frames": 8,  "fps": 12, "loop": true },
+    "alert":   { "file": "alert.png",   "frames": 8,  "fps": 12, "loop": true }
   },
   "author": "Mochi contributors",
   "license": "MIT"
