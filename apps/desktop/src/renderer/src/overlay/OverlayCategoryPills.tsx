@@ -1,5 +1,5 @@
 import { useEffect, useState, type JSX } from 'react';
-import type { Project, TimerSnapshot } from '@mochi/core';
+import { categoryIcon, categoryLabel, type Project, type TimerSnapshot } from '@mochi/core';
 
 interface OverlayCategoryPillsProps {
   timer: TimerSnapshot | null;
@@ -69,14 +69,16 @@ export function OverlayCategoryPills({
         const isActive = activeProjectId === project.id;
         const isHovered = activeHoverId === project.id;
 
-        const displayName = project.name === 'General' ? '🎯 General' : project.name;
-        const iconChar = displayName.slice(0, 2).trim() || '🎯';
+        // Shared with the Time tab's overlay preview, so what is shown in
+        // settings is what actually appears under Mochi.
+        const iconChar = categoryIcon(project.name);
+        const plainName = categoryLabel(project.name) || project.name;
 
         return (
           <button
             key={project.id}
             type="button"
-            title={`Track under ${project.name}`}
+            title={`Track under ${plainName}`}
             onClick={(e) => {
               e.stopPropagation();
               void window.mochi.timer.toggle(project.id);
