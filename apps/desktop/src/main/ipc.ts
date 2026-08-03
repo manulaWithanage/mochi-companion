@@ -19,6 +19,7 @@ import type {
 import {
   LOCAL_PROVIDERS,
   createTask,
+  isActivityCategoryId,
   parseCategory,
   parseHhMm,
   rollForward,
@@ -217,6 +218,15 @@ export function registerIpc(ctx: IpcContext): void {
       ctx.activity.start();
     }
     return next;
+  });
+
+  ipcMain.handle('settings:setAppCategory', (_e, app: unknown, category: unknown) => {
+    const current = ctx.settings.get();
+    if (typeof app !== 'string' || app.length === 0) return current;
+    if (!isActivityCategoryId(category)) return current;
+    return ctx.settings.update({
+      learnedAppCategories: { ...current.learnedAppCategories, [app]: category },
+    });
   });
 
   ipcMain.handle('settings:setPrimaryProjects', (_e, ids: unknown) => {

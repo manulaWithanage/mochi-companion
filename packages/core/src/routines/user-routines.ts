@@ -96,3 +96,96 @@ export const ROUTINE_PRESETS: readonly Omit<UserRoutine, 'id' | 'createdAt'>[] =
     reminderMessage: "Wrap up today's work, review completed tasks, and clear your desk.",
   },
 ];
+
+// ---------------------------------------------------------------------------
+// When does this next happen?
+// ---------------------------------------------------------------------------
+
+/** Sunday-first, matching Date.getDay(). */
+const DAY_ORDER: readonly RoutineDay[] = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
+
+/** Every time a routine is set for, tolerating the legacy single `time`. */
+export function routineTimes(routine: UserRoutine): readonly string[] {
+  const times = routine.times !== undefined && routine.times.length > 0
+    ? routine.times
+    : [routine.time];
+  return [...times].filter((t) => /^\d{1,2}:\d{2}$/.test(t)).sort();
+}
+
+/**
+ * The next moment this routine fires, or null.
+ *
+ * Null means it is disabled, has no valid times, or has no days selected — all
+ * of which are states a form can produce and none of which should be shown as
+ * "next up in 6 days" by accident.
+ *
+ * Searches eight days rather than seven so a routine due later *today* is found
+ * before the same weekday next week.
+ */
+export function nextOccurrence(routine: UserRoutine, now: Date): number | null {
+  if (!routine.enabled) return null;
+  const times = routineTimes(routine);
+  if (times.length === 0 || routine.days.length === 0) return null;
+
+  for (let offset = 0; offset < 8; offset += 1) {
+    const day = new Date(now);
+    day.setDate(day.getDate() + offset);
+    const weekday = DAY_ORDER[day.getDay()]!;
+    if (!routine.days.includes(weekday)) continue;
+
+    for (const time of times) {
+      const [hours, minutes] = time.split(':');
+      const at = new Date(day);
+      at.setHours(Number(hours), Number(minutes), 0, 0);
+      if (at.getTime() > now.getTime()) return at.getTime();
+    }
+  }
+  return null;
+}
+
+/** True when the routine is scheduled on the given day at all. */
+export function runsOnDay(routine: UserRoutine, day: Date): boolean {
+  return routine.days.includes(DAY_ORDER[day.getDay()]!);
+}
+
+/**
+ * Routines in the order the day will actually reach them.
+ *
+ * Disabled ones sink to the bottom rather than disappearing: they are still
+ * yours, and hiding them makes the toggle feel like a delete.
+ */
+export function sortByNext(
+  routines: readonly UserRoutine[],
+  now: Date,
+): readonly UserRoutine[] {
+  return [...routines].sort((a, b) => {
+    const nextA = nextOccurrence(a, now);
+    const nextB = nextOccurrence(b, now);
+    if (nextA === null && nextB === null) return a.createdAt - b.createdAt;
+    if (nextA === null) return 1;
+    if (nextB === null) return -1;
+    return nextA - nextB;
+  });
+}
+
+/** `in 20 min`, `in 3 hours`, `tomorrow`, `Friday`. */
+export function describeNext(at: number | null, now: Date): string {
+  if (at === null) return 'paused';
+
+  const ms = at - now.getTime();
+  const minutes = Math.round(ms / 60_000);
+  if (minutes < 1) return 'now';
+  if (minutes < 60) return `in ${minutes} min`;
+
+  const sameDay = new Date(at).toDateString() === now.toDateString();
+  if (sameDay) {
+    const hours = Math.round(minutes / 60);
+    return hours === 1 ? 'in 1 hour' : `in ${hours} hours`;
+  }
+
+  const tomorrow = new Date(now);
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  if (new Date(at).toDateString() === tomorrow.toDateString()) return 'tomorrow';
+
+  return new Date(at).toLocaleDateString(undefined, { weekday: 'long' });
+}

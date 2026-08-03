@@ -7,6 +7,7 @@ import {
   switchCount,
   totalsByApp,
   totalsByCategory,
+  ACTIVITY_CATEGORIES,
   KNOWN_SITES,
   type ActivityCategory,
   type ActivitySpan,
@@ -61,6 +62,93 @@ const Stat = ({
   </div>
 );
 
+/**
+ * When, not just how much.
+ *
+ * Totals answer "where did the day go" but not "when was I actually deep in
+ * something", and the spans already carry timestamps. Rendered only for a
+ * single day, because seven stacked strips is a chart nobody reads.
+ */
+const Timeline = ({
+  spans,
+  from,
+  to,
+}: {
+  readonly spans: readonly ActivitySpan[];
+  readonly from: number;
+  readonly to: number;
+}): JSX.Element | null => {
+  const width = to - from;
+  if (width <= 0 || spans.length === 0) return null;
+
+  // Start the strip at the first recorded moment rather than at midnight,
+  // otherwise most of it is empty and the day is squeezed into a corner.
+  const firstAt = Math.min(...spans.map((s) => s.startedAt));
+  const start = Math.max(from, firstAt - 15 * 60_000);
+  const span = Math.max(1, to - start);
+
+  const hours: number[] = [];
+  const cursor = new Date(start);
+  cursor.setMinutes(0, 0, 0);
+  cursor.setHours(cursor.getHours() + 1);
+  while (cursor.getTime() < to) {
+    hours.push(cursor.getTime());
+    cursor.setHours(cursor.getHours() + 1);
+  }
+
+  return (
+    <div style={{ ...card, marginBottom: 14 }}>
+      <div style={{ fontSize: 12, color: C.dim, marginBottom: 10 }}>When</div>
+
+      <div
+        style={{
+          position: 'relative',
+          height: 26,
+          borderRadius: 6,
+          background: 'rgba(255,255,255,0.035)',
+          overflow: 'hidden',
+        }}
+      >
+        {spans.map((s) => (
+          <div
+            key={`${s.startedAt}-${s.app}`}
+            title={`${s.app} · ${humanDuration(s.endedAt - s.startedAt)}`}
+            style={{
+              position: 'absolute',
+              left: `${((s.startedAt - start) / span) * 100}%`,
+              // A one-sample span is 10s in a nine-hour day: without a floor it
+              // rounds to nothing and the strip looks emptier than the day was.
+              width: `${Math.max(0.4, ((s.endedAt - s.startedAt) / span) * 100)}%`,
+              top: 0,
+              bottom: 0,
+              background: CATEGORY_COLOUR[s.category],
+              opacity: 0.85,
+            }}
+          />
+        ))}
+      </div>
+
+      <div style={{ position: 'relative', height: 14, marginTop: 4 }}>
+        {hours.map((h) => (
+          <span
+            key={h}
+            style={{
+              position: 'absolute',
+              left: `${((h - start) / span) * 100}%`,
+              transform: 'translateX(-50%)',
+              fontSize: 10,
+              color: C.faint,
+              whiteSpace: 'nowrap',
+            }}
+          >
+            {new Date(h).getHours()}:00
+          </span>
+        ))}
+      </div>
+    </div>
+  );
+};
+
 function rangeBounds(range: Range, now: Date): { from: number; to: number } {
   const start = new Date(now);
   start.setHours(0, 0, 0, 0);
@@ -90,11 +178,14 @@ export function ActivityTab(): JSX.Element {
   useEffect(() => {
     void window.mochi.settings.get().then(setSettings);
     void window.mochi.activity.supported().then(setSupported);
-    reload(range, now);
+    reload(range, new Date());
 
     const offSettings = window.mochi.settings.onChange(setSettings);
     // Buffered samples only reach the list every couple of minutes, so a slow
     // refresh is enough and keeps this tab off the critical path.
+    //
+    // `now` is deliberately NOT a dependency: it is set by this very interval,
+    // so including it tore the timer down and rebuilt it on every tick.
     const tick = setInterval(() => {
       const next = new Date();
       setNow(next);
@@ -105,8 +196,9 @@ export function ActivityTab(): JSX.Element {
       offSettings();
       clearInterval(tick);
     };
-  }, [range, now, reload]);
+  }, [range, reload]);
 
+  const bounds = useMemo(() => rangeBounds(range, now), [range, now]);
   const tracking = settings?.activityTracking === true;
   const sites = settings?.trackBrowsingSites === true;
 
@@ -127,6 +219,16 @@ export function ActivityTab(): JSX.Element {
   const toggleSites = useCallback(async (next: boolean) => {
     setSettings(await window.mochi.settings.setTrackBrowsingSites(next));
   }, []);
+
+  const recategorise = useCallback(
+    async (app: string, category: ActivityCategory) => {
+      setSettings(await window.mochi.settings.setAppCategory(app, category));
+      // Existing spans keep the old category — recategorising is not a rewrite
+      // of history — so reload to show what changed from here on.
+      reload(range, new Date());
+    },
+    [range, reload],
+  );
 
   const wipe = useCallback(async () => {
     await window.mochi.activity.forgetAll();
@@ -253,6 +355,10 @@ export function ActivityTab(): JSX.Element {
             </div>
           ) : (
             <>
+              {range === 'today' && (
+                <Timeline spans={spans} from={bounds.from} to={bounds.to} />
+              )}
+
               <div style={{ display: 'flex', gap: 10, marginBottom: 14 }}>
                 <Stat value={humanDuration(totalMs)} caption="at the keyboard" accent />
                 <Stat value={humanDuration(focused)} caption="in focused apps" />
@@ -352,6 +458,36 @@ export function ActivityTab(): JSX.Element {
                       >
                         {humanDuration(a.ms)}
                       </span>
+
+                      {/*
+                        A correction is worth more than any inference, so it is
+                        offered on the row rather than hidden in a settings
+                        page. It overwrites whatever a model decided and is
+                        never re-asked.
+                      */}
+                      <select
+                        value={a.category}
+                        onChange={(e) =>
+                          void recategorise(a.app, e.target.value as ActivityCategory)
+                        }
+                        title={`Filed under ${activityCategoryInfo(a.category).label}. Change it if that is wrong.`}
+                        style={{
+                          background: 'transparent',
+                          border: `1px solid ${C.border}`,
+                          borderRadius: 6,
+                          color: C.dim,
+                          fontSize: 11,
+                          padding: '2px 4px',
+                          cursor: 'pointer',
+                          fontFamily: 'inherit',
+                        }}
+                      >
+                        {ACTIVITY_CATEGORIES.map((c) => (
+                          <option key={c.id} value={c.id} style={{ background: '#241f2b' }}>
+                            {c.label}
+                          </option>
+                        ))}
+                      </select>
                     </div>
                   ))}
                 </div>

@@ -9,7 +9,7 @@
  * is a compile error rather than a runtime `undefined is not a function`.
  */
 
-import type { ActivitySpan } from '../activity/activity.js';
+import type { ActivityCategory, ActivitySpan } from '../activity/activity.js';
 import type { Briefing } from '../briefing/briefing.js';
 import type { CalendarEvent } from '../calendar/calendar.js';
 import type { EmailCategory } from '../google/categories.js';
@@ -178,6 +178,13 @@ export interface MochiBridge {
     setPrimaryProjects(ids: readonly string[]): Promise<MochiSettings>;
     setActivityTracking(enabled: boolean): Promise<MochiSettings>;
     setTrackBrowsingSites(enabled: boolean): Promise<MochiSettings>;
+    /**
+     * Correct what an app is filed under.
+     *
+     * A user correction is worth more than any inference, so this overwrites
+     * whatever a model decided and is never re-asked.
+     */
+    setAppCategory(app: string, category: ActivityCategory): Promise<MochiSettings>;
     setGmailAi(patch: Partial<GmailAiSettings>): Promise<MochiSettings>;
     onChange(listener: (settings: MochiSettings) => void): () => void;
   };

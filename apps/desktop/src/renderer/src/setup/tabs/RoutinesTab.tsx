@@ -1,4 +1,4 @@
-import { useEffect, useState, type JSX } from 'react';
+import { useEffect, useMemo, useState, type JSX } from 'react';
 import type {
   MochiSettings,
   RoutineCategory,
@@ -6,7 +6,14 @@ import type {
   UserRoutine,
   UserRoutineInput,
 } from '@mochi/core';
-import { EMOJI_OPTIONS, ROUTINE_PRESETS } from '@mochi/core';
+import {
+  describeNext,
+  EMOJI_OPTIONS,
+  nextOccurrence,
+  ROUTINE_PRESETS,
+  runsOnDay,
+  sortByNext,
+} from '@mochi/core';
 import { button, C, card, h2, input, label, sub } from '../ui.js';
 
 const DAYS_MAP: { key: RoutineDay; label: string }[] = [
@@ -138,6 +145,7 @@ const Toggle = ({
 
 export function RoutinesTab(): JSX.Element {
   const [routines, setRoutines] = useState<readonly UserRoutine[]>([]);
+  const [now, setNow] = useState(() => new Date());
   const [settings, setSettings] = useState<MochiSettings | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -164,12 +172,20 @@ export function RoutinesTab(): JSX.Element {
 
     const offRoutines = window.mochi.userRoutines.onChange(setRoutines);
     const offSettings = window.mochi.settings.onChange(setSettings);
+    // "in 20 min" is a lie a minute later unless something re-renders.
+    const tick = setInterval(() => setNow(new Date()), 30_000);
 
     return () => {
       offRoutines();
       offSettings();
+      clearInterval(tick);
     };
   }, []);
+
+  // Schedule order, not creation order: a list of daily routines should read
+  // like a day.
+  const ordered = useMemo(() => sortByNext(routines, now), [routines, now]);
+  const upNext = ordered.find((r) => nextOccurrence(r, now) !== null) ?? null;
 
   const openNewForm = (): void => {
     setEditingId(null);
@@ -633,10 +649,13 @@ export function RoutinesTab(): JSX.Element {
           </div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-            {routines.map((r) => {
+            {ordered.map((r) => {
               const catInfo = CATEGORY_MAP[r.category] ?? CATEGORY_MAP.custom;
               const displayIcon = r.icon || catInfo.defaultIcon;
               const displayTimes = r.times && r.times.length > 0 ? r.times : [r.time];
+              const next = nextOccurrence(r, now);
+              const isNext = upNext !== null && upNext.id === r.id;
+              const today = runsOnDay(r, now);
 
               return (
                 <div
@@ -647,8 +666,11 @@ export function RoutinesTab(): JSX.Element {
                     alignItems: 'center',
                     justifyContent: 'space-between',
                     gap: 14,
-                    opacity: r.enabled ? 1 : 0.6,
-                    borderColor: r.enabled ? C.border : 'transparent',
+                    opacity: r.enabled ? 1 : 0.55,
+                    // The one firing next is picked out, so the list answers
+                    // "what is coming" without being read top to bottom.
+                    borderColor: isNext ? 'rgba(242,166,179,0.45)' : r.enabled ? C.border : 'transparent',
+                    background: isNext ? 'rgba(242,166,179,0.05)' : undefined,
                   }}
                 >
                   <div style={{ display: 'flex', alignItems: 'center', gap: 12, flex: 1 }}>
@@ -724,6 +746,26 @@ export function RoutinesTab(): JSX.Element {
                             </span>
                           ))}
                         </div>
+                      </div>
+
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 6 }}>
+                        <span
+                          style={{
+                            fontSize: 11,
+                            fontWeight: 600,
+                            padding: '2px 8px',
+                            borderRadius: 99,
+                            color: isNext ? '#241f2b' : r.enabled ? C.dim : C.faint,
+                            background: isNext ? C.accent : '#251e30',
+                          }}
+                        >
+                          {isNext ? `next · ${describeNext(next, now)}` : describeNext(next, now)}
+                        </span>
+                        {r.enabled && !today && (
+                          // Otherwise a Mon/Wed/Fri routine looks identical on a
+                          // Tuesday to one that is about to fire.
+                          <span style={{ fontSize: 11, color: C.faint }}>not scheduled today</span>
+                        )}
                       </div>
 
                       {r.mochiReminder && r.reminderMessage && (
