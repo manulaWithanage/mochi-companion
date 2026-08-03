@@ -416,17 +416,19 @@ for (const [file, [frames, opts]] of Object.entries(SHEETS)) {
 console.log(`\nWrote ${OUT_DIR}`);
 
 // ---------------------------------------------------------------------------
-// App icon — one idle frame, large. electron-builder converts PNG to .ico
-// and .icns itself, so a single 512px source covers every platform.
+// The app icon is NOT generated here.
+//
+// This script used to draw one large idle frame into
+// apps/desktop/assets/icon.png. It no longer does, because that file is now
+// the real Mochi brand logo — vector mascot, purple wordmark, subtitle —
+// imported by hand in 67f24ef and shipped as the app icon by
+// electron-builder.yml.
+//
+// Leaving the two in the same place meant the generator silently reverted the
+// brand logo every time anyone ran it, and CI's "generated artwork is up to
+// date" check then demanded that reversion be committed. Drawing an icon that
+// must never be used is worse than not drawing one, so it is gone.
+//
+// If a generated icon is ever wanted again, give it its own filename. Do not
+// hand this path back.
 // ---------------------------------------------------------------------------
-const ICON_DIR = join(dirname(fileURLToPath(import.meta.url)), '..', 'apps', 'desktop', 'assets');
-FRAME = 512;
-U = FRAME / 128;
-SS = 2; // 1024px working surface is plenty at this output size
-
-const iconSurface = new Surface(FRAME * SS, FRAME * SS);
-drawMochi(iconSurface, { squash: 0, bob: -2, eyes: 'open' });
-mkdirSync(ICON_DIR, { recursive: true });
-const icon = encodePng(FRAME, FRAME, iconSurface.downsample(SS));
-writeFileSync(join(ICON_DIR, 'icon.png'), icon);
-console.log(`icon.png       ${FRAME}x${FRAME}    ${icon.length} bytes`);

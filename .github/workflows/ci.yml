@@ -62,13 +62,17 @@ jobs:
       # One OS only: the encoder is deterministic for a given zlib, but zlib
       # output is not guaranteed byte-identical across platforms, and a false
       # failure on three runners is just noise.
+      #
+      # skins/ only. apps/desktop/assets used to be checked too, back when the
+      # generator drew the app icon; it now holds the hand-made brand logo,
+      # which no script produces and this must not ask anyone to overwrite.
       - name: Verify generated artwork is up to date
         if: matrix.os == 'ubuntu-latest'
         shell: bash
         run: |
           node scripts/generate-default-skin.mjs
-          if ! git diff --quiet -- skins apps/desktop/assets; then
+          if ! git diff --quiet -- skins; then
             echo "::error::Generated artwork is out of date. Run: node scripts/generate-default-skin.mjs"
-            git --no-pager diff --stat -- skins apps/desktop/assets
+            git --no-pager diff --stat -- skins
             exit 1
           fi
