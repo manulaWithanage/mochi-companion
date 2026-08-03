@@ -122,6 +122,16 @@ export class OverlayWindow {
     const win = this.win;
     if (win === null) return;
 
+    win.webContents.on('console-message', (_e, level, message, line, sourceId) => {
+      console.log(`[overlay-web] [${level}] ${message} (${sourceId}:${line})`);
+    });
+    win.webContents.on('did-fail-load', (_e, errorCode, errorDescription, validatedURL) => {
+      console.error(`[overlay-web] FAILED TO LOAD: ${errorCode} ${errorDescription} (${validatedURL})`);
+    });
+    win.webContents.on('render-process-gone', (_e, details) => {
+      console.error(`[overlay-web] RENDER PROCESS GONE:`, details);
+    });
+
     const showOverlay = () => {
       if (!win.isDestroyed() && !win.isVisible()) {
         win.showInactive();

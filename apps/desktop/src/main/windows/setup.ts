@@ -51,6 +51,16 @@ export class SetupWindow {
       this.win = null;
     });
 
+    this.win.webContents.on('console-message', (_e, level, message, line, sourceId) => {
+      console.log(`[setup-web] [${level}] ${message} (${sourceId}:${line})`);
+    });
+    this.win.webContents.on('did-fail-load', (_e, errorCode, errorDescription, validatedURL) => {
+      console.error(`[setup-web] FAILED TO LOAD: ${errorCode} ${errorDescription} (${validatedURL})`);
+    });
+    this.win.webContents.on('render-process-gone', (_e, details) => {
+      console.error(`[setup-web] RENDER PROCESS GONE:`, details);
+    });
+
     void this.load();
     return this.win;
   }
