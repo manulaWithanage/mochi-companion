@@ -52,6 +52,24 @@ function formatCategoryName(name: string): string {
   return name;
 }
 
+/** The small ◀ ▶ buttons that set a pinned category's place on the overlay. */
+function slotArrow(disabled: boolean): React.CSSProperties {
+  return {
+    background: 'rgba(255, 255, 255, 0.06)',
+    border: `1px solid ${C.border}`,
+    color: disabled ? C.faint : C.text,
+    borderRadius: 5,
+    width: 22,
+    height: 22,
+    cursor: disabled ? 'not-allowed' : 'pointer',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    fontSize: 10,
+    padding: 0,
+  };
+}
+
 type TimeSubTab = 'categories' | 'performance' | 'history';
 type DateRangeFilter = 'today' | '7days' | '30days' | 'all';
 
@@ -69,6 +87,8 @@ export function TimeTab(): JSX.Element {
   const [selectedColour, setSelectedColour] = useState('#6366f1');
   const [busy, setBusy] = useState(false);
   const [showCreateForm, setShowCreateForm] = useState(false);
+  /** Removing a category takes its sessions with it, so it asks first. */
+  const [confirmArchive, setConfirmArchive] = useState<string | null>(null);
 
   const reload = useCallback(async () => {
     const sList = await window.mochi.timer.listSessions();
@@ -119,11 +139,12 @@ export function TimeTab(): JSX.Element {
       if (current.includes(projectId)) {
         updated = current.filter((id) => id !== projectId);
       } else {
-        if (current.length >= 3) {
-          updated = [current[0]!, current[1]!, projectId].filter(Boolean);
-        } else {
-          updated = [...current, projectId];
-        }
+        // Full is full. This used to keep slots 1 and 2 and overwrite slot 3,
+        // so pinning a fourth category silently threw one off the overlay with
+        // no warning and no way to tell which. The button is disabled at 3
+        // instead, and says why.
+        if (current.length >= 3) return;
+        updated = [...current, projectId];
       }
 
       const nextSettings = await window.mochi.settings.setPrimaryProjects(updated);
@@ -440,218 +461,63 @@ export function TimeTab(): JSX.Element {
             </button>
           </div>
 
-          {/* Floating Mascot Badges Banner */}
+          {/*
+            The overlay, at a glance.
+
+            This was a 200px panel repeating the three category names that are
+            already in the list below, with "3 / 3 Active" above it and
+            "3 / 3 Mascot Quick-Trackers Pinned" below -- the same fact stated
+            three times. Slot order and unpinning now live on the rows
+            themselves, where the categories are, so this only has to show what
+            Mochi is actually carrying.
+          */}
           <div
             style={{
               background: 'linear-gradient(135deg, rgba(35, 27, 48, 0.9), rgba(22, 17, 30, 0.95))',
               border: `1px solid ${C.border}`,
               borderRadius: 14,
-              padding: '18px 20px',
+              padding: '12px 16px',
               marginBottom: 20,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 14,
+              flexWrap: 'wrap',
             }}
           >
-            <div
-              style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                marginBottom: 14,
-              }}
-            >
-              <div>
-                <div
-                  style={{
-                    fontSize: 14,
-                    fontWeight: 700,
-                    color: C.text,
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 8,
-                  }}
-                >
-                  <span>⭐ Mascot Quick-Track Icons</span>
-                  <span
-                    style={{
-                      fontSize: 11,
-                      background: `${C.accent}33`,
-                      color: C.accent,
-                      padding: '2px 8px',
-                      borderRadius: 999,
-                      fontWeight: 700,
-                    }}
-                  >
-                    {primaryCount} / 3 Active
-                  </span>
-                </div>
-                <div style={{ fontSize: 12, color: C.dim, marginTop: 3 }}>
-                  Assigned quick-tracker categories floating on Mochi's overlay, use ◀ ▶ to reorder
-                  positions
-                </div>
-              </div>
-            </div>
-
-            {/* 3 Slot Position Grid */}
-            <div
-              style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
-                gap: 12,
-              }}
-            >
+            <span style={{ fontSize: 12, color: C.dim, whiteSpace: 'nowrap' }}>
+              ⭐ On Mochi&apos;s overlay
+            </span>
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', flex: 1 }}>
               {[0, 1, 2].map((slotIdx) => {
                 const id = settings?.primaryProjectIds?.[slotIdx];
-                const p = id ? projects.find((x) => x.id === id) : null;
-
+                const p = id === undefined ? null : (projects.find((x) => x.id === id) ?? null);
                 return (
-                  <div
+                  <span
                     key={slotIdx}
                     style={{
-                      background: p ? `${p.colour}16` : 'rgba(255, 255, 255, 0.02)',
-                      border: `1px solid ${p ? p.colour : C.border}`,
-                      borderRadius: 12,
-                      padding: '12px 14px',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      gap: 10,
-                      transition: 'all 160ms ease',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: 7,
+                      fontSize: 12,
+                      fontWeight: 600,
+                      padding: '5px 11px',
+                      borderRadius: 999,
+                      border: `1px solid ${p === null ? C.border : p.colour}`,
+                      background: p === null ? 'transparent' : `${p.colour}18`,
+                      color: p === null ? C.faint : C.text,
                     }}
                   >
-                    <div
-                      style={{
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        alignItems: 'center',
-                      }}
-                    >
-                      <span
-                        style={{
-                          fontSize: 10,
-                          fontWeight: 750,
-                          color: p ? p.colour : C.faint,
-                          textTransform: 'uppercase',
-                          letterSpacing: '0.04em',
-                          background: 'rgba(0, 0, 0, 0.25)',
-                          padding: '2px 7px',
-                          borderRadius: 6,
-                        }}
-                      >
-                        Slot #{slotIdx + 1} Position
-                      </span>
-                      {p && (
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                          <button
-                            type="button"
-                            title="Move Left"
-                            disabled={slotIdx === 0}
-                            onClick={() => void movePrimaryProject(slotIdx, 'left')}
-                            style={{
-                              background: 'rgba(255, 255, 255, 0.06)',
-                              border: `1px solid ${C.border}`,
-                              color: slotIdx === 0 ? C.faint : C.text,
-                              borderRadius: 6,
-                              width: 24,
-                              height: 24,
-                              cursor: slotIdx === 0 ? 'not-allowed' : 'pointer',
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              fontSize: 11,
-                            }}
-                          >
-                            ◀
-                          </button>
-                          <button
-                            type="button"
-                            title="Move Right"
-                            disabled={slotIdx === (settings?.primaryProjectIds?.length ?? 0) - 1}
-                            onClick={() => void movePrimaryProject(slotIdx, 'right')}
-                            style={{
-                              background: 'rgba(255, 255, 255, 0.06)',
-                              border: `1px solid ${C.border}`,
-                              color:
-                                slotIdx === (settings?.primaryProjectIds?.length ?? 0) - 1
-                                  ? C.faint
-                                  : C.text,
-                              borderRadius: 6,
-                              width: 24,
-                              height: 24,
-                              cursor:
-                                slotIdx === (settings?.primaryProjectIds?.length ?? 0) - 1
-                                  ? 'not-allowed'
-                                  : 'pointer',
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              fontSize: 11,
-                            }}
-                          >
-                            ▶
-                          </button>
-                          <button
-                            type="button"
-                            title="Unpin"
-                            onClick={() => void togglePrimaryProject(p.id)}
-                            style={{
-                              background: 'rgba(255, 255, 255, 0.06)',
-                              border: `1px solid ${C.border}`,
-                              color: C.dim,
-                              borderRadius: 6,
-                              width: 24,
-                              height: 24,
-                              cursor: 'pointer',
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              fontSize: 12,
-                            }}
-                          >
-                            ×
-                          </button>
-                        </div>
-                      )}
-                    </div>
-
-                    {p ? (
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                        <div
-                          style={{
-                            width: 10,
-                            height: 10,
-                            borderRadius: '50%',
-                            background: p.colour,
-                            boxShadow: `0 0 8px ${p.colour}`,
-                            flexShrink: 0,
-                          }}
-                        />
-                        <div
-                          style={{
-                            fontSize: 13,
-                            fontWeight: 700,
-                            color: C.text,
-                            whiteSpace: 'nowrap',
-                            overflow: 'hidden',
-                            textOverflow: 'ellipsis',
-                          }}
-                        >
-                          {formatCategoryName(p.name)}
-                        </div>
-                      </div>
-                    ) : (
-                      <div
-                        style={{
-                          fontSize: 11.5,
-                          color: C.faint,
-                          fontStyle: 'italic',
-                          padding: '4px 0',
-                        }}
-                      >
-                        + Pin a category from below to assign to Slot #{slotIdx + 1}
-                      </div>
-                    )}
-                  </div>
+                    <span style={{ fontSize: 10, color: p === null ? C.faint : p.colour }}>
+                      {slotIdx + 1}
+                    </span>
+                    {p === null ? 'empty' : formatCategoryName(p.name)}
+                  </span>
                 );
               })}
             </div>
+            <span style={{ fontSize: 11.5, color: C.faint, whiteSpace: 'nowrap' }}>
+              Pin below to fill a slot
+            </span>
           </div>
 
           {/* Inline Create Category Form */}
@@ -788,7 +654,7 @@ export function TimeTab(): JSX.Element {
                 TRACKED CATEGORIES ({projects.length})
               </div>
               <div style={{ fontSize: 11.5, color: C.dim }}>
-                ⭐ {primaryCount} / 3 Mascot Quick-Trackers Pinned
+                ⭐ {primaryCount} of 3 overlay slots used
               </div>
             </div>
 
@@ -875,21 +741,58 @@ export function TimeTab(): JSX.Element {
                           {humanDuration(ms)} · {count} session{count === 1 ? '' : 's'}
                         </span>
 
+                        {/* Slot order lives here now, next to the category it
+                            reorders, rather than in a separate panel. */}
+                        {isPrimary && (
+                          <div style={{ display: 'flex', gap: 3 }}>
+                            <button
+                              type="button"
+                              title="Move earlier on the overlay"
+                              disabled={primaryIndex === 0}
+                              onClick={() => void movePrimaryProject(primaryIndex, 'left')}
+                              style={slotArrow(primaryIndex === 0)}
+                            >
+                              ◀
+                            </button>
+                            <button
+                              type="button"
+                              title="Move later on the overlay"
+                              disabled={primaryIndex === primaryCount - 1}
+                              onClick={() => void movePrimaryProject(primaryIndex, 'right')}
+                              style={slotArrow(primaryIndex === primaryCount - 1)}
+                            >
+                              ▶
+                            </button>
+                          </div>
+                        )}
+
                         <button
                           type="button"
+                          // Pinning a fourth used to silently drop whichever
+                          // category happened to be in slot 3 -- no warning,
+                          // and it vanished from the overlay. Full means full.
+                          disabled={!isPrimary && primaryCount >= 3}
+                          title={
+                            isPrimary
+                              ? `Overlay slot ${primaryIndex + 1} — click to unpin`
+                              : primaryCount >= 3
+                                ? 'All 3 overlay slots are used. Unpin one first.'
+                                : 'Pin to Mochi’s overlay'
+                          }
                           onClick={() => void togglePrimaryProject(project.id)}
                           style={{
                             background: 'transparent',
                             border: `1px solid ${isPrimary ? project.colour : C.border}`,
-                            color: isPrimary ? C.text : C.dim,
+                            color: isPrimary ? C.text : primaryCount >= 3 ? C.faint : C.dim,
                             borderRadius: 6,
                             padding: '4px 8px',
                             fontSize: 11,
                             fontWeight: 600,
-                            cursor: 'pointer',
+                            cursor: !isPrimary && primaryCount >= 3 ? 'not-allowed' : 'pointer',
+                            whiteSpace: 'nowrap',
                           }}
                         >
-                          {isPrimary ? '★ Pinned' : '☆ Pin'}
+                          {isPrimary ? `★ Slot ${primaryIndex + 1}` : '☆ Pin'}
                         </button>
 
                         {/* Start / Stop Tracking Button */}
@@ -916,40 +819,88 @@ export function TimeTab(): JSX.Element {
                           <span>{isRunningThis ? '⏹ Stop' : '▶ Track'}</span>
                         </button>
 
-                        {project.name !== 'General' && (
-                          <button
-                            type="button"
-                            onClick={() => void archiveCategory(project.id)}
-                            title="Delete category"
-                            style={{
-                              background: 'none',
-                              border: 'none',
-                              color: C.dim,
-                              cursor: 'pointer',
-                              fontSize: 13,
-                              padding: '2px 4px',
-                            }}
-                            onMouseEnter={(e) => (e.currentTarget.style.color = C.warn)}
-                            onMouseLeave={(e) => (e.currentTarget.style.color = C.dim)}
-                          >
-                            🗑️
-                          </button>
-                        )}
+                        {project.name !== 'General' &&
+                          (confirmArchive === project.id ? (
+                            // One click used to archive a category and every
+                            // session behind it, with nothing to undo it.
+                            <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                              <span style={{ fontSize: 11.5, color: C.warn, fontWeight: 600 }}>
+                                Remove?
+                              </span>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setConfirmArchive(null);
+                                  void archiveCategory(project.id);
+                                }}
+                                style={{
+                                  ...button('ghost'),
+                                  padding: '3px 9px',
+                                  fontSize: 11.5,
+                                  color: C.warn,
+                                  borderColor: C.warn,
+                                }}
+                              >
+                                Remove
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setConfirmArchive(null)}
+                                style={{ ...button('ghost'), padding: '3px 9px', fontSize: 11.5 }}
+                              >
+                                Cancel
+                              </button>
+                            </span>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => setConfirmArchive(project.id)}
+                              title={`Remove ${formatCategoryName(project.name)}`}
+                              style={{
+                                background: 'none',
+                                border: 'none',
+                                color: C.dim,
+                                cursor: 'pointer',
+                                fontSize: 13,
+                                padding: '2px 4px',
+                              }}
+                              onMouseEnter={(e) => (e.currentTarget.style.color = C.warn)}
+                              onMouseLeave={(e) => (e.currentTarget.style.color = C.dim)}
+                            >
+                              🗑️
+                            </button>
+                          ))}
                       </div>
                     </div>
 
-                    {/* Progress Bar */}
-                    <div
-                      style={{
-                        height: 5,
-                        borderRadius: 3,
-                        background: '#262033',
-                        overflow: 'hidden',
-                      }}
-                    >
+                    {/* Share of tracked time. The bar drew this already but
+                        never said what it measured, so a full bar and a sliver
+                        were equally unexplained. */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                       <div
-                        style={{ width: `${pct}%`, height: '100%', background: project.colour }}
-                      />
+                        style={{
+                          flex: 1,
+                          height: 5,
+                          borderRadius: 3,
+                          background: '#262033',
+                          overflow: 'hidden',
+                        }}
+                      >
+                        <div
+                          style={{ width: `${pct}%`, height: '100%', background: project.colour }}
+                        />
+                      </div>
+                      <span
+                        style={{
+                          fontSize: 11,
+                          color: C.faint,
+                          fontVariantNumeric: 'tabular-nums',
+                          minWidth: 62,
+                          textAlign: 'right',
+                        }}
+                      >
+                        {pct < 1 && pct > 0 ? '<1' : Math.round(pct)}% of time
+                      </span>
                     </div>
                   </div>
                 );
