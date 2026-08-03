@@ -42,6 +42,7 @@ export class SetupWindow {
     const showWin = () => {
       if (this.win !== null && !this.win.isDestroyed() && !this.win.isVisible()) {
         this.win.show();
+        console.log('[setup] window shown successfully');
       }
     };
     this.win.once('ready-to-show', showWin);

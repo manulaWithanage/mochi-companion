@@ -125,6 +125,7 @@ export class OverlayWindow {
     const showOverlay = () => {
       if (!win.isDestroyed() && !win.isVisible()) {
         win.showInactive();
+        console.log('[overlay] window shown inactive successfully');
       }
     };
     win.once('ready-to-show', showOverlay);

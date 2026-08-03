@@ -351,7 +351,7 @@ export const Footer: React.FC = () => {
         style={{
           position: 'relative',
           width: '100%',
-          height: '480px',
+          height: '520px',
           overflow: 'hidden',
           margin: 0,
           padding: 0,
@@ -374,14 +374,14 @@ export const Footer: React.FC = () => {
 
         {/* Full Bleed Scenery Image */}
         <img
-          src="/footer_zen_landscape_v2.png"
-          alt="Mochi papercraft zen garden with a stream, bridge, and distant mountains"
+          src="/morning-briefing-backdrop-v1.png"
+          alt="Mochi papercraft mountain sanctuary with cherry blossoms"
           style={{
             width: '100%',
             height: '100%',
             objectFit: 'cover',
-            objectPosition: 'center 72%',
-            transform: 'scale(1.02)',
+            objectPosition: 'center bottom',
+            transform: 'scale(1.01)',
             display: 'block',
             zIndex: 1,
           }}
