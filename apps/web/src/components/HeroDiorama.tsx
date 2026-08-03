@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { LandingMascotCanvas } from './LandingMascotCanvas';
 
 type HeroMode = 'idle' | 'working' | 'resting';
 
@@ -190,10 +189,6 @@ export const HeroDiorama: React.FC = () => {
             </div>
             <span>{detail.action}</span>
           </div>
-        </div>
-
-        <div className="hero-sanctuary__mascot" aria-hidden="true">
-          <LandingMascotCanvas state={mode} size={104} />
         </div>
       </div>
 

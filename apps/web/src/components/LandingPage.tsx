@@ -297,16 +297,19 @@ export const LandingPage: React.FC = () => {
           </div>
           <div className="connection-grid">
             <article>
+              <small className="connection-card__step">01 · CORE</small>
               <span>◌</span>
               <h3>Mochi only</h3>
               <p>Tasks, focus, routines, and local history. No account.</p>
             </article>
             <article>
+              <small className="connection-card__step">02 · ON YOUR COMPUTER</small>
               <span>⌘</span>
               <h3>Local AI</h3>
               <p>Use Ollama or LM Studio on your own computer.</p>
             </article>
             <article>
+              <small className="connection-card__step">03 · WHEN YOU CHOOSE</small>
               <span>✦</span>
               <h3>Connected tools</h3>
               <p>Choose Gmail, calendar, or your preferred AI provider.</p>
