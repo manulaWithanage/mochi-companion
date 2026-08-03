@@ -2,7 +2,7 @@
 
 **A local-first behavioural memory for personal AI companions**
 
-*Manula Withanage · 2026 · Reference implementation: [Mochi](https://github.com/manulaWithanage/mochi-companion)*
+_Manula Withanage · 2026 · Reference implementation: [Mochi](https://github.com/manulaWithanage/mochi-companion)_
 
 ---
 
@@ -38,12 +38,12 @@ A companion that runs all day on your desktop has a different memory problem fro
 
 Existing approaches each solve part of this and miss the rest:
 
-| Approach | What it gives you | Why it does not fit |
-|---|---|---|
-| Long context / full history | No architecture needed | Costs scale with history; no persistence between sessions; precision falls as context grows |
-| Vector store + RAG | Good fuzzy recall over text | Behavioural facts are numbers and relations, not passages. "What is my median session length" is not a similarity search |
-| Cloud memory service | Managed, cross-device | Requires a server and your behavioural data on it |
-| Fine-tuning | Deeply personalised | Far too slow and expensive to track a habit that changes in a fortnight |
+| Approach                    | What it gives you           | Why it does not fit                                                                                                      |
+| --------------------------- | --------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| Long context / full history | No architecture needed      | Costs scale with history; no persistence between sessions; precision falls as context grows                              |
+| Vector store + RAG          | Good fuzzy recall over text | Behavioural facts are numbers and relations, not passages. "What is my median session length" is not a similarity search |
+| Cloud memory service        | Managed, cross-device       | Requires a server and your behavioural data on it                                                                        |
+| Fine-tuning                 | Deeply personalised         | Far too slow and expensive to track a habit that changes in a fortnight                                                  |
 
 MNMA is narrower than any of these. It is a **behavioural** memory for **one** user on **one** machine, and it trades generality for being cheap, private, and correct about numbers.
 
@@ -80,19 +80,19 @@ MNMA is narrower than any of these. It is a **behavioural** memory for **one** u
 
 The obvious design gives a small local model every deduction to make. It is also wrong, and it took building it to see why.
 
-Consider the belief *"peak focus window is 2–5 PM."* That is a histogram over session start times weighted by duration. Ordinary code computes it in microseconds, exactly, every time. A 0.5B model asked the same question is slower, occasionally wrong, and introduces an error class that otherwise cannot exist.
+Consider the belief _"peak focus window is 2–5 PM."_ That is a histogram over session start times weighted by duration. Ordinary code computes it in microseconds, exactly, every time. A 0.5B model asked the same question is slower, occasionally wrong, and introduces an error class that otherwise cannot exist.
 
 So the division is by **kind of question**, not by convenience:
 
-| Question | Tier | Why |
-|---|---|---|
-| Median session length | 0 | Arithmetic |
-| Peak focus window | 0 | Histogram |
-| Sustained-work ceiling | 0 | Percentile |
-| Streaks, deep-work ratio | 0 | Counting |
-| "Short bullets or long paragraphs?" | 1 | Linguistic |
-| "Is `Untitled-3.psd` deep work?" | 1 | World knowledge |
-| "Draft this as me" | 2 | Fluency |
+| Question                            | Tier | Why             |
+| ----------------------------------- | ---- | --------------- |
+| Median session length               | 0    | Arithmetic      |
+| Peak focus window                   | 0    | Histogram       |
+| Sustained-work ceiling              | 0    | Percentile      |
+| Streaks, deep-work ratio            | 0    | Counting        |
+| "Short bullets or long paragraphs?" | 1    | Linguistic      |
+| "Is `Untitled-3.psd` deep work?"    | 1    | World knowledge |
+| "Draft this as me"                  | 2    | Fluency         |
 
 The consequence is that **most users need no local model at all.** Tier 0 alone yields peak windows, session habits and routine patterns. Tier 1 is an upgrade that improves style matching, not a dependency.
 
@@ -108,7 +108,7 @@ Nodes are typed entities: apps, time windows, habits, styles, routines, contacts
   "to": "peak_window_14_17",
   "relation": "active_during",
   "provenance": "computed",
-  "confirms":    [1751200000000, 1751286400000, 1751372800000],
+  "confirms": [1751200000000, 1751286400000, 1751372800000],
   "contradicts": []
 }
 ```
@@ -125,7 +125,7 @@ Two decisions in that shape matter more than they look.
 - `computed` — Tier 0 arithmetic. Trusted immediately.
 - `inferred` — a model's judgement. Must earn trust.
 
-That three-way split is what makes an onboarding questionnaire work. The naive design gives onboarding answers a low confidence and then filters out low-confidence beliefs — silently discarding the entire questionnaire. Provenance separates *"we are unsure"* from *"a model guessed"*, which are not the same thing at all.
+That three-way split is what makes an onboarding questionnaire work. The naive design gives onboarding answers a low confidence and then filters out low-confidence beliefs — silently discarding the entire questionnaire. Provenance separates _"we are unsure"_ from _"a model guessed"_, which are not the same thing at all.
 
 ---
 
@@ -151,14 +151,14 @@ with a deliberately pessimistic prior (α=1, β=4) and τ scaled to how often th
 
 One formula produces four behaviours that are usually implemented separately:
 
-| Behaviour | How it falls out |
-|---|---|
-| **Reinforcement** | Many recent confirmations raise confidence and hold it |
-| **Forgetting** | A one-off observation's weight decays; confidence drifts back to the prior with no pruning rule |
-| **Regime shift** | Recent contradictions outweigh stale confirmations; a job change overturns a habit without a special "drifting" state |
-| **Quarantine** | A weak prior means one or two observations cannot cross a usability threshold |
+| Behaviour         | How it falls out                                                                                                      |
+| ----------------- | --------------------------------------------------------------------------------------------------------------------- |
+| **Reinforcement** | Many recent confirmations raise confidence and hold it                                                                |
+| **Forgetting**    | A one-off observation's weight decays; confidence drifts back to the prior with no pruning rule                       |
+| **Regime shift**  | Recent contradictions outweigh stale confirmations; a job change overturns a habit without a special "drifting" state |
+| **Quarantine**    | A weak prior means one or two observations cannot cross a usability threshold                                         |
 
-> **Why τ must scale with cadence.** A flat forgetting window and a fixed confirmation threshold are incompatible. If unreinforced beliefs fade in seven days and a belief needs five confirmations to be usable, then anything recurring less than about five times a week can *never be learned* — a Friday habit gets one confirmation and decays before the second arrives. Tying τ to the observed period removes the conflict. This is not a tuning detail; it is the difference between a system that can learn weekly rhythms and one that structurally cannot.
+> **Why τ must scale with cadence.** A flat forgetting window and a fixed confirmation threshold are incompatible. If unreinforced beliefs fade in seven days and a belief needs five confirmations to be usable, then anything recurring less than about five times a week can _never be learned_ — a Friday habit gets one confirmation and decays before the second arrives. Tying τ to the observed period removes the conflict. This is not a tuning detail; it is the difference between a system that can learn weekly rhythms and one that structurally cannot.
 
 ### Law 3 — The bounded handoff
 
@@ -209,14 +209,14 @@ The style belief survived the job change, because nothing contradicted it. That 
 
 ## 5. Cost
 
-| Resource | Cost |
-|---|---|
-| Graph read | Sub-millisecond, in-memory traversal |
-| Tier 0 extraction | Microseconds, on session boundaries |
-| Tier 1 inference | ~0.5–1s per batch on CPU for a 0.5B model, none if not installed |
-| Resident memory | ~400MB **if** Tier 1 is enabled and pinned resident |
-| Network | Zero for Tiers 0 and 1 |
-| Executive context | Bounded by the ceiling, by construction |
+| Resource          | Cost                                                             |
+| ----------------- | ---------------------------------------------------------------- |
+| Graph read        | Sub-millisecond, in-memory traversal                             |
+| Tier 0 extraction | Microseconds, on session boundaries                              |
+| Tier 1 inference  | ~0.5–1s per batch on CPU for a 0.5B model, none if not installed |
+| Resident memory   | ~400MB **if** Tier 1 is enabled and pinned resident              |
+| Network           | Zero for Tiers 0 and 1                                           |
+| Executive context | Bounded by the ceiling, by construction                          |
 
 > **Two honest corrections to numbers that circulate about this kind of design.**
 >
@@ -270,16 +270,16 @@ Stated plainly, because an architecture document that only lists strengths is ma
 
 MNMA builds openly on prior art. The contribution is the combination, not the components.
 
-| Work | What it established | Relation to MNMA |
-|---|---|---|
-| **MemGPT** — Packer et al., UC Berkeley, 2023 ([arXiv:2310.08560](https://arxiv.org/abs/2310.08560)) | Tiered memory for LLM agents: working context, recall, archival | MNMA adopts the tiering; adds that the *writer* is local and cheap while the *reader* is remote and expensive |
-| **Zep / Graphiti** — Rasmussen et al., 2025 ([arXiv:2501.13956](https://arxiv.org/pdf/2501.13956)) | Temporal knowledge graph for agent memory; typed edges with validity intervals; expiring facts rather than deleting them | Closest prior art. Zep invalidates edges on contradiction; MNMA instead keeps contradictions as evidence and lets confidence fall out of one formula. Zep assumes cloud models and a server; MNMA assumes neither |
-| **Ebbinghaus**, 1885 | The forgetting curve, `R = e^(-t/S)` | The decay term in Law 2 |
-| **Karpathy's LLM-as-OS** framing | LLM as CPU, context as RAM, tools as syscalls | MNMA's graph is the file system in that analogy |
+| Work                                                                                                 | What it established                                                                                                      | Relation to MNMA                                                                                                                                                                                                  |
+| ---------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **MemGPT** — Packer et al., UC Berkeley, 2023 ([arXiv:2310.08560](https://arxiv.org/abs/2310.08560)) | Tiered memory for LLM agents: working context, recall, archival                                                          | MNMA adopts the tiering; adds that the _writer_ is local and cheap while the _reader_ is remote and expensive                                                                                                     |
+| **Zep / Graphiti** — Rasmussen et al., 2025 ([arXiv:2501.13956](https://arxiv.org/pdf/2501.13956))   | Temporal knowledge graph for agent memory; typed edges with validity intervals; expiring facts rather than deleting them | Closest prior art. Zep invalidates edges on contradiction; MNMA instead keeps contradictions as evidence and lets confidence fall out of one formula. Zep assumes cloud models and a server; MNMA assumes neither |
+| **Ebbinghaus**, 1885                                                                                 | The forgetting curve, `R = e^(-t/S)`                                                                                     | The decay term in Law 2                                                                                                                                                                                           |
+| **Karpathy's LLM-as-OS** framing                                                                     | LLM as CPU, context as RAM, tools as syscalls                                                                            | MNMA's graph is the file system in that analogy                                                                                                                                                                   |
 
 **What is genuinely new in the combination:**
 
-1. Deterministic code as the *highest-authority* tier, outranking both models — most memory systems route everything through a model.
+1. Deterministic code as the _highest-authority_ tier, outranking both models — most memory systems route everything through a model.
 2. A small local model as the writer and a large remote model as the reader, with a hard token contract between them.
 3. Single-user, zero-server, single encrypted file the user owns outright.
 4. One unified evidence model for reinforcement, decay and contradiction rather than separate subsystems.
@@ -290,14 +290,14 @@ A note on the name: **"Neural" describes the shape of the idea, not the implemen
 
 ## 9. Reference implementation
 
-| Module | Law | Contents |
-|---|---|---|
-| `core/brain/graph.ts` | 1, 4 | Node and edge types, provenance, observation, correction, suppression, untrusted-input parsing |
-| `core/brain/confidence.ts` | 2 | Beta posterior, recency weighting, cadence scaling, usability floor |
-| `core/brain/stats.ts` | Tier 0 | Median, peak window, sustained ceiling, streak, deep-work ratio |
-| `core/brain/context.ts` | 3 | Priority ranking, token estimation, ceiling enforcement |
-| `core/brain/eval.ts` | — | Edit distance, trial assignment, effect summary |
-| `main/services/brain-service.ts` | — | In-memory graph, encrypted persistence, compaction |
+| Module                           | Law    | Contents                                                                                       |
+| -------------------------------- | ------ | ---------------------------------------------------------------------------------------------- |
+| `core/brain/graph.ts`            | 1, 4   | Node and edge types, provenance, observation, correction, suppression, untrusted-input parsing |
+| `core/brain/confidence.ts`       | 2      | Beta posterior, recency weighting, cadence scaling, usability floor                            |
+| `core/brain/stats.ts`            | Tier 0 | Median, peak window, sustained ceiling, streak, deep-work ratio                                |
+| `core/brain/context.ts`          | 3      | Priority ranking, token estimation, ceiling enforcement                                        |
+| `core/brain/eval.ts`             | —      | Edit distance, trial assignment, effect summary                                                |
+| `main/services/brain-service.ts` | —      | In-memory graph, encrypted persistence, compaction                                             |
 
 All logic modules are pure: no clock of their own, no I/O. Every function taking "now" takes it as an argument, which makes the entire evidence model testable without mocking time.
 
@@ -315,4 +315,4 @@ Neither was a coding error. Both were specification gaps that only appeared when
 
 ---
 
-*MNMA is MIT-licensed along with the rest of `packages/core`. Corrections and counter-evidence are welcome — particularly from anyone who has measured this class of architecture with more than one user.*
+_MNMA is MIT-licensed along with the rest of `packages/core`. Corrections and counter-evidence are welcome — particularly from anyone who has measured this class of architecture with more than one user._

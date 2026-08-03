@@ -81,10 +81,7 @@ export interface PeakWindow {
  * Scattered hours would produce "your peak is 9am, 2pm and 7pm", which is not
  * something anyone can act on.
  */
-export function peakWindow(
-  sessions: readonly WorkSession[],
-  windowHours = 3,
-): PeakWindow | null {
+export function peakWindow(sessions: readonly WorkSession[], windowHours = 3): PeakWindow | null {
   const spans = toSpans(sessions);
   if (spans.length < MIN_SAMPLE) return null;
 

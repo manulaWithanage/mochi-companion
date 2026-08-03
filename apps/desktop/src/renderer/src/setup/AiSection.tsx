@@ -200,11 +200,7 @@ function LocalRuntimeRow({
                 if (e.key === 'Enter') void apply(url);
               }}
             />
-            <button
-              style={primaryButton(busy)}
-              disabled={busy}
-              onClick={() => void apply(url)}
-            >
+            <button style={primaryButton(busy)} disabled={busy} onClick={() => void apply(url)}>
               {busy ? 'Checking…' : 'Use'}
             </button>
           </div>
@@ -278,7 +274,10 @@ export function AiSection(): JSX.Element {
     try {
       const result = await window.mochi.llm.saveAzureKey(resource, deployment, key);
       if (result.ok) {
-        setAzureMessage({ ok: true, text: `Azure OpenAI connected, deployment "${deployment}" ready` });
+        setAzureMessage({
+          ok: true,
+          text: `Azure OpenAI connected, deployment "${deployment}" ready`,
+        });
         setAzureKey('');
       } else {
         setAzureMessage({ ok: false, text: result.error ?? 'Azure credentials did not work.' });
@@ -365,7 +364,10 @@ export function AiSection(): JSX.Element {
                   {providerLabel(c.provider)}{' '}
                   <code style={{ opacity: 0.55, fontSize: 12 }}>{c.redacted}</code>
                 </span>
-                <button style={ghostButton} onClick={() => void window.mochi.llm.forgetKey(c.provider)}>
+                <button
+                  style={ghostButton}
+                  onClick={() => void window.mochi.llm.forgetKey(c.provider)}
+                >
                   Remove
                 </button>
               </div>
@@ -531,9 +533,9 @@ export function AiSection(): JSX.Element {
           </div>
           <p style={{ margin: '6px 0 0', fontSize: 12, opacity: 0.55 }}>
             {status.spentToday.toLocaleString()} /{' '}
-            {status.dailyTokenCap === 0 ? 'unlimited' : status.dailyTokenCap.toLocaleString()} tokens.
-            Local models cost nothing; for cloud ones you pay your provider directly and Mochi never
-            sees a bill.
+            {status.dailyTokenCap === 0 ? 'unlimited' : status.dailyTokenCap.toLocaleString()}{' '}
+            tokens. Local models cost nothing; for cloud ones you pay your provider directly and
+            Mochi never sees a bill.
           </p>
         </div>
       )}

@@ -12,11 +12,7 @@
  */
 
 import ICAL from 'ical.js';
-import {
-  extractConferenceUrl,
-  type Attendance,
-  type CalendarEvent,
-} from '@mochi/core';
+import { extractConferenceUrl, type Attendance, type CalendarEvent } from '@mochi/core';
 
 export interface IcsParseOptions {
   /** Only events overlapping this window are returned. */
@@ -85,8 +81,7 @@ function toEvent(
     startsAt,
     endsAt,
     allDay: event.startDate.isDate,
-    cancelled:
-      String(vevent.getFirstPropertyValue('status') ?? '').toUpperCase() === 'CANCELLED',
+    cancelled: String(vevent.getFirstPropertyValue('status') ?? '').toUpperCase() === 'CANCELLED',
     attendance: attendanceOf(vevent, options.selfEmail),
     ...(location !== undefined ? { location } : {}),
     ...(conferenceUrl !== null ? { conferenceUrl } : {}),
@@ -175,14 +170,7 @@ export function parseIcs(text: string, options: IcsParseOptions): readonly Calen
         if (endsAt <= options.from) continue;
 
         events.push(
-          toEvent(
-            details.item,
-            details.item.component,
-            startsAt,
-            endsAt,
-            options,
-            `@${startsAt}`,
-          ),
+          toEvent(details.item, details.item.component, startsAt, endsAt, options, `@${startsAt}`),
         );
         if (events.length >= MAX_EVENTS) break;
       }

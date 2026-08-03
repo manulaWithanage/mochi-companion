@@ -168,7 +168,11 @@ describe('briefingText', () => {
         tasks: [task('old', '2026-08-01')],
       }),
     );
-    expect(briefingText(b).split('.').filter((s) => s.trim().length > 0)).toHaveLength(2);
+    expect(
+      briefingText(b)
+        .split('.')
+        .filter((s) => s.trim().length > 0),
+    ).toHaveLength(2);
   });
 
   it('works with no model configured', () => {

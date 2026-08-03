@@ -194,9 +194,7 @@ export function summariseArms(trials: readonly Trial[]): readonly ArmSummary[] {
 function medianOf(values: readonly number[]): number {
   const sorted = [...values].sort((a, b) => a - b);
   const mid = Math.floor(sorted.length / 2);
-  return sorted.length % 2 === 1
-    ? sorted[mid]!
-    : ((sorted[mid - 1] ?? 0) + (sorted[mid] ?? 0)) / 2;
+  return sorted.length % 2 === 1 ? sorted[mid]! : ((sorted[mid - 1] ?? 0) + (sorted[mid] ?? 0)) / 2;
 }
 
 // ---------------------------------------------------------------------------
@@ -305,7 +303,6 @@ export function evaluatePredictive(
   const points = edges.flatMap((e) => replayEdge(e, cadence));
   const brier = brierScore(points);
   const baseline = baselineBrier(points);
-  const skill =
-    brier === null || baseline === null || baseline === 0 ? null : 1 - brier / baseline;
+  const skill = brier === null || baseline === null || baseline === 0 ? null : 1 - brier / baseline;
   return { points: points.length, brier, baseline, skill };
 }

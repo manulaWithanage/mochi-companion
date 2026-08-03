@@ -251,4 +251,3 @@ export function clampToDisplays(
     displayId: host.id,
   };
 }
-

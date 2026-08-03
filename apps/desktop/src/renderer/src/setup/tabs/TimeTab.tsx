@@ -1,5 +1,12 @@
 import { useCallback, useEffect, useMemo, useState, type JSX } from 'react';
-import { elapsedMs, formatDuration, type MochiSettings, type Project, type TimerSnapshot, type WorkSession } from '@mochi/core';
+import {
+  elapsedMs,
+  formatDuration,
+  type MochiSettings,
+  type Project,
+  type TimerSnapshot,
+  type WorkSession,
+} from '@mochi/core';
 import { button, C, card, h2, humanDuration, input, label, sub } from '../ui.js';
 
 const QUICK_PRESETS = [
@@ -11,8 +18,32 @@ const QUICK_PRESETS = [
   { name: 'Side Project', colour: '#3b82f6', icon: '⚡' },
 ];
 
-const EMOJI_OPTIONS = ['💼', '👤', '📚', '🎨', '🧘', '💻', '☕', '⚡', '🏋️', '🎧', '📝', '🎯', '🚀', '🛠️'];
-const SWATCH_OPTIONS = ['#6366f1', '#ec4899', '#10b981', '#f59e0b', '#8b5cf6', '#3b82f6', '#F2A6B3', '#A6D6F2'];
+const EMOJI_OPTIONS = [
+  '💼',
+  '👤',
+  '📚',
+  '🎨',
+  '🧘',
+  '💻',
+  '☕',
+  '⚡',
+  '🏋️',
+  '🎧',
+  '📝',
+  '🎯',
+  '🚀',
+  '🛠️',
+];
+const SWATCH_OPTIONS = [
+  '#6366f1',
+  '#ec4899',
+  '#10b981',
+  '#f59e0b',
+  '#8b5cf6',
+  '#3b82f6',
+  '#F2A6B3',
+  '#A6D6F2',
+];
 
 function formatCategoryName(name: string): string {
   if (name === 'General') {
@@ -281,7 +312,11 @@ export function TimeTab(): JSX.Element {
 
     // Work / Study vs Rest Ratio
     const workStudyMs = categoryBreakdown
-      .filter((c) => !c.project.name.toLowerCase().includes('rest') && !c.project.name.toLowerCase().includes('wellness'))
+      .filter(
+        (c) =>
+          !c.project.name.toLowerCase().includes('rest') &&
+          !c.project.name.toLowerCase().includes('wellness'),
+      )
       .reduce((sum, c) => sum + c.ms, 0);
     const focusRatioPct = totalMs > 0 ? Math.round((workStudyMs / totalMs) * 100) : 0;
 
@@ -381,11 +416,19 @@ export function TimeTab(): JSX.Element {
       {subTab === 'categories' ? (
         <div>
           {/* Header Bar */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+          <div
+            style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              marginBottom: 20,
+            }}
+          >
             <div>
               <h2 style={h2}>Time & Categories</h2>
               <p style={sub}>
-                {sessions.length} session{sessions.length === 1 ? '' : 's'} · {humanDuration(totals.grand)} total focus tracked.
+                {sessions.length} session{sessions.length === 1 ? '' : 's'} ·{' '}
+                {humanDuration(totals.grand)} total focus tracked.
               </p>
             </div>
             <button
@@ -407,22 +450,54 @@ export function TimeTab(): JSX.Element {
               marginBottom: 20,
             }}
           >
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                marginBottom: 14,
+              }}
+            >
               <div>
-                <div style={{ fontSize: 14, fontWeight: 700, color: C.text, display: 'flex', alignItems: 'center', gap: 8 }}>
+                <div
+                  style={{
+                    fontSize: 14,
+                    fontWeight: 700,
+                    color: C.text,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 8,
+                  }}
+                >
                   <span>⭐ Mascot Quick-Track Icons</span>
-                  <span style={{ fontSize: 11, background: `${C.accent}33`, color: C.accent, padding: '2px 8px', borderRadius: 999, fontWeight: 700 }}>
+                  <span
+                    style={{
+                      fontSize: 11,
+                      background: `${C.accent}33`,
+                      color: C.accent,
+                      padding: '2px 8px',
+                      borderRadius: 999,
+                      fontWeight: 700,
+                    }}
+                  >
                     {primaryCount} / 3 Active
                   </span>
                 </div>
                 <div style={{ fontSize: 12, color: C.dim, marginTop: 3 }}>
-                  Assigned quick-tracker categories floating on Mochi's overlay, use ◀ ▶ to reorder positions
+                  Assigned quick-tracker categories floating on Mochi's overlay, use ◀ ▶ to reorder
+                  positions
                 </div>
               </div>
             </div>
 
             {/* 3 Slot Position Grid */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 12 }}>
+            <div
+              style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+                gap: 12,
+              }}
+            >
               {[0, 1, 2].map((slotIdx) => {
                 const id = settings?.primaryProjectIds?.[slotIdx];
                 const p = id ? projects.find((x) => x.id === id) : null;
@@ -441,7 +516,13 @@ export function TimeTab(): JSX.Element {
                       transition: 'all 160ms ease',
                     }}
                   >
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div
+                      style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                      }}
+                    >
                       <span
                         style={{
                           fontSize: 10,
@@ -487,11 +568,17 @@ export function TimeTab(): JSX.Element {
                             style={{
                               background: 'rgba(255, 255, 255, 0.06)',
                               border: `1px solid ${C.border}`,
-                              color: slotIdx === (settings?.primaryProjectIds?.length ?? 0) - 1 ? C.faint : C.text,
+                              color:
+                                slotIdx === (settings?.primaryProjectIds?.length ?? 0) - 1
+                                  ? C.faint
+                                  : C.text,
                               borderRadius: 6,
                               width: 24,
                               height: 24,
-                              cursor: slotIdx === (settings?.primaryProjectIds?.length ?? 0) - 1 ? 'not-allowed' : 'pointer',
+                              cursor:
+                                slotIdx === (settings?.primaryProjectIds?.length ?? 0) - 1
+                                  ? 'not-allowed'
+                                  : 'pointer',
                               display: 'flex',
                               alignItems: 'center',
                               justifyContent: 'center',
@@ -536,12 +623,28 @@ export function TimeTab(): JSX.Element {
                             flexShrink: 0,
                           }}
                         />
-                        <div style={{ fontSize: 13, fontWeight: 700, color: C.text, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                        <div
+                          style={{
+                            fontSize: 13,
+                            fontWeight: 700,
+                            color: C.text,
+                            whiteSpace: 'nowrap',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                          }}
+                        >
                           {formatCategoryName(p.name)}
                         </div>
                       </div>
                     ) : (
-                      <div style={{ fontSize: 11.5, color: C.faint, fontStyle: 'italic', padding: '4px 0' }}>
+                      <div
+                        style={{
+                          fontSize: 11.5,
+                          color: C.faint,
+                          fontStyle: 'italic',
+                          padding: '4px 0',
+                        }}
+                      >
                         + Pin a category from below to assign to Slot #{slotIdx + 1}
                       </div>
                     )}
@@ -563,7 +666,9 @@ export function TimeTab(): JSX.Element {
                 <span style={label}>Or Pick a Quick Preset</span>
                 <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 6 }}>
                   {QUICK_PRESETS.map((preset) => {
-                    const exists = projects.some((p) => p.name.toLowerCase().includes(preset.name.toLowerCase()));
+                    const exists = projects.some((p) =>
+                      p.name.toLowerCase().includes(preset.name.toLowerCase()),
+                    );
                     return (
                       <button
                         key={preset.name}
@@ -595,7 +700,7 @@ export function TimeTab(): JSX.Element {
 
               <div style={{ borderTop: `1px solid ${C.border}`, paddingTop: 14 }}>
                 <span style={label}>Icon & Colour</span>
-                
+
                 {/* Icon Row */}
                 <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 10 }}>
                   {EMOJI_OPTIONS.map((ico) => (
@@ -663,8 +768,23 @@ export function TimeTab(): JSX.Element {
 
           {/* Main Tracked Categories List */}
           <div style={{ ...card, marginBottom: 20 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
-              <div style={{ fontSize: 12.5, fontWeight: 700, color: C.dim, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                marginBottom: 14,
+              }}
+            >
+              <div
+                style={{
+                  fontSize: 12.5,
+                  fontWeight: 700,
+                  color: C.dim,
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.05em',
+                }}
+              >
                 TRACKED CATEGORIES ({projects.length})
               </div>
               <div style={{ fontSize: 11.5, color: C.dim }}>
@@ -715,8 +835,10 @@ export function TimeTab(): JSX.Element {
                             boxShadow: `0 0 8px ${project.colour}`,
                           }}
                         />
-                        <span style={{ fontSize: 14, fontWeight: 700, color: C.text }}>{formatCategoryName(project.name)}</span>
-                        
+                        <span style={{ fontSize: 14, fontWeight: 700, color: C.text }}>
+                          {formatCategoryName(project.name)}
+                        </span>
+
                         {isRunningThis && (
                           <span
                             style={{
@@ -732,7 +854,14 @@ export function TimeTab(): JSX.Element {
                               gap: 4,
                             }}
                           >
-                            <span style={{ width: 6, height: 6, borderRadius: '50%', background: project.colour }} />
+                            <span
+                              style={{
+                                width: 6,
+                                height: 6,
+                                borderRadius: '50%',
+                                background: project.colour,
+                              }}
+                            />
                             Tracking Active
                           </span>
                         )}
@@ -740,7 +869,9 @@ export function TimeTab(): JSX.Element {
 
                       {/* Actions & Start/Stop Button */}
                       <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                        <span style={{ fontSize: 12, color: C.dim, fontVariantNumeric: 'tabular-nums' }}>
+                        <span
+                          style={{ fontSize: 12, color: C.dim, fontVariantNumeric: 'tabular-nums' }}
+                        >
                           {humanDuration(ms)} · {count} session{count === 1 ? '' : 's'}
                         </span>
 
@@ -766,7 +897,9 @@ export function TimeTab(): JSX.Element {
                           type="button"
                           onClick={() => void startOrStopSession(project.id)}
                           style={{
-                            background: isRunningThis ? 'linear-gradient(135deg, #ff5e7e, #e63956)' : `${project.colour}22`,
+                            background: isRunningThis
+                              ? 'linear-gradient(135deg, #ff5e7e, #e63956)'
+                              : `${project.colour}22`,
                             border: `1px solid ${isRunningThis ? '#e63956' : project.colour}`,
                             color: isRunningThis ? '#ffffff' : C.text,
                             borderRadius: 6,
@@ -806,8 +939,17 @@ export function TimeTab(): JSX.Element {
                     </div>
 
                     {/* Progress Bar */}
-                    <div style={{ height: 5, borderRadius: 3, background: '#262033', overflow: 'hidden' }}>
-                      <div style={{ width: `${pct}%`, height: '100%', background: project.colour }} />
+                    <div
+                      style={{
+                        height: 5,
+                        borderRadius: 3,
+                        background: '#262033',
+                        overflow: 'hidden',
+                      }}
+                    >
+                      <div
+                        style={{ width: `${pct}%`, height: '100%', background: project.colour }}
+                      />
                     </div>
                   </div>
                 );
@@ -819,14 +961,32 @@ export function TimeTab(): JSX.Element {
         /* Dedicated Performance & Reports Analytics Sub-Tab */
         <div>
           {/* Header Bar & Date Period Filters */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+          <div
+            style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              marginBottom: 20,
+            }}
+          >
             <div>
               <h2 style={h2}>Performance & Reports</h2>
-              <p style={sub}>Analyze how you manage focus time and category distribution across date ranges.</p>
+              <p style={sub}>
+                Analyze how you manage focus time and category distribution across date ranges.
+              </p>
             </div>
 
             {/* Date Range Filter Switcher */}
-            <div style={{ display: 'flex', gap: 4, background: '#181422', padding: 3, borderRadius: 8, border: `1px solid ${C.border}` }}>
+            <div
+              style={{
+                display: 'flex',
+                gap: 4,
+                background: '#181422',
+                padding: 3,
+                borderRadius: 8,
+                border: `1px solid ${C.border}`,
+              }}
+            >
               {(
                 [
                   { id: 'today', label: 'Today' },
@@ -861,65 +1021,151 @@ export function TimeTab(): JSX.Element {
           </div>
 
           {/* KPI Stat Cards Grid */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 14, marginBottom: 20 }}>
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
+              gap: 14,
+              marginBottom: 20,
+            }}
+          >
             {/* Total Focus Time */}
             <div style={{ ...card, display: 'flex', flexDirection: 'column', gap: 6 }}>
-              <div style={{ fontSize: 11, fontWeight: 700, color: C.dim, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+              <div
+                style={{
+                  fontSize: 11,
+                  fontWeight: 700,
+                  color: C.dim,
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.04em',
+                }}
+              >
                 ⏱️ Total Focus Time
               </div>
-              <div style={{ fontSize: 22, fontWeight: 800, color: C.text, fontVariantNumeric: 'tabular-nums' }}>
+              <div
+                style={{
+                  fontSize: 22,
+                  fontWeight: 800,
+                  color: C.text,
+                  fontVariantNumeric: 'tabular-nums',
+                }}
+              >
                 {humanDuration(performanceStats.totalMs)}
               </div>
             </div>
 
             {/* Total Sessions */}
             <div style={{ ...card, display: 'flex', flexDirection: 'column', gap: 6 }}>
-              <div style={{ fontSize: 11, fontWeight: 700, color: C.dim, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+              <div
+                style={{
+                  fontSize: 11,
+                  fontWeight: 700,
+                  color: C.dim,
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.04em',
+                }}
+              >
                 🎯 Focus Sessions
               </div>
               <div style={{ fontSize: 22, fontWeight: 800, color: C.text }}>
-                {performanceStats.sessionCount} {performanceStats.sessionCount === 1 ? 'session' : 'sessions'}
+                {performanceStats.sessionCount}{' '}
+                {performanceStats.sessionCount === 1 ? 'session' : 'sessions'}
               </div>
             </div>
 
             {/* Avg Session Length */}
             <div style={{ ...card, display: 'flex', flexDirection: 'column', gap: 6 }}>
-              <div style={{ fontSize: 11, fontWeight: 700, color: C.dim, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+              <div
+                style={{
+                  fontSize: 11,
+                  fontWeight: 700,
+                  color: C.dim,
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.04em',
+                }}
+              >
                 ⚡ Avg Session Length
               </div>
-              <div style={{ fontSize: 22, fontWeight: 800, color: C.text, fontVariantNumeric: 'tabular-nums' }}>
+              <div
+                style={{
+                  fontSize: 22,
+                  fontWeight: 800,
+                  color: C.text,
+                  fontVariantNumeric: 'tabular-nums',
+                }}
+              >
                 {humanDuration(performanceStats.avgSessionMs)}
               </div>
             </div>
 
             {/* Peak Focus Window */}
             <div style={{ ...card, display: 'flex', flexDirection: 'column', gap: 6 }}>
-              <div style={{ fontSize: 11, fontWeight: 700, color: C.dim, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+              <div
+                style={{
+                  fontSize: 11,
+                  fontWeight: 700,
+                  color: C.dim,
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.04em',
+                }}
+              >
                 🧠 Peak Focus Window
               </div>
-              <div style={{ fontSize: 14, fontWeight: 750, color: C.accent, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+              <div
+                style={{
+                  fontSize: 14,
+                  fontWeight: 750,
+                  color: C.accent,
+                  whiteSpace: 'nowrap',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                }}
+              >
                 {performanceStats.peakPeriod}
               </div>
             </div>
           </div>
 
           {/* SVG Donut Pie Chart & Smart User Insights Grid */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 16, marginBottom: 20 }}>
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
+              gap: 16,
+              marginBottom: 20,
+            }}
+          >
             {/* SVG Donut Pie Chart Card */}
             <div style={card}>
-              <div style={{ fontSize: 12, fontWeight: 700, color: C.dim, textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: 16 }}>
+              <div
+                style={{
+                  fontSize: 12,
+                  fontWeight: 700,
+                  color: C.dim,
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.04em',
+                  marginBottom: 16,
+                }}
+              >
                 🎨 Category Time Breakdown (Pie Chart)
               </div>
 
               {performanceStats.categoryBreakdown.length === 0 ? (
-                <div style={{ fontSize: 13, color: C.faint, padding: '24px 0', textAlign: 'center' }}>
+                <div
+                  style={{ fontSize: 13, color: C.faint, padding: '24px 0', textAlign: 'center' }}
+                >
                   No sessions recorded for this timeframe to render chart.
                 </div>
               ) : (
                 <div style={{ display: 'flex', alignItems: 'center', gap: 24, flexWrap: 'wrap' }}>
                   {/* SVG Donut Ring */}
                   <div style={{ position: 'relative', width: 140, height: 140, flexShrink: 0 }}>
-                    <svg width="140" height="140" viewBox="0 0 140 140" style={{ transform: 'rotate(-90deg)' }}>
+                    <svg
+                      width="140"
+                      height="140"
+                      viewBox="0 0 140 140"
+                      style={{ transform: 'rotate(-90deg)' }}
+                    >
                       {(() => {
                         const radius = 50;
                         const circumference = 2 * Math.PI * radius; // ~314.15
@@ -962,25 +1208,72 @@ export function TimeTab(): JSX.Element {
                       <span style={{ fontSize: 14, fontWeight: 800, color: C.text }}>
                         {performanceStats.categoryBreakdown.length}
                       </span>
-                      <span style={{ fontSize: 9.5, color: C.dim, textTransform: 'uppercase' }}>Categories</span>
+                      <span style={{ fontSize: 9.5, color: C.dim, textTransform: 'uppercase' }}>
+                        Categories
+                      </span>
                     </div>
                   </div>
 
                   {/* Donut Legend Items */}
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8, flex: 1, minWidth: 140 }}>
+                  <div
+                    style={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: 8,
+                      flex: 1,
+                      minWidth: 140,
+                    }}
+                  >
                     {performanceStats.categoryBreakdown.map((item) => (
-                      <div key={item.project.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: 12 }}>
+                      <div
+                        key={item.project.id}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          fontSize: 12,
+                        }}
+                      >
                         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                          <span style={{ width: 9, height: 9, borderRadius: '50%', background: item.project.colour, boxShadow: `0 0 6px ${item.project.colour}` }} />
-                          <span style={{ color: C.text, fontWeight: 650, maxWidth: 100, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          <span
+                            style={{
+                              width: 9,
+                              height: 9,
+                              borderRadius: '50%',
+                              background: item.project.colour,
+                              boxShadow: `0 0 6px ${item.project.colour}`,
+                            }}
+                          />
+                          <span
+                            style={{
+                              color: C.text,
+                              fontWeight: 650,
+                              maxWidth: 100,
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                              whiteSpace: 'nowrap',
+                            }}
+                          >
                             {formatCategoryName(item.project.name)}
                           </span>
                         </div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                          <span style={{ color: item.project.colour, fontWeight: 750, fontVariantNumeric: 'tabular-nums' }}>
+                          <span
+                            style={{
+                              color: item.project.colour,
+                              fontWeight: 750,
+                              fontVariantNumeric: 'tabular-nums',
+                            }}
+                          >
                             {item.pct.toFixed(1)}%
                           </span>
-                          <span style={{ color: C.dim, fontSize: 11, fontVariantNumeric: 'tabular-nums' }}>
+                          <span
+                            style={{
+                              color: C.dim,
+                              fontSize: 11,
+                              fontVariantNumeric: 'tabular-nums',
+                            }}
+                          >
                             ({humanDuration(item.ms)})
                           </span>
                         </div>
@@ -992,27 +1285,92 @@ export function TimeTab(): JSX.Element {
             </div>
 
             {/* Smart Focus Insights & Ratio Card */}
-            <div style={{ ...card, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+            <div
+              style={{
+                ...card,
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'space-between',
+              }}
+            >
               <div>
-                <div style={{ fontSize: 12, fontWeight: 700, color: C.dim, textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: 14 }}>
+                <div
+                  style={{
+                    fontSize: 12,
+                    fontWeight: 700,
+                    color: C.dim,
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.04em',
+                    marginBottom: 14,
+                  }}
+                >
                   🧠 Productivity & Focus Insights
                 </div>
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
                   {/* Focus Ratio Indicator */}
-                  <div style={{ background: '#181422', border: `1px solid ${C.border}`, borderRadius: 10, padding: '12px 14px' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
-                      <span style={{ fontSize: 12.5, fontWeight: 650, color: C.text }}>🎯 Deep Work Focus Ratio</span>
-                      <span style={{ fontSize: 13, fontWeight: 800, color: C.accent }}>{performanceStats.focusRatioPct}%</span>
+                  <div
+                    style={{
+                      background: '#181422',
+                      border: `1px solid ${C.border}`,
+                      borderRadius: 10,
+                      padding: '12px 14px',
+                    }}
+                  >
+                    <div
+                      style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        marginBottom: 6,
+                      }}
+                    >
+                      <span style={{ fontSize: 12.5, fontWeight: 650, color: C.text }}>
+                        🎯 Deep Work Focus Ratio
+                      </span>
+                      <span style={{ fontSize: 13, fontWeight: 800, color: C.accent }}>
+                        {performanceStats.focusRatioPct}%
+                      </span>
                     </div>
-                    <div style={{ height: 6, borderRadius: 3, background: '#262033', overflow: 'hidden' }}>
-                      <div style={{ width: `${performanceStats.focusRatioPct}%`, height: '100%', background: C.accent, borderRadius: 3 }} />
+                    <div
+                      style={{
+                        height: 6,
+                        borderRadius: 3,
+                        background: '#262033',
+                        overflow: 'hidden',
+                      }}
+                    >
+                      <div
+                        style={{
+                          width: `${performanceStats.focusRatioPct}%`,
+                          height: '100%',
+                          background: C.accent,
+                          borderRadius: 3,
+                        }}
+                      />
                     </div>
                   </div>
 
                   {/* Smart Tip */}
-                  <div style={{ background: 'rgba(242, 166, 179, 0.1)', border: `1px solid ${C.accent}44`, borderRadius: 10, padding: '12px 14px' }}>
-                    <div style={{ fontSize: 12, fontWeight: 700, color: C.accent, marginBottom: 4, display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <div
+                    style={{
+                      background: 'rgba(242, 166, 179, 0.1)',
+                      border: `1px solid ${C.accent}44`,
+                      borderRadius: 10,
+                      padding: '12px 14px',
+                    }}
+                  >
+                    <div
+                      style={{
+                        fontSize: 12,
+                        fontWeight: 700,
+                        color: C.accent,
+                        marginBottom: 4,
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 6,
+                      }}
+                    >
                       <span>💡 Mochi Productivity Coach</span>
                     </div>
                     <div style={{ fontSize: 12, color: C.text, lineHeight: 1.45 }}>
@@ -1028,7 +1386,16 @@ export function TimeTab(): JSX.Element {
 
           {/* Detailed Category Performance Table */}
           <div style={card}>
-            <div style={{ fontSize: 12, fontWeight: 700, color: C.dim, textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: 14 }}>
+            <div
+              style={{
+                fontSize: 12,
+                fontWeight: 700,
+                color: C.dim,
+                textTransform: 'uppercase',
+                letterSpacing: '0.04em',
+                marginBottom: 14,
+              }}
+            >
               Category Performance Table ({performanceStats.categoryBreakdown.length})
             </div>
 
@@ -1048,23 +1415,63 @@ export function TimeTab(): JSX.Element {
                       padding: '12px 14px',
                     }}
                   >
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                    <div
+                      style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        marginBottom: 8,
+                      }}
+                    >
                       <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                        <div style={{ width: 10, height: 10, borderRadius: '50%', background: item.project.colour, boxShadow: `0 0 6px ${item.project.colour}` }} />
-                        <span style={{ fontSize: 14, fontWeight: 700, color: C.text }}>{formatCategoryName(item.project.name)}</span>
+                        <div
+                          style={{
+                            width: 10,
+                            height: 10,
+                            borderRadius: '50%',
+                            background: item.project.colour,
+                            boxShadow: `0 0 6px ${item.project.colour}`,
+                          }}
+                        />
+                        <span style={{ fontSize: 14, fontWeight: 700, color: C.text }}>
+                          {formatCategoryName(item.project.name)}
+                        </span>
                       </div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-                        <span style={{ fontSize: 12, fontWeight: 700, color: item.project.colour, fontVariantNumeric: 'tabular-nums' }}>
+                        <span
+                          style={{
+                            fontSize: 12,
+                            fontWeight: 700,
+                            color: item.project.colour,
+                            fontVariantNumeric: 'tabular-nums',
+                          }}
+                        >
                           {item.pct.toFixed(1)}%
                         </span>
-                        <span style={{ fontSize: 12, color: C.dim, fontVariantNumeric: 'tabular-nums' }}>
-                          {humanDuration(item.ms)} · {item.count} session{item.count === 1 ? '' : 's'}
+                        <span
+                          style={{ fontSize: 12, color: C.dim, fontVariantNumeric: 'tabular-nums' }}
+                        >
+                          {humanDuration(item.ms)} · {item.count} session
+                          {item.count === 1 ? '' : 's'}
                         </span>
                       </div>
                     </div>
                     {/* Individual progress bar */}
-                    <div style={{ height: 4, borderRadius: 2, background: '#262033', overflow: 'hidden' }}>
-                      <div style={{ width: `${item.pct}%`, height: '100%', background: item.project.colour }} />
+                    <div
+                      style={{
+                        height: 4,
+                        borderRadius: 2,
+                        background: '#262033',
+                        overflow: 'hidden',
+                      }}
+                    >
+                      <div
+                        style={{
+                          width: `${item.pct}%`,
+                          height: '100%',
+                          background: item.project.colour,
+                        }}
+                      />
                     </div>
                   </div>
                 ))}
@@ -1075,14 +1482,32 @@ export function TimeTab(): JSX.Element {
       ) : (
         /* Dedicated Session History Sub-Tab */
         <div style={card}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+          <div
+            style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              marginBottom: 16,
+            }}
+          >
             <div>
-              <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: C.text }}>🕒 Session History Log</h3>
+              <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: C.text }}>
+                🕒 Session History Log
+              </h3>
               <p style={{ margin: '4px 0 0', fontSize: 12, color: C.dim }}>
                 {sessions.length} total focus sessions tracked.
               </p>
             </div>
-            <div style={{ fontSize: 12, fontWeight: 700, color: C.accent, background: `${C.accent}22`, padding: '4px 12px', borderRadius: 8 }}>
+            <div
+              style={{
+                fontSize: 12,
+                fontWeight: 700,
+                color: C.accent,
+                background: `${C.accent}22`,
+                padding: '4px 12px',
+                borderRadius: 8,
+              }}
+            >
               {humanDuration(totals.grand)} Total Focus
             </div>
           </div>
@@ -1103,7 +1528,8 @@ export function TimeTab(): JSX.Element {
                   hour: '2-digit',
                   minute: '2-digit',
                 });
-                const dur = s.endedAt !== null ? formatDuration(s.endedAt - s.startedAt) : 'Running now';
+                const dur =
+                  s.endedAt !== null ? formatDuration(s.endedAt - s.startedAt) : 'Running now';
 
                 return (
                   <div
@@ -1119,7 +1545,15 @@ export function TimeTab(): JSX.Element {
                     }}
                   >
                     <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                      <div style={{ width: 8, height: 8, borderRadius: '50%', background: color, boxShadow: `0 0 6px ${color}` }} />
+                      <div
+                        style={{
+                          width: 8,
+                          height: 8,
+                          borderRadius: '50%',
+                          background: color,
+                          boxShadow: `0 0 6px ${color}`,
+                        }}
+                      />
                       <span style={{ fontSize: 13.5, fontWeight: 650, color: C.text }}>{name}</span>
                     </div>
 

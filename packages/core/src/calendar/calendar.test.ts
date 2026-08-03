@@ -136,9 +136,7 @@ describe('mergeBusy', () => {
   });
 
   it('merges back-to-back meetings into one block', () => {
-    expect(mergeBusy([ev('a', 10, 1), ev('b', 11, 1)])).toEqual([
-      { start: at(10), end: at(12) },
-    ]);
+    expect(mergeBusy([ev('a', 10, 1), ev('b', 11, 1)])).toEqual([{ start: at(10), end: at(12) }]);
   });
 
   it('keeps separated meetings apart', () => {
@@ -182,7 +180,10 @@ describe('freeBlocks', () => {
 
   it('drops gaps too short to use', () => {
     // A 10-minute hole between meetings is not focus time.
-    const blocks = freeBlocks([ev('a', 10, 1), { ...ev('b', 11, 1), startsAt: at(11, 10) }], window);
+    const blocks = freeBlocks(
+      [ev('a', 10, 1), { ...ev('b', 11, 1), startsAt: at(11, 10) }],
+      window,
+    );
     expect(blocks.some((b) => b.end - b.start < MIN_FREE_BLOCK_MS)).toBe(false);
   });
 
@@ -201,9 +202,7 @@ describe('freeBlocks', () => {
   });
 
   it('ignores meetings outside the working window', () => {
-    expect(freeBlocks([ev('evening', 19, 1)], window)).toEqual([
-      { start: at(9), end: at(17) },
-    ]);
+    expect(freeBlocks([ev('evening', 19, 1)], window)).toEqual([{ start: at(9), end: at(17) }]);
   });
 
   it('is empty once the window has ended', () => {

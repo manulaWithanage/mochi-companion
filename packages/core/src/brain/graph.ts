@@ -15,13 +15,7 @@
  */
 
 export type NodeType =
-  | 'app'
-  | 'time_window'
-  | 'habit'
-  | 'style'
-  | 'routine'
-  | 'contact'
-  | 'project';
+  'app' | 'time_window' | 'habit' | 'style' | 'routine' | 'contact' | 'project';
 
 /**
  * Where a belief came from. This decides which rules apply to it, and it is the
@@ -157,8 +151,7 @@ export function observe(graph: BrainGraph, observation: Observation): BrainGraph
   };
 }
 
-const rank = (p: Provenance): number =>
-  p === 'declared' ? 2 : p === 'computed' ? 1 : 0;
+const rank = (p: Provenance): number => (p === 'declared' ? 2 : p === 'computed' ? 1 : 0);
 
 /**
  * Apply a user correction from the Memory tab.
@@ -179,7 +172,10 @@ export function correct(graph: BrainGraph, spec: Observation): BrainGraph {
 }
 
 /** Mark a belief as wrong and keep it marked, so it is not relearned. */
-export function suppress(graph: BrainGraph, spec: Pick<BrainEdge, 'from' | 'to' | 'relation'>): BrainGraph {
+export function suppress(
+  graph: BrainGraph,
+  spec: Pick<BrainEdge, 'from' | 'to' | 'relation'>,
+): BrainGraph {
   const key = edgeKey(spec);
   return {
     ...graph,
@@ -249,8 +245,7 @@ export function parseGraph(raw: unknown): BrainGraph {
 }
 
 const asArray = (v: unknown): unknown[] => (Array.isArray(v) ? v : []);
-const str = (v: unknown): string | null =>
-  typeof v === 'string' && v.length > 0 ? v : null;
+const str = (v: unknown): string | null => (typeof v === 'string' && v.length > 0 ? v : null);
 const stamps = (v: unknown): readonly number[] =>
   asArray(v).filter((n): n is number => typeof n === 'number' && Number.isFinite(n));
 

@@ -91,9 +91,7 @@ export function composeBriefing(input: BriefingInput): Briefing {
   const todays = hasCalendar ? eventsOnDay(events, now).filter(isBusy) : [];
   const ahead = hasCalendar ? upcoming(events, at) : [];
   const shape =
-    window === null || !hasCalendar
-      ? null
-      : dayShape(events, window, { notBefore: at });
+    window === null || !hasCalendar ? null : dayShape(events, window, { notBefore: at });
 
   const blocks: readonly Interval[] =
     window === null || !hasCalendar ? [] : freeBlocks(events, window, { notBefore: at });
@@ -158,7 +156,11 @@ export function composeBriefing(input: BriefingInput): Briefing {
       text: `${plural(late.length, 'task')} carried over from before.`,
     });
   } else if (open.length > 0) {
-    lines.push({ kind: 'tasks', weight: 60, text: `${plural(open.length, 'task')} on today's list.` });
+    lines.push({
+      kind: 'tasks',
+      weight: 60,
+      text: `${plural(open.length, 'task')} on today's list.`,
+    });
   }
 
   const quiet = lines.length === 0;

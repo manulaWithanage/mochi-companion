@@ -117,8 +117,22 @@ const Stat = ({
       transition: 'border-color 0.2s, transform 0.2s',
     }}
   >
-    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
-      <div style={{ fontSize: 24, fontWeight: 700, letterSpacing: '-0.02em', color: accent === true ? C.accent : C.text }}>
+    <div
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        marginBottom: 4,
+      }}
+    >
+      <div
+        style={{
+          fontSize: 24,
+          fontWeight: 700,
+          letterSpacing: '-0.02em',
+          color: accent === true ? C.accent : C.text,
+        }}
+      >
         {value}
       </div>
       {tooltip !== undefined && (
@@ -159,11 +173,22 @@ const Timeline = ({
 
   return (
     <div style={{ ...card, marginBottom: 16, background: 'rgba(34, 29, 41, 0.6)' }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          marginBottom: 12,
+        }}
+      >
         <span style={{ fontSize: 12.5, fontWeight: 600, color: C.text, letterSpacing: '0.01em' }}>
           Daily Timeline
         </span>
-        <Tooltip content="Shows continuous active blocks throughout today. Keyboard idle time is automatically filtered out." width={260} align="right">
+        <Tooltip
+          content="Shows continuous active blocks throughout today. Keyboard idle time is automatically filtered out."
+          width={260}
+          align="right"
+        >
           <span style={{ fontSize: 11.5, color: C.faint, cursor: 'help' }}>How it works ⓘ</span>
         </Tooltip>
       </div>
@@ -263,10 +288,7 @@ export function ActivityTab(): JSX.Element {
   const sites = settings?.trackBrowsingSites === true;
 
   const apps = useMemo(() => totalsByApp(spans), [spans]);
-  const categories = useMemo(
-    () => totalsByCategory(spans).filter((c) => c.ms > 0),
-    [spans],
-  );
+  const categories = useMemo(() => totalsByCategory(spans).filter((c) => c.ms > 0), [spans]);
   const totalMs = useMemo(() => apps.reduce((sum, a) => sum + a.ms, 0), [apps]);
   const focused = useMemo(() => focusedMs(spans), [spans]);
   const switches = useMemo(() => switchCount(spans), [spans]);
@@ -297,9 +319,24 @@ export function ActivityTab(): JSX.Element {
   return (
     <div style={{ maxWidth: 880, margin: '0 auto' }}>
       {/* Sleek Minimalist Header */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          marginBottom: 20,
+        }}
+      >
         <div>
-          <h2 style={{ margin: 0, fontSize: 22, fontWeight: 700, letterSpacing: '-0.02em', color: C.text }}>
+          <h2
+            style={{
+              margin: 0,
+              fontSize: 22,
+              fontWeight: 700,
+              letterSpacing: '-0.02em',
+              color: C.text,
+            }}
+          >
             Activity
           </h2>
         </div>
@@ -373,8 +410,11 @@ export function ActivityTab(): JSX.Element {
           <Tooltip
             content={
               <div>
-                <strong style={{ color: C.good, display: 'block', marginBottom: 4 }}>🔒 100% Local Privacy</strong>
-                Only application names in front are recorded. Idle time is discarded. Data is kept purely in Mochi&apos;s local SQLite database and auto-purges after 90 days.
+                <strong style={{ color: C.good, display: 'block', marginBottom: 4 }}>
+                  🔒 100% Local Privacy
+                </strong>
+                Only application names in front are recorded. Idle time is discarded. Data is kept
+                purely in Mochi&apos;s local SQLite database and auto-purges after 90 days.
               </div>
             }
             width={300}
@@ -403,8 +443,11 @@ export function ActivityTab(): JSX.Element {
             <Tooltip
               content={
                 <div>
-                  <strong style={{ color: C.accent, display: 'block', marginBottom: 4 }}>🌐 Site Splitting</strong>
-                  Differentiates sites like YouTube vs research docs. Window titles are checked in-memory against supported sites and instantly discarded.
+                  <strong style={{ color: C.accent, display: 'block', marginBottom: 4 }}>
+                    🌐 Site Splitting
+                  </strong>
+                  Differentiates sites like YouTube vs research docs. Window titles are checked
+                  in-memory against supported sites and instantly discarded.
                   <div style={{ marginTop: 6, fontSize: 11, color: C.dim }}>
                     <strong>Includes:</strong> {KNOWN_SITES.slice(0, 8).join(', ')}, etc.
                   </div>
@@ -474,8 +517,17 @@ export function ActivityTab(): JSX.Element {
               <div style={{ fontSize: 14, fontWeight: 600, color: C.text, marginBottom: 4 }}>
                 No Activity Recorded Yet
               </div>
-              <div style={{ fontSize: 12.5, color: C.dim, lineHeight: 1.55, maxWidth: 420, margin: '0 auto' }}>
-                Activity samples arrive automatically every couple of minutes while you work. Keep working and check back shortly!
+              <div
+                style={{
+                  fontSize: 12.5,
+                  color: C.dim,
+                  lineHeight: 1.55,
+                  maxWidth: 420,
+                  margin: '0 auto',
+                }}
+              >
+                Activity samples arrive automatically every couple of minutes while you work. Keep
+                working and check back shortly!
               </div>
             </div>
           ) : (
@@ -510,9 +562,22 @@ export function ActivityTab(): JSX.Element {
 
               {/* Work Category Breakdown */}
               <div style={{ ...card, marginBottom: 16, background: 'rgba(34, 29, 41, 0.6)' }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-                  <span style={{ fontSize: 12.5, fontWeight: 600, color: C.text }}>Work Breakdown</span>
-                  <Tooltip content="Automatically categorized from active app names. You can reassign categories below." width={250} align="right">
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    marginBottom: 12,
+                  }}
+                >
+                  <span style={{ fontSize: 12.5, fontWeight: 600, color: C.text }}>
+                    Work Breakdown
+                  </span>
+                  <Tooltip
+                    content="Automatically categorized from active app names. You can reassign categories below."
+                    width={250}
+                    align="right"
+                  >
                     <span style={{ fontSize: 11.5, color: C.faint, cursor: 'help' }}>ⓘ</span>
                   </Tooltip>
                 </div>
@@ -544,7 +609,13 @@ export function ActivityTab(): JSX.Element {
                   {categories.map((c) => (
                     <span
                       key={c.category}
-                      style={{ fontSize: 11.5, color: C.dim, display: 'inline-flex', alignItems: 'center', gap: 6 }}
+                      style={{
+                        fontSize: 11.5,
+                        color: C.dim,
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: 6,
+                      }}
                     >
                       <span
                         style={{
@@ -555,7 +626,13 @@ export function ActivityTab(): JSX.Element {
                         }}
                       />
                       <span>{c.label}</span>
-                      <strong style={{ color: C.text, fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>
+                      <strong
+                        style={{
+                          color: C.text,
+                          fontWeight: 600,
+                          fontVariantNumeric: 'tabular-nums',
+                        }}
+                      >
                         {humanDuration(c.ms)}
                       </strong>
                     </span>
@@ -565,10 +642,25 @@ export function ActivityTab(): JSX.Element {
 
               {/* Applications List */}
               <div style={{ ...card, marginBottom: 20, background: 'rgba(34, 29, 41, 0.6)' }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
-                  <span style={{ fontSize: 12.5, fontWeight: 600, color: C.text }}>Applications Used</span>
-                  <Tooltip content="Reassign an application's category using the dropdown if Mochi categorized it incorrectly." width={260} align="right">
-                    <span style={{ fontSize: 11.5, color: C.faint, cursor: 'help' }}>Category Help ⓘ</span>
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    marginBottom: 14,
+                  }}
+                >
+                  <span style={{ fontSize: 12.5, fontWeight: 600, color: C.text }}>
+                    Applications Used
+                  </span>
+                  <Tooltip
+                    content="Reassign an application's category using the dropdown if Mochi categorized it incorrectly."
+                    width={260}
+                    align="right"
+                  >
+                    <span style={{ fontSize: 11.5, color: C.faint, cursor: 'help' }}>
+                      Category Help ⓘ
+                    </span>
                   </Tooltip>
                 </div>
 
@@ -640,7 +732,11 @@ export function ActivityTab(): JSX.Element {
                         }}
                       >
                         {ACTIVITY_CATEGORIES.map((c) => (
-                          <option key={c.id} value={c.id} style={{ background: '#241f2b', color: C.text }}>
+                          <option
+                            key={c.id}
+                            value={c.id}
+                            style={{ background: '#241f2b', color: C.text }}
+                          >
                             {c.label}
                           </option>
                         ))}
@@ -665,8 +761,17 @@ export function ActivityTab(): JSX.Element {
           <div style={{ fontSize: 15, fontWeight: 650, color: C.text, marginBottom: 6 }}>
             Tracking is Paused
           </div>
-          <div style={{ fontSize: 12.5, color: C.dim, maxWidth: 420, margin: '0 auto 16px', lineHeight: 1.55 }}>
-            No activity is recorded while paused. Enable tracking to view your work metrics and focus patterns.
+          <div
+            style={{
+              fontSize: 12.5,
+              color: C.dim,
+              maxWidth: 420,
+              margin: '0 auto 16px',
+              lineHeight: 1.55,
+            }}
+          >
+            No activity is recorded while paused. Enable tracking to view your work metrics and
+            focus patterns.
           </div>
           <button style={button('primary')} onClick={() => void toggle(true)}>
             Enable Activity Tracking
@@ -675,7 +780,15 @@ export function ActivityTab(): JSX.Element {
       )}
 
       {/* Subtle Data Management Footer */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingTop: 12, borderTop: `1px solid ${C.border}` }}>
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          paddingTop: 12,
+          borderTop: `1px solid ${C.border}`,
+        }}
+      >
         <button
           onClick={() => setShowPrivacyDetails((v) => !v)}
           style={{

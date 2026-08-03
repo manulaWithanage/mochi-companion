@@ -182,7 +182,9 @@ export class BriefingService {
       }),
     );
 
-    console.log(`[briefing] delivered: ${briefing.meetingCount} meeting(s), ${briefing.openTasks} task(s)`);
+    console.log(
+      `[briefing] delivered: ${briefing.meetingCount} meeting(s), ${briefing.openTasks} task(s)`,
+    );
     return briefing;
   }
 

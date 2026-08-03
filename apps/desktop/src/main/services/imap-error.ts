@@ -48,7 +48,13 @@ export interface ImapFailure {
  * command it was running to some errors, and a credential must never be one
  * unlucky property name away from a log file.
  */
-const REPORTED_KEYS = ['code', 'serverResponseCode', 'responseText', 'response', 'hostname'] as const;
+const REPORTED_KEYS = [
+  'code',
+  'serverResponseCode',
+  'responseText',
+  'response',
+  'hostname',
+] as const;
 
 /** Long enough to diagnose, short enough not to flood a log with server prose. */
 const MAX_DETAIL = 300;
@@ -122,7 +128,8 @@ function gather(error: unknown, depth: number, seen: Set<object>, into: Gathered
   }
 }
 
-const AUTH_TEXT = /authenticationfailed|authentication failed|\b535\b|invalid credentials|application-specific password|web login required/i;
+const AUTH_TEXT =
+  /authenticationfailed|authentication failed|\b535\b|invalid credentials|application-specific password|web login required/i;
 const NETWORK_TEXT =
   /etimedout|econnrefused|enotfound|eai_again|ehostunreach|enetunreach|econnreset|econnaborted|epipe|socket timeout|connection closed|connection not available|timed out|getaddrinfo/i;
 const NOT_GMAIL_TEXT = /x-gm-ext-1|missingserverextension/i;

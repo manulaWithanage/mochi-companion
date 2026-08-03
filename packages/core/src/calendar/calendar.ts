@@ -90,9 +90,7 @@ export function upcoming(
   withinMs = 12 * 60 * 60_000,
 ): readonly CalendarEvent[] {
   const horizon = now + withinMs;
-  return sortByStart(
-    events.filter((e) => isBusy(e) && e.startsAt > now && e.startsAt <= horizon),
-  );
+  return sortByStart(events.filter((e) => isBusy(e) && e.startsAt > now && e.startsAt <= horizon));
 }
 
 export function nextEvent(events: readonly CalendarEvent[], now: number): CalendarEvent | null {
@@ -100,10 +98,7 @@ export function nextEvent(events: readonly CalendarEvent[], now: number): Calend
 }
 
 /** Everything on a calendar day, all-day entries included, for a briefing. */
-export function eventsOnDay(
-  events: readonly CalendarEvent[],
-  day: Date,
-): readonly CalendarEvent[] {
+export function eventsOnDay(events: readonly CalendarEvent[], day: Date): readonly CalendarEvent[] {
   const start = new Date(day);
   start.setHours(0, 0, 0, 0);
   const end = new Date(start);
@@ -113,9 +108,7 @@ export function eventsOnDay(
 
   // Overlap, not containment: a meeting that started yesterday and runs into
   // this morning is still part of today.
-  return sortByStart(
-    events.filter((e) => !e.cancelled && e.startsAt < to && e.endsAt > from),
-  );
+  return sortByStart(events.filter((e) => !e.cancelled && e.startsAt < to && e.endsAt > from));
 }
 
 // ---------------------------------------------------------------------------

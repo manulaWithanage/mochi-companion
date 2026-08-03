@@ -268,7 +268,11 @@ export function azureChatUrl(
  * the first label is both sufficient and safe.
  */
 export function cleanAzureResourceName(input: string): string {
-  const host = input.trim().replace(/^https?:\/\//i, '').split('/')[0] ?? '';
+  const host =
+    input
+      .trim()
+      .replace(/^https?:\/\//i, '')
+      .split('/')[0] ?? '';
   return (host.split('.')[0] ?? '').trim();
 }
 

@@ -164,8 +164,7 @@ async function bootstrap(): Promise<void> {
     phrase: async (prompt) => {
       const result = await llmClient.generate({
         task: 'phrase',
-        system:
-          'You are Mochi, a small desktop companion. Warm and brief. Never add facts.',
+        system: 'You are Mochi, a small desktop companion. Warm and brief. Never add facts.',
         prompt,
       });
       return result.ok ? result.text : null;

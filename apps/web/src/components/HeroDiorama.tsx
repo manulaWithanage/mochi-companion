@@ -7,18 +7,18 @@ const modeDetails: Record<HeroMode, { label: string; message: string; status: st
   idle: {
     label: 'Ready',
     message: 'I am here whenever you are ready. 🍡',
-    status: 'A quiet moment on your desktop'
+    status: 'A quiet moment on your desktop',
   },
   working: {
     label: 'Focus',
     message: 'Focus timer is running. I will keep time for you. ⏱️',
-    status: 'Focus session · 00:42:18'
+    status: 'Focus session · 00:42:18',
   },
   resting: {
     label: 'Rest',
     message: 'A little pause can make room for good work. 💤',
-    status: 'Resting quietly nearby'
-  }
+    status: 'Resting quietly nearby',
+  },
 };
 
 export const HeroDiorama: React.FC = () => {
@@ -40,8 +40,8 @@ export const HeroDiorama: React.FC = () => {
         <p className="hero-diorama__eyebrow">YOUR PRIVATE DESKTOP COMPANION</p>
         <h1 id="hero-title">A calmer way to keep time.</h1>
         <p className="hero-diorama__description">
-          Mochi lives quietly on your desktop. Start focus time in one click,
-          keep a simple record of your day, and take breaks on your terms.
+          Mochi lives quietly on your desktop. Start focus time in one click, keep a simple record
+          of your day, and take breaks on your terms.
         </p>
         <div className="hero-diorama__actions">
           <a className="hero-diorama__download" href="/Mochi-Setup.exe" download>
@@ -51,13 +51,17 @@ export const HeroDiorama: React.FC = () => {
             See how Mochi helps <span aria-hidden="true">↓</span>
           </a>
         </div>
-        <p className="hero-diorama__trust">Windows desktop app <span>•</span> No account required <span>•</span> Data stays local</p>
+        <p className="hero-diorama__trust">
+          Windows desktop app <span>•</span> No account required <span>•</span> Data stays local
+        </p>
       </div>
 
       <div className="hero-diorama__demo" aria-label="Interactive Mochi preview">
         <div className="hero-diorama__window">
           <div className="hero-diorama__window-bar">
-            <span className="hero-diorama__window-app"><span className="hero-diorama__window-app-dot" aria-hidden="true" /> Mochi</span>
+            <span className="hero-diorama__window-app">
+              <span className="hero-diorama__window-app-dot" aria-hidden="true" /> Mochi
+            </span>
             <span>Quietly nearby</span>
             <span className="hero-diorama__live">● Live</span>
           </div>
@@ -70,7 +74,13 @@ export const HeroDiorama: React.FC = () => {
               <LandingMascotCanvas state={mode} size={205} />
             </div>
             <div className="hero-diorama__status">
-              <span className={mode === 'working' ? 'hero-diorama__status-dot hero-diorama__status-dot--active' : 'hero-diorama__status-dot'} />
+              <span
+                className={
+                  mode === 'working'
+                    ? 'hero-diorama__status-dot hero-diorama__status-dot--active'
+                    : 'hero-diorama__status-dot'
+                }
+              />
               {detail.status}
             </div>
           </div>

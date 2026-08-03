@@ -1,5 +1,12 @@
 import { useEffect, useRef, useState, type JSX } from 'react';
-import { parseHhMm, type LoadedSkin, type MascotSize, type MascotState, type MochiSettings, type SkinSummary } from '@mochi/core';
+import {
+  parseHhMm,
+  type LoadedSkin,
+  type MascotSize,
+  type MascotState,
+  type MochiSettings,
+  type SkinSummary,
+} from '@mochi/core';
 import { button, C, card, h2, input, label, sub } from '../ui.js';
 
 const STATES: readonly MascotState[] = ['idle', 'working', 'resting', 'alert'];
@@ -265,7 +272,11 @@ export function MochiTab(): JSX.Element {
         </div>
 
         <span style={label}>Skin</span>
-        <select style={{ ...input, marginBottom: 14 }} value={skinName} onChange={(e) => setSkinName(e.target.value)}>
+        <select
+          style={{ ...input, marginBottom: 14 }}
+          value={skinName}
+          onChange={(e) => setSkinName(e.target.value)}
+        >
           {skins.map((s) => (
             <option key={s.name} value={s.name}>
               {s.name}
@@ -278,7 +289,11 @@ export function MochiTab(): JSX.Element {
         <div style={{ display: 'flex', gap: 8, marginBottom: 14 }}>
           {(['small', 'medium', 'large'] as const).map((sz) => {
             const isSelected = mascotSize === sz;
-            const labels = { small: 'Small (130px)', medium: 'Medium (170px)', large: 'Large (210px)' };
+            const labels = {
+              small: 'Small (130px)',
+              medium: 'Medium (170px)',
+              large: 'Large (210px)',
+            };
             return (
               <button
                 key={sz}
@@ -329,7 +344,8 @@ export function MochiTab(): JSX.Element {
           </p>
         )}
         <p style={{ fontSize: 12, color: C.faint, margin: '10px 0 0' }}>
-          Outside these hours {settings.assistantName} rests, and day-start/day-end greetings are scheduled from them.
+          Outside these hours {settings.assistantName} rests, and day-start/day-end greetings are
+          scheduled from them.
         </p>
       </div>
 
@@ -383,7 +399,8 @@ export function MochiTab(): JSX.Element {
           </div>
         ))}
         <p style={{ fontSize: 12, color: C.faint, margin: '12px 0 0', lineHeight: 1.5 }}>
-          All of these pass an interruption budget first (at most 3 an hour, silent during quiet hours and while anything is fullscreen).
+          All of these pass an interruption budget first (at most 3 an hour, silent during quiet
+          hours and while anything is fullscreen).
         </p>
       </div>
     </div>

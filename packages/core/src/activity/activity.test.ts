@@ -216,9 +216,9 @@ describe('switchCount', () => {
 
 describe('longestStretchMs', () => {
   it('finds the longest unbroken span', () => {
-    expect(
-      longestStretchMs([span('VS Code', 0, 60), span('Chrome', 60, 300, 'browsing')]),
-    ).toBe(240_000);
+    expect(longestStretchMs([span('VS Code', 0, 60), span('Chrome', 60, 300, 'browsing')])).toBe(
+      240_000,
+    );
   });
 
   it('is zero with nothing tracked', () => {

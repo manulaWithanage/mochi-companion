@@ -1,5 +1,12 @@
 import { useEffect, useState, type JSX } from 'react';
-import { elapsedMs, formatDuration, type MochiSettings, type Project, type TimerSnapshot, type WorkSession } from '@mochi/core';
+import {
+  elapsedMs,
+  formatDuration,
+  type MochiSettings,
+  type Project,
+  type TimerSnapshot,
+  type WorkSession,
+} from '@mochi/core';
 import { C, humanDuration } from './ui.js';
 import { TodayTab } from './tabs/TodayTab.js';
 import { TimeTab } from './tabs/TimeTab.js';
@@ -10,15 +17,7 @@ import { GmailTab } from './tabs/GmailTab.js';
 import { CalendarTab } from './tabs/CalendarTab.js';
 import { ActivityTab } from './tabs/ActivityTab.js';
 
-type TabId =
-  | 'today'
-  | 'calendar'
-  | 'activity'
-  | 'time'
-  | 'routines'
-  | 'mochi'
-  | 'ai'
-  | 'gmail';
+type TabId = 'today' | 'calendar' | 'activity' | 'time' | 'routines' | 'mochi' | 'ai' | 'gmail';
 
 const TABS: readonly { id: TabId; label: string }[] = [
   { id: 'today', label: 'Today' },
@@ -39,14 +38,34 @@ function renderTabIcon(id: TabId, active: boolean): JSX.Element {
   switch (id) {
     case 'today':
       return (
-        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke={strokeColor} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" style={{ opacity }}>
+        <svg
+          width="17"
+          height="17"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke={strokeColor}
+          strokeWidth={strokeWidth}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          style={{ opacity }}
+        >
           <circle cx="12" cy="12" r="10" />
           <polyline points="12 6 12 12 16 14" />
         </svg>
       );
     case 'calendar':
       return (
-        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke={strokeColor} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" style={{ opacity }}>
+        <svg
+          width="17"
+          height="17"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke={strokeColor}
+          strokeWidth={strokeWidth}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          style={{ opacity }}
+        >
           <rect width="18" height="18" x="3" y="4" rx="2" ry="2" />
           <line x1="16" x2="16" y1="2" y2="6" />
           <line x1="8" x2="8" y1="2" y2="6" />
@@ -56,7 +75,17 @@ function renderTabIcon(id: TabId, active: boolean): JSX.Element {
       );
     case 'time':
       return (
-        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke={strokeColor} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" style={{ opacity }}>
+        <svg
+          width="17"
+          height="17"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke={strokeColor}
+          strokeWidth={strokeWidth}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          style={{ opacity }}
+        >
           <line x1="10" x2="14" y1="2" y2="2" />
           <line x1="12" x2="12" y1="14" y2="11" />
           <circle cx="12" cy="14" r="8" />
@@ -64,7 +93,17 @@ function renderTabIcon(id: TabId, active: boolean): JSX.Element {
       );
     case 'activity':
       return (
-        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke={strokeColor} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" style={{ opacity }}>
+        <svg
+          width="17"
+          height="17"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke={strokeColor}
+          strokeWidth={strokeWidth}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          style={{ opacity }}
+        >
           <line x1="4" x2="4" y1="20" y2="13" />
           <line x1="10" x2="10" y1="20" y2="6" />
           <line x1="16" x2="16" y1="20" y2="10" />
@@ -73,7 +112,17 @@ function renderTabIcon(id: TabId, active: boolean): JSX.Element {
       );
     case 'routines':
       return (
-        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke={strokeColor} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" style={{ opacity }}>
+        <svg
+          width="17"
+          height="17"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke={strokeColor}
+          strokeWidth={strokeWidth}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          style={{ opacity }}
+        >
           <path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
           <path d="M3 3v5h5" />
           <path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16" />
@@ -82,7 +131,17 @@ function renderTabIcon(id: TabId, active: boolean): JSX.Element {
       );
     case 'mochi':
       return (
-        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke={strokeColor} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" style={{ opacity }}>
+        <svg
+          width="17"
+          height="17"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke={strokeColor}
+          strokeWidth={strokeWidth}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          style={{ opacity }}
+        >
           <circle cx="12" cy="12" r="10" />
           <path d="M8 14s1.5 2 4 2 4-2 4-2" />
           <line x1="9" x2="9.01" y1="9" y2="9" />
@@ -91,13 +150,33 @@ function renderTabIcon(id: TabId, active: boolean): JSX.Element {
       );
     case 'ai':
       return (
-        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke={strokeColor} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" style={{ opacity }}>
+        <svg
+          width="17"
+          height="17"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke={strokeColor}
+          strokeWidth={strokeWidth}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          style={{ opacity }}
+        >
           <path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z" />
         </svg>
       );
     case 'gmail':
       return (
-        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke={strokeColor} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" style={{ opacity }}>
+        <svg
+          width="17"
+          height="17"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke={strokeColor}
+          strokeWidth={strokeWidth}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          style={{ opacity }}
+        >
           <rect width="20" height="16" x="2" y="4" rx="2" />
           <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
         </svg>
@@ -172,24 +251,69 @@ export function Dashboard(): JSX.Element {
           boxSizing: 'border-box',
         }}
       >
-        <div style={{ padding: '0 4px 16px', borderBottom: `1px solid ${C.border}`, marginBottom: 12 }}>
+        <div
+          style={{ padding: '0 4px 16px', borderBottom: `1px solid ${C.border}`, marginBottom: 12 }}
+        >
           {/* Web App Brand Logo */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <svg width="30" height="30" viewBox="0 0 100 100" fill="none" style={{ flexShrink: 0 }}>
-              <rect x="8" y="8" width="84" height="84" rx="32" fill="#F8FAFD" stroke="#3D4963" strokeWidth="7" />
-              <path d="M 28 42 Q 36 32 44 42" stroke="#3D4963" strokeWidth="6" strokeLinecap="round" fill="none" />
-              <path d="M 56 42 Q 64 32 72 42" stroke="#3D4963" strokeWidth="6" strokeLinecap="round" fill="none" />
-              <path d="M 44 56 Q 50 64 56 56" stroke="#3D4963" strokeWidth="5" strokeLinecap="round" fill="none" />
+              <rect
+                x="8"
+                y="8"
+                width="84"
+                height="84"
+                rx="32"
+                fill="#F8FAFD"
+                stroke="#3D4963"
+                strokeWidth="7"
+              />
+              <path
+                d="M 28 42 Q 36 32 44 42"
+                stroke="#3D4963"
+                strokeWidth="6"
+                strokeLinecap="round"
+                fill="none"
+              />
+              <path
+                d="M 56 42 Q 64 32 72 42"
+                stroke="#3D4963"
+                strokeWidth="6"
+                strokeLinecap="round"
+                fill="none"
+              />
+              <path
+                d="M 44 56 Q 50 64 56 56"
+                stroke="#3D4963"
+                strokeWidth="5"
+                strokeLinecap="round"
+                fill="none"
+              />
               <ellipse cx="22" cy="52" rx="7" ry="5" fill="#FF9F73" opacity="0.9" />
               <ellipse cx="78" cy="52" rx="7" ry="5" fill="#FF9F73" opacity="0.9" />
             </svg>
             <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                <span style={{ fontSize: 17, fontWeight: 800, color: C.accent, letterSpacing: '-0.02em', lineHeight: 1 }}>
+                <span
+                  style={{
+                    fontSize: 17,
+                    fontWeight: 800,
+                    color: C.accent,
+                    letterSpacing: '-0.02em',
+                    lineHeight: 1,
+                  }}
+                >
                   {settings?.assistantName ?? 'Mochi'}
                 </span>
               </div>
-              <span style={{ fontSize: 10.5, fontWeight: 500, color: C.dim, marginTop: 3, letterSpacing: '0.01em' }}>
+              <span
+                style={{
+                  fontSize: 10.5,
+                  fontWeight: 500,
+                  color: C.dim,
+                  marginTop: 3,
+                  letterSpacing: '0.01em',
+                }}
+              >
                 Desktop Companion
               </span>
             </div>
@@ -207,7 +331,8 @@ export function Dashboard(): JSX.Element {
             {running ? (
               <div
                 style={{
-                  background: 'linear-gradient(135deg, rgba(242, 166, 179, 0.16), rgba(35, 24, 42, 0.8))',
+                  background:
+                    'linear-gradient(135deg, rgba(242, 166, 179, 0.16), rgba(35, 24, 42, 0.8))',
                   border: `1px solid rgba(242, 166, 179, 0.35)`,
                   boxShadow: '0 4px 14px rgba(0, 0, 0, 0.3)',
                   borderRadius: 11,
@@ -217,15 +342,51 @@ export function Dashboard(): JSX.Element {
                   gap: 5,
                 }}
               >
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 9.5, fontWeight: 750, color: C.accent, letterSpacing: '0.04em', textTransform: 'uppercase' }}>
-                  <span style={{ width: 7, height: 7, borderRadius: '50%', background: C.accent, boxShadow: `0 0 8px ${C.accent}`, display: 'inline-block' }} />
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 6,
+                    fontSize: 9.5,
+                    fontWeight: 750,
+                    color: C.accent,
+                    letterSpacing: '0.04em',
+                    textTransform: 'uppercase',
+                  }}
+                >
+                  <span
+                    style={{
+                      width: 7,
+                      height: 7,
+                      borderRadius: '50%',
+                      background: C.accent,
+                      boxShadow: `0 0 8px ${C.accent}`,
+                      display: 'inline-block',
+                    }}
+                  />
                   <span>Tracking Active</span>
                 </div>
-                <div style={{ fontSize: 12.5, fontWeight: 700, color: C.text, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                <div
+                  style={{
+                    fontSize: 12.5,
+                    fontWeight: 700,
+                    color: C.text,
+                    whiteSpace: 'nowrap',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                  }}
+                >
                   {activeProjectName}
                 </div>
                 {timer !== null && (
-                  <div style={{ fontSize: 12, fontWeight: 650, color: C.accent, fontVariantNumeric: 'tabular-nums' }}>
+                  <div
+                    style={{
+                      fontSize: 12,
+                      fontWeight: 650,
+                      color: C.accent,
+                      fontVariantNumeric: 'tabular-nums',
+                    }}
+                  >
                     {formatDuration(timer.elapsedMs)}
                   </div>
                 )}
@@ -260,7 +421,9 @@ export function Dashboard(): JSX.Element {
                 </button>
               </div>
             ) : (
-              <div style={{ fontSize: 11.5, color: C.dim }}>{humanDuration(todayMs)} focus today</div>
+              <div style={{ fontSize: 11.5, color: C.dim }}>
+                {humanDuration(todayMs)} focus today
+              </div>
             )}
           </div>
         </div>

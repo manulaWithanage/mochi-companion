@@ -26,12 +26,13 @@ const DAYS_MAP: { key: RoutineDay; label: string }[] = [
   { key: 'sun', label: 'S' },
 ];
 
-const CATEGORY_MAP: Record<RoutineCategory, { label: string; defaultIcon: string; color: string }> = {
-  health: { label: 'Health & Wellness', defaultIcon: '💧', color: '#10b981' },
-  focus: { label: 'Deep Work', defaultIcon: '🎯', color: '#6366f1' },
-  mindfulness: { label: 'Mindful Break', defaultIcon: '🧘', color: '#ec4899' },
-  custom: { label: 'Custom Habit', defaultIcon: '⚡', color: '#f59e0b' },
-};
+const CATEGORY_MAP: Record<RoutineCategory, { label: string; defaultIcon: string; color: string }> =
+  {
+    health: { label: 'Health & Wellness', defaultIcon: '💧', color: '#10b981' },
+    focus: { label: 'Deep Work', defaultIcon: '🎯', color: '#6366f1' },
+    mindfulness: { label: 'Mindful Break', defaultIcon: '🧘', color: '#ec4899' },
+    custom: { label: 'Custom Habit', defaultIcon: '⚡', color: '#f59e0b' },
+  };
 
 /** Parses inputs like "14:00", "2:00 PM", "9:30", "930", "9am", "11pm", "1430" -> "14:00" */
 function parseFlexibleTime(inputStr: string): string | null {
@@ -106,13 +107,7 @@ const TIME_SUGGESTIONS = [
   { label: '09:30 PM', value: '21:30' },
 ] as const;
 
-const Toggle = ({
-  on,
-  onChange,
-}: {
-  on: boolean;
-  onChange: (v: boolean) => void;
-}): JSX.Element => (
+const Toggle = ({ on, onChange }: { on: boolean; onChange: (v: boolean) => void }): JSX.Element => (
   <button
     onClick={() => onChange(!on)}
     aria-pressed={on}
@@ -301,10 +296,20 @@ export function RoutinesTab(): JSX.Element {
 
   return (
     <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 }}>
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'flex-start',
+          marginBottom: 16,
+        }}
+      >
         <div>
           <h2 style={h2}>Personal Routines</h2>
-          <p style={sub}>Schedule daily habits & health breaks with local clock sync. Mochi will remind you on time.</p>
+          <p style={sub}>
+            Schedule daily habits & health breaks with local clock sync. Mochi will remind you on
+            time.
+          </p>
         </div>
         {!isEditing && (
           <div style={{ display: 'flex', gap: 8 }}>
@@ -320,11 +325,23 @@ export function RoutinesTab(): JSX.Element {
 
       {/* Center Screen Animation Setting Toggle */}
       {settings !== null && (
-        <div style={{ ...card, marginBottom: 16, padding: '12px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div
+          style={{
+            ...card,
+            marginBottom: 16,
+            padding: '12px 16px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+          }}
+        >
           <div>
-            <div style={{ fontSize: 13, fontWeight: 600, color: C.text }}>Center-Screen Reminder Animation</div>
+            <div style={{ fontSize: 13, fontWeight: 600, color: C.text }}>
+              Center-Screen Reminder Animation
+            </div>
             <div style={{ fontSize: 11.5, color: C.dim, marginTop: 2 }}>
-              When a routine triggers, Mochi glides smoothly to the center of your screen to deliver the reminder.
+              When a routine triggers, Mochi glides smoothly to the center of your screen to deliver
+              the reminder.
             </div>
           </div>
           <Toggle
@@ -340,11 +357,18 @@ export function RoutinesTab(): JSX.Element {
           <div style={{ fontSize: 12, fontWeight: 600, color: C.dim, marginBottom: 10 }}>
             ⚡ QUICK ADD PRESETS
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 10 }}>
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))',
+              gap: 10,
+            }}
+          >
             {ROUTINE_PRESETS.map((preset) => {
               const catInfo = CATEGORY_MAP[preset.category];
               const displayIcon = preset.icon || catInfo.defaultIcon;
-              const displayTimes = preset.times && preset.times.length > 0 ? preset.times.join(', ') : preset.time;
+              const displayTimes =
+                preset.times && preset.times.length > 0 ? preset.times.join(', ') : preset.time;
               return (
                 <button
                   key={preset.title}
@@ -363,10 +387,27 @@ export function RoutinesTab(): JSX.Element {
                   onMouseLeave={(e) => (e.currentTarget.style.borderColor = C.border)}
                 >
                   <div style={{ fontSize: 18, marginBottom: 4 }}>{displayIcon}</div>
-                  <div style={{ fontSize: 12.5, fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                  <div
+                    style={{
+                      fontSize: 12.5,
+                      fontWeight: 600,
+                      whiteSpace: 'nowrap',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                    }}
+                  >
                     {preset.title}
                   </div>
-                  <div style={{ fontSize: 11, color: C.dim, marginTop: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                  <div
+                    style={{
+                      fontSize: 11,
+                      color: C.dim,
+                      marginTop: 2,
+                      whiteSpace: 'nowrap',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                    }}
+                  >
                     🕒 {displayTimes}
                   </div>
                 </button>
@@ -425,7 +466,7 @@ export function RoutinesTab(): JSX.Element {
           {/* Multiple Times Selector */}
           <div style={{ marginBottom: 14 }}>
             <span style={label}>Reminder Times (Add multiple times during the day)</span>
-            
+
             {/* Active Time Chips */}
             <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 10 }}>
               {times.map((t) => (
@@ -444,7 +485,9 @@ export function RoutinesTab(): JSX.Element {
                     color: C.accent,
                   }}
                 >
-                  <span>🕒 {formatTime12h(t)} <span style={{ opacity: 0.6, fontSize: 11 }}>({t})</span></span>
+                  <span>
+                    🕒 {formatTime12h(t)} <span style={{ opacity: 0.6, fontSize: 11 }}>({t})</span>
+                  </span>
                   {times.length > 1 && (
                     <button
                       type="button"
@@ -468,7 +511,15 @@ export function RoutinesTab(): JSX.Element {
             </div>
 
             {/* Add New Time Input */}
-            <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap', marginBottom: 8 }}>
+            <div
+              style={{
+                display: 'flex',
+                gap: 8,
+                alignItems: 'center',
+                flexWrap: 'wrap',
+                marginBottom: 8,
+              }}
+            >
               <div style={{ position: 'relative', flex: 1, minWidth: 220 }}>
                 <input
                   style={{ ...input, marginBottom: 0, paddingRight: 90 }}
@@ -604,7 +655,9 @@ export function RoutinesTab(): JSX.Element {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <div>
                 <div style={{ fontSize: 13, fontWeight: 500 }}>Remind with Mochi</div>
-                <div style={{ fontSize: 12, color: C.dim }}>Mochi will popup a cute reminder bubble at each specified time.</div>
+                <div style={{ fontSize: 12, color: C.dim }}>
+                  Mochi will popup a cute reminder bubble at each specified time.
+                </div>
               </div>
               <Toggle on={mochiReminder} onChange={setMochiReminder} />
             </div>
@@ -669,7 +722,11 @@ export function RoutinesTab(): JSX.Element {
                     opacity: r.enabled ? 1 : 0.55,
                     // The one firing next is picked out, so the list answers
                     // "what is coming" without being read top to bottom.
-                    borderColor: isNext ? 'rgba(242,166,179,0.45)' : r.enabled ? C.border : 'transparent',
+                    borderColor: isNext
+                      ? 'rgba(242,166,179,0.45)'
+                      : r.enabled
+                        ? C.border
+                        : 'transparent',
                     background: isNext ? 'rgba(242,166,179,0.05)' : undefined,
                   }}
                 >
@@ -693,7 +750,9 @@ export function RoutinesTab(): JSX.Element {
 
                     <div style={{ flex: 1 }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                        <span style={{ fontSize: 14, fontWeight: 600, color: C.text }}>{r.title}</span>
+                        <span style={{ fontSize: 14, fontWeight: 600, color: C.text }}>
+                          {r.title}
+                        </span>
                         <span
                           style={{
                             fontSize: 11,
@@ -708,7 +767,15 @@ export function RoutinesTab(): JSX.Element {
                         </span>
                       </div>
 
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 4, flexWrap: 'wrap' }}>
+                      <div
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 12,
+                          marginTop: 4,
+                          flexWrap: 'wrap',
+                        }}
+                      >
                         {/* Render all scheduled times */}
                         <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
                           <span style={{ fontSize: 12 }}>🕒</span>
@@ -769,7 +836,14 @@ export function RoutinesTab(): JSX.Element {
                       </div>
 
                       {r.mochiReminder && r.reminderMessage && (
-                        <div style={{ fontSize: 11.5, color: C.dim, marginTop: 6, fontStyle: 'italic' }}>
+                        <div
+                          style={{
+                            fontSize: 11.5,
+                            color: C.dim,
+                            marginTop: 6,
+                            fontStyle: 'italic',
+                          }}
+                        >
                           💬 "{r.reminderMessage}"
                         </div>
                       )}
@@ -786,7 +860,12 @@ export function RoutinesTab(): JSX.Element {
                     </button>
                     <button
                       onClick={() => void handleDelete(r.id)}
-                      style={{ ...button('ghost'), padding: '4px 8px', fontSize: 12, color: C.warn }}
+                      style={{
+                        ...button('ghost'),
+                        padding: '4px 8px',
+                        fontSize: 12,
+                        color: C.warn,
+                      }}
                     >
                       Delete
                     </button>

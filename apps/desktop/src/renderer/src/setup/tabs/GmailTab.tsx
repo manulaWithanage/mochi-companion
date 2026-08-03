@@ -853,11 +853,20 @@ export function GmailTab(): JSX.Element {
                     }}
                   >
                     <div>
-                      <div style={{ fontSize: 11, color: C.faint, fontWeight: 650, marginBottom: 6 }}>
+                      <div
+                        style={{ fontSize: 11, color: C.faint, fontWeight: 650, marginBottom: 6 }}
+                      >
                         📩 EMAIL BODY CONTENT
                       </div>
                       {isLoadingBody ? (
-                        <div style={{ fontSize: 12, color: C.dim, fontStyle: 'italic', padding: '10px 0' }}>
+                        <div
+                          style={{
+                            fontSize: 12,
+                            color: C.dim,
+                            fontStyle: 'italic',
+                            padding: '10px 0',
+                          }}
+                        >
                           ⚡ Fetching message body from Gmail…
                         </div>
                       ) : (
@@ -892,10 +901,25 @@ export function GmailTab(): JSX.Element {
                           padding: '12px 14px',
                         }}
                       >
-                        <div style={{ fontSize: 11, fontWeight: 650, color: C.accent, marginBottom: 4 }}>
+                        <div
+                          style={{
+                            fontSize: 11,
+                            fontWeight: 650,
+                            color: C.accent,
+                            marginBottom: 4,
+                          }}
+                        >
                           ✦ MOCHI PREPARED DRAFT REPLY
                         </div>
-                        <div style={{ fontSize: 12, color: C.text, fontStyle: 'italic', lineHeight: 1.5, marginBottom: 8 }}>
+                        <div
+                          style={{
+                            fontSize: 12,
+                            color: C.text,
+                            fontStyle: 'italic',
+                            lineHeight: 1.5,
+                            marginBottom: 8,
+                          }}
+                        >
                           "{email.draft.body}"
                         </div>
                         <button

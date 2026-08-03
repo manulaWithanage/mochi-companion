@@ -147,7 +147,8 @@ export async function validateKey(rawKey: string): Promise<KeyValidation> {
       provider: 'azure',
       redacted,
       models: [],
-      error: 'Azure OpenAI keys must be added via the Azure section with resource name and deployment.',
+      error:
+        'Azure OpenAI keys must be added via the Azure section with resource name and deployment.',
     };
   }
 

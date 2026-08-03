@@ -8,11 +8,7 @@
 import { readFileSync, writeFileSync, renameSync, mkdirSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { app } from 'electron';
-import {
-  ROUTINE_PRESETS,
-  type UserRoutine,
-  type UserRoutineInput,
-} from '@mochi/core';
+import { ROUTINE_PRESETS, type UserRoutine, type UserRoutineInput } from '@mochi/core';
 
 export class UserRoutinesVault {
   private readonly filePath: string;
@@ -66,10 +62,9 @@ export class UserRoutinesVault {
     return this.cache;
   }
 
-  private static editableFields(input: UserRoutineInput): Omit<
-    UserRoutine,
-    'id' | 'enabled' | 'createdAt'
-  > {
+  private static editableFields(
+    input: UserRoutineInput,
+  ): Omit<UserRoutine, 'id' | 'enabled' | 'createdAt'> {
     const message = input.reminderMessage?.trim() ?? '';
     const icon = input.icon?.trim() ?? '';
     // `time` stays the primary for older records; `times` is the real list.
@@ -96,7 +91,12 @@ export class UserRoutinesVault {
     if (input.id) {
       this.cache = this.cache.map((routine) => {
         if (routine.id !== input.id) return routine;
-        const { reminderMessage: _cleared, icon: _iconCleared, times: _timesCleared, ...keep } = routine;
+        const {
+          reminderMessage: _cleared,
+          icon: _iconCleared,
+          times: _timesCleared,
+          ...keep
+        } = routine;
         return { ...keep, ...UserRoutinesVault.editableFields(input) };
       });
     } else {

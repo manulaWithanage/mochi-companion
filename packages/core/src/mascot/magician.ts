@@ -69,7 +69,7 @@ export const MAGICIAN: MagicianTiming = {
 export interface MagicianPose {
   /** CSS scale. Above 1 during the overshoot, so the arrival has some snap. */
   readonly scale: number;
-  readonly opacity: number
+  readonly opacity: number;
   /** Milliseconds for the transition *into* this pose. */
   readonly durationMs: number;
   /**

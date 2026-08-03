@@ -58,10 +58,10 @@ const at = (hour: number, minutes: number, d = 0): WorkSession => {
 // ---------------------------------------------------------------------------
 
 describe('graph', () => {
-  const seeded = upsertNode(
-    upsertNode(emptyGraph, { id: 'VS_Code', type: 'app' }),
-    { id: 'peak', type: 'time_window' },
-  );
+  const seeded = upsertNode(upsertNode(emptyGraph, { id: 'VS_Code', type: 'app' }), {
+    id: 'peak',
+    type: 'time_window',
+  });
 
   it('creates an edge on first observation', () => {
     const g = observe(seeded, {
@@ -71,8 +71,9 @@ describe('graph', () => {
       provenance: 'inferred',
       at: NOW,
     });
-    expect(findEdge(g, { from: 'VS_Code', to: 'peak', relation: 'active_during' })?.confirms)
-      .toHaveLength(1);
+    expect(
+      findEdge(g, { from: 'VS_Code', to: 'peak', relation: 'active_during' })?.confirms,
+    ).toHaveLength(1);
   });
 
   it('accumulates observations on the same edge rather than duplicating it', () => {
@@ -305,7 +306,10 @@ describe('confidenceOf', () => {
     const oldHabit = [10, 12, 14, 16, 18, 20, 22, 24].map((d) => daysAgo(d));
     const before = confidenceOf(inferred(oldHabit), { now: NOW });
     const after = confidenceOf(
-      inferred(oldHabit, [0, 1, 2, 3, 4, 5].map((d) => daysAgo(d))),
+      inferred(
+        oldHabit,
+        [0, 1, 2, 3, 4, 5].map((d) => daysAgo(d)),
+      ),
       { now: NOW },
     );
     expect(before).toBeGreaterThanOrEqual(USABILITY_FLOOR);

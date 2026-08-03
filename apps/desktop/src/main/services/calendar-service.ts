@@ -11,12 +11,7 @@
  * very different things.
  */
 
-import {
-  parseIcs,
-  looksLikeIcsUrl,
-  normaliseIcsUrl,
-  redactIcsUrl,
-} from './ics.js';
+import { parseIcs, looksLikeIcsUrl, normaliseIcsUrl, redactIcsUrl } from './ics.js';
 import type { CalendarConnectResult, CalendarEvent, CalendarStatus } from '@mochi/core';
 
 /**
@@ -104,11 +99,15 @@ export class CalendarService {
     if (!looksLikeIcsUrl(rawUrl)) {
       return {
         ok: false,
-        error: 'That does not look like a calendar address. It should start with https and end in .ics',
+        error:
+          'That does not look like a calendar address. It should start with https and end in .ics',
       };
     }
     if (!this.vault.available) {
-      return { ok: false, error: 'This system cannot encrypt secrets, so the address was not saved.' };
+      return {
+        ok: false,
+        error: 'This system cannot encrypt secrets, so the address was not saved.',
+      };
     }
 
     const url = normaliseIcsUrl(rawUrl);

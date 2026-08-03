@@ -9,14 +9,7 @@ import {
   type MagicianPhase,
 } from './magician.js';
 
-const ALL: readonly MagicianPhase[] = [
-  'none',
-  'vanish',
-  'appear',
-  'hold',
-  'depart',
-  'restore',
-];
+const ALL: readonly MagicianPhase[] = ['none', 'vanish', 'appear', 'hold', 'depart', 'restore'];
 
 describe('magicianPose', () => {
   it('covers every phase', () => {

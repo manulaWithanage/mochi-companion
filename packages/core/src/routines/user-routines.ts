@@ -47,7 +47,21 @@ export interface UserRoutineInput {
 }
 
 export const EMOJI_OPTIONS: readonly string[] = [
-  '💧', '🏃', '🧘', '📝', '☕', '🍏', '🎯', '⚡', '🚶', '🍎', '🏋️', '📚', '👁️', '🧘‍♂️', '🍵'
+  '💧',
+  '🏃',
+  '🧘',
+  '📝',
+  '☕',
+  '🍏',
+  '🎯',
+  '⚡',
+  '🚶',
+  '🍎',
+  '🏋️',
+  '📚',
+  '👁️',
+  '🧘‍♂️',
+  '🍵',
 ];
 
 export const ROUTINE_PRESETS: readonly Omit<UserRoutine, 'id' | 'createdAt'>[] = [
@@ -71,7 +85,8 @@ export const ROUTINE_PRESETS: readonly Omit<UserRoutine, 'id' | 'createdAt'>[] =
     category: 'health',
     enabled: true,
     mochiReminder: true,
-    reminderMessage: "You've been focused a while — stand up, stretch your back and relax your eyes.",
+    reminderMessage:
+      "You've been focused a while — stand up, stretch your back and relax your eyes.",
   },
   {
     title: 'Mindful Reset',
@@ -106,9 +121,8 @@ const DAY_ORDER: readonly RoutineDay[] = ['sun', 'mon', 'tue', 'wed', 'thu', 'fr
 
 /** Every time a routine is set for, tolerating the legacy single `time`. */
 export function routineTimes(routine: UserRoutine): readonly string[] {
-  const times = routine.times !== undefined && routine.times.length > 0
-    ? routine.times
-    : [routine.time];
+  const times =
+    routine.times !== undefined && routine.times.length > 0 ? routine.times : [routine.time];
   return [...times].filter((t) => /^\d{1,2}:\d{2}$/.test(t)).sort();
 }
 
@@ -154,10 +168,7 @@ export function runsOnDay(routine: UserRoutine, day: Date): boolean {
  * Disabled ones sink to the bottom rather than disappearing: they are still
  * yours, and hiding them makes the toggle feel like a delete.
  */
-export function sortByNext(
-  routines: readonly UserRoutine[],
-  now: Date,
-): readonly UserRoutine[] {
+export function sortByNext(routines: readonly UserRoutine[], now: Date): readonly UserRoutine[] {
   return [...routines].sort((a, b) => {
     const nextA = nextOccurrence(a, now);
     const nextB = nextOccurrence(b, now);

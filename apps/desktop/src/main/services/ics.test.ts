@@ -11,8 +11,7 @@ const ics = (...events: readonly string[][]): string =>
     'END:VCALENDAR',
   ].join('\r\n');
 
-const AUG = (day: number, hour = 0, minute = 0): number =>
-  Date.UTC(2026, 7, day, hour, minute, 0);
+const AUG = (day: number, hour = 0, minute = 0): number => Date.UTC(2026, 7, day, hour, minute, 0);
 
 const WINDOW = { from: AUG(1), to: AUG(14) };
 
@@ -37,7 +36,12 @@ describe('parseIcs', () => {
     // DTSTART;VALUE=DATE has no time. Core excludes these from busy time, so
     // getting the flag wrong makes every day look fully booked.
     const events = parseIcs(
-      ics(['UID:b', 'SUMMARY:Public holiday', 'DTSTART;VALUE=DATE:20260805', 'DTEND;VALUE=DATE:20260806']),
+      ics([
+        'UID:b',
+        'SUMMARY:Public holiday',
+        'DTSTART;VALUE=DATE:20260805',
+        'DTEND;VALUE=DATE:20260806',
+      ]),
       WINDOW,
     );
     expect(events[0]?.allDay).toBe(true);
@@ -114,7 +118,13 @@ describe('parseIcs', () => {
     // otherwise spin until the process dies.
     const started = Date.now();
     const events = parseIcs(
-      ics(['UID:f', 'SUMMARY:Tick', 'DTSTART:20260801T000000Z', 'DTEND:20260801T000100Z', 'RRULE:FREQ=MINUTELY']),
+      ics([
+        'UID:f',
+        'SUMMARY:Tick',
+        'DTSTART:20260801T000000Z',
+        'DTEND:20260801T000100Z',
+        'RRULE:FREQ=MINUTELY',
+      ]),
       WINDOW,
     );
     expect(events.length).toBeGreaterThan(0);
@@ -160,9 +170,7 @@ describe('parseIcs', () => {
       WINDOW,
     );
     expect(events).toHaveLength(3);
-    const onTheFourth = events.filter(
-      (e) => e.startsAt >= AUG(4) && e.startsAt < AUG(5),
-    );
+    const onTheFourth = events.filter((e) => e.startsAt >= AUG(4) && e.startsAt < AUG(5));
     expect(onTheFourth).toHaveLength(1);
     expect(onTheFourth[0]?.startsAt).toBe(AUG(4, 14));
   });

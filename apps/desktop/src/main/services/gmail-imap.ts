@@ -292,10 +292,7 @@ export class GmailImapService {
         category,
       };
     } catch (error) {
-      console.error(
-        '[gmail-imap] single-message fetch failed:',
-        describeImapFailure(error).detail,
-      );
+      console.error('[gmail-imap] single-message fetch failed:', describeImapFailure(error).detail);
       if (client) {
         try {
           await client.logout();

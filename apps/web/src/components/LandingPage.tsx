@@ -185,242 +185,243 @@ export const LandingPage: React.FC = () => {
       <HeroDiorama />
 
       <div className="legacy-hero" aria-hidden="true">
-      {/* 🌸 FULL VIEWPORT (100vh) 3D PAPERCRAFT HERO SECTION */}
-      <section
-        style={{
-          position: 'relative',
-          width: '100%',
-          minHeight: 'calc(100vh - 75px)', // Industry standard 100% viewport height fill!
-          overflow: 'hidden',
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
-          padding: '48px 24px',
-        }}
-      >
-        {/* Full-Bleed Viewport Background Artwork */}
-        <img
-          src="/hero_papercraft_art.jpg"
-          alt="Mochi 3D Papercraft Origami Hero Background Art"
-          style={{
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            width: '100%',
-            height: '100%',
-            objectFit: 'cover',
-            objectPosition: 'center center',
-            display: 'block',
-            zIndex: 1,
-          }}
-        />
-
-        {/* 📄 ONE SINGLE UNIFIED COMPACT CRYSTAL GLASS CARD */}
-        <div
+        {/* 🌸 FULL VIEWPORT (100vh) 3D PAPERCRAFT HERO SECTION */}
+        <section
           style={{
             position: 'relative',
-            zIndex: 10,
-            maxWidth: '920px',
             width: '100%',
+            minHeight: 'calc(100vh - 75px)', // Industry standard 100% viewport height fill!
+            overflow: 'hidden',
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
-            textAlign: 'center',
-            background: 'rgba(255, 255, 255, 0.15)',
-            backdropFilter: 'blur(10px)',
-            WebkitBackdropFilter: 'blur(10px)',
-            borderRadius: '32px',
-            border: '1px solid rgba(255, 255, 255, 0.35)',
-            padding: '36px 44px 28px 44px',
-            boxShadow: '0 20px 60px rgba(0, 0, 0, 0.05), inset 0 1px 1px rgba(255, 255, 255, 0.7)',
+            justifyContent: 'center',
+            padding: '48px 24px',
           }}
         >
-          {/* Clean Badge Pill */}
+          {/* Full-Bleed Viewport Background Artwork */}
+          <img
+            src="/hero_papercraft_art.jpg"
+            alt="Mochi 3D Papercraft Origami Hero Background Art"
+            style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              width: '100%',
+              height: '100%',
+              objectFit: 'cover',
+              objectPosition: 'center center',
+              display: 'block',
+              zIndex: 1,
+            }}
+          />
+
+          {/* 📄 ONE SINGLE UNIFIED COMPACT CRYSTAL GLASS CARD */}
           <div
             style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '8px',
-              padding: '5px 16px',
-              borderRadius: '20px',
-              background: 'rgba(255, 255, 255, 0.65)',
-              backdropFilter: 'blur(8px)',
-              border: '1px solid rgba(79, 70, 229, 0.25)',
-              fontSize: '12px',
-              fontWeight: '700',
-              color: '#4f46e5',
-              letterSpacing: '0.02em',
-              marginBottom: '18px',
-              boxShadow: '0 4px 14px rgba(0, 0, 0, 0.04)',
-            }}
-          >
-            Super-Intelligent Desktop Workflow Companion
-          </div>
-
-          {/* Hero Title */}
-          <h1
-            style={{
-              fontSize: '50px',
-              fontWeight: '800',
-              lineHeight: '1.14',
-              marginBottom: '16px',
-              color: '#0f172a',
-              letterSpacing: '-0.03em',
-            }}
-          >
-            Work feels peaceful when your <span className="gradient-text">AI companion</span> sits
-            on your screen.
-          </h1>
-
-          <p
-            style={{
-              fontSize: '17px',
-              color: '#0f172a',
-              lineHeight: '1.55',
-              marginBottom: '26px',
-              fontWeight: '600',
-              maxWidth: '720px',
-              margin: '0 auto 26px auto',
-            }}
-          >
-            Mochi lives right on your computer screen. It logs your work hours with 1 click, reminds
-            you to drink water and enjoy breakfast, and keeps your workday calm, focused, and on
-            schedule.
-          </p>
-
-          {/* CTA Button Row */}
-          <div
-            style={{
-              display: 'flex',
-              gap: '16px',
-              flexWrap: 'wrap',
-              justifyContent: 'center',
-              marginBottom: '24px',
-            }}
-          >
-            <a
-              href="/Mochi-Setup.exe"
-              download
-              style={{
-                padding: '13px 30px',
-                fontSize: '15px',
-                fontWeight: '700',
-                borderRadius: '30px',
-                background: 'linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)',
-                color: '#ffffff',
-                textDecoration: 'none',
-                boxShadow: '0 10px 28px rgba(79, 70, 229, 0.35)',
-                display: 'inline-flex',
-                alignItems: 'center',
-              }}
-            >
-              Download Free for Windows
-            </a>
-
-            <a
-              href="#privacy"
-              style={{
-                padding: '13px 26px',
-                fontSize: '15px',
-                fontWeight: '700',
-                borderRadius: '30px',
-                background: 'rgba(255, 255, 255, 0.85)',
-                border: '1px solid rgba(0, 0, 0, 0.1)',
-                color: '#0f172a',
-                boxShadow: '0 4px 16px rgba(0, 0, 0, 0.04)',
-                textDecoration: 'none',
-                display: 'inline-flex',
-                alignItems: 'center',
-              }}
-            >
-              Private by Design
-            </a>
-          </div>
-
-          <div
-            style={{
-              display: 'flex',
-              flexWrap: 'wrap',
-              justifyContent: 'center',
-              gap: '10px 18px',
-              marginBottom: '22px',
-              color: '#0f172a',
-              fontSize: '12.5px',
-              fontWeight: '700',
-            }}
-          >
-            <span>Windows desktop app</span>
-            <span aria-hidden="true" style={{ color: '#64748b' }}>
-              •
-            </span>
-            <span>100% Free & Open-Source</span>
-            <span aria-hidden="true" style={{ color: '#64748b' }}>
-              •
-            </span>
-            <span>Your data stays 100% local</span>
-          </div>
-
-          {/* 🍡 INTERACTIVE MOCHI MASCOT & SPEECH BUBBLE */}
-          <div
-            style={{
+              position: 'relative',
+              zIndex: 10,
+              maxWidth: '920px',
+              width: '100%',
               display: 'flex',
               flexDirection: 'column',
               alignItems: 'center',
-              justifyContent: 'center',
-              width: '100%',
-              paddingTop: '20px',
-              borderTop: '1px solid rgba(0, 0, 0, 0.06)',
+              textAlign: 'center',
+              background: 'rgba(255, 255, 255, 0.15)',
+              backdropFilter: 'blur(10px)',
+              WebkitBackdropFilter: 'blur(10px)',
+              borderRadius: '32px',
+              border: '1px solid rgba(255, 255, 255, 0.35)',
+              padding: '36px 44px 28px 44px',
+              boxShadow:
+                '0 20px 60px rgba(0, 0, 0, 0.05), inset 0 1px 1px rgba(255, 255, 255, 0.7)',
             }}
           >
-            {/* Apple Liquid Glassmorphic Speech Bubble */}
+            {/* Clean Badge Pill */}
             <div
               style={{
-                background: 'rgba(255, 255, 255, 0.85)',
-                backdropFilter: 'blur(16px)',
-                WebkitBackdropFilter: 'blur(16px)',
-                color: '#0f172a',
-                padding: '9px 20px',
-                borderRadius: '24px',
-                fontSize: '13px',
-                fontWeight: '600',
-                maxWidth: '460px',
-                textAlign: 'center',
-                boxShadow:
-                  '0 12px 32px rgba(0, 0, 0, 0.1), inset 0 1px 2px rgba(255, 255, 255, 0.95)',
-                marginBottom: '10px',
-                position: 'relative',
-                border: '1px solid rgba(255, 255, 255, 0.95)',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '8px',
+                padding: '5px 16px',
+                borderRadius: '20px',
+                background: 'rgba(255, 255, 255, 0.65)',
+                backdropFilter: 'blur(8px)',
+                border: '1px solid rgba(79, 70, 229, 0.25)',
+                fontSize: '12px',
+                fontWeight: '700',
+                color: '#4f46e5',
+                letterSpacing: '0.02em',
+                marginBottom: '18px',
+                boxShadow: '0 4px 14px rgba(0, 0, 0, 0.04)',
               }}
             >
-              {speechMessage}
-              {/* Pointer Tail */}
-              <div
-                style={{
-                  position: 'absolute',
-                  bottom: '-6px',
-                  left: '50%',
-                  transform: 'translateX(-50%)',
-                  width: 0,
-                  height: 0,
-                  borderLeft: '6px solid transparent',
-                  borderRight: '6px solid transparent',
-                  borderTop: '6px solid rgba(255, 255, 255, 0.9)',
-                }}
-              ></div>
+              Super-Intelligent Desktop Workflow Companion
             </div>
 
-            {/* Live Interactive Mascot Canvas (Starts Sleeping ( ^_^ ) z Z) */}
-            <div style={{ filter: 'drop-shadow(0 10px 20px rgba(0, 0, 0, 0.1))' }}>
-              <LandingMascotCanvas
-                state={mascotState}
-                size={165}
-                onMascotClick={handleMascotClick}
-              />
+            {/* Hero Title */}
+            <h1
+              style={{
+                fontSize: '50px',
+                fontWeight: '800',
+                lineHeight: '1.14',
+                marginBottom: '16px',
+                color: '#0f172a',
+                letterSpacing: '-0.03em',
+              }}
+            >
+              Work feels peaceful when your <span className="gradient-text">AI companion</span> sits
+              on your screen.
+            </h1>
+
+            <p
+              style={{
+                fontSize: '17px',
+                color: '#0f172a',
+                lineHeight: '1.55',
+                marginBottom: '26px',
+                fontWeight: '600',
+                maxWidth: '720px',
+                margin: '0 auto 26px auto',
+              }}
+            >
+              Mochi lives right on your computer screen. It logs your work hours with 1 click,
+              reminds you to drink water and enjoy breakfast, and keeps your workday calm, focused,
+              and on schedule.
+            </p>
+
+            {/* CTA Button Row */}
+            <div
+              style={{
+                display: 'flex',
+                gap: '16px',
+                flexWrap: 'wrap',
+                justifyContent: 'center',
+                marginBottom: '24px',
+              }}
+            >
+              <a
+                href="/Mochi-Setup.exe"
+                download
+                style={{
+                  padding: '13px 30px',
+                  fontSize: '15px',
+                  fontWeight: '700',
+                  borderRadius: '30px',
+                  background: 'linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)',
+                  color: '#ffffff',
+                  textDecoration: 'none',
+                  boxShadow: '0 10px 28px rgba(79, 70, 229, 0.35)',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                }}
+              >
+                Download Free for Windows
+              </a>
+
+              <a
+                href="#privacy"
+                style={{
+                  padding: '13px 26px',
+                  fontSize: '15px',
+                  fontWeight: '700',
+                  borderRadius: '30px',
+                  background: 'rgba(255, 255, 255, 0.85)',
+                  border: '1px solid rgba(0, 0, 0, 0.1)',
+                  color: '#0f172a',
+                  boxShadow: '0 4px 16px rgba(0, 0, 0, 0.04)',
+                  textDecoration: 'none',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                }}
+              >
+                Private by Design
+              </a>
+            </div>
+
+            <div
+              style={{
+                display: 'flex',
+                flexWrap: 'wrap',
+                justifyContent: 'center',
+                gap: '10px 18px',
+                marginBottom: '22px',
+                color: '#0f172a',
+                fontSize: '12.5px',
+                fontWeight: '700',
+              }}
+            >
+              <span>Windows desktop app</span>
+              <span aria-hidden="true" style={{ color: '#64748b' }}>
+                •
+              </span>
+              <span>100% Free & Open-Source</span>
+              <span aria-hidden="true" style={{ color: '#64748b' }}>
+                •
+              </span>
+              <span>Your data stays 100% local</span>
+            </div>
+
+            {/* 🍡 INTERACTIVE MOCHI MASCOT & SPEECH BUBBLE */}
+            <div
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                width: '100%',
+                paddingTop: '20px',
+                borderTop: '1px solid rgba(0, 0, 0, 0.06)',
+              }}
+            >
+              {/* Apple Liquid Glassmorphic Speech Bubble */}
+              <div
+                style={{
+                  background: 'rgba(255, 255, 255, 0.85)',
+                  backdropFilter: 'blur(16px)',
+                  WebkitBackdropFilter: 'blur(16px)',
+                  color: '#0f172a',
+                  padding: '9px 20px',
+                  borderRadius: '24px',
+                  fontSize: '13px',
+                  fontWeight: '600',
+                  maxWidth: '460px',
+                  textAlign: 'center',
+                  boxShadow:
+                    '0 12px 32px rgba(0, 0, 0, 0.1), inset 0 1px 2px rgba(255, 255, 255, 0.95)',
+                  marginBottom: '10px',
+                  position: 'relative',
+                  border: '1px solid rgba(255, 255, 255, 0.95)',
+                }}
+              >
+                {speechMessage}
+                {/* Pointer Tail */}
+                <div
+                  style={{
+                    position: 'absolute',
+                    bottom: '-6px',
+                    left: '50%',
+                    transform: 'translateX(-50%)',
+                    width: 0,
+                    height: 0,
+                    borderLeft: '6px solid transparent',
+                    borderRight: '6px solid transparent',
+                    borderTop: '6px solid rgba(255, 255, 255, 0.9)',
+                  }}
+                ></div>
+              </div>
+
+              {/* Live Interactive Mascot Canvas (Starts Sleeping ( ^_^ ) z Z) */}
+              <div style={{ filter: 'drop-shadow(0 10px 20px rgba(0, 0, 0, 0.1))' }}>
+                <LandingMascotCanvas
+                  state={mascotState}
+                  size={165}
+                  onMascotClick={handleMascotClick}
+                />
+              </div>
             </div>
           </div>
-        </div>
-      </section>
+        </section>
       </div>
 
       {/* 🔮 SECTION 1: WHY MOCHI EXISTS — SYMMETRICAL 3D PAPERCRAFT CARDS WITH MATCHING ARTWORK BANNERS */}

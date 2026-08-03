@@ -1,7 +1,7 @@
 # Mochi Individual User Brain & Neural Knowledge Graph
 
 **Master Blueprint & Technical Architecture Document**
-*The Manula Neural Memory Architecture (MNMA)*
+_The Manula Neural Memory Architecture (MNMA)_
 
 ---
 
@@ -11,7 +11,7 @@ Mochi is designed to evolve from a desktop timer and assistant into a truly pers
 
 By building an Individual User Brain Engine (`@mochi/core/brain`), Mochi continuously learns how the user works, adapts its personality, coaching, and reminders to individual habits, and drafts messages matching the user's exact writing style, keeping all raw activity data on the user's local machine.
 
-**What "better" actually means here.** The point of this architecture is *output quality*, not saved money. A personalized draft that needs two edits instead of ten is the win. Token savings are real but small, and the document is careful not to lean on them (see §2.4).
+**What "better" actually means here.** The point of this architecture is _output quality_, not saved money. A personalized draft that needs two edits instead of ten is the win. Token savings are real but small, and the document is careful not to lean on them (see §2.4).
 
 ---
 
@@ -41,19 +41,19 @@ By building an Individual User Brain Engine (`@mochi/core/brain`), Mochi continu
 
 ### 2.1 Tier 0 exists because most of this is arithmetic, not inference
 
-The original design gave the small model every deduction to make, including things like *"peak energy window confirmed: 2 PM – 4 PM."* That is a median and a histogram. TypeScript computes it exactly, in microseconds, and cannot get it wrong.
+The original design gave the small model every deduction to make, including things like _"peak energy window confirmed: 2 PM – 4 PM."_ That is a median and a histogram. TypeScript computes it exactly, in microseconds, and cannot get it wrong.
 
 So the split is:
 
-| Question | Who answers it | Why |
-|---|---|---|
-| Median session length | **Tier 0** (TypeScript) | Arithmetic |
-| Peak focus window | **Tier 0** | Histogram over start times |
-| Fatigue threshold | **Tier 0** | Where completion rate drops |
-| Streaks, deep-work ratio | **Tier 0** | Counting |
-| "Does this person write short bullets or long paragraphs?" | **Tier 1** (SLM) | Genuinely linguistic |
-| "Is `Untitled-3.psd` deep work or messing about?" | **Tier 1** | Needs world knowledge |
-| "Draft this email as me" | **Tier 2** | Needs real fluency |
+| Question                                                   | Who answers it          | Why                         |
+| ---------------------------------------------------------- | ----------------------- | --------------------------- |
+| Median session length                                      | **Tier 0** (TypeScript) | Arithmetic                  |
+| Peak focus window                                          | **Tier 0**              | Histogram over start times  |
+| Fatigue threshold                                          | **Tier 0**              | Where completion rate drops |
+| Streaks, deep-work ratio                                   | **Tier 0**              | Counting                    |
+| "Does this person write short bullets or long paragraphs?" | **Tier 1** (SLM)        | Genuinely linguistic        |
+| "Is `Untitled-3.psd` deep work or messing about?"          | **Tier 1**              | Needs world knowledge       |
+| "Draft this email as me"                                   | **Tier 2**              | Needs real fluency          |
 
 > **NOTE**
 > This matters more than it looks. Narrowing Tier 1 to the fuzzy cases means most users get a working brain with **no local model installed at all** — Tier 0 alone produces peak windows, session habits and routine patterns. The SLM becomes an upgrade that improves writing-style matching, not a hard dependency. It also deletes an entire class of bug: a model cannot mis-deduce a number it was never asked about.
@@ -73,7 +73,7 @@ Following MemGPT (Packer et al., UC Berkeley, 2023):
 
 The earlier draft of this document claimed 85–90% token cost reduction. That figure does not survive scrutiny and has been removed.
 
-The honest comparison is not *"raw logs versus 100 tokens"* — nobody would ship raw logs. It is *"a generic system prompt versus a personalized one"*, and both are about the same size. With prompt caching, repeated context is close to free anyway.
+The honest comparison is not _"raw logs versus 100 tokens"_ — nobody would ship raw logs. It is _"a generic system prompt versus a personalized one"_, and both are about the same size. With prompt caching, repeated context is close to free anyway.
 
 > **IMPORTANT**
 > Justify this architecture on **quality of output**, not on cost. The measurable claim is in §9: the number of edits the user makes to a Mochi draft should fall over time. That is the number that matters, and unlike a cost percentage, it is testable.
@@ -122,7 +122,7 @@ The graph connects data points gathered from local OS activity, time tracking, t
 ## 4. Privacy & Local Execution Standards (Rule 1 & Rule 2)
 
 > **IMPORTANT**
-> **Be precise here.** The earlier draft said no personal activity or writing samples are *ever* uploaded. That was not true, because §7.2's whole purpose is sending a profile summary to a cloud model. Overclaiming privacy is worse than claiming less and meaning it.
+> **Be precise here.** The earlier draft said no personal activity or writing samples are _ever_ uploaded. That was not true, because §7.2's whole purpose is sending a profile summary to a cloud model. Overclaiming privacy is worse than claiming less and meaning it.
 
 The accurate two-tier statement:
 
@@ -148,7 +148,7 @@ Storage: the graph is written with `safeStorage` encryption, the same as API key
 
 > Implementation progress lives in `ROADMAP.md`, not here. An architecture document that also tracks status rots twice as fast.
 
-**Phase A — pure logic, no model required** *(implemented)*
+**Phase A — pure logic, no model required** _(implemented)_
 
 1. `@mochi/core/brain/graph.ts` — typed node and edge schema, traversal.
 2. `@mochi/core/brain/confidence.ts` — the single evidence model (§7.4).
@@ -249,21 +249,21 @@ MNMA is a purpose-built, on-device, typed behavioural knowledge graph, continuou
 ### 7.2 Related work, and what is actually new here
 
 > **IMPORTANT**
-> Positioning this accurately makes it *stronger*, not weaker. The earlier draft said MNMA "is not derived from any existing tool or framework" — in a document that cites MemGPT two pages earlier. A reviewer spots that immediately, and it costs more credibility than the claim buys.
+> Positioning this accurately makes it _stronger_, not weaker. The earlier draft said MNMA "is not derived from any existing tool or framework" — in a document that cites MemGPT two pages earlier. A reviewer spots that immediately, and it costs more credibility than the claim buys.
 
 **Prior art this builds on, openly:**
 
-| Work | What it established |
-|---|---|
-| **MemGPT** (Packer et al., UC Berkeley, 2023) | Tiered memory for LLM agents: working context vs. recall vs. archival |
+| Work                                                                                              | What it established                                                                                                      |
+| ------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| **MemGPT** (Packer et al., UC Berkeley, 2023)                                                     | Tiered memory for LLM agents: working context vs. recall vs. archival                                                    |
 | **Zep / Graphiti** ([arXiv:2501.13956](https://arxiv.org/pdf/2501.13956), Rasmussen et al., 2025) | Temporal knowledge graph for agent memory; typed edges with validity intervals, expiring facts rather than deleting them |
-| **Ebbinghaus** (1885) | The forgetting curve, `R = e^(-t/S)` — the basis for evidence decay |
-| **Karpathy's LLM-as-OS** | The framing in §7.3 |
+| **Ebbinghaus** (1885)                                                                             | The forgetting curve, `R = e^(-t/S)` — the basis for evidence decay                                                      |
+| **Karpathy's LLM-as-OS**                                                                          | The framing in §7.3                                                                                                      |
 
 **What MNMA contributes as a combination:**
 
 1. **A three-tier split where deterministic code outranks both models.** Tier 0 owns every statistic; the SLM is confined to linguistic judgement. Most memory systems send everything through a model.
-2. **A small *local* model as the writer and a large *remote* model as the reader**, with a hard token contract between them. Zep and MemGPT assume cloud models throughout.
+2. **A small _local_ model as the writer and a large _remote_ model as the reader**, with a hard token contract between them. Zep and MemGPT assume cloud models throughout.
 3. **Desktop-only, single-user, zero-server.** No account, no sync, no vector database — a single encrypted file the user owns outright.
 4. **One unified evidence model** (§7.4) covering reinforcement, decay and contradiction, rather than three separate mechanisms.
 
@@ -271,13 +271,13 @@ That is a genuine and defensible contribution. It does not require claiming the 
 
 ### 7.3 Mapping to Karpathy's LLM OS
 
-| Karpathy's LLM OS concept | MNMA equivalent |
-|---|---|
-| CPU (reasoning engine) | Executive Brain (user's configured strong model) |
-| RAM (context window) | The assembled MNMA context package |
-| Disk / file system | The MNMA neural graph (encrypted `brain.json`) |
-| Background OS process | Tier 0 extractor + resident Subconscious SLM |
-| System calls | Mochi's IPC handlers (sessions, routines, drafts) |
+| Karpathy's LLM OS concept | MNMA equivalent                                   |
+| ------------------------- | ------------------------------------------------- |
+| CPU (reasoning engine)    | Executive Brain (user's configured strong model)  |
+| RAM (context window)      | The assembled MNMA context package                |
+| Disk / file system        | The MNMA neural graph (encrypted `brain.json`)    |
+| Background OS process     | Tier 0 extractor + resident Subconscious SLM      |
+| System calls              | Mochi's IPC handlers (sessions, routines, drafts) |
 
 ### 7.4 The MNMA Design Laws
 
@@ -418,17 +418,17 @@ The brain will want to say things — coaching, reminders, observations.
 
 ### 8.11 Complexity summary
 
-| # | Complexity | Severity | Solution |
-|---|---|---|---|
-| 1 | OS app sensing vs. zero native deps | 🔴 **High** | Explicit decision required; everything else works without it |
-| 2 | Cold start (empty graph) | 🔴 High | Onboarding seeds, exempt from the usability floor |
-| 3 | Behaviour drift | 🟡 Medium | Falls out of the Law 2 evidence model; no separate mechanism |
-| 4 | SLM inference mistakes | 🟡 Medium | Tier 0 removes numeric errors; schema guard catches the rest |
-| 5 | Graph bloat | 🟡 Medium | Decay-based pruning + compaction; in-memory reads |
-| 6 | Token budget drift | 🟡 Medium | Hard ceiling, priority-ranked assembly |
-| 7 | Nudge spam | 🟡 Medium | Everything routes through the interruption governor |
-| 8 | Multi-device / data loss | 🟢 Low | Optional encrypted export and import |
-| 9 | Hallucination leakage | 🟢 Low | Weak prior + provenance tiers + quarantine |
+| #   | Complexity                          | Severity    | Solution                                                     |
+| --- | ----------------------------------- | ----------- | ------------------------------------------------------------ |
+| 1   | OS app sensing vs. zero native deps | 🔴 **High** | Explicit decision required; everything else works without it |
+| 2   | Cold start (empty graph)            | 🔴 High     | Onboarding seeds, exempt from the usability floor            |
+| 3   | Behaviour drift                     | 🟡 Medium   | Falls out of the Law 2 evidence model; no separate mechanism |
+| 4   | SLM inference mistakes              | 🟡 Medium   | Tier 0 removes numeric errors; schema guard catches the rest |
+| 5   | Graph bloat                         | 🟡 Medium   | Decay-based pruning + compaction; in-memory reads            |
+| 6   | Token budget drift                  | 🟡 Medium   | Hard ceiling, priority-ranked assembly                       |
+| 7   | Nudge spam                          | 🟡 Medium   | Everything routes through the interruption governor          |
+| 8   | Multi-device / data loss            | 🟢 Low      | Optional encrypted export and import                         |
+| 9   | Hallucination leakage               | 🟢 Low      | Weak prior + provenance tiers + quarantine                   |
 
 ---
 
@@ -444,13 +444,13 @@ Record the generated draft, record the sent version, store the normalized Levens
 
 Supporting counters, all cheap:
 
-| Metric | What a good trend looks like |
-|---|---|
-| Draft edit distance | Falling |
-| Nudges dismissed vs. acted on | Dismissal rate falling |
-| Corrections in the Memory tab | Falling after the first fortnight |
-| Edges above the usability floor | Rising, then plateauing |
-| Context package size | Flat — pinned by the ceiling |
+| Metric                          | What a good trend looks like      |
+| ------------------------------- | --------------------------------- |
+| Draft edit distance             | Falling                           |
+| Nudges dismissed vs. acted on   | Dismissal rate falling            |
+| Corrections in the Memory tab   | Falling after the first fortnight |
+| Edges above the usability floor | Rising, then plateauing           |
+| Context package size            | Flat — pinned by the ceiling      |
 
 ### 9.2 The Memory tab is part of the architecture
 

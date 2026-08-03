@@ -150,8 +150,9 @@ function CalendarCard(): JSX.Element {
         <>
           <div style={{ fontSize: 12, color: C.dim, lineHeight: 1.6, marginBottom: 12 }}>
             In Google Calendar open <strong style={{ color: C.text }}>Settings</strong>, pick your
-            calendar, scroll to <strong style={{ color: C.text }}>Secret address in iCal format</strong>{' '}
-            and copy it. Read-only, no setup, nothing to publish.
+            calendar, scroll to{' '}
+            <strong style={{ color: C.text }}>Secret address in iCal format</strong> and copy it.
+            Read-only, no setup, nothing to publish.
           </div>
 
           <span style={label}>Secret iCal address</span>

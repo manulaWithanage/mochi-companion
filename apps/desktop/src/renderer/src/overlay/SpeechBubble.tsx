@@ -74,7 +74,8 @@ export function SpeechBubble({ text, onDismiss, onHoverChange }: Props): JSX.Ele
         padding: '11px 15px',
         borderRadius: 16,
         borderBottomRightRadius: 5,
-        background: 'linear-gradient(145deg, rgba(48, 37, 58, 0.98) 0%, rgba(28, 21, 35, 0.98) 100%)',
+        background:
+          'linear-gradient(145deg, rgba(48, 37, 58, 0.98) 0%, rgba(28, 21, 35, 0.98) 100%)',
         color: '#ffffff',
         font: '600 13px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif',
         border: '1px solid rgba(242, 166, 179, 0.45)',

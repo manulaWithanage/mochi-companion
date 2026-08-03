@@ -310,11 +310,7 @@ export function samplesToSpans(
     null;
 
   for (const sample of ordered) {
-    if (
-      current !== null &&
-      current.app === sample.app &&
-      sample.at - current.last <= maxGapMs
-    ) {
+    if (current !== null && current.app === sample.app && sample.at - current.last <= maxGapMs) {
       current.last = sample.at;
       continue;
     }
@@ -381,9 +377,7 @@ export interface CategoryTotal {
 
 /** Always every category, in a fixed order, so a legend cannot reflow. */
 export function totalsByCategory(spans: readonly ActivitySpan[]): readonly CategoryTotal[] {
-  const totals = new Map<ActivityCategory, number>(
-    ACTIVITY_CATEGORIES.map((c) => [c.id, 0]),
-  );
+  const totals = new Map<ActivityCategory, number>(ACTIVITY_CATEGORIES.map((c) => [c.id, 0]));
   for (const span of spans) {
     totals.set(span.category, (totals.get(span.category) ?? 0) + spanMs(span));
   }
@@ -497,7 +491,11 @@ export function parseAppCategories(
   asked: readonly string[],
 ): Readonly<Record<string, ActivityCategory>> {
   // Models wrap JSON in fences however firmly they are told not to.
-  const cleaned = text.trim().replace(/^```(?:json)?/i, '').replace(/```$/, '').trim();
+  const cleaned = text
+    .trim()
+    .replace(/^```(?:json)?/i, '')
+    .replace(/```$/, '')
+    .trim();
   const start = cleaned.indexOf('{');
   const end = cleaned.lastIndexOf('}');
   if (start < 0 || end <= start) return {};

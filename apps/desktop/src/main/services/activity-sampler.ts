@@ -145,7 +145,12 @@ export class WindowsForegroundSource implements ForegroundSource {
       // stdin parsing and the quoting minefield.
       this.child = spawn(
         'powershell.exe',
-        ['-NoProfile', '-NonInteractive', '-EncodedCommand', encodeScript(this.intervalSeconds, this.withTitle)],
+        [
+          '-NoProfile',
+          '-NonInteractive',
+          '-EncodedCommand',
+          encodeScript(this.intervalSeconds, this.withTitle),
+        ],
         { windowsHide: true, stdio: ['ignore', 'pipe', 'pipe'] },
       );
     } catch {
@@ -182,7 +187,6 @@ export class WindowsForegroundSource implements ForegroundSource {
       this.restartTimer = setTimeout(() => this.start(onSample), RESTART_DELAY_MS);
       this.restartTimer.unref?.();
     });
-
   }
 
   stop(): void {
