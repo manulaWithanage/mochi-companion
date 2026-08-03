@@ -16,12 +16,15 @@ import { AiSection } from './AiSection.js';
 import { GmailTab } from './tabs/GmailTab.js';
 import { CalendarTab } from './tabs/CalendarTab.js';
 import { ActivityTab } from './tabs/ActivityTab.js';
+import { TasksTab } from './tabs/TasksTab.js';
 
-type TabId = 'today' | 'calendar' | 'activity' | 'time' | 'routines' | 'mochi' | 'ai' | 'gmail';
+type TabId =
+  'today' | 'calendar' | 'tasks' | 'activity' | 'time' | 'routines' | 'mochi' | 'ai' | 'gmail';
 
 const TABS: readonly { id: TabId; label: string }[] = [
   { id: 'today', label: 'Today' },
   { id: 'calendar', label: 'Calendar' },
+  { id: 'tasks', label: 'Tasks' },
   { id: 'time', label: 'Time' },
   { id: 'activity', label: 'Activity' },
   { id: 'routines', label: 'Routines' },
@@ -51,6 +54,25 @@ function renderTabIcon(id: TabId, active: boolean): JSX.Element {
         >
           <circle cx="12" cy="12" r="10" />
           <polyline points="12 6 12 12 16 14" />
+        </svg>
+      );
+    case 'tasks':
+      return (
+        <svg
+          width="17"
+          height="17"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke={strokeColor}
+          strokeWidth={strokeWidth}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          style={{ opacity }}
+        >
+          <polyline points="3 7 5 9 9 5" />
+          <polyline points="3 16 5 18 9 14" />
+          <line x1="13" y1="7" x2="21" y2="7" />
+          <line x1="13" y1="17" x2="21" y2="17" />
         </svg>
       );
     case 'calendar':
@@ -517,6 +539,7 @@ export function Dashboard(): JSX.Element {
         <div style={{ maxWidth: 960, margin: '0 auto' }}>
           {tab === 'today' && <TodayTab />}
           {tab === 'time' && <TimeTab />}
+          {tab === 'tasks' && <TasksTab />}
           {tab === 'routines' && <RoutinesTab />}
           {tab === 'mochi' && <MochiTab />}
           {tab === 'calendar' && <CalendarTab />}

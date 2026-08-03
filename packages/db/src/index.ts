@@ -159,6 +159,21 @@ export const MIGRATIONS: readonly Migration[] = [
       CREATE INDEX idx_activity_range ON activity_spans (started_at, ended_at);
     `,
   },
+  {
+    version: 5,
+    name: 'task-reminders',
+    up: `
+      -- Epoch ms for a spoken reminder, null for a silent task. Added rather
+      -- than folded into due_on: a due day groups the list and most tasks have
+      -- one, while a reminder is an exact moment and is opt-in. Existing rows
+      -- get NULL, which is exactly "no reminder".
+      ALTER TABLE tasks ADD COLUMN remind_at INTEGER;
+
+      -- The scheduler asks "anything due between then and now" every tick, so
+      -- the reminder time is the index. Open tasks only.
+      CREATE INDEX idx_tasks_remind ON tasks (remind_at) WHERE remind_at IS NOT NULL;
+    `,
+  },
 ];
 
 export const LATEST_VERSION: number = MIGRATIONS.reduce(

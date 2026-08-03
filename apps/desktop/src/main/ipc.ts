@@ -19,6 +19,7 @@ import type {
 import {
   LOCAL_PROVIDERS,
   createTask,
+  MAX_TASK_TITLE,
   isActivityCategoryId,
   parseCategory,
   parseHhMm,
@@ -120,19 +121,52 @@ export function registerIpc(ctx: IpcContext): void {
   // ---- tasks -------------------------------------------------------------
   ipcMain.handle('tasks:list', () => ctx.storage.listTasks());
 
-  ipcMain.handle('tasks:create', async (_e, title: unknown, dueOn: unknown, projectId: unknown) => {
-    const result = createTask({
-      id: randomUUID(),
-      title: asString(title, ''),
-      now: new Date(),
-      // undefined means today; explicit null means someday.
-      ...(dueOn === null || typeof dueOn === 'string' ? { dueOn } : {}),
-      ...(typeof projectId === 'string' ? { projectId } : {}),
-    });
-    if (!result.ok) return null;
-    await ctx.storage.saveTask(result.task);
-    ctx.notifyTasks();
-    return result.task;
+  ipcMain.handle(
+    'tasks:create',
+    async (_e, title: unknown, dueOn: unknown, projectId: unknown, remindAt: unknown) => {
+      const result = createTask({
+        id: randomUUID(),
+        title: asString(title, ''),
+        now: new Date(),
+        // undefined means today; explicit null means someday.
+        ...(dueOn === null || typeof dueOn === 'string' ? { dueOn } : {}),
+        ...(typeof projectId === 'string' ? { projectId } : {}),
+        // Anything that is not a finite number is "no reminder" rather than an
+        // Invalid Date the scheduler would compare against for ever.
+        ...(typeof remindAt === 'number' && Number.isFinite(remindAt) ? { remindAt } : {}),
+      });
+      if (!result.ok) return null;
+      await ctx.storage.saveTask(result.task);
+      ctx.notifyTasks();
+      return result.task;
+    },
+  );
+
+  /** Edit an existing task in place — title, day, or reminder. */
+  ipcMain.handle('tasks:update', async (_e, id: unknown, patch: unknown) => {
+    if (typeof id !== 'string') return ctx.notifyTasks();
+    const tasks = await ctx.storage.listTasks();
+    const task = tasks.find((t) => t.id === id);
+    if (task === undefined) return ctx.notifyTasks();
+
+    const fields = (patch ?? {}) as Record<string, unknown>;
+    const title = typeof fields['title'] === 'string' ? fields['title'].trim() : task.title;
+    if (title.length === 0 || title.length > MAX_TASK_TITLE) return ctx.notifyTasks();
+
+    const dueOn =
+      fields['dueOn'] === null || typeof fields['dueOn'] === 'string'
+        ? (fields['dueOn'] as string | null)
+        : task.dueOn;
+
+    const remindAt =
+      fields['remindAt'] === null
+        ? null
+        : typeof fields['remindAt'] === 'number' && Number.isFinite(fields['remindAt'])
+          ? fields['remindAt']
+          : task.remindAt;
+
+    await ctx.storage.saveTask({ ...task, title, dueOn, remindAt });
+    return ctx.notifyTasks();
   });
 
   ipcMain.handle('tasks:toggle', async (_e, id: unknown) => {

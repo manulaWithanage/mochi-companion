@@ -158,8 +158,18 @@ export interface MochiBridge {
 
   readonly tasks: {
     list(): Promise<readonly Task[]>;
-    /** Omit dueOn for today; pass null for someday. */
-    create(title: string, dueOn?: string | null, projectId?: string | null): Promise<Task | null>;
+    /** Omit dueOn for today; pass null for someday. `remindAt` is epoch ms. */
+    create(
+      title: string,
+      dueOn?: string | null,
+      projectId?: string | null,
+      remindAt?: number | null,
+    ): Promise<Task | null>;
+    /** Edit in place. Omitted fields are left as they are. */
+    update(
+      id: string,
+      patch: { title?: string; dueOn?: string | null; remindAt?: number | null },
+    ): Promise<readonly Task[]>;
     toggle(id: string): Promise<readonly Task[]>;
     remove(id: string): Promise<readonly Task[]>;
     /** Move an overdue task to today. */

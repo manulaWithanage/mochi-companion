@@ -36,6 +36,7 @@ import { SetupWindow } from './windows/setup.js';
 import { MochiTray } from './tray.js';
 import { RoutineService } from './services/routine-service.js';
 import { UserRoutineScheduler } from './services/user-routine-scheduler.js';
+import { TaskReminderScheduler } from './services/task-reminder-scheduler.js';
 import { LlmService } from './services/llm-service.js';
 import { KeyVault } from './storage/key-vault.js';
 import { ProviderService } from './services/provider-service.js';
@@ -139,6 +140,9 @@ async function bootstrap(): Promise<void> {
 
   const userRoutineScheduler = new UserRoutineScheduler(bus, userRoutines, settings, overlay);
   userRoutineScheduler.start();
+
+  const taskReminders = new TaskReminderScheduler(bus, storage, settings, overlay);
+  taskReminders.start();
 
   const google = new GoogleService(join(app.getPath('userData'), 'google.enc.json'));
   // Local base URLs are a host and port, not a secret, so they live in
@@ -414,6 +418,7 @@ async function bootstrap(): Promise<void> {
   app.on('before-quit', () => {
     void gmailManager.stop();
     userRoutineScheduler.stop();
+    taskReminders.stop();
     routines.stop();
     mascot.stop();
     tray.destroy();

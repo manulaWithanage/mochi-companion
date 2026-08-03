@@ -47,6 +47,7 @@ const task = (id: string, dueOn: string | null, doneAt: number | null = null): T
   id,
   title: id,
   projectId: null,
+  remindAt: null,
   dueOn,
   doneAt,
   createdAt: at(8),

@@ -2,14 +2,18 @@ import { describe, expect, it } from 'vitest';
 import {
   completedToday,
   createTask,
+  describeDue,
   dueToday,
   isOpen,
   MAX_TASK_TITLE,
   overdue,
+  planHeadline,
+  remindersDue,
   progressForToday,
   rollForward,
   someday,
   sortForDisplay,
+  upcomingReminders,
   taskDay,
   toggleDone,
   type Task,
@@ -26,6 +30,7 @@ const task = (over: Partial<Task> = {}): Task => ({
   doneAt: null,
   createdAt: now.getTime(),
   priority: 0,
+  remindAt: null,
   ...over,
 });
 
@@ -163,5 +168,117 @@ describe('rollForward', () => {
   it('leaves a completed task alone', () => {
     const done = task({ dueOn: '2026-01-02', doneAt: 123 });
     expect(rollForward(done, now).dueOn).toBe('2026-01-02');
+  });
+});
+
+describe('remindersDue', () => {
+  const at = (h: number, m = 0): number => new Date(2026, 0, 15, h, m).getTime();
+
+  it('returns reminders that have come due since the last delivery', () => {
+    const tasks = [
+      task({ id: 'past', remindAt: at(9) }),
+      task({ id: 'now', remindAt: at(10) }),
+      task({ id: 'later', remindAt: at(11) }),
+    ];
+    // Everything up to 09:30 has already been spoken.
+    expect(remindersDue(tasks, now, at(9, 30)).map((t) => t.id)).toEqual(['now']);
+  });
+
+  it('does not repeat one already delivered', () => {
+    const tasks = [task({ id: 'a', remindAt: at(10) })];
+    expect(remindersDue(tasks, now, at(10))).toEqual([]);
+  });
+
+  it('still fires one missed while the machine was asleep', () => {
+    // Two hours of ticks never happened; the reminder must not be swallowed.
+    const tasks = [task({ id: 'slept', remindAt: at(9) })];
+    expect(remindersDue(tasks, now, at(8)).map((t) => t.id)).toEqual(['slept']);
+  });
+
+  it('never reminds about a task already ticked off', () => {
+    const tasks = [task({ id: 'done', remindAt: at(9), doneAt: at(9, 30) })];
+    expect(remindersDue(tasks, now, at(8))).toEqual([]);
+  });
+
+  it('ignores tasks with no reminder set', () => {
+    expect(remindersDue([task({ remindAt: null })], now, 0)).toEqual([]);
+  });
+
+  it('delivers oldest first', () => {
+    const tasks = [task({ id: 'b', remindAt: at(9, 50) }), task({ id: 'a', remindAt: at(9, 10) })];
+    expect(remindersDue(tasks, now, at(9)).map((t) => t.id)).toEqual(['a', 'b']);
+  });
+});
+
+describe('upcomingReminders', () => {
+  it('lists only what is still ahead, soonest first', () => {
+    const at = (h: number): number => new Date(2026, 0, 15, h).getTime();
+    const tasks = [
+      task({ id: 'gone', remindAt: at(9) }),
+      task({ id: 'late', remindAt: at(16) }),
+      task({ id: 'soon', remindAt: at(11) }),
+      task({ id: 'done', remindAt: at(12), doneAt: at(11) }),
+    ];
+    expect(upcomingReminders(tasks, now).map((t) => t.id)).toEqual(['soon', 'late']);
+  });
+});
+
+describe('describeDue', () => {
+  it('prefers the reminder time when there is one', () => {
+    const in20 = new Date(2026, 0, 15, 10, 20).getTime();
+    expect(describeDue(task({ remindAt: in20 }), now)).toBe('in 20 min');
+  });
+
+  it('says how late a missed reminder is', () => {
+    const ago = new Date(2026, 0, 15, 9, 30).getTime();
+    expect(describeDue(task({ remindAt: ago }), now)).toBe('30 min ago');
+  });
+
+  it('falls back to the day when no time is set', () => {
+    expect(describeDue(task({ dueOn: TODAY, remindAt: null }), now)).toBe('today');
+    expect(describeDue(task({ dueOn: '2026-01-16', remindAt: null }), now)).toBe('tomorrow');
+    expect(describeDue(task({ dueOn: '2026-01-14', remindAt: null }), now)).toBe(
+      'overdue since 2026-01-14',
+    );
+  });
+
+  it('says someday rather than inventing a date', () => {
+    expect(describeDue(task({ dueOn: null, remindAt: null }), now)).toBe('someday');
+  });
+
+  it('names the weekday for something later this week', () => {
+    // 2026-01-18 is a Sunday.
+    expect(describeDue(task({ dueOn: '2026-01-18', remindAt: null }), now)).toBe('Sunday');
+  });
+});
+
+describe('planHeadline', () => {
+  it('says what is actually there rather than something encouraging', () => {
+    expect(planHeadline([], now)).toBe('Nothing on the list.');
+    expect(planHeadline([task({ dueOn: TODAY })], now)).toBe('One thing due today.');
+    expect(
+      planHeadline([task({ id: 'a', dueOn: TODAY }), task({ id: 'b', dueOn: TODAY })], now),
+    ).toBe('Two things due today.');
+  });
+
+  it('leads with overdue, because that is the thing worth knowing', () => {
+    const tasks = [task({ id: 'late', dueOn: '2026-01-14' }), task({ id: 'now', dueOn: TODAY })];
+    expect(planHeadline(tasks, now)).toBe('One overdue, 1 due today.');
+  });
+
+  it('does not claim a light day when things are overdue', () => {
+    const tasks = [task({ id: 'a', dueOn: '2026-01-10' }), task({ id: 'b', dueOn: '2026-01-11' })];
+    expect(planHeadline(tasks, now)).toBe('Two overdue tasks.');
+  });
+
+  it('separates an empty day from an empty list', () => {
+    // Something exists, just not for today — that is not "nothing on the list".
+    expect(planHeadline([task({ dueOn: null })], now)).toBe('Nothing due today, one waiting.');
+    expect(planHeadline([task({ doneAt: 1 })], now)).toBe('Nothing on the list.');
+  });
+
+  it('switches to numerals past nine', () => {
+    const many = Array.from({ length: 11 }, (_, i) => task({ id: `t${i}`, dueOn: TODAY }));
+    expect(planHeadline(many, now)).toBe('11 things due today.');
   });
 });

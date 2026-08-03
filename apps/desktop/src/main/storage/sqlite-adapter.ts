@@ -69,6 +69,7 @@ interface TaskRow {
   done_at: number | null;
   created_at: number;
   priority: number;
+  remind_at: number | null;
 }
 
 interface SessionRow {
@@ -162,6 +163,8 @@ const toTask = (row: TaskRow): Task => ({
   doneAt: row.done_at,
   createdAt: row.created_at,
   priority: row.priority,
+  // Rows written before migration 5 have no column value at all.
+  remindAt: row.remind_at ?? null,
 });
 
 const toSession = (row: SessionRow): WorkSession => ({
@@ -401,14 +404,15 @@ export class SqliteStorageAdapter implements StorageAdapter, EmailStore {
       ),
       pruneActivity: this.db.prepare(`DELETE FROM activity_spans WHERE ended_at < ?`),
       upsertTask: this.db.prepare(
-        `INSERT INTO tasks (id, title, project_id, due_on, done_at, created_at, priority)
-         VALUES (?, ?, ?, ?, ?, ?, ?)
+        `INSERT INTO tasks (id, title, project_id, due_on, done_at, created_at, priority, remind_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?)
          ON CONFLICT(id) DO UPDATE SET
            title      = excluded.title,
            project_id = excluded.project_id,
            due_on     = excluded.due_on,
            done_at    = excluded.done_at,
-           priority   = excluded.priority`,
+           priority   = excluded.priority,
+           remind_at  = excluded.remind_at`,
       ),
       deleteTask: this.db.prepare(`DELETE FROM tasks WHERE id = ?`),
       upsertEmail: this.db.prepare(
@@ -642,6 +646,7 @@ export class SqliteStorageAdapter implements StorageAdapter, EmailStore {
       task.doneAt,
       task.createdAt,
       task.priority,
+      task.remindAt,
     );
   }
 

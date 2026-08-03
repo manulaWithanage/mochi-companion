@@ -79,8 +79,10 @@ const bridge: MochiBridge = {
 
   tasks: {
     list: () => ipcRenderer.invoke('tasks:list') as Promise<readonly Task[]>,
-    create: (title, dueOn, projectId) =>
-      ipcRenderer.invoke('tasks:create', title, dueOn, projectId) as Promise<Task | null>,
+    create: (title, dueOn, projectId, remindAt) =>
+      ipcRenderer.invoke('tasks:create', title, dueOn, projectId, remindAt) as Promise<Task | null>,
+    update: (id, patch) =>
+      ipcRenderer.invoke('tasks:update', id, patch) as Promise<readonly Task[]>,
     toggle: (id) => ipcRenderer.invoke('tasks:toggle', id) as Promise<readonly Task[]>,
     remove: (id) => ipcRenderer.invoke('tasks:remove', id) as Promise<readonly Task[]>,
     rollForward: (id) => ipcRenderer.invoke('tasks:rollForward', id) as Promise<readonly Task[]>,
