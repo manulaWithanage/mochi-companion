@@ -221,50 +221,93 @@ function SettingsView(): JSX.Element {
           </div>
         </div>
 
-        {/* Sub-tab Switcher Pills */}
+        {/* Tactile Segmented Switch Buttons */}
         <div
           style={{
-            display: 'flex',
-            background: 'rgba(255, 255, 255, 0.04)',
-            border: `1px solid ${C.border}`,
-            borderRadius: 11,
+            display: 'inline-flex',
+            background: 'rgba(10, 8, 16, 0.75)',
+            border: '1px solid rgba(255, 255, 255, 0.1)',
+            borderRadius: 13,
             padding: 4,
             gap: 4,
+            boxShadow: 'inset 0 2px 6px rgba(0, 0, 0, 0.5)',
           }}
         >
           <button
             onClick={() => setSubTab('companion')}
             style={{
-              padding: '7px 18px',
-              borderRadius: 8,
-              border: 'none',
-              background: subTab === 'companion' ? C.accent : 'transparent',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8,
+              padding: '8px 18px',
+              borderRadius: 10,
+              border:
+                subTab === 'companion'
+                  ? '1px solid rgba(242, 166, 179, 0.45)'
+                  : '1px solid transparent',
+              background:
+                subTab === 'companion'
+                  ? 'linear-gradient(180deg, #2e263c 0%, #221a2e 100%)'
+                  : 'transparent',
               color: subTab === 'companion' ? '#ffffff' : C.dim,
               fontSize: 13,
-              fontWeight: 650,
+              fontWeight: subTab === 'companion' ? 700 : 550,
               cursor: 'pointer',
-              transition: 'all 140ms ease',
-              boxShadow: subTab === 'companion' ? '0 2px 8px rgba(242, 166, 179, 0.3)' : 'none',
+              transition: 'all 150ms cubic-bezier(0.16, 1, 0.3, 1)',
+              boxShadow:
+                subTab === 'companion'
+                  ? '0 3px 12px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.14)'
+                  : 'none',
             }}
           >
-            Companion & Skin
+            <span
+              style={{
+                width: 7,
+                height: 7,
+                borderRadius: '50%',
+                background: subTab === 'companion' ? C.accent : 'transparent',
+                boxShadow: subTab === 'companion' ? `0 0 8px ${C.accent}` : 'none',
+                transition: 'all 150ms ease',
+              }}
+            />
+            <span>Companion & Skin</span>
           </button>
           <button
             onClick={() => setSubTab('ai')}
             style={{
-              padding: '7px 18px',
-              borderRadius: 8,
-              border: 'none',
-              background: subTab === 'ai' ? C.accent : 'transparent',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8,
+              padding: '8px 18px',
+              borderRadius: 10,
+              border:
+                subTab === 'ai' ? '1px solid rgba(242, 166, 179, 0.45)' : '1px solid transparent',
+              background:
+                subTab === 'ai'
+                  ? 'linear-gradient(180deg, #2e263c 0%, #221a2e 100%)'
+                  : 'transparent',
               color: subTab === 'ai' ? '#ffffff' : C.dim,
               fontSize: 13,
-              fontWeight: 650,
+              fontWeight: subTab === 'ai' ? 700 : 550,
               cursor: 'pointer',
-              transition: 'all 140ms ease',
-              boxShadow: subTab === 'ai' ? '0 2px 8px rgba(242, 166, 179, 0.3)' : 'none',
+              transition: 'all 150ms cubic-bezier(0.16, 1, 0.3, 1)',
+              boxShadow:
+                subTab === 'ai'
+                  ? '0 3px 12px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.14)'
+                  : 'none',
             }}
           >
-            AI Providers
+            <span
+              style={{
+                width: 7,
+                height: 7,
+                borderRadius: '50%',
+                background: subTab === 'ai' ? C.accent : 'transparent',
+                boxShadow: subTab === 'ai' ? `0 0 8px ${C.accent}` : 'none',
+                transition: 'all 150ms ease',
+              }}
+            />
+            <span>AI Providers</span>
           </button>
         </div>
       </div>
