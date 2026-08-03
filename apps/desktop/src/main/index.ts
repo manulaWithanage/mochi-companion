@@ -63,8 +63,19 @@ app.commandLine.appendSwitch('disable-gpu-shader-disk-cache');
 
 // Single instance: two mascots writing the same database would corrupt
 // session state, and two overlays is nonsense anyway.
+//
+// app.exit() rather than app.quit(). quit() is a *request*: it returns
+// immediately, fires before-quit, and lets the rest of this module keep
+// running — so a losing instance would go on to open the database, start the
+// schedulers and register IPC while it was supposed to be leaving. The
+// symptom was a process that lived long enough to be counted but never showed
+// a window, which reads exactly like a silent failure to launch.
+//
+// A losing instance has done nothing yet, so there is nothing to unwind:
+// exit(0) stops here and now.
 if (!app.requestSingleInstanceLock()) {
-  app.quit();
+  console.log('[startup] another Mochi already holds the single-instance lock — exiting');
+  app.exit(0);
 }
 
 /**

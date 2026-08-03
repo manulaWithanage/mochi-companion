@@ -48,9 +48,38 @@ $running = @(Get-Process -Name 'Mochi*', 'electron' -ErrorAction SilentlyContinu
 if ($running.Count -gt 0) {
   foreach ($p in $running) { Write-Host "  stopping $($p.ProcessName) (pid $($p.Id))" }
   $running | Stop-Process -Force -ErrorAction SilentlyContinue
-  # Long enough for the SQLite lock on mochi.db and the dev server port to be
-  # released. 500ms was occasionally not.
-  Start-Sleep -Milliseconds 1200
+
+  # Wait for them to actually be gone rather than assuming a fixed delay covers
+  # it. This used to sleep 1200ms and hope.
+  #
+  # It matters more than it looks. A force-killed Electron does not release its
+  # single-instance lock the instant Stop-Process returns, and the next
+  # instance calls app.requestSingleInstanceLock() within a second of starting.
+  # Lose that race and the new instance exits immediately -- no window, no
+  # error, and a process list that still looks populated because the *old*
+  # processes are the ones you are seeing. It reads as "launched fine but
+  # nothing appeared", which is the hardest kind of failure to chase.
+  $deadline = (Get-Date).AddSeconds(15)
+  while ((Get-Date) -lt $deadline) {
+    if (@(Get-Process -Name 'Mochi*', 'electron' -ErrorAction SilentlyContinue).Count -eq 0) {
+      break
+    }
+    Start-Sleep -Milliseconds 150
+  }
+
+  $stubborn = @(Get-Process -Name 'Mochi*', 'electron' -ErrorAction SilentlyContinue)
+  if ($stubborn.Count -gt 0) {
+    # Say so rather than starting anyway and producing the exact silent failure
+    # this wait exists to prevent.
+    Write-Warning "$($stubborn.Count) process(es) survived 15s: $(($stubborn | ForEach-Object { "$($_.ProcessName)($($_.Id))" }) -join ', ')"
+    Write-Warning 'Starting anyway, but the new instance may lose the single-instance lock and exit without a window.'
+  } else {
+    Write-Host '  stopped cleanly'
+  }
+
+  # The handle is released as the process record disappears, but the OS is not
+  # obliged to have finished tearing down the named lock at that exact moment.
+  Start-Sleep -Milliseconds 400
 } else {
   Write-Host '  nothing running'
 }

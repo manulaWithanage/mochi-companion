@@ -18,6 +18,7 @@ export * from './routines/user-routines.js';
 export * from './llm/providers.js';
 export * from './llm/router.js';
 export * from './tasks/tasks.js';
+export * from './tasks/when.js';
 export * from './activity/activity.js';
 export * from './calendar/calendar.js';
 export * from './calendar/retrospective.js';
