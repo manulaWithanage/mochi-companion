@@ -17,6 +17,7 @@ import {
   type EmailCategory,
 } from '@mochi/core';
 import type { GmailCredentials } from '../storage/gmail-vault.js';
+import { describeImapFailure } from './imap-error.js';
 
 export interface EmailSummary {
   readonly uid: number;
@@ -226,8 +227,8 @@ export class GmailImapService {
         counts,
       };
     } catch (error) {
-      const message = error instanceof Error ? error.message : String(error);
-      console.error('[gmail-imap] metadata sync failed:', message);
+      const failure = describeImapFailure(error, 'Gmail sync error');
+      console.error('[gmail-imap] metadata sync failed:', failure.detail);
       if (client) {
         try {
           await client.logout();
@@ -235,12 +236,7 @@ export class GmailImapService {
           /* ignore logout errors */
         }
       }
-      return {
-        ok: false,
-        error: /authentication|535|AUTHENTICATIONFAILED/i.test(message)
-          ? 'Authentication failed. Check your Gmail App Password.'
-          : `Gmail sync error: ${message}`,
-      };
+      return { ok: false, error: failure.message };
     }
   }
 
@@ -296,8 +292,10 @@ export class GmailImapService {
         category,
       };
     } catch (error) {
-      const message = error instanceof Error ? error.message : String(error);
-      console.error('[gmail-imap] single-message fetch failed:', message);
+      console.error(
+        '[gmail-imap] single-message fetch failed:',
+        describeImapFailure(error).detail,
+      );
       if (client) {
         try {
           await client.logout();
@@ -361,8 +359,7 @@ export class GmailImapService {
       await client.logout();
       return [...latest].map(([threadId, sentAt]) => ({ threadId, sentAt }));
     } catch (error) {
-      const message = error instanceof Error ? error.message : String(error);
-      console.error('[gmail-imap] sent-thread sync failed:', message);
+      console.error('[gmail-imap] sent-thread sync failed:', describeImapFailure(error).detail);
       if (client) {
         try {
           await client.logout();
@@ -475,19 +472,11 @@ export class GmailImapService {
       await client.logout();
       return { ok: true, emails, counts };
     } catch (error) {
-      const message = error instanceof Error ? error.message : String(error);
-      console.error('[gmail-imap] fetch failed:', message);
-
-      // Friendly error messages for common auth failures
-      const friendlyError = /authentication|535|AUTHENTICATIONFAILED/i.test(message)
-        ? 'Authentication failed. Check your Gmail App Password.'
-        : /ENOTFOUND|ECONNREFUSED/i.test(message)
-          ? 'Could not reach Gmail. Check your internet connection.'
-          : // Category filtering is built on X-GM-RAW, a Gmail-only extension.
-            // Anything else answering on this host is not Gmail.
-            /X-GM-EXT-1|MissingServerExtension/i.test(message)
-            ? 'This server is not Gmail — inbox categories need Gmail’s IMAP extensions.'
-            : `Gmail connection error: ${message}`;
+      // Auth, unreachable-host and not-actually-Gmail are all told apart by
+      // describeImapFailure — including the case where the error carries no
+      // message at all, which is what a failed connect actually looks like.
+      const failure = describeImapFailure(error, 'Gmail connection error');
+      console.error('[gmail-imap] fetch failed:', failure.detail);
 
       if (client) {
         try {
@@ -496,7 +485,7 @@ export class GmailImapService {
           /* ignore logout errors */
         }
       }
-      return { ok: false, error: friendlyError };
+      return { ok: false, error: failure.message };
     }
   }
 
@@ -548,8 +537,8 @@ export class GmailImapService {
 
       return { ok: true };
     } catch (error) {
-      const message = error instanceof Error ? error.message : String(error);
-      console.error('[gmail-imap] save draft failed:', message);
+      const failure = describeImapFailure(error, 'Failed to save draft');
+      console.error('[gmail-imap] save draft failed:', failure.detail);
 
       if (client) {
         try {
@@ -558,7 +547,7 @@ export class GmailImapService {
           /* ignore */
         }
       }
-      return { ok: false, error: `Failed to save draft: ${message}` };
+      return { ok: false, error: failure.message };
     }
   }
 
@@ -582,10 +571,14 @@ export class GmailImapService {
       await client.logout();
       return { ok: true };
     } catch (error) {
-      const message = error instanceof Error ? error.message : String(error);
-      const friendlyError = /authentication|535|AUTHENTICATIONFAILED/i.test(message)
-        ? 'Authentication failed. Make sure IMAP is enabled in Gmail and the App Password is correct.'
-        : `Connection error: ${message}`;
+      // Deliberately not the shared auth wording. This runs while the user is
+      // setting the account up, when "IMAP is switched off" is as likely as a
+      // mistyped password and is the harder of the two to guess at.
+      const failure = describeImapFailure(error, 'Connection error');
+      const friendlyError =
+        failure.kind === 'auth'
+          ? 'Authentication failed. Make sure IMAP is enabled in Gmail and the App Password is correct.'
+          : failure.message;
       if (client) {
         try {
           await client.logout();

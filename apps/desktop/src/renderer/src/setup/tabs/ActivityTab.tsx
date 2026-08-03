@@ -345,7 +345,7 @@ export function ActivityTab(): JSX.Element {
         style={{
           display: 'flex',
           alignItems: 'center',
-          justify: 'space-between',
+          justifyContent: 'space-between',
           padding: '10px 0 18px',
           marginBottom: 16,
           borderBottom: `1px solid ${C.border}`,
@@ -707,7 +707,7 @@ export function ActivityTab(): JSX.Element {
             background: 'rgba(255, 255, 255, 0.02)',
             display: 'flex',
             alignItems: 'center',
-            justify: 'space-between',
+            justifyContent: 'space-between',
             gap: 14,
           }}
         >

@@ -10,6 +10,7 @@ import { powerMonitor } from 'electron';
 import type { CachedEmail, EmailStore, GmailSyncStatus } from '@mochi/core';
 import type { GmailCredentials } from '../storage/gmail-vault.js';
 import type { GmailImapService } from './gmail-imap.js';
+import { describeImapFailure } from './imap-error.js';
 
 const RECONCILE_INTERVAL_MS = 15 * 60_000;
 const IDLE_RESTART_MS = 25 * 60_000;
@@ -184,7 +185,7 @@ export class GmailSyncService {
         this.scheduleChangeSync();
       });
       client.on('error', (error) => {
-        this.lastError = `Gmail watcher error: ${error.message}`;
+        this.lastError = describeImapFailure(error, 'Gmail watcher error').message;
         this.emitStatus();
       });
       client.on('close', () => {
@@ -207,8 +208,7 @@ export class GmailSyncService {
         this.watcher = null;
       }
       this.watching = false;
-      const message = error instanceof Error ? error.message : String(error);
-      this.lastError = `Gmail watcher error: ${message}`;
+      this.lastError = describeImapFailure(error, 'Gmail watcher error').message;
       this.emitStatus();
       this.scheduleReconnect();
     }
