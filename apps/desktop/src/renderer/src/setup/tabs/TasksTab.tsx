@@ -548,7 +548,7 @@ export function TasksTab(): JSX.Element {
               gap: 6,
             }}
           >
-            {isTimerRunning ? '⏹ Pause Focus' : '⚡ Start focus session'}
+            {isTimerRunning ? 'Pause focus' : 'Start focus session'}
           </button>
         </div>
       </div>
@@ -608,10 +608,6 @@ export function TasksTab(): JSX.Element {
 
         {/*
           What the typed text was understood to mean.
-
-          Shown rather than applied silently: a composer that quietly rewrites
-          your input is worse than one that does nothing. The matched words are
-          quoted back, and the chip is clickable to undo it.
         */}
         {detected && (
           <div
@@ -637,7 +633,7 @@ export function TasksTab(): JSX.Element {
                 fontWeight: 600,
               }}
             >
-              {parsed.remindAt === null ? '📅' : '⏰'} {describeWhen(parsed, now)}
+              {parsed.remindAt === null ? 'Due' : 'Remind'} {describeWhen(parsed, now)}
             </span>
             <span>
               from “{parsed.matched}” — saving as{' '}
@@ -801,7 +797,7 @@ export function TasksTab(): JSX.Element {
 
             <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                <span style={{ fontSize: 12, color: C.dim }}>📅 Exact Date:</span>
+                <span style={{ fontSize: 12, color: C.dim }}>Date:</span>
                 <input
                   type="date"
                   title="Due date"
@@ -821,7 +817,7 @@ export function TasksTab(): JSX.Element {
               </div>
 
               <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                <span style={{ fontSize: 12, color: C.dim }}>⏰ Exact Time:</span>
+                <span style={{ fontSize: 12, color: C.dim }}>Time:</span>
                 <input
                   type="time"
                   title={dueDay.length === 0 ? 'Pick a date first' : 'Remind me at this time'}
@@ -1027,7 +1023,7 @@ export function TasksTab(): JSX.Element {
                           style={{ fontSize: 12, color: C.accent, flexShrink: 0 }}
                           title="Mochi will remind you"
                         >
-                          ⏰ {formatTimeOnly(task.remindAt)}
+                          remind {formatTimeOnly(task.remindAt)}
                         </span>
                       )}
 
@@ -1125,7 +1121,7 @@ export function TasksTab(): JSX.Element {
                                   color: C.faint,
                                 }}
                               >
-                                🗑
+                                Delete
                               </button>
                             </>
                           )}
