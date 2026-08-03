@@ -7,23 +7,39 @@ import type {
   UserRoutineInput,
 } from '@mochi/core';
 import {
+  describeDays,
   describeNext,
   EMOJI_OPTIONS,
   nextOccurrence,
   ROUTINE_PRESETS,
+  routineTimes,
   runsOnDay,
   sortByNext,
 } from '@mochi/core';
 import { button, C, card, h2, input, label, sub } from '../ui.js';
 
-const DAYS_MAP: { key: RoutineDay; label: string }[] = [
-  { key: 'mon', label: 'M' },
-  { key: 'tue', label: 'T' },
-  { key: 'wed', label: 'W' },
-  { key: 'thu', label: 'T' },
-  { key: 'fri', label: 'F' },
-  { key: 'sat', label: 'S' },
-  { key: 'sun', label: 'S' },
+/**
+ * Two letters, not one.
+ *
+ * Single initials give M T W T F S S: Tuesday and Thursday are the same
+ * button, and so are Saturday and Sunday. The full name rides along as a
+ * tooltip and an accessible name so nothing depends on decoding the label.
+ */
+const DAYS_MAP: { key: RoutineDay; short: string; full: string }[] = [
+  { key: 'mon', short: 'Mo', full: 'Monday' },
+  { key: 'tue', short: 'Tu', full: 'Tuesday' },
+  { key: 'wed', short: 'We', full: 'Wednesday' },
+  { key: 'thu', short: 'Th', full: 'Thursday' },
+  { key: 'fri', short: 'Fr', full: 'Friday' },
+  { key: 'sat', short: 'Sa', full: 'Saturday' },
+  { key: 'sun', short: 'Su', full: 'Sunday' },
+];
+
+/** The three schedules almost everyone wants, one click instead of seven. */
+const DAY_SHORTCUTS: { label: string; days: RoutineDay[] }[] = [
+  { label: 'Weekdays', days: ['mon', 'tue', 'wed', 'thu', 'fri'] },
+  { label: 'Every day', days: ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'] },
+  { label: 'Weekends', days: ['sat', 'sun'] },
 ];
 
 const CATEGORY_MAP: Record<RoutineCategory, { label: string; defaultIcon: string; color: string }> =
@@ -107,10 +123,20 @@ const TIME_SUGGESTIONS = [
   { label: '09:30 PM', value: '21:30' },
 ] as const;
 
-const Toggle = ({ on, onChange }: { on: boolean; onChange: (v: boolean) => void }): JSX.Element => (
+const Toggle = ({
+  on,
+  onChange,
+  label,
+}: {
+  on: boolean;
+  onChange: (v: boolean) => void;
+  /** Says which routine this switch belongs to; the control itself is unlabelled. */
+  label?: string;
+}): JSX.Element => (
   <button
     onClick={() => onChange(!on)}
     aria-pressed={on}
+    {...(label === undefined ? {} : { 'aria-label': label, title: label })}
     style={{
       flexShrink: 0,
       width: 38,
@@ -144,6 +170,9 @@ export function RoutinesTab(): JSX.Element {
   const [settings, setSettings] = useState<MochiSettings | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  // Delete asks first. It sat next to Edit at the same size with no undo
+  // behind it, which is one slip away from losing a routine.
+  const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
 
   // Form State
   const [title, setTitle] = useState('');
@@ -284,15 +313,33 @@ export function RoutinesTab(): JSX.Element {
 
   const handleDelete = async (id: string): Promise<void> => {
     const updated = await window.mochi.userRoutines.remove(id);
+    setConfirmDelete(null);
     setRoutines(updated);
   };
 
+  /**
+   * Preview the alert using a routine the user actually has.
+   *
+   * It used to send a hardcoded "Hydration Break" regardless, which shows how
+   * the animation looks but not what *your* reminder will say — and reads as a
+   * developer button rather than a preview.
+   */
   const handleTestAlert = (): void => {
+    const sample = upNext ?? ordered[0];
     void window.mochi.userRoutines.triggerTestAlert(
-      'Hydration Break',
-      'Time for a glass of water! Staying hydrated keeps your energy steady.',
+      sample?.title ?? 'Hydration Break',
+      sample?.reminderMessage ??
+        'Time for a glass of water! Staying hydrated keeps your energy steady.',
     );
   };
+
+  // Offering a preset that is already in the list just makes a duplicate, and
+  // the panel keeps its full height for ever. Once they are all added it goes
+  // away, which is roughly 130px back for the list that matters.
+  const availablePresets = useMemo(() => {
+    const existing = new Set(routines.map((r) => r.title.trim().toLowerCase()));
+    return ROUTINE_PRESETS.filter((p) => !existing.has(p.title.trim().toLowerCase()));
+  }, [routines]);
 
   return (
     <div>
@@ -351,8 +398,8 @@ export function RoutinesTab(): JSX.Element {
         </div>
       )}
 
-      {/* Preset Quick-Add Banner */}
-      {!isEditing && (
+      {/* Preset Quick-Add Banner — only what is not already in the list */}
+      {!isEditing && availablePresets.length > 0 && (
         <div style={{ ...card, marginBottom: 20 }}>
           <div style={{ fontSize: 12, fontWeight: 600, color: C.dim, marginBottom: 10 }}>
             ⚡ QUICK ADD PRESETS
@@ -364,7 +411,7 @@ export function RoutinesTab(): JSX.Element {
               gap: 10,
             }}
           >
-            {ROUTINE_PRESETS.map((preset) => {
+            {availablePresets.map((preset) => {
               const catInfo = CATEGORY_MAP[preset.category];
               const displayIcon = preset.icon || catInfo.defaultIcon;
               const displayTimes =
@@ -624,14 +671,42 @@ export function RoutinesTab(): JSX.Element {
 
           <div style={{ marginBottom: 14 }}>
             <span style={label}>Repeat Days</span>
+
+            <div style={{ display: 'flex', gap: 6, marginBottom: 8 }}>
+              {DAY_SHORTCUTS.map((shortcut) => {
+                const applied =
+                  shortcut.days.length === selectedDays.length &&
+                  shortcut.days.every((d) => selectedDays.includes(d));
+                return (
+                  <button
+                    key={shortcut.label}
+                    type="button"
+                    onClick={() => setSelectedDays([...shortcut.days])}
+                    style={{
+                      ...button('ghost'),
+                      padding: '3px 10px',
+                      fontSize: 11.5,
+                      color: applied ? C.accent : C.dim,
+                      borderColor: applied ? C.accent : C.border,
+                    }}
+                  >
+                    {shortcut.label}
+                  </button>
+                );
+              })}
+            </div>
+
             <div style={{ display: 'flex', gap: 6 }}>
-              {DAYS_MAP.map(({ key, label: dLabel }) => {
+              {DAYS_MAP.map(({ key, short, full }) => {
                 const active = selectedDays.includes(key);
                 return (
                   <button
                     key={key}
                     type="button"
                     onClick={() => toggleDay(key)}
+                    title={full}
+                    aria-label={full}
+                    aria-pressed={active}
                     style={{
                       flex: 1,
                       padding: '6px 0',
@@ -644,10 +719,15 @@ export function RoutinesTab(): JSX.Element {
                       cursor: 'pointer',
                     }}
                   >
-                    {dLabel}
+                    {short}
                   </button>
                 );
               })}
+            </div>
+
+            {/* Reads back what was chosen, in the same words the list uses. */}
+            <div style={{ fontSize: 11.5, color: C.dim, marginTop: 6 }}>
+              Repeats: <strong style={{ color: C.text }}>{describeDays(selectedDays)}</strong>
             </div>
           </div>
 
@@ -705,10 +785,11 @@ export function RoutinesTab(): JSX.Element {
             {ordered.map((r) => {
               const catInfo = CATEGORY_MAP[r.category] ?? CATEGORY_MAP.custom;
               const displayIcon = r.icon || catInfo.defaultIcon;
-              const displayTimes = r.times && r.times.length > 0 ? r.times : [r.time];
+              const displayTimes = routineTimes(r);
               const next = nextOccurrence(r, now);
               const isNext = upNext !== null && upNext.id === r.id;
               const today = runsOnDay(r, now);
+              const askingToDelete = confirmDelete === r.id;
 
               return (
                 <div
@@ -719,14 +800,17 @@ export function RoutinesTab(): JSX.Element {
                     alignItems: 'center',
                     justifyContent: 'space-between',
                     gap: 14,
-                    opacity: r.enabled ? 1 : 0.55,
+                    // Dimmed, not faded out. At 0.55 with a transparent border
+                    // a paused routine was hard to read and hard to aim at,
+                    // which makes the toggle feel one-way.
+                    opacity: r.enabled ? 1 : 0.78,
                     // The one firing next is picked out, so the list answers
                     // "what is coming" without being read top to bottom.
-                    borderColor: isNext
-                      ? 'rgba(242,166,179,0.45)'
-                      : r.enabled
-                        ? C.border
-                        : 'transparent',
+                    borderColor: askingToDelete
+                      ? C.warn
+                      : isNext
+                        ? 'rgba(242,166,179,0.45)'
+                        : C.border,
                     background: isNext ? 'rgba(242,166,179,0.05)' : undefined,
                   }}
                 >
@@ -749,7 +833,9 @@ export function RoutinesTab(): JSX.Element {
                     </div>
 
                     <div style={{ flex: 1 }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <div
+                        style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}
+                      >
                         <span style={{ fontSize: 14, fontWeight: 600, color: C.text }}>
                           {r.title}
                         </span>
@@ -765,57 +851,9 @@ export function RoutinesTab(): JSX.Element {
                         >
                           {catInfo.label}
                         </span>
-                      </div>
-
-                      <div
-                        style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: 12,
-                          marginTop: 4,
-                          flexWrap: 'wrap',
-                        }}
-                      >
-                        {/* Render all scheduled times */}
-                        <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
-                          <span style={{ fontSize: 12 }}>🕒</span>
-                          {displayTimes.map((t) => (
-                            <span
-                              key={t}
-                              style={{
-                                fontSize: 11.5,
-                                fontWeight: 600,
-                                color: C.accent,
-                                background: '#251e30',
-                                padding: '1px 6px',
-                                borderRadius: 4,
-                              }}
-                            >
-                              {formatTime12h(t)}
-                            </span>
-                          ))}
-                        </div>
-
-                        {/* Render active days */}
-                        <div style={{ display: 'flex', gap: 3 }}>
-                          {DAYS_MAP.map(({ key, label: dLabel }) => (
-                            <span
-                              key={key}
-                              style={{
-                                fontSize: 10,
-                                padding: '1px 5px',
-                                borderRadius: 4,
-                                background: r.days.includes(key) ? '#382e44' : 'transparent',
-                                color: r.days.includes(key) ? C.text : C.faint,
-                              }}
-                            >
-                              {dLabel}
-                            </span>
-                          ))}
-                        </div>
-                      </div>
-
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 6 }}>
+                        {/* On the title line rather than a line of its own:
+                            four stacked lines per row fitted three routines
+                            on screen out of four. */}
                         <span
                           style={{
                             fontSize: 11,
@@ -828,10 +866,47 @@ export function RoutinesTab(): JSX.Element {
                         >
                           {isNext ? `next · ${describeNext(next, now)}` : describeNext(next, now)}
                         </span>
+                      </div>
+
+                      {/*
+                        One line for the whole schedule. The seven day pills
+                        that used to sit here read "M T W T F S S" — two Ts,
+                        two Ss, and on/off told apart only by a shade of grey.
+                      */}
+                      <div
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 6,
+                          marginTop: 4,
+                          flexWrap: 'wrap',
+                          fontSize: 12,
+                        }}
+                      >
+                        <span>🕒</span>
+                        {displayTimes.map((t) => (
+                          <span
+                            key={t}
+                            style={{
+                              fontSize: 11.5,
+                              fontWeight: 600,
+                              color: C.accent,
+                              background: '#251e30',
+                              padding: '1px 6px',
+                              borderRadius: 4,
+                            }}
+                          >
+                            {formatTime12h(t)}
+                          </span>
+                        ))}
+                        <span style={{ color: C.faint }}>·</span>
+                        <span style={{ fontSize: 11.5, color: C.dim, fontWeight: 500 }}>
+                          {describeDays(r.days)}
+                        </span>
                         {r.enabled && !today && (
                           // Otherwise a Mon/Wed/Fri routine looks identical on a
                           // Tuesday to one that is about to fire.
-                          <span style={{ fontSize: 11, color: C.faint }}>not scheduled today</span>
+                          <span style={{ fontSize: 11.5, color: C.faint }}>· not today</span>
                         )}
                       </div>
 
@@ -840,35 +915,80 @@ export function RoutinesTab(): JSX.Element {
                           style={{
                             fontSize: 11.5,
                             color: C.dim,
-                            marginTop: 6,
+                            marginTop: 5,
                             fontStyle: 'italic',
+                            // One line. A long message used to push every other
+                            // routine below the fold.
+                            whiteSpace: 'nowrap',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            maxWidth: 460,
                           }}
+                          title={r.reminderMessage}
                         >
-                          💬 "{r.reminderMessage}"
+                          💬 “{r.reminderMessage}”
                         </div>
                       )}
                     </div>
                   </div>
 
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                    <Toggle on={r.enabled} onChange={() => void handleToggle(r.id)} />
-                    <button
-                      onClick={() => openEditForm(r)}
-                      style={{ ...button('ghost'), padding: '4px 8px', fontSize: 12 }}
-                    >
-                      Edit
-                    </button>
-                    <button
-                      onClick={() => void handleDelete(r.id)}
-                      style={{
-                        ...button('ghost'),
-                        padding: '4px 8px',
-                        fontSize: 12,
-                        color: C.warn,
-                      }}
-                    >
-                      Delete
-                    </button>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
+                    {askingToDelete ? (
+                      // Asks before destroying. There is no undo behind this,
+                      // and it used to be one click, the same size as Edit and
+                      // right beside it.
+                      <>
+                        <span style={{ fontSize: 12, color: C.warn, fontWeight: 600 }}>
+                          Delete “{r.title}”?
+                        </span>
+                        <button
+                          onClick={() => void handleDelete(r.id)}
+                          style={{
+                            ...button('ghost'),
+                            padding: '4px 10px',
+                            fontSize: 12,
+                            color: C.warn,
+                            borderColor: C.warn,
+                          }}
+                        >
+                          Delete
+                        </button>
+                        <button
+                          onClick={() => setConfirmDelete(null)}
+                          style={{ ...button('ghost'), padding: '4px 10px', fontSize: 12 }}
+                        >
+                          Cancel
+                        </button>
+                      </>
+                    ) : (
+                      <>
+                        <Toggle
+                          on={r.enabled}
+                          onChange={() => void handleToggle(r.id)}
+                          label={`${r.enabled ? 'Pause' : 'Resume'} ${r.title}`}
+                        />
+                        <button
+                          onClick={() => openEditForm(r)}
+                          style={{ ...button('ghost'), padding: '4px 8px', fontSize: 12 }}
+                        >
+                          Edit
+                        </button>
+                        <button
+                          onClick={() => setConfirmDelete(r.id)}
+                          style={{
+                            ...button('ghost'),
+                            padding: '4px 8px',
+                            fontSize: 12,
+                            // Muted until it is the thing you are doing. A
+                            // destructive action does not need to shout from
+                            // every row.
+                            color: C.dim,
+                          }}
+                        >
+                          Delete
+                        </button>
+                      </>
+                    )}
                   </div>
                 </div>
               );

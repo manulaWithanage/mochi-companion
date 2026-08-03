@@ -1,10 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import {
+  describeDays,
   describeNext,
   nextOccurrence,
   routineTimes,
   runsOnDay,
   sortByNext,
+  type RoutineDay,
   type UserRoutine,
 } from './user-routines.js';
 
@@ -125,5 +127,42 @@ describe('describeNext', () => {
 
   it('says paused rather than inventing a time', () => {
     expect(describeNext(null, MON_10AM)).toBe('paused');
+  });
+});
+
+describe('describeDays', () => {
+  it('names the common shapes rather than listing them', () => {
+    expect(describeDays(['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'])).toBe('Every day');
+    expect(describeDays(['mon', 'tue', 'wed', 'thu', 'fri'])).toBe('Weekdays');
+    expect(describeDays(['sat', 'sun'])).toBe('Weekends');
+  });
+
+  it('lists anything else in week order, whatever order it was given in', () => {
+    expect(describeDays(['fri', 'mon', 'wed'])).toBe('Mon, Wed & Fri');
+    expect(describeDays(['wed'])).toBe('Wed');
+    expect(describeDays(['sat', 'mon'])).toBe('Mon & Sat');
+  });
+
+  it('distinguishes the pairs that single initials cannot', () => {
+    // M T W T F S S renders these three identically.
+    expect(describeDays(['tue', 'thu'])).toBe('Tue & Thu');
+    expect(describeDays(['tue'])).toBe('Tue');
+    expect(describeDays(['thu'])).toBe('Thu');
+    expect(describeDays(['sat'])).toBe('Sat');
+    expect(describeDays(['sun'])).toBe('Sun');
+  });
+
+  it('says so when nothing is selected instead of implying a schedule', () => {
+    expect(describeDays([])).toBe('No days selected');
+  });
+
+  it('is not fooled by five days that include a weekend', () => {
+    // Five days, but not Mon-Fri: calling this "Weekdays" would be wrong.
+    expect(describeDays(['mon', 'tue', 'wed', 'thu', 'sat'])).toBe('Mon, Tue, Wed, Thu & Sat');
+  });
+
+  it('ignores duplicates', () => {
+    const days = ['mon', 'mon', 'wed'] as readonly RoutineDay[];
+    expect(describeDays(days)).toBe('Mon & Wed');
   });
 });

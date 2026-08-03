@@ -179,6 +179,44 @@ export function sortByNext(routines: readonly UserRoutine[], now: Date): readonl
   });
 }
 
+/** Monday-first, which is how the week is read on screen. */
+const DISPLAY_ORDER: readonly RoutineDay[] = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
+
+const DAY_NAME: Record<RoutineDay, string> = {
+  mon: 'Mon',
+  tue: 'Tue',
+  wed: 'Wed',
+  thu: 'Thu',
+  fri: 'Fri',
+  sat: 'Sat',
+  sun: 'Sun',
+};
+
+/**
+ * The schedule in words: `Every day`, `Weekdays`, `Mon, Wed & Fri`.
+ *
+ * Seven initials cannot say this. Rendered as M T W T F S S they contain two
+ * Ts and two Ss, so "Tuesday and Thursday" and "Tuesday twice" look identical,
+ * and telling on from off means comparing two similar greys. A sentence is
+ * read correctly the first time by everyone.
+ */
+export function describeDays(days: readonly RoutineDay[]): string {
+  const selected = DISPLAY_ORDER.filter((day) => days.includes(day));
+  if (selected.length === 0) return 'No days selected';
+  if (selected.length === 7) return 'Every day';
+
+  const isWeekdays =
+    selected.length === 5 && !selected.includes('sat') && !selected.includes('sun');
+  if (isWeekdays) return 'Weekdays';
+
+  const isWeekend = selected.length === 2 && selected.includes('sat') && selected.includes('sun');
+  if (isWeekend) return 'Weekends';
+
+  const names = selected.map((day) => DAY_NAME[day]);
+  const last = names[names.length - 1]!;
+  return names.length === 1 ? last : `${names.slice(0, -1).join(', ')} & ${last}`;
+}
+
 /** `in 20 min`, `in 3 hours`, `tomorrow`, `Friday`. */
 export function describeNext(at: number | null, now: Date): string {
   if (at === null) return 'paused';
