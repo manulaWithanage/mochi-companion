@@ -16,16 +16,16 @@ import {
 import { button, C, card, humanDuration, WEEKDAYS } from '../ui.js';
 
 const CATEGORY_COLOUR: Record<ActivityCategory, string> = {
-  coding: '#f2a6b3',
-  design: '#c9a6f2',
-  writing: '#a6c8f2',
-  terminal: '#a8e6b8',
-  meeting: '#ffb3c1',
-  communication: '#f2d3a6',
-  browsing: '#8f8aa3',
-  gaming: '#7fd8c8',
-  media: '#f5a3e0',
-  other: '#5a5364',
+  coding: '#3b82f6', // Vibrant Sapphire Blue
+  design: '#ec4899', // Energetic Pink / Magenta
+  writing: '#06b6d4', // Electric Cyan
+  terminal: '#10b981', // Vivid Emerald Mint
+  meeting: '#f59e0b', // Radiant Amber Gold
+  communication: '#ff6b00', // Bright Coral Orange
+  browsing: '#8b5cf6', // Deep Royal Purple / Violet
+  gaming: '#14b8a6', // Vibrant Teal
+  media: '#f43f5e', // Bright Rose Crimson
+  other: '#64748b', // Slate Grey
 };
 
 type Range = 'today' | 'week';
@@ -287,12 +287,21 @@ export function ActivityTab(): JSX.Element {
   const tracking = settings?.activityTracking === true;
   const sites = settings?.trackBrowsingSites === true;
 
-  const apps = useMemo(() => totalsByApp(spans), [spans]);
-  const categories = useMemo(() => totalsByCategory(spans).filter((c) => c.ms > 0), [spans]);
+  const effectiveSpans = useMemo(() => {
+    const overrides = settings?.learnedAppCategories;
+    if (!overrides || Object.keys(overrides).length === 0) return spans;
+    return spans.map((s) => ({
+      ...s,
+      category: (overrides[s.app] as ActivityCategory) || s.category,
+    }));
+  }, [spans, settings?.learnedAppCategories]);
+
+  const apps = useMemo(() => totalsByApp(effectiveSpans), [effectiveSpans]);
+  const categories = useMemo(() => totalsByCategory(effectiveSpans).filter((c) => c.ms > 0), [effectiveSpans]);
   const totalMs = useMemo(() => apps.reduce((sum, a) => sum + a.ms, 0), [apps]);
-  const focused = useMemo(() => focusedMs(spans), [spans]);
-  const switches = useMemo(() => switchCount(spans), [spans]);
-  const longest = useMemo(() => longestStretchMs(spans), [spans]);
+  const focused = useMemo(() => focusedMs(effectiveSpans), [effectiveSpans]);
+  const switches = useMemo(() => switchCount(effectiveSpans), [effectiveSpans]);
+  const longest = useMemo(() => longestStretchMs(effectiveSpans), [effectiveSpans]);
 
   const toggle = useCallback(async (next: boolean) => {
     setSettings(await window.mochi.settings.setActivityTracking(next));
@@ -533,7 +542,7 @@ export function ActivityTab(): JSX.Element {
           ) : (
             <>
               {/* Timeline Chart */}
-              {range === 'today' && <Timeline spans={spans} from={bounds.from} to={bounds.to} />}
+              {range === 'today' && <Timeline spans={effectiveSpans} from={bounds.from} to={bounds.to} />}
 
               {/* Core Key Stats */}
               <div style={{ display: 'flex', gap: 12, marginBottom: 16 }}>
@@ -585,11 +594,12 @@ export function ActivityTab(): JSX.Element {
                 <div
                   style={{
                     display: 'flex',
-                    height: 10,
-                    borderRadius: 5,
+                    height: 12,
+                    borderRadius: 6,
                     overflow: 'hidden',
-                    background: 'rgba(0, 0, 0, 0.25)',
-                    marginBottom: 14,
+                    background: 'rgba(0, 0, 0, 0.3)',
+                    marginBottom: 16,
+                    boxShadow: 'inset 0 1px 3px rgba(0, 0, 0, 0.4)',
                   }}
                 >
                   {categories.map((c) => (
@@ -599,6 +609,7 @@ export function ActivityTab(): JSX.Element {
                       style={{
                         width: `${c.share * 100}%`,
                         background: CATEGORY_COLOUR[c.category],
+                        boxShadow: `0 0 8px ${CATEGORY_COLOUR[c.category]}44`,
                         transition: 'width 240ms ease',
                       }}
                     />
@@ -610,26 +621,27 @@ export function ActivityTab(): JSX.Element {
                     <span
                       key={c.category}
                       style={{
-                        fontSize: 11.5,
+                        fontSize: 12,
                         color: C.dim,
                         display: 'inline-flex',
                         alignItems: 'center',
-                        gap: 6,
+                        gap: 7,
                       }}
                     >
                       <span
                         style={{
-                          width: 8,
-                          height: 8,
+                          width: 9,
+                          height: 9,
                           borderRadius: 3,
                           background: CATEGORY_COLOUR[c.category],
+                          boxShadow: `0 0 6px ${CATEGORY_COLOUR[c.category]}88`,
                         }}
                       />
                       <span>{c.label}</span>
                       <strong
                         style={{
                           color: C.text,
-                          fontWeight: 600,
+                          fontWeight: 650,
                           fontVariantNumeric: 'tabular-nums',
                         }}
                       >
@@ -685,18 +697,21 @@ export function ActivityTab(): JSX.Element {
                       <div
                         style={{
                           flex: 1,
-                          height: 6,
-                          borderRadius: 3,
-                          background: 'rgba(0, 0, 0, 0.25)',
+                          height: 8,
+                          borderRadius: 4,
+                          background: 'rgba(0, 0, 0, 0.3)',
                           overflow: 'hidden',
+                          boxShadow: 'inset 0 1px 2px rgba(0, 0, 0, 0.3)',
                         }}
                       >
                         <div
                           style={{
                             width: `${Math.max(2, a.share * 100)}%`,
                             height: '100%',
-                            borderRadius: 3,
+                            borderRadius: 4,
                             background: CATEGORY_COLOUR[a.category],
+                            boxShadow: `0 0 8px ${CATEGORY_COLOUR[a.category]}66`,
+                            transition: 'width 240ms ease, background-color 240ms ease',
                           }}
                         />
                       </div>
@@ -720,15 +735,18 @@ export function ActivityTab(): JSX.Element {
                         }
                         title={`Categorized as ${activityCategoryInfo(a.category).label}. Click to reassign.`}
                         style={{
-                          background: 'rgba(255, 255, 255, 0.03)',
-                          border: `1px solid ${C.border}`,
-                          borderRadius: 6,
-                          color: C.dim,
-                          fontSize: 11,
-                          padding: '3px 6px',
+                          background: `${CATEGORY_COLOUR[a.category]}1e`,
+                          border: `1px solid ${CATEGORY_COLOUR[a.category]}55`,
+                          borderRadius: 7,
+                          color: '#ffffff',
+                          fontSize: 11.5,
+                          fontWeight: 600,
+                          padding: '4px 8px',
                           cursor: 'pointer',
                           fontFamily: 'inherit',
                           outline: 'none',
+                          boxShadow: '0 2px 6px rgba(0, 0, 0, 0.25)',
+                          transition: 'all 0.15s ease',
                         }}
                       >
                         {ACTIVITY_CATEGORIES.map((c) => (
