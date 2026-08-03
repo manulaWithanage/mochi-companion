@@ -29,7 +29,7 @@ export const HeroDiorama: React.FC = () => {
     <section className="hero-diorama" aria-labelledby="hero-title">
       <img
         className="hero-diorama__art"
-        src="/hero_papercraft_art.jpg"
+        src="/hero_papercraft_art_v2.png"
         alt=""
         aria-hidden="true"
       />

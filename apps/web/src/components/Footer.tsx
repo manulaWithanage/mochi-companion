@@ -346,12 +346,12 @@ export const Footer: React.FC = () => {
         </div>
       </div>
 
-      {/* 🌸 BOTTOM SECTION: EXPANDED 620px TALL 3D PAPERCRAFT LANDSCAPE BANNER */}
+      {/* 🌸 BOTTOM SECTION: CALM 3D PAPERCRAFT ZEN LANDSCAPE */}
       <div
         style={{
           position: 'relative',
           width: '100%',
-          height: '620px',
+          height: '480px',
           overflow: 'hidden',
           margin: 0,
           padding: 0,
@@ -374,14 +374,14 @@ export const Footer: React.FC = () => {
 
         {/* Full Bleed Scenery Image */}
         <img
-          src="/perfect_footer_banner.jpg"
-          alt="Mochi 3D Papercraft Origami Japanese Scenery Banner Full View"
+          src="/footer_zen_landscape_v2.png"
+          alt="Mochi papercraft zen garden with a stream, bridge, and distant mountains"
           style={{
             width: '100%',
-            height: 'calc(100% + 24px)',
+            height: '100%',
             objectFit: 'cover',
-            objectPosition: 'center 40%',
-            transform: 'scale(1.04) translateY(12px)',
+            objectPosition: 'center 72%',
+            transform: 'scale(1.02)',
             display: 'block',
             zIndex: 1,
           }}

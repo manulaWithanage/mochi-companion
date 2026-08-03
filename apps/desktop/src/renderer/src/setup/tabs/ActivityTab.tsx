@@ -13,7 +13,7 @@ import {
   type ActivitySpan,
   type MochiSettings,
 } from '@mochi/core';
-import { button, C, card, h2, humanDuration, sub, WEEKDAYS } from '../ui.js';
+import { button, C, card, humanDuration, WEEKDAYS } from '../ui.js';
 
 const CATEGORY_COLOUR: Record<ActivityCategory, string> = {
   coding: '#f2a6b3',
@@ -35,12 +35,20 @@ const Tooltip = ({
   content,
   children,
   width = 280,
+  align = 'center',
 }: {
   readonly content: React.ReactNode;
   readonly children: React.ReactNode;
   readonly width?: number;
+  readonly align?: 'left' | 'center' | 'right';
 }): JSX.Element => {
   const [hovered, setHovered] = useState(false);
+
+  const getLeftStyle = () => {
+    if (align === 'left') return { left: 0, transform: 'translateY(-6px)' };
+    if (align === 'right') return { right: 0, transform: 'translateY(-6px)' };
+    return { left: '50%', transform: 'translateX(-50%) translateY(-6px)' };
+  };
 
   return (
     <div
@@ -54,15 +62,14 @@ const Tooltip = ({
           style={{
             position: 'absolute',
             bottom: '100%',
-            left: '50%',
-            transform: 'translateX(-50%) translateY(-6px)',
+            ...getLeftStyle(),
             width,
             maxWidth: '90vw',
             padding: '10px 14px',
             borderRadius: 10,
-            background: '#282230',
-            border: '1px solid #3d3448',
-            boxShadow: '0 10px 28px rgba(0, 0, 0, 0.55)',
+            background: '#241f2b',
+            border: '1px solid #3b3244',
+            boxShadow: '0 12px 32px rgba(0, 0, 0, 0.65)',
             color: C.text,
             fontSize: 12,
             lineHeight: 1.55,
@@ -75,11 +82,11 @@ const Tooltip = ({
             style={{
               position: 'absolute',
               top: '100%',
-              left: '50%',
-              transform: 'translateX(-50%)',
+              left: align === 'left' ? '16px' : align === 'right' ? 'calc(100% - 24px)' : '50%',
+              transform: align === 'center' ? 'translateX(-50%)' : 'none',
               borderWidth: 6,
               borderStyle: 'solid',
-              borderColor: '#3d3448 transparent transparent transparent',
+              borderColor: '#3b3244 transparent transparent transparent',
             }}
           />
         </div>
@@ -99,34 +106,32 @@ const Stat = ({
   readonly accent?: boolean;
   readonly tooltip?: string;
 }): JSX.Element => (
-  <div style={{ ...card, flex: 1, padding: '13px 15px', position: 'relative' }}>
-    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-      <div style={{ fontSize: 22, fontWeight: 650, color: accent === true ? C.accent : C.text }}>
+  <div
+    style={{
+      ...card,
+      flex: 1,
+      padding: '16px 18px',
+      background: 'rgba(34, 29, 41, 0.6)',
+      backdropFilter: 'blur(8px)',
+      border: `1px solid ${C.border}`,
+      transition: 'border-color 0.2s, transform 0.2s',
+    }}
+  >
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+      <div style={{ fontSize: 24, fontWeight: 700, letterSpacing: '-0.02em', color: accent === true ? C.accent : C.text }}>
         {value}
       </div>
       {tooltip !== undefined && (
-        <Tooltip content={tooltip} width={220}>
-          <span
-            style={{
-              fontSize: 12,
-              color: C.dim,
-              cursor: 'help',
-              opacity: 0.6,
-              transition: 'opacity 0.15s',
-            }}
-          >
-            ⓘ
-          </span>
+        <Tooltip content={tooltip} width={220} align="right">
+          <span style={{ fontSize: 12, color: C.faint, cursor: 'help' }}>ⓘ</span>
         </Tooltip>
       )}
     </div>
-    <div style={{ fontSize: 11.5, color: C.dim, marginTop: 2 }}>{caption}</div>
+    <div style={{ fontSize: 12, color: C.dim, fontWeight: 450 }}>{caption}</div>
   </div>
 );
 
-/**
- * Visual activity timeline strip
- */
+/** Visual activity timeline strip */
 const Timeline = ({
   spans,
   from,
@@ -153,22 +158,24 @@ const Timeline = ({
   }
 
   return (
-    <div style={{ ...card, marginBottom: 14 }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
-        <div style={{ fontSize: 12, color: C.dim, fontWeight: 600 }}>Hourly Activity Timeline</div>
-        <Tooltip content="Shows when you were actively using apps throughout today. Idle keyboard periods are automatically discarded." width={260}>
-          <span style={{ fontSize: 11.5, color: C.faint, cursor: 'help' }}>How to read ⓘ</span>
+    <div style={{ ...card, marginBottom: 16, background: 'rgba(34, 29, 41, 0.6)' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+        <span style={{ fontSize: 12.5, fontWeight: 600, color: C.text, letterSpacing: '0.01em' }}>
+          Daily Timeline
+        </span>
+        <Tooltip content="Shows continuous active blocks throughout today. Keyboard idle time is automatically filtered out." width={260} align="right">
+          <span style={{ fontSize: 11.5, color: C.faint, cursor: 'help' }}>How it works ⓘ</span>
         </Tooltip>
       </div>
 
       <div
         style={{
           position: 'relative',
-          height: 28,
-          borderRadius: 8,
-          background: 'rgba(255, 255, 255, 0.035)',
+          height: 24,
+          borderRadius: 6,
+          background: 'rgba(0, 0, 0, 0.25)',
           overflow: 'hidden',
-          border: `1px solid ${C.border}`,
+          border: '1px solid rgba(255, 255, 255, 0.05)',
         }}
       >
         {spans.map((s) => (
@@ -182,8 +189,7 @@ const Timeline = ({
               top: 0,
               bottom: 0,
               background: CATEGORY_COLOUR[s.category],
-              opacity: 0.88,
-              transition: 'opacity 0.15s',
+              opacity: 0.9,
             }}
           />
         ))}
@@ -289,24 +295,39 @@ export function ActivityTab(): JSX.Element {
   }, []);
 
   return (
-    <div style={{ maxWidth: 860, margin: '0 auto' }}>
-      {/* Header & Range Switcher */}
-      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 14 }}>
+    <div style={{ maxWidth: 880, margin: '0 auto' }}>
+      {/* Sleek Minimalist Header */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
         <div>
-          <h2 style={h2}>Activity Dashboard</h2>
-          <p style={{ ...sub, margin: 0 }}>Visual time & application usage measured locally on this machine.</p>
+          <h2 style={{ margin: 0, fontSize: 22, fontWeight: 700, letterSpacing: '-0.02em', color: C.text }}>
+            Activity
+          </h2>
         </div>
 
-        {/* Range Buttons */}
-        <div style={{ display: 'flex', gap: 6, background: C.panel, padding: 3, borderRadius: 10, border: `1px solid ${C.border}` }}>
+        {/* Minimalist Segmented Time Range Selector */}
+        <div
+          style={{
+            display: 'flex',
+            background: 'rgba(255, 255, 255, 0.04)',
+            padding: 3,
+            borderRadius: 10,
+            border: `1px solid ${C.border}`,
+          }}
+        >
           {(['today', 'week'] as const).map((r) => (
             <button
               key={r}
               style={{
-                ...button(range === r ? 'primary' : 'ghost'),
+                border: 'none',
+                background: range === r ? C.panelAlt : 'transparent',
+                color: range === r ? C.text : C.dim,
+                boxShadow: range === r ? '0 2px 8px rgba(0,0,0,0.3)' : 'none',
                 fontSize: 12,
-                padding: '5px 13px',
+                fontWeight: range === r ? 600 : 500,
+                padding: '6px 14px',
                 borderRadius: 8,
+                cursor: 'pointer',
+                transition: 'all 0.15s ease',
               }}
               onClick={() => {
                 setRange(r);
@@ -319,53 +340,19 @@ export function ActivityTab(): JSX.Element {
         </div>
       </div>
 
-      {/* Streamlined Privacy & Tracking Control Bar */}
+      {/* Clean Single-Row Toolbar (No bulky container card) */}
       <div
         style={{
-          ...card,
-          marginBottom: 16,
-          padding: '12px 16px',
           display: 'flex',
-          flexWrap: 'wrap',
           alignItems: 'center',
           justify: 'space-between',
-          gap: 12,
-          background: 'rgba(34, 29, 41, 0.85)',
-          borderColor: tracking ? 'rgba(168, 230, 184, 0.3)' : C.border,
+          padding: '10px 0 18px',
+          marginBottom: 16,
+          borderBottom: `1px solid ${C.border}`,
         }}
       >
-        {/* Status Indicators with Tooltips */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap' }}>
-          {/* Privacy Tooltip Pill */}
-          <Tooltip
-            content={
-              <div>
-                <strong style={{ color: C.good, display: 'block', marginBottom: 4 }}>🔒 Local Privacy Guarantee</strong>
-                Only application names in front are recorded. Idle time is discarded. Data stays inside Mochi&apos;s local database, never leaves this PC, and auto-deletes after 90 days.
-              </div>
-            }
-            width={300}
-          >
-            <span
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: 6,
-                fontSize: 12,
-                color: C.good,
-                background: 'rgba(168, 230, 184, 0.1)',
-                border: '1px solid rgba(168, 230, 184, 0.25)',
-                padding: '4px 10px',
-                borderRadius: 20,
-                cursor: 'help',
-                fontWeight: 500,
-              }}
-            >
-              🔒 100% Private & Local <span style={{ fontSize: 11, opacity: 0.7 }}>ⓘ</span>
-            </span>
-          </Tooltip>
-
-          {/* Tracking Status */}
+        {/* Left: Status & Local Privacy Tooltip */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <span
               style={{
@@ -373,77 +360,104 @@ export function ActivityTab(): JSX.Element {
                 height: 8,
                 borderRadius: '50%',
                 background: tracking ? C.good : C.warn,
-                boxShadow: tracking ? '0 0 8px rgba(168, 230, 184, 0.5)' : 'none',
+                boxShadow: tracking ? '0 0 10px rgba(168, 230, 184, 0.6)' : 'none',
               }}
             />
-            <span style={{ fontSize: 13, fontWeight: 550, color: C.text }}>
-              {tracking ? 'Tracking Active' : 'Tracking Off'}
+            <span style={{ fontSize: 13, fontWeight: 600, color: C.text }}>
+              {tracking ? 'Tracking Active' : 'Tracking Paused'}
             </span>
-            <Tooltip
-              content={
-                supported === false
-                  ? 'Activity tracking is currently Windows-only.'
-                  : tracking
-                    ? 'Samples active application every 10 seconds while keyboard/mouse is in use.'
-                    : 'Recording paused. Turn on to track work patterns.'
-              }
-              width={240}
-            >
-              <span style={{ fontSize: 11.5, color: C.faint, cursor: 'help' }}>ⓘ</span>
-            </Tooltip>
           </div>
+
+          <span style={{ color: C.borderStrong, fontSize: 12 }}>|</span>
+
+          <Tooltip
+            content={
+              <div>
+                <strong style={{ color: C.good, display: 'block', marginBottom: 4 }}>🔒 100% Local Privacy</strong>
+                Only application names in front are recorded. Idle time is discarded. Data is kept purely in Mochi&apos;s local SQLite database and auto-purges after 90 days.
+              </div>
+            }
+            width={300}
+            align="left"
+          >
+            <span
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 5,
+                fontSize: 12,
+                color: C.dim,
+                cursor: 'help',
+                transition: 'color 0.15s',
+              }}
+            >
+              <span>Local Privacy</span>
+              <span style={{ fontSize: 11, color: C.faint }}>ⓘ</span>
+            </span>
+          </Tooltip>
         </div>
 
-        {/* Action Controls */}
+        {/* Right: Site Splitting Chip & Primary Toggle */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          {/* Site Splitting Toggle with Tooltip */}
           {tracking && (
             <Tooltip
               content={
                 <div>
                   <strong style={{ color: C.accent, display: 'block', marginBottom: 4 }}>🌐 Site Splitting</strong>
-                  Distinguishes YouTube from research docs. Window titles are checked instantly against {KNOWN_SITES.length} popular sites and immediately discarded.
-                  <div style={{ marginTop: 6, fontSize: 11, opacity: 0.7 }}>
-                    <strong>Supported:</strong> {KNOWN_SITES.slice(0, 10).join(', ')}, and more.
+                  Differentiates sites like YouTube vs research docs. Window titles are checked in-memory against supported sites and instantly discarded.
+                  <div style={{ marginTop: 6, fontSize: 11, color: C.dim }}>
+                    <strong>Includes:</strong> {KNOWN_SITES.slice(0, 8).join(', ')}, etc.
                   </div>
                 </div>
               }
               width={280}
+              align="right"
             >
               <button
+                onClick={() => void toggleSites(!sites)}
                 style={{
-                  ...button(sites ? 'primary' : 'ghost'),
+                  border: `1px solid ${sites ? 'rgba(242, 166, 179, 0.35)' : C.border}`,
+                  background: sites ? 'rgba(242, 166, 179, 0.1)' : 'transparent',
+                  color: sites ? C.accent : C.dim,
                   fontSize: 12,
+                  fontWeight: 550,
                   padding: '5px 12px',
                   borderRadius: 8,
+                  cursor: 'pointer',
                   display: 'inline-flex',
                   alignItems: 'center',
                   gap: 6,
+                  transition: 'all 0.15s ease',
                 }}
-                onClick={() => void toggleSites(!sites)}
               >
-                🌐 Sites: {sites ? 'On' : 'Off'} <span style={{ fontSize: 10, opacity: 0.7 }}>ⓘ</span>
+                <span>Site Splitting: {sites ? 'On' : 'Off'}</span>
+                <span style={{ fontSize: 10, opacity: 0.7 }}>ⓘ</span>
               </button>
             </Tooltip>
           )}
 
-          {/* Master Tracking Button */}
           <button
             style={{
-              ...button(tracking ? 'ghost' : 'primary'),
-              fontSize: 12,
               padding: '6px 14px',
               borderRadius: 8,
+              border: tracking ? `1px solid ${C.borderStrong}` : 'none',
+              background: tracking ? 'transparent' : C.accent,
+              color: tracking ? C.text : '#241f2b',
+              fontSize: 12.5,
+              fontWeight: 600,
+              cursor: supported === false ? 'default' : 'pointer',
+              opacity: supported === false ? 0.5 : 1,
+              transition: 'all 0.15s ease',
             }}
             disabled={supported === false}
             onClick={() => void toggle(!tracking)}
           >
-            {tracking ? 'Pause Tracking' : 'Start Tracking'}
+            {tracking ? 'Pause' : 'Start Tracking'}
           </button>
         </div>
       </div>
 
-      {/* Main Activity View */}
+      {/* Content Section */}
       {tracking ? (
         <>
           {totalMs === 0 ? (
@@ -453,12 +467,15 @@ export function ActivityTab(): JSX.Element {
                 borderStyle: 'dashed',
                 background: 'transparent',
                 textAlign: 'center',
-                padding: '36px 24px',
+                padding: '40px 24px',
+                margin: '20px 0',
               }}
             >
-              <div style={{ fontSize: 14, fontWeight: 600, color: C.text, marginBottom: 4 }}>No Activity Spans Recorded Yet</div>
-              <div style={{ fontSize: 12.5, color: C.dim, lineHeight: 1.55, maxWidth: 460, margin: '0 auto' }}>
-                Activity samples arrive every couple of minutes while you use your computer. Keep working and check back shortly!
+              <div style={{ fontSize: 14, fontWeight: 600, color: C.text, marginBottom: 4 }}>
+                No Activity Recorded Yet
+              </div>
+              <div style={{ fontSize: 12.5, color: C.dim, lineHeight: 1.55, maxWidth: 420, margin: '0 auto' }}>
+                Activity samples arrive automatically every couple of minutes while you work. Keep working and check back shortly!
               </div>
             </div>
           ) : (
@@ -466,36 +483,36 @@ export function ActivityTab(): JSX.Element {
               {/* Timeline Chart */}
               {range === 'today' && <Timeline spans={spans} from={bounds.from} to={bounds.to} />}
 
-              {/* Core Key Stats with Tooltips */}
-              <div style={{ display: 'flex', gap: 10, marginBottom: 14 }}>
+              {/* Core Key Stats */}
+              <div style={{ display: 'flex', gap: 12, marginBottom: 16 }}>
                 <Stat
                   value={humanDuration(totalMs)}
-                  caption="at the keyboard"
+                  caption="Active Time"
                   accent
-                  tooltip="Total active time registered at keyboard or mouse."
+                  tooltip="Total time active at the keyboard/mouse."
                 />
                 <Stat
                   value={humanDuration(focused)}
-                  caption="in focused apps"
-                  tooltip="Time spent inside apps classified as work or productivity."
+                  caption="Focused Apps"
+                  tooltip="Time spent inside productivity and work apps."
                 />
                 <Stat
                   value={humanDuration(longest)}
-                  caption="longest stretch"
-                  tooltip="Your single longest continuous block of uninterrupted focus."
+                  caption="Longest Stretch"
+                  tooltip="Your single longest continuous block of focus today."
                 />
                 <Stat
                   value={String(switches)}
-                  caption="app switches"
-                  tooltip="Total number of times you switched between active applications."
+                  caption="App Switches"
+                  tooltip="Total number of app switches."
                 />
               </div>
 
               {/* Work Category Breakdown */}
-              <div style={{ ...card, marginBottom: 14 }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
-                  <div style={{ fontSize: 12, color: C.dim, fontWeight: 600 }}>Work Category Breakdown</div>
-                  <Tooltip content="Work categories are inferred automatically based on application names. You can adjust categories in the list below." width={260}>
+              <div style={{ ...card, marginBottom: 16, background: 'rgba(34, 29, 41, 0.6)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+                  <span style={{ fontSize: 12.5, fontWeight: 600, color: C.text }}>Work Breakdown</span>
+                  <Tooltip content="Automatically categorized from active app names. You can reassign categories below." width={250} align="right">
                     <span style={{ fontSize: 11.5, color: C.faint, cursor: 'help' }}>ⓘ</span>
                   </Tooltip>
                 </div>
@@ -503,11 +520,11 @@ export function ActivityTab(): JSX.Element {
                 <div
                   style={{
                     display: 'flex',
-                    height: 12,
-                    borderRadius: 6,
+                    height: 10,
+                    borderRadius: 5,
                     overflow: 'hidden',
-                    background: 'rgba(255, 255, 255, 0.04)',
-                    marginBottom: 12,
+                    background: 'rgba(0, 0, 0, 0.25)',
+                    marginBottom: 14,
                   }}
                 >
                   {categories.map((c) => (
@@ -523,7 +540,7 @@ export function ActivityTab(): JSX.Element {
                   ))}
                 </div>
 
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 14 }}>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 16 }}>
                   {categories.map((c) => (
                     <span
                       key={c.category}
@@ -537,30 +554,33 @@ export function ActivityTab(): JSX.Element {
                           background: CATEGORY_COLOUR[c.category],
                         }}
                       />
-                      {c.label} <strong style={{ color: C.text, fontWeight: 600 }}>{humanDuration(c.ms)}</strong>
+                      <span>{c.label}</span>
+                      <strong style={{ color: C.text, fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>
+                        {humanDuration(c.ms)}
+                      </strong>
                     </span>
                   ))}
                 </div>
               </div>
 
               {/* Applications List */}
-              <div style={{ ...card, marginBottom: 14 }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-                  <div style={{ fontSize: 12, color: C.dim, fontWeight: 600 }}>Top Applications</div>
-                  <Tooltip content="Change an application's category dropdown if Mochi categorized it incorrectly. Your preference is saved locally." width={260}>
-                    <span style={{ fontSize: 11.5, color: C.faint, cursor: 'help' }}>Categorization ⓘ</span>
+              <div style={{ ...card, marginBottom: 20, background: 'rgba(34, 29, 41, 0.6)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+                  <span style={{ fontSize: 12.5, fontWeight: 600, color: C.text }}>Applications Used</span>
+                  <Tooltip content="Reassign an application's category using the dropdown if Mochi categorized it incorrectly." width={260} align="right">
+                    <span style={{ fontSize: 11.5, color: C.faint, cursor: 'help' }}>Category Help ⓘ</span>
                   </Tooltip>
                 </div>
 
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                   {apps.slice(0, 12).map((a) => (
-                    <div key={a.app} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <div key={a.app} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                       <span
                         style={{
                           fontSize: 12.5,
                           color: C.text,
-                          minWidth: 130,
-                          maxWidth: 160,
+                          minWidth: 140,
+                          maxWidth: 180,
                           overflow: 'hidden',
                           textOverflow: 'ellipsis',
                           whiteSpace: 'nowrap',
@@ -573,9 +593,9 @@ export function ActivityTab(): JSX.Element {
                       <div
                         style={{
                           flex: 1,
-                          height: 7,
-                          borderRadius: 4,
-                          background: 'rgba(255, 255, 255, 0.04)',
+                          height: 6,
+                          borderRadius: 3,
+                          background: 'rgba(0, 0, 0, 0.25)',
                           overflow: 'hidden',
                         }}
                       >
@@ -583,7 +603,7 @@ export function ActivityTab(): JSX.Element {
                           style={{
                             width: `${Math.max(2, a.share * 100)}%`,
                             height: '100%',
-                            borderRadius: 4,
+                            borderRadius: 3,
                             background: CATEGORY_COLOUR[a.category],
                           }}
                         />
@@ -592,10 +612,10 @@ export function ActivityTab(): JSX.Element {
                         style={{
                           fontSize: 11.5,
                           color: C.text,
-                          minWidth: 56,
+                          minWidth: 54,
                           textAlign: 'right',
                           fontVariantNumeric: 'tabular-nums',
-                          fontWeight: 550,
+                          fontWeight: 600,
                         }}
                       >
                         {humanDuration(a.ms)}
@@ -606,16 +626,17 @@ export function ActivityTab(): JSX.Element {
                         onChange={(e) =>
                           void recategorise(a.app, e.target.value as ActivityCategory)
                         }
-                        title={`Categorized as ${activityCategoryInfo(a.category).label}. Click to change.`}
+                        title={`Categorized as ${activityCategoryInfo(a.category).label}. Click to reassign.`}
                         style={{
                           background: 'rgba(255, 255, 255, 0.03)',
                           border: `1px solid ${C.border}`,
                           borderRadius: 6,
                           color: C.dim,
                           fontSize: 11,
-                          padding: '2px 6px',
+                          padding: '3px 6px',
                           cursor: 'pointer',
                           fontFamily: 'inherit',
+                          outline: 'none',
                         }}
                       >
                         {ACTIVITY_CATEGORIES.map((c) => (
@@ -636,14 +657,16 @@ export function ActivityTab(): JSX.Element {
           style={{
             ...card,
             textAlign: 'center',
-            padding: '40px 24px',
-            marginBottom: 14,
-            borderColor: C.borderStrong,
+            padding: '44px 24px',
+            marginBottom: 20,
+            background: 'rgba(34, 29, 41, 0.4)',
           }}
         >
-          <div style={{ fontSize: 15, fontWeight: 650, color: C.text, marginBottom: 6 }}>Activity Tracking is Paused</div>
-          <div style={{ fontSize: 12.5, color: C.dim, maxWidth: 440, margin: '0 auto 16px', lineHeight: 1.55 }}>
-            Nothing is being recorded right now. Enable tracking above whenever you want to analyze your daily productivity and focus patterns.
+          <div style={{ fontSize: 15, fontWeight: 650, color: C.text, marginBottom: 6 }}>
+            Tracking is Paused
+          </div>
+          <div style={{ fontSize: 12.5, color: C.dim, maxWidth: 420, margin: '0 auto 16px', lineHeight: 1.55 }}>
+            No activity is recorded while paused. Enable tracking to view your work metrics and focus patterns.
           </div>
           <button style={button('primary')} onClick={() => void toggle(true)}>
             Enable Activity Tracking
@@ -651,59 +674,65 @@ export function ActivityTab(): JSX.Element {
         </div>
       )}
 
-      {/* Collapsible Privacy & Data Wipe Drawer */}
-      <div style={{ ...card, background: 'rgba(255, 255, 255, 0.015)' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <div>
-            <button
-              onClick={() => setShowPrivacyDetails((v) => !v)}
-              style={{
-                background: 'transparent',
-                border: 'none',
-                color: C.dim,
-                fontSize: 12,
-                fontWeight: 600,
-                cursor: 'pointer',
-                padding: 0,
-                display: 'flex',
-                alignItems: 'center',
-                gap: 6,
-              }}
-            >
-              <span>{showPrivacyDetails ? '▾' : '▸'}</span> Data Management & Clear History
-            </button>
-          </div>
+      {/* Subtle Data Management Footer */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingTop: 12, borderTop: `1px solid ${C.border}` }}>
+        <button
+          onClick={() => setShowPrivacyDetails((v) => !v)}
+          style={{
+            background: 'transparent',
+            border: 'none',
+            color: C.faint,
+            fontSize: 11.5,
+            cursor: 'pointer',
+            padding: 0,
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 4,
+            transition: 'color 0.15s',
+          }}
+        >
+          <span>{showPrivacyDetails ? '▾ Hide Data Controls' : '▸ Manage Activity Data'}</span>
+        </button>
 
-          <span style={{ fontSize: 11, color: C.faint }}>
-            {range === 'today' ? `Today, ${WEEKDAYS[now.getDay()]}` : 'Last 7 Days'} · Stored Locally
-          </span>
-        </div>
-
-        {showPrivacyDetails && (
-          <div style={{ marginTop: 12, paddingTop: 12, borderTop: `1px solid ${C.border}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 14 }}>
-            <div style={{ flex: 1, fontSize: 12, color: C.dim, lineHeight: 1.5 }}>
-              Wipe all recorded application spans from Mochi&apos;s local SQLite database. This action is immediate and cannot be undone.
-            </div>
-            {confirmWipe ? (
-              <div style={{ display: 'flex', gap: 8, shrink: 0 }}>
-                <button style={button('ghost')} onClick={() => setConfirmWipe(false)}>
-                  Cancel
-                </button>
-                <button
-                  style={{ ...button('primary'), background: C.warn }}
-                  onClick={() => void wipe()}
-                >
-                  Confirm Delete All
-                </button>
-              </div>
-            ) : (
-              <button style={button('ghost')} onClick={() => setConfirmWipe(true)}>
-                Delete All Data
-              </button>
-            )}
-          </div>
-        )}
+        <span style={{ fontSize: 11, color: C.faint }}>
+          {range === 'today' ? `Today, ${WEEKDAYS[now.getDay()]}` : 'Last 7 Days'} · Stored Locally
+        </span>
       </div>
+
+      {showPrivacyDetails && (
+        <div
+          style={{
+            ...card,
+            marginTop: 12,
+            background: 'rgba(255, 255, 255, 0.02)',
+            display: 'flex',
+            alignItems: 'center',
+            justify: 'space-between',
+            gap: 14,
+          }}
+        >
+          <div style={{ fontSize: 12, color: C.dim, lineHeight: 1.5 }}>
+            Purge all recorded activity spans from local database storage. Cannot be undone.
+          </div>
+          {confirmWipe ? (
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button style={button('ghost')} onClick={() => setConfirmWipe(false)}>
+                Cancel
+              </button>
+              <button
+                style={{ ...button('primary'), background: C.warn }}
+                onClick={() => void wipe()}
+              >
+                Confirm Delete All
+              </button>
+            </div>
+          ) : (
+            <button style={button('ghost')} onClick={() => setConfirmWipe(true)}>
+              Delete All Data
+            </button>
+          )}
+        </div>
+      )}
     </div>
   );
 }
