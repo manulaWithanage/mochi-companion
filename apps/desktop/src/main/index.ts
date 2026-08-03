@@ -395,9 +395,10 @@ async function bootstrap(): Promise<void> {
   if (settings.get().paused) overlay.setPaused(true);
   tray.create();
 
-  // First run opens the 3-step setup window; afterwards Mochi just appears.
+  // First run opens the setup window; in dev mode, also open it automatically.
   const firstRun = !settings.get().setupCompleted;
-  if (firstRun) {
+  const isDev = process.env['ELECTRON_RENDERER_URL'] !== undefined;
+  if (firstRun || isDev) {
     setup.open();
   }
 
