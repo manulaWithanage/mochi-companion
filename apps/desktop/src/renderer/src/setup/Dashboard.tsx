@@ -19,7 +19,14 @@ import { ActivityTab } from './tabs/ActivityTab.js';
 import { TasksTab } from './tabs/TasksTab.js';
 
 type TabId =
-  'today' | 'calendar' | 'tasks' | 'activity' | 'time' | 'routines' | 'mochi' | 'ai' | 'gmail';
+  | 'today'
+  | 'calendar'
+  | 'tasks'
+  | 'activity'
+  | 'time'
+  | 'routines'
+  | 'gmail'
+  | 'settings';
 
 const PRIMARY_TABS: readonly { id: TabId; label: string }[] = [
   { id: 'today', label: 'Today' },
@@ -32,8 +39,7 @@ const PRIMARY_TABS: readonly { id: TabId; label: string }[] = [
 ];
 
 const SETTINGS_TABS: readonly { id: TabId; label: string }[] = [
-  { id: 'mochi', label: 'Mochi' },
-  { id: 'ai', label: 'AI' },
+  { id: 'settings', label: 'Settings' },
 ];
 
 function renderTabIcon(id: TabId, active: boolean): JSX.Element {
@@ -154,41 +160,6 @@ function renderTabIcon(id: TabId, active: boolean): JSX.Element {
           <path d="M16 16h5v5" />
         </svg>
       );
-    case 'mochi':
-      return (
-        <svg
-          width="17"
-          height="17"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke={strokeColor}
-          strokeWidth={strokeWidth}
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          style={{ opacity }}
-        >
-          <circle cx="12" cy="12" r="10" />
-          <path d="M8 14s1.5 2 4 2 4-2 4-2" />
-          <line x1="9" x2="9.01" y1="9" y2="9" />
-          <line x1="15" x2="15.01" y1="9" y2="9" />
-        </svg>
-      );
-    case 'ai':
-      return (
-        <svg
-          width="17"
-          height="17"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke={strokeColor}
-          strokeWidth={strokeWidth}
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          style={{ opacity }}
-        >
-          <path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z" />
-        </svg>
-      );
     case 'gmail':
       return (
         <svg
@@ -206,7 +177,111 @@ function renderTabIcon(id: TabId, active: boolean): JSX.Element {
           <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
         </svg>
       );
+    case 'settings':
+      return (
+        <svg
+          width="17"
+          height="17"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke={strokeColor}
+          strokeWidth={strokeWidth}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          style={{ opacity }}
+        >
+          <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" />
+          <circle cx="12" cy="12" r="3" />
+        </svg>
+      );
   }
+}
+
+function SettingsView(): JSX.Element {
+  const [subTab, setSubTab] = useState<'companion' | 'ai'>('companion');
+
+  return (
+    <div>
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          marginBottom: 24,
+          borderBottom: `1px solid ${C.border}`,
+          paddingBottom: 16,
+        }}
+      >
+        <div>
+          <h2 style={{ margin: '0 0 4px', fontSize: 22, fontWeight: 700, color: C.text }}>
+            Settings
+          </h2>
+          <div style={{ fontSize: 13, color: C.dim }}>
+            Manage your companion appearance, schedule, and AI models.
+          </div>
+        </div>
+
+        {/* Sub-tab Switcher Pills */}
+        <div
+          style={{
+            display: 'flex',
+            background: 'rgba(255, 255, 255, 0.04)',
+            border: `1px solid ${C.border}`,
+            borderRadius: 11,
+            padding: 4,
+            gap: 4,
+          }}
+        >
+          <button
+            onClick={() => setSubTab('companion')}
+            style={{
+              padding: '7px 18px',
+              borderRadius: 8,
+              border: 'none',
+              background: subTab === 'companion' ? C.accent : 'transparent',
+              color: subTab === 'companion' ? '#ffffff' : C.dim,
+              fontSize: 13,
+              fontWeight: 650,
+              cursor: 'pointer',
+              transition: 'all 140ms ease',
+              boxShadow: subTab === 'companion' ? '0 2px 8px rgba(242, 166, 179, 0.3)' : 'none',
+            }}
+          >
+            Companion & Skin
+          </button>
+          <button
+            onClick={() => setSubTab('ai')}
+            style={{
+              padding: '7px 18px',
+              borderRadius: 8,
+              border: 'none',
+              background: subTab === 'ai' ? C.accent : 'transparent',
+              color: subTab === 'ai' ? '#ffffff' : C.dim,
+              fontSize: 13,
+              fontWeight: 650,
+              cursor: 'pointer',
+              transition: 'all 140ms ease',
+              boxShadow: subTab === 'ai' ? '0 2px 8px rgba(242, 166, 179, 0.3)' : 'none',
+            }}
+          >
+            AI Providers
+          </button>
+        </div>
+      </div>
+
+      {subTab === 'companion' ? (
+        <MochiTab />
+      ) : (
+        <div>
+          <h3 style={{ margin: '0 0 4px', fontSize: 18, fontWeight: 650 }}>AI Providers & Keys</h3>
+          <p style={{ margin: '0 0 18px', fontSize: 13, color: C.dim }}>
+            Bring your own key, or run a local model. Mochi never sees your bill.
+          </p>
+          <AiSection />
+        </div>
+      )}
+    </div>
+  );
 }
 
 export function Dashboard(): JSX.Element {
@@ -265,10 +340,10 @@ export function Dashboard(): JSX.Element {
       {/* ---- sidebar ---- */}
       <nav
         style={{
-          width: 205,
+          width: 240,
           flexShrink: 0,
           borderRight: `1px solid ${C.border}`,
-          padding: '20px 14px',
+          padding: '24px 16px',
           display: 'flex',
           flexDirection: 'column',
           gap: 5,
@@ -618,25 +693,16 @@ export function Dashboard(): JSX.Element {
       </nav>
 
       {/* ---- content ---- */}
-      <main style={{ flex: 1, overflowY: 'auto', padding: '24px 28px', boxSizing: 'border-box' }}>
-        <div style={{ maxWidth: 960, margin: '0 auto' }}>
+      <main style={{ flex: 1, overflowY: 'auto', padding: '28px 36px', boxSizing: 'border-box' }}>
+        <div style={{ maxWidth: 1140, margin: '0 auto' }}>
           {tab === 'today' && <TodayTab />}
           {tab === 'time' && <TimeTab />}
           {tab === 'tasks' && <TasksTab />}
           {tab === 'routines' && <RoutinesTab />}
-          {tab === 'mochi' && <MochiTab />}
           {tab === 'calendar' && <CalendarTab />}
           {tab === 'activity' && <ActivityTab />}
           {tab === 'gmail' && <GmailTab />}
-          {tab === 'ai' && (
-            <div>
-              <h2 style={{ margin: '0 0 2px', fontSize: 19, fontWeight: 650 }}>AI</h2>
-              <p style={{ margin: '0 0 18px', fontSize: 13, color: C.dim }}>
-                Bring your own key, or run a local model. Mochi never sees your bill.
-              </p>
-              <AiSection />
-            </div>
-          )}
+          {tab === 'settings' && <SettingsView />}
         </div>
       </main>
     </div>
