@@ -122,11 +122,13 @@ export class OverlayWindow {
     const win = this.win;
     if (win === null) return;
 
-    win.once('ready-to-show', () => {
+    const showOverlay = () => {
       if (!win.isDestroyed() && !win.isVisible()) {
         win.showInactive();
       }
-    });
+    };
+    win.once('ready-to-show', showOverlay);
+    setTimeout(showOverlay, 800);
 
     win.on('moved', () => this.schedulePersist());
 

@@ -39,7 +39,13 @@ export class SetupWindow {
     });
 
     this.win.setMenuBarVisibility(false);
-    this.win.once('ready-to-show', () => this.win?.show());
+    const showWin = () => {
+      if (this.win !== null && !this.win.isDestroyed() && !this.win.isVisible()) {
+        this.win.show();
+      }
+    };
+    this.win.once('ready-to-show', showWin);
+    setTimeout(showWin, 800);
     this.win.on('closed', () => {
       this.win = null;
     });
