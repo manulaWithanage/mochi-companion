@@ -21,16 +21,19 @@ import { TasksTab } from './tabs/TasksTab.js';
 type TabId =
   'today' | 'calendar' | 'tasks' | 'activity' | 'time' | 'routines' | 'mochi' | 'ai' | 'gmail';
 
-const TABS: readonly { id: TabId; label: string }[] = [
+const PRIMARY_TABS: readonly { id: TabId; label: string }[] = [
   { id: 'today', label: 'Today' },
   { id: 'calendar', label: 'Calendar' },
   { id: 'tasks', label: 'Tasks' },
   { id: 'time', label: 'Time' },
   { id: 'activity', label: 'Activity' },
   { id: 'routines', label: 'Routines' },
+  { id: 'gmail', label: 'Gmail' },
+];
+
+const SETTINGS_TABS: readonly { id: TabId; label: string }[] = [
   { id: 'mochi', label: 'Mochi' },
   { id: 'ai', label: 'AI' },
-  { id: 'gmail', label: 'Gmail' },
 ];
 
 function renderTabIcon(id: TabId, active: boolean): JSX.Element {
@@ -450,8 +453,88 @@ export function Dashboard(): JSX.Element {
           </div>
         </div>
 
-        {/* Tab Items */}
-        {TABS.map((t) => {
+        {/* Primary Feature Tabs */}
+        {PRIMARY_TABS.map((t) => {
+          const active = t.id === tab;
+          return (
+            <button
+              key={t.id}
+              onClick={() => setTab(t.id)}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 11,
+                textAlign: 'left',
+                padding: '9px 12px',
+                borderRadius: 10,
+                border: 'none',
+                borderLeft: active ? `3px solid ${C.accent}` : '3px solid transparent',
+                cursor: 'pointer',
+                fontSize: 13.5,
+                background: active
+                  ? 'linear-gradient(90deg, rgba(242, 166, 179, 0.16) 0%, rgba(242, 166, 179, 0.04) 100%)'
+                  : 'transparent',
+                color: active ? C.accent : C.dim,
+                fontWeight: active ? 650 : 500,
+                boxShadow: active ? '0 2px 10px rgba(0, 0, 0, 0.2)' : 'none',
+                transition: 'all 140ms ease',
+              }}
+              onMouseEnter={(e) => {
+                if (!active) {
+                  e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)';
+                  e.currentTarget.style.color = C.text;
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (!active) {
+                  e.currentTarget.style.background = 'transparent';
+                  e.currentTarget.style.color = C.dim;
+                }
+              }}
+            >
+              <div
+                style={{
+                  width: 22,
+                  height: 22,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flexShrink: 0,
+                }}
+              >
+                {renderTabIcon(t.id, active)}
+              </div>
+              <span>{t.label}</span>
+            </button>
+          );
+        })}
+
+        {/* Settings Divider */}
+        <div
+          style={{
+            margin: '8px 4px 4px',
+            borderTop: `1px solid ${C.border}`,
+            paddingTop: 8,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+          }}
+        >
+          <span
+            style={{
+              fontSize: 10,
+              fontWeight: 700,
+              color: C.faint,
+              letterSpacing: '0.08em',
+              textTransform: 'uppercase',
+            }}
+          >
+            Settings
+          </span>
+        </div>
+
+        {/* Settings Tabs (Mochi & AI) */}
+        {SETTINGS_TABS.map((t) => {
           const active = t.id === tab;
           return (
             <button
