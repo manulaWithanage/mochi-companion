@@ -2,12 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { LandingMascotCanvas } from './LandingMascotCanvas';
 import { MochiIcon } from './MochiIcon';
 import { Footer } from './Footer';
+import { HeroDiorama } from './HeroDiorama';
 
-interface LandingPageProps {
-  onGoToDashboard: () => void;
-}
-
-export const LandingPage: React.FC<LandingPageProps> = ({ onGoToDashboard }) => {
+export const LandingPage: React.FC = () => {
   // Initial default state is peaceful resting/sleeping ( ^_^ ) z Z
   const [mascotState, setMascotState] = useState<'idle' | 'working' | 'resting' | 'coffee'>(
     'resting',
@@ -149,8 +146,8 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGoToDashboard }) => 
             100% Private
           </a>
 
-          <button
-            onClick={onGoToDashboard}
+          <a
+            href="#privacy"
             style={{
               fontSize: '13.5px',
               fontWeight: '600',
@@ -159,12 +156,12 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGoToDashboard }) => 
               background: 'rgba(255, 255, 255, 0.85)',
               border: '1px solid rgba(0, 0, 0, 0.1)',
               color: '#0f172a',
-              cursor: 'pointer',
               boxShadow: '0 2px 8px rgba(0, 0, 0, 0.03)',
+              textDecoration: 'none',
             }}
           >
-            Explore Dashboard
-          </button>
+            Private by Design
+          </a>
 
           <a
             href="/Mochi-Setup.exe"
@@ -185,6 +182,9 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGoToDashboard }) => 
         </div>
       </nav>
 
+      <HeroDiorama />
+
+      <div className="legacy-hero" aria-hidden="true">
       {/* 🌸 FULL VIEWPORT (100vh) 3D PAPERCRAFT HERO SECTION */}
       <section
         style={{
@@ -318,8 +318,8 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGoToDashboard }) => 
               Download Free for Windows
             </a>
 
-            <button
-              onClick={onGoToDashboard}
+            <a
+              href="#privacy"
               style={{
                 padding: '13px 26px',
                 fontSize: '15px',
@@ -328,12 +328,14 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGoToDashboard }) => 
                 background: 'rgba(255, 255, 255, 0.85)',
                 border: '1px solid rgba(0, 0, 0, 0.1)',
                 color: '#0f172a',
-                cursor: 'pointer',
                 boxShadow: '0 4px 16px rgba(0, 0, 0, 0.04)',
+                textDecoration: 'none',
+                display: 'inline-flex',
+                alignItems: 'center',
               }}
             >
-              Explore Web Dashboard
-            </button>
+              Private by Design
+            </a>
           </div>
 
           <div
@@ -419,6 +421,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGoToDashboard }) => 
           </div>
         </div>
       </section>
+      </div>
 
       {/* 🔮 SECTION 1: WHY MOCHI EXISTS — SYMMETRICAL 3D PAPERCRAFT CARDS WITH MATCHING ARTWORK BANNERS */}
       <section
@@ -554,7 +557,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGoToDashboard }) => 
             >
               <li style={{ display: 'flex', gap: '10px', alignItems: 'flex-start' }}>
                 <span style={{ color: '#ef4444', fontWeight: 'bold' }}>✕</span> Complex, bloated
-                dashboards that take minutes just to start a timer
+                work tools that take minutes just to start a timer
               </li>
               <li style={{ display: 'flex', gap: '10px', alignItems: 'flex-start' }}>
                 <span style={{ color: '#ef4444', fontWeight: 'bold' }}>✕</span> Forgetting to take

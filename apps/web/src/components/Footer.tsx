@@ -172,8 +172,8 @@ export const Footer: React.FC = () => {
                   </a>
                 </li>
                 <li>
-                  <a href="#dashboard" style={{ color: 'inherit', textDecoration: 'none' }}>
-                    Cloud Analytics Dashboard
+                  <a href="#privacy" style={{ color: 'inherit', textDecoration: 'none' }}>
+                    On-device activity history
                   </a>
                 </li>
               </ul>
