@@ -133,9 +133,11 @@ export class OverlayWindow {
     });
 
     const showOverlay = () => {
-      if (!win.isDestroyed() && !win.isVisible()) {
-        win.showInactive();
-        console.log('[overlay] window shown inactive successfully');
+      if (!win.isDestroyed()) {
+        win.show();
+        win.setAlwaysOnTop(true, 'screen-saver');
+        win.setAlwaysOnTop(true);
+        console.log('[overlay] window shown successfully');
       }
     };
     win.once('ready-to-show', showOverlay);
