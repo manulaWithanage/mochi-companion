@@ -95,7 +95,8 @@ export const button = (variant: 'primary' | 'ghost' | 'danger' = 'ghost'): React
     borderRadius: 10,
     border: '1px solid rgba(255, 255, 255, 0.1)',
     borderTop: '1px solid rgba(255, 255, 255, 0.18)',
-    background: 'linear-gradient(180deg, rgba(255, 255, 255, 0.07) 0%, rgba(255, 255, 255, 0.03) 100%)',
+    background:
+      'linear-gradient(180deg, rgba(255, 255, 255, 0.07) 0%, rgba(255, 255, 255, 0.03) 100%)',
     color: C.text,
     fontSize: 13,
     fontWeight: 600,

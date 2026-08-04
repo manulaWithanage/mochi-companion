@@ -189,9 +189,6 @@ export function RoutinesTab(): JSX.Element {
   const [category, setCategory] = useState<RoutineCategory>('health');
   const [mochiReminder, setMochiReminder] = useState(true);
   const [reminderMessage, setReminderMessage] = useState('');
-  const [customIntervalMins, setCustomIntervalMins] = useState('30');
-  const [intervalStart, setIntervalStart] = useState('09:00');
-  const [intervalEnd, setIntervalEnd] = useState('17:00');
 
   useEffect(() => {
     void window.mochi.userRoutines.list().then(setRoutines);
@@ -213,30 +210,6 @@ export function RoutinesTab(): JSX.Element {
   // like a day.
   const ordered = useMemo(() => sortByNext(routines, now), [routines, now]);
   const upNext = ordered.find((r) => nextOccurrence(r, now) !== null) ?? null;
-
-  const applyIntervalTimes = (mins: number): void => {
-    const parseMin = (tStr: string): number => {
-      if (!tStr) return 9 * 60;
-      const parts = tStr.split(':').map(Number);
-      return (parts[0] || 0) * 60 + (parts[1] || 0);
-    };
-
-    let start = parseMin(intervalStart);
-    let end = parseMin(intervalEnd);
-    if (end <= start) end = start + 8 * 60;
-
-    const step = Math.max(1, mins);
-    const result: string[] = [];
-
-    for (let current = start; current <= end; current += step) {
-      const hh = String(Math.floor(current / 60)).padStart(2, '0');
-      const mm = String(current % 60).padStart(2, '0');
-      result.push(`${hh}:${mm}`);
-    }
-
-    const uniqueSorted = [...new Set(result)].sort();
-    setTimes(uniqueSorted);
-  };
 
   const openNewForm = (): void => {
     setEditingId(null);

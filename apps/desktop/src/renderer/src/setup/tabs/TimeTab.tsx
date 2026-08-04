@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useMemo, useState, type JSX } from 'react';
 import {
   categoryIcon,
-  categoryLabel,
   elapsedMs,
   formatDuration,
   type MochiSettings,
@@ -50,28 +49,13 @@ const SWATCH_OPTIONS = [
 
 function formatCategoryName(name: string): string {
   const cleaned = name
-    .replace(/^[\p{Emoji}\p{Extended_Pictographic}\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\s]+/gu, '')
+    .replace(
+      /^[\p{Emoji}\p{Extended_Pictographic}\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\s]+/gu,
+      '',
+    )
     .trim();
   return cleaned.length > 0 ? cleaned : name;
 }
-
-/**
- * Secondary row actions.
- *
- * Deliberately quiet: hairline border, no fill, no weight. These only appear
- * on hover, and nothing on a row should compete with Track.
- */
-const quietButton: React.CSSProperties = {
-  background: 'transparent',
-  border: `1px solid ${C.border}`,
-  color: C.dim,
-  borderRadius: 6,
-  padding: '4px 9px',
-  fontSize: 11.5,
-  fontWeight: 500,
-  cursor: 'pointer',
-  whiteSpace: 'nowrap',
-};
 
 /** The small ◀ ▶ buttons that set a pinned category's place on the overlay. */
 function slotArrow(disabled: boolean): React.CSSProperties {
@@ -116,8 +100,6 @@ export function TimeTab(): JSX.Element {
   const [showCreateForm, setShowCreateForm] = useState(false);
   /** Removing a category takes its sessions with it, so it asks first. */
   const [confirmArchive, setConfirmArchive] = useState<string | null>(null);
-  /** Which row the cursor is on; secondary actions fade in only for that one. */
-  const [hoveredRow, setHoveredRow] = useState<string | null>(null);
 
   const reload = useCallback(async () => {
     const sList = await window.mochi.timer.listSessions();
@@ -413,7 +395,16 @@ export function TimeTab(): JSX.Element {
             id: 'categories',
             label: 'Categories & Mascot Badges',
             icon: (
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+              <svg
+                width="15"
+                height="15"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
                 <rect width="7" height="7" x="3" y="3" rx="1.5" />
                 <rect width="7" height="7" x="14" y="3" rx="1.5" />
                 <rect width="7" height="7" x="14" y="14" rx="1.5" />
@@ -425,7 +416,16 @@ export function TimeTab(): JSX.Element {
             id: 'performance',
             label: 'Performance & Reports',
             icon: (
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+              <svg
+                width="15"
+                height="15"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
                 <line x1="18" y1="20" x2="18" y2="10" />
                 <line x1="12" y1="20" x2="12" y2="4" />
                 <line x1="6" y1="20" x2="6" y2="14" />
@@ -436,7 +436,16 @@ export function TimeTab(): JSX.Element {
             id: 'history',
             label: `Session History (${sessions.length})`,
             icon: (
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+              <svg
+                width="15"
+                height="15"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
                 <circle cx="12" cy="12" r="10" />
                 <polyline points="12 6 12 12 16 14" />
               </svg>
@@ -571,7 +580,9 @@ export function TimeTab(): JSX.Element {
                       background: isRunning
                         ? `radial-gradient(circle at top left, ${p.colour}22, rgba(23, 19, 30, 0.9))`
                         : 'rgba(23, 19, 30, 0.6)',
-                      boxShadow: isRunning ? `0 4px 18px ${p.colour}33` : '0 2px 8px rgba(0,0,0,0.2)',
+                      boxShadow: isRunning
+                        ? `0 4px 18px ${p.colour}33`
+                        : '0 2px 8px rgba(0,0,0,0.2)',
                       display: 'flex',
                       flexDirection: 'column',
                       justifyContent: 'space-between',
@@ -580,8 +591,16 @@ export function TimeTab(): JSX.Element {
                       transition: 'all 200ms ease',
                     }}
                   >
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                      <span style={{ fontSize: 10.5, fontWeight: 800, color: p.colour, opacity: 0.9 }}>
+                    <div
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                      }}
+                    >
+                      <span
+                        style={{ fontSize: 10.5, fontWeight: 800, color: p.colour, opacity: 0.9 }}
+                      >
                         SLOT {slotIdx + 1}
                       </span>
                       {isRunning && (
@@ -662,6 +681,27 @@ export function TimeTab(): JSX.Element {
                       >
                         {isRunning ? '⏸ Pause' : '▶ Track'}
                       </button>
+                      {/* Which slot a category occupies decides where it sits
+                          under the mascot, so it has to be changeable from the
+                          card that shows the slot. */}
+                      <button
+                        type="button"
+                        title="Move earlier on the overlay"
+                        disabled={slotIdx === 0}
+                        onClick={() => void movePrimaryProject(slotIdx, 'left')}
+                        style={slotArrow(slotIdx === 0)}
+                      >
+                        ◀
+                      </button>
+                      <button
+                        type="button"
+                        title="Move later on the overlay"
+                        disabled={slotIdx >= primaryCount - 1}
+                        onClick={() => void movePrimaryProject(slotIdx, 'right')}
+                        style={slotArrow(slotIdx >= primaryCount - 1)}
+                      >
+                        ▶
+                      </button>
                       <button
                         type="button"
                         title="Unpin from overlay"
@@ -699,7 +739,7 @@ export function TimeTab(): JSX.Element {
                 <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 8 }}>
                   {QUICK_PRESETS.map((preset) => {
                     const exists = projects.some(
-                      (p) => p.name.toLowerCase() === preset.name.toLowerCase()
+                      (p) => p.name.toLowerCase() === preset.name.toLowerCase(),
                     );
                     return (
                       <button
@@ -746,7 +786,8 @@ export function TimeTab(): JSX.Element {
                         height: 34,
                         borderRadius: 8,
                         border: `1px solid ${selectedIcon === ico ? C.accent : 'rgba(255, 255, 255, 0.1)'}`,
-                        background: selectedIcon === ico ? `${C.accent}33` : 'rgba(255, 255, 255, 0.04)',
+                        background:
+                          selectedIcon === ico ? `${C.accent}33` : 'rgba(255, 255, 255, 0.04)',
                         fontSize: 16,
                         cursor: 'pointer',
                         display: 'flex',
@@ -816,7 +857,8 @@ export function TimeTab(): JSX.Element {
               }}
             >
               <div style={{ fontSize: 13, fontWeight: 700, color: C.text }}>
-                All Categories <span style={{ color: C.dim, fontWeight: 500 }}>({projects.length})</span>
+                All Categories{' '}
+                <span style={{ color: C.dim, fontWeight: 500 }}>({projects.length})</span>
               </div>
               <span style={{ fontSize: 12, color: C.dim }}>
                 Pin up to 3 categories to Mochi&apos;s desktop overlay
@@ -833,7 +875,8 @@ export function TimeTab(): JSX.Element {
                   fontSize: 13,
                 }}
               >
-                No categories created yet. Click &quot;+ New Category&quot; above to add your first topic!
+                No categories created yet. Click &quot;+ New Category&quot; above to add your first
+                topic!
               </div>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -867,7 +910,15 @@ export function TimeTab(): JSX.Element {
                       }}
                     >
                       {/* Left: Icon & Title */}
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 12, width: 220, flexShrink: 0 }}>
+                      <div
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 12,
+                          width: 220,
+                          flexShrink: 0,
+                        }}
+                      >
                         <div
                           style={{
                             width: 38,
@@ -898,7 +949,14 @@ export function TimeTab(): JSX.Element {
                             {formatCategoryName(project.name)}
                           </div>
                           {isRunningThis && (
-                            <div style={{ fontSize: 11, fontWeight: 700, color: project.colour, marginTop: 2 }}>
+                            <div
+                              style={{
+                                fontSize: 11,
+                                fontWeight: 700,
+                                color: project.colour,
+                                marginTop: 2,
+                              }}
+                            >
                               ● Active Session
                             </div>
                           )}
@@ -915,11 +973,25 @@ export function TimeTab(): JSX.Element {
                             marginBottom: 6,
                           }}
                         >
-                          <span style={{ fontSize: 13, fontWeight: 700, color: C.text, fontVariantNumeric: 'tabular-nums' }}>
+                          <span
+                            style={{
+                              fontSize: 13,
+                              fontWeight: 700,
+                              color: C.text,
+                              fontVariantNumeric: 'tabular-nums',
+                            }}
+                          >
                             {humanDuration(ms)}
                           </span>
-                          <span style={{ fontSize: 11.5, color: C.dim, fontVariantNumeric: 'tabular-nums' }}>
-                            {pct < 1 && pct > 0 ? '<1' : Math.round(pct)}% · {count} session{count === 1 ? '' : 's'}
+                          <span
+                            style={{
+                              fontSize: 11.5,
+                              color: C.dim,
+                              fontVariantNumeric: 'tabular-nums',
+                            }}
+                          >
+                            {pct < 1 && pct > 0 ? '<1' : Math.round(pct)}% · {count} session
+                            {count === 1 ? '' : 's'}
                           </span>
                         </div>
                         {/* Thick Rounded Progress Bar */}
@@ -945,7 +1017,9 @@ export function TimeTab(): JSX.Element {
                       </div>
 
                       {/* Right: Permanent Action Bar (No Hover Required!) */}
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
+                      <div
+                        style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}
+                      >
                         {asking ? (
                           <>
                             <button
@@ -997,7 +1071,11 @@ export function TimeTab(): JSX.Element {
                                 background: isPrimary
                                   ? `${project.colour}22`
                                   : 'rgba(255, 255, 255, 0.04)',
-                                color: isPrimary ? project.colour : primaryCount >= 3 ? C.faint : C.dim,
+                                color: isPrimary
+                                  ? project.colour
+                                  : primaryCount >= 3
+                                    ? C.faint
+                                    : C.dim,
                                 fontSize: 12,
                                 fontWeight: isPrimary ? 750 : 500,
                                 cursor: !isPrimary && primaryCount >= 3 ? 'not-allowed' : 'pointer',
@@ -1097,7 +1175,9 @@ export function TimeTab(): JSX.Element {
             </div>
 
             {/* Date Range Filter Switcher */}
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 8 }}>
+            <div
+              style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 8 }}
+            >
               <SegmentedControl<DateRangeFilter>
                 options={[
                   { id: 'today', label: 'Today' },
@@ -1184,7 +1264,16 @@ export function TimeTab(): JSX.Element {
                   gap: 6,
                 }}
               >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={C.accent} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                <svg
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke={C.accent}
+                  strokeWidth="2.2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
                   <circle cx="12" cy="12" r="10" />
                   <polyline points="12 6 12 12 16 14" />
                 </svg>
@@ -1228,14 +1317,30 @@ export function TimeTab(): JSX.Element {
                   gap: 6,
                 }}
               >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#a8e6b8" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                <svg
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="#a8e6b8"
+                  strokeWidth="2.2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
                   <line x1="18" y1="20" x2="18" y2="10" />
                   <line x1="12" y1="20" x2="12" y2="4" />
                   <line x1="6" y1="20" x2="6" y2="14" />
                 </svg>
                 <span>Focus Sessions</span>
               </div>
-              <div style={{ fontSize: 26, fontWeight: 800, color: '#ffffff', letterSpacing: '-0.02em' }}>
+              <div
+                style={{
+                  fontSize: 26,
+                  fontWeight: 800,
+                  color: '#ffffff',
+                  letterSpacing: '-0.02em',
+                }}
+              >
                 {performanceStats.sessionCount}{' '}
                 <span style={{ fontSize: 14, color: C.dim, fontWeight: 600 }}>
                   {performanceStats.sessionCount === 1 ? 'session' : 'sessions'}
@@ -1268,7 +1373,16 @@ export function TimeTab(): JSX.Element {
                   gap: 6,
                 }}
               >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#8b5cf6" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                <svg
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="#8b5cf6"
+                  strokeWidth="2.2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
                   <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
                 </svg>
                 <span>Avg Session Length</span>
@@ -1311,7 +1425,16 @@ export function TimeTab(): JSX.Element {
                   gap: 6,
                 }}
               >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#ffb3c1" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                <svg
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="#ffb3c1"
+                  strokeWidth="2.2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
                   <path d="M6 9H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h2" />
                   <path d="M18 9h2a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2h-2" />
                   <path d="M4 22h16" />
@@ -1332,7 +1455,7 @@ export function TimeTab(): JSX.Element {
                   marginTop: 4,
                 }}
               >
-                {performanceStats.peakWindow}
+                {performanceStats.peakPeriod}
               </div>
             </div>
           </div>
@@ -1364,7 +1487,9 @@ export function TimeTab(): JSX.Element {
               </div>
 
               {performanceStats.categoryBreakdown.length === 0 ? (
-                <div style={{ fontSize: 13, color: C.faint, padding: '30px 0', textAlign: 'center' }}>
+                <div
+                  style={{ fontSize: 13, color: C.faint, padding: '30px 0', textAlign: 'center' }}
+                >
                   No focus activity recorded for this period.
                 </div>
               ) : (
@@ -1426,14 +1551,29 @@ export function TimeTab(): JSX.Element {
                       <span style={{ fontSize: 18, fontWeight: 800, color: C.text }}>
                         {performanceStats.categoryBreakdown.length}
                       </span>
-                      <span style={{ fontSize: 9.5, fontWeight: 700, color: C.dim, textTransform: 'uppercase' }}>
+                      <span
+                        style={{
+                          fontSize: 9.5,
+                          fontWeight: 700,
+                          color: C.dim,
+                          textTransform: 'uppercase',
+                        }}
+                      >
                         Categories
                       </span>
                     </div>
                   </div>
 
                   {/* Right Donut Legend */}
-                  <div style={{ flex: 1, minWidth: 160, display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  <div
+                    style={{
+                      flex: 1,
+                      minWidth: 160,
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: 8,
+                    }}
+                  >
                     {performanceStats.categoryBreakdown.map((item) => (
                       <div
                         key={item.project.id}
@@ -1483,7 +1623,16 @@ export function TimeTab(): JSX.Element {
             </div>
 
             {/* Smart Focus Insights & Mochi Productivity Coach Card */}
-            <div style={{ ...card, background: 'rgba(34, 29, 41, 0.75)', padding: '18px 20px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+            <div
+              style={{
+                ...card,
+                background: 'rgba(34, 29, 41, 0.75)',
+                padding: '18px 20px',
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'space-between',
+              }}
+            >
               <div>
                 <div
                   style={{
@@ -1684,7 +1833,10 @@ export function TimeTab(): JSX.Element {
         </div>
       ) : (
         /* Dedicated Session History Sub-Tab */
-        <div key="history" style={{ ...card, padding: '20px 24px', animation: 'fadeInSubTab 220ms ease-out' }}>
+        <div
+          key="history"
+          style={{ ...card, padding: '20px 24px', animation: 'fadeInSubTab 220ms ease-out' }}
+        >
           <div
             style={{
               display: 'flex',
@@ -1720,7 +1872,8 @@ export function TimeTab(): JSX.Element {
 
           {sessions.length === 0 ? (
             <div style={{ fontSize: 13, color: C.dim, padding: '40px 0', textAlign: 'center' }}>
-              No recorded focus sessions yet. Click "▶ Track" in Categories to log your first session!
+              No recorded focus sessions yet. Click "▶ Track" in Categories to log your first
+              session!
             </div>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -1748,8 +1901,12 @@ export function TimeTab(): JSX.Element {
                       justifyContent: 'space-between',
                       alignItems: 'center',
                       background: 'rgba(24, 20, 34, 0.95)',
-                      border: s.endedAt === null ? `1.5px solid ${color}` : '1px solid rgba(255, 255, 255, 0.08)',
-                      boxShadow: s.endedAt === null ? `0 4px 14px ${color}33` : '0 2px 6px rgba(0,0,0,0.2)',
+                      border:
+                        s.endedAt === null
+                          ? `1.5px solid ${color}`
+                          : '1px solid rgba(255, 255, 255, 0.08)',
+                      boxShadow:
+                        s.endedAt === null ? `0 4px 14px ${color}33` : '0 2px 6px rgba(0,0,0,0.2)',
                       borderRadius: 12,
                       padding: '12px 18px',
                       transition: 'all 160ms ease',
@@ -1785,8 +1942,14 @@ export function TimeTab(): JSX.Element {
                           fontWeight: 750,
                           color: s.endedAt === null ? '#a8e6b8' : '#ffffff',
                           fontVariantNumeric: 'tabular-nums',
-                          background: s.endedAt === null ? 'rgba(168, 230, 184, 0.18)' : 'linear-gradient(180deg, #3f334c 0%, #282032 100%)',
-                          border: s.endedAt === null ? '1px solid rgba(168, 230, 184, 0.4)' : '1px solid rgba(242, 166, 179, 0.35)',
+                          background:
+                            s.endedAt === null
+                              ? 'rgba(168, 230, 184, 0.18)'
+                              : 'linear-gradient(180deg, #3f334c 0%, #282032 100%)',
+                          border:
+                            s.endedAt === null
+                              ? '1px solid rgba(168, 230, 184, 0.4)'
+                              : '1px solid rgba(242, 166, 179, 0.35)',
                           padding: '5px 14px',
                           borderRadius: 8,
                           boxShadow: '0 2px 6px rgba(0,0,0,0.3)',

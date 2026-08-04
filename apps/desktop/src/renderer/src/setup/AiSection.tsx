@@ -29,6 +29,9 @@ const C = {
   edge: '#3b3244',
   track: '#332c3d',
   dim: '#9d94a8',
+  // Disabled text. The shared palette in ui.ts has this; this local copy
+  // did not, so a disabled button referenced a colour that did not exist.
+  faint: 'rgba(244, 238, 246, 0.38)',
 };
 
 const box: React.CSSProperties = {
@@ -77,9 +80,7 @@ const primaryButton = (disabled: boolean): React.CSSProperties => ({
   padding: '10px 18px',
   borderRadius: 10,
   border: disabled ? '1px solid rgba(255,255,255,0.08)' : '1px solid rgba(242, 166, 179, 0.4)',
-  background: disabled
-    ? 'rgba(255, 255, 255, 0.08)'
-    : 'linear-gradient(135deg, #f2a6b3, #e58597)',
+  background: disabled ? 'rgba(255, 255, 255, 0.08)' : 'linear-gradient(135deg, #f2a6b3, #e58597)',
   color: disabled ? C.faint : '#1c1625',
   fontWeight: 700,
   fontSize: 13.5,

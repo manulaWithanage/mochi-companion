@@ -18,7 +18,7 @@ import {
   type TimerSnapshot,
   type WorkSession,
 } from '@mochi/core';
-import { button, C, card, dayKey, h2, humanDuration, input, sub, WEEKDAYS } from '../ui.js';
+import { button, C, card, dayKey, humanDuration, input, WEEKDAYS } from '../ui.js';
 
 /**
  * The daily overview: time tracked, today's checklist, and what is coming.
@@ -367,9 +367,29 @@ export function TodayTab({ onSelectTab }: { onSelectTab?: (tab: string) => void 
       >
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div>
-            <h2 style={{ margin: 0, fontSize: 20, fontWeight: 700, color: C.text, display: 'flex', alignItems: 'center', gap: 10 }}>
+            <h2
+              style={{
+                margin: 0,
+                fontSize: 20,
+                fontWeight: 700,
+                color: C.text,
+                display: 'flex',
+                alignItems: 'center',
+                gap: 10,
+              }}
+            >
               <span>☀️ Welcome to Mochi</span>
-              <span style={{ fontSize: 11, padding: '3px 9px', borderRadius: 999, background: 'rgba(16,185,129,0.15)', color: '#10b981', border: '1px solid rgba(16,185,129,0.3)', fontWeight: 600 }}>
+              <span
+                style={{
+                  fontSize: 11,
+                  padding: '3px 9px',
+                  borderRadius: 999,
+                  background: 'rgba(16,185,129,0.15)',
+                  color: '#10b981',
+                  border: '1px solid rgba(16,185,129,0.3)',
+                  fontWeight: 600,
+                }}
+              >
                 🟢 Active in Background
               </span>
             </h2>
@@ -382,7 +402,9 @@ export function TodayTab({ onSelectTab }: { onSelectTab?: (tab: string) => void 
         </div>
 
         {/* 4 Clickable Quick Action Guide Cards */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10, marginTop: 16 }}>
+        <div
+          style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10, marginTop: 16 }}
+        >
           {[
             {
               id: 'tasks',
@@ -434,7 +456,9 @@ export function TodayTab({ onSelectTab }: { onSelectTab?: (tab: string) => void 
                 e.currentTarget.style.boxShadow = 'none';
               }}
             >
-              <div style={{ fontSize: 12.5, fontWeight: 650, color: C.text, marginBottom: 4 }}>{card.title}</div>
+              <div style={{ fontSize: 12.5, fontWeight: 650, color: C.text, marginBottom: 4 }}>
+                {card.title}
+              </div>
               <div style={{ fontSize: 11, color: C.dim, lineHeight: 1.35 }}>{card.desc}</div>
             </button>
           ))}

@@ -95,11 +95,19 @@ export function Setup(): JSX.Element {
   );
 
   const finish = async (): Promise<void> => {
+    // Activity tracking is not part of SetupPayload and has its own channel,
+    // because it is opt-in by design and the setting has a dedicated setter.
+    // Passing it in the payload silently dropped the user's choice: the field
+    // was not in the contract, so the main process never read it.
+    //
+    // Applied first, so the settings completeSetup returns already include it
+    // and the snapshot below is not stale.
+    await window.mochi.settings.setActivityTracking(activityTrackingEnabled);
+
     const updated = await window.mochi.settings.completeSetup({
       assistantName: name.trim() || 'Mochi',
       skinName,
       workHours: { start, end },
-      activityTracking: activityTrackingEnabled,
     });
     setSettings(updated);
     window.mochi.window.closeSetup();
@@ -125,7 +133,13 @@ export function Setup(): JSX.Element {
                 transition: 'background 220ms ease',
               }}
             />
-            <span style={{ fontSize: 10.5, color: i === step ? '#f2a6b3' : '#73667d', fontWeight: i === step ? 650 : 500 }}>
+            <span
+              style={{
+                fontSize: 10.5,
+                color: i === step ? '#f2a6b3' : '#73667d',
+                fontWeight: i === step ? 650 : 500,
+              }}
+            >
               {i + 1}. {s}
             </span>
           </div>
@@ -180,18 +194,29 @@ export function Setup(): JSX.Element {
               ⏰ When is your active workday?
             </h1>
             <p style={{ margin: '6px 0 0', fontSize: 13.5, color: '#a79ab2', lineHeight: 1.45 }}>
-              Outside these hours, {name.trim() || 'Mochi'} enters Do Not Disturb mode so you can rest.
+              Outside these hours, {name.trim() || 'Mochi'} enters Do Not Disturb mode so you can
+              rest.
             </p>
           </div>
 
           <div style={{ display: 'flex', gap: 16 }}>
             <div style={{ flex: 1 }}>
               <span style={label}>Work Starts</span>
-              <input style={input} value={start} placeholder="09:00" onChange={(e) => setStart(e.target.value)} />
+              <input
+                style={input}
+                value={start}
+                placeholder="09:00"
+                onChange={(e) => setStart(e.target.value)}
+              />
             </div>
             <div style={{ flex: 1 }}>
               <span style={label}>Work Ends</span>
-              <input style={input} value={end} placeholder="17:00" onChange={(e) => setEnd(e.target.value)} />
+              <input
+                style={input}
+                value={end}
+                placeholder="17:00"
+                onChange={(e) => setEnd(e.target.value)}
+              />
             </div>
           </div>
 
@@ -231,9 +256,16 @@ export function Setup(): JSX.Element {
                 transition: 'all 160ms ease',
               }}
             >
-              <input type="checkbox" checked={hydrationEnabled} onChange={() => {}} style={{ width: 18, height: 18, accentColor: '#f2a6b3' }} />
+              <input
+                type="checkbox"
+                checked={hydrationEnabled}
+                onChange={() => {}}
+                style={{ width: 18, height: 18, accentColor: '#f2a6b3' }}
+              />
               <div>
-                <strong style={{ fontSize: 14, color: '#f4eef6', display: 'block' }}>💧 Hydration & Stretch Reminders (Recommended)</strong>
+                <strong style={{ fontSize: 14, color: '#f4eef6', display: 'block' }}>
+                  💧 Hydration & Stretch Reminders (Recommended)
+                </strong>
                 <span style={{ fontSize: 12, color: '#a79ab2', marginTop: 2, display: 'block' }}>
                   Gentle nudges every 45 mins to drink water, stretch, and protect your energy.
                 </span>
@@ -255,9 +287,16 @@ export function Setup(): JSX.Element {
                 transition: 'all 160ms ease',
               }}
             >
-              <input type="checkbox" checked={chimeEnabled} onChange={() => {}} style={{ width: 18, height: 18, accentColor: '#f2a6b3' }} />
+              <input
+                type="checkbox"
+                checked={chimeEnabled}
+                onChange={() => {}}
+                style={{ width: 18, height: 18, accentColor: '#f2a6b3' }}
+              />
               <div>
-                <strong style={{ fontSize: 14, color: '#f4eef6', display: 'block' }}>🔔 Soft Audio Chimes</strong>
+                <strong style={{ fontSize: 14, color: '#f4eef6', display: 'block' }}>
+                  🔔 Soft Audio Chimes
+                </strong>
                 <span style={{ fontSize: 12, color: '#a79ab2', marginTop: 2, display: 'block' }}>
                   Plays a subtle, calming chime when routine breaks or top priority alerts trigger.
                 </span>
@@ -274,14 +313,23 @@ export function Setup(): JSX.Element {
                 padding: '14px 16px',
                 borderRadius: 12,
                 background: activityTrackingEnabled ? 'rgba(242,166,179,0.08)' : '#241f2b',
-                border: activityTrackingEnabled ? '1px solid rgba(242,166,179,0.3)' : '1px solid #3b3244',
+                border: activityTrackingEnabled
+                  ? '1px solid rgba(242,166,179,0.3)'
+                  : '1px solid #3b3244',
                 cursor: 'pointer',
                 transition: 'all 160ms ease',
               }}
             >
-              <input type="checkbox" checked={activityTrackingEnabled} onChange={() => {}} style={{ width: 18, height: 18, accentColor: '#f2a6b3' }} />
+              <input
+                type="checkbox"
+                checked={activityTrackingEnabled}
+                onChange={() => {}}
+                style={{ width: 18, height: 18, accentColor: '#f2a6b3' }}
+              />
               <div>
-                <strong style={{ fontSize: 14, color: '#f4eef6', display: 'block' }}>📊 On-Device Activity & Screen Time Tracking</strong>
+                <strong style={{ fontSize: 14, color: '#f4eef6', display: 'block' }}>
+                  📊 On-Device Activity & Screen Time Tracking
+                </strong>
                 <span style={{ fontSize: 12, color: '#a79ab2', marginTop: 2, display: 'block' }}>
                   Observes screen time 100% locally on your computer to show work breakdown graphs.
                 </span>
@@ -299,7 +347,8 @@ export function Setup(): JSX.Element {
               👤 Account & Pro Access
             </h1>
             <p style={{ margin: '6px 0 0', fontSize: 13.5, color: '#a79ab2', lineHeight: 1.45 }}>
-              Choose how you want to start. You can create a free account for 14-day Pro cloud access or continue offline as a guest.
+              Choose how you want to start. You can create a free account for 14-day Pro cloud
+              access or continue offline as a guest.
             </p>
           </div>
 
@@ -317,7 +366,8 @@ export function Setup(): JSX.Element {
             >
               <h3 style={{ margin: 0, fontSize: 15, color: '#f4eef6' }}>👤 Continue as Guest</h3>
               <p style={{ margin: '6px 0 0', fontSize: 12, color: '#a79ab2', lineHeight: 1.4 }}>
-                100% Offline Local Mode. No email or password needed. Use your own API keys for free.
+                100% Offline Local Mode. No email or password needed. Use your own API keys for
+                free.
               </p>
             </div>
 
@@ -332,7 +382,9 @@ export function Setup(): JSX.Element {
                 cursor: 'pointer',
               }}
             >
-              <h3 style={{ margin: 0, fontSize: 15, color: '#f4eef6' }}>✨ 14-Day Free Pro Trial</h3>
+              <h3 style={{ margin: 0, fontSize: 15, color: '#f4eef6' }}>
+                ✨ 14-Day Free Pro Trial
+              </h3>
               <p style={{ margin: '6px 0 0', fontSize: 12, color: '#a79ab2', lineHeight: 1.4 }}>
                 Create account to unlock zero-setup Cloud AI & multi-device sync (No credit card).
               </p>
@@ -343,11 +395,23 @@ export function Setup(): JSX.Element {
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 4 }}>
               <div>
                 <span style={label}>Email</span>
-                <input style={input} type="email" placeholder="you@example.com" value={email} onChange={(e) => setEmail(e.target.value)} />
+                <input
+                  style={input}
+                  type="email"
+                  placeholder="you@example.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                />
               </div>
               <div>
                 <span style={label}>Password</span>
-                <input style={input} type="password" placeholder="••••••••••••" value={password} onChange={(e) => setPassword(e.target.value)} />
+                <input
+                  style={input}
+                  type="password"
+                  placeholder="••••••••••••"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                />
               </div>
             </div>
           )}
@@ -355,7 +419,15 @@ export function Setup(): JSX.Element {
       )}
 
       {/* Navigation Buttons */}
-      <div style={{ marginTop: 'auto', display: 'flex', gap: 10, justifyContent: 'space-between', paddingTop: 16 }}>
+      <div
+        style={{
+          marginTop: 'auto',
+          display: 'flex',
+          gap: 10,
+          justifyContent: 'space-between',
+          paddingTop: 16,
+        }}
+      >
         <button
           style={{ ...button(false), visibility: step === 0 ? 'hidden' : 'visible' }}
           onClick={() => setStep((s) => s - 1)}

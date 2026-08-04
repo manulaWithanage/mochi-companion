@@ -129,7 +129,7 @@ export function OverlayCategoryPills({
         title="Open Mochi Dashboard & Settings"
         onClick={(e) => {
           e.stopPropagation();
-          void window.mochi.window.showSetup();
+          void window.mochi.window.openSettings();
         }}
         onMouseEnter={() => {
           setActiveHoverId('settings-gear');
