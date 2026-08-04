@@ -507,9 +507,9 @@ export function CalendarTab(): JSX.Element {
               transition: 'all 0.15s ease',
             }}
             onClick={() => void window.mochi.calendar.previewBriefing()}
-            title="Runs the real briefing now, governor and all"
+            title="Makes Mochi say the morning briefing now, so you can hear it before relying on it"
           >
-            Show me
+            Preview the briefing
           </button>
         </div>
 
@@ -547,8 +547,15 @@ export function CalendarTab(): JSX.Element {
         )}
       </div>
 
-      {/* ---- TODAY'S METRICS & TIMELINE ---- */}
-      {today !== null && (
+      {/*
+        ---- TODAY'S METRICS & TIMELINE ----
+
+        Only when meetings actually break the day up. With an empty calendar this
+        block was three noughts, an empty bar, and "Longest focus stretch 8h 00m"
+        — which is the length of the workday, presented in green as though it were
+        a finding. Nothing here is information until there is a meeting in it.
+      */}
+      {today !== null && today.shape.meetingCount > 0 && (
         <div style={{ marginBottom: 20 }}>
           {/* Stat Cards */}
           <div style={{ display: 'flex', gap: 12, marginBottom: 14 }}>
@@ -872,22 +879,14 @@ export function CalendarTab(): JSX.Element {
         </div>
 
         {byDay.length === 0 ? (
-          <div
-            style={{
-              padding: '24px 16px',
-              textAlign: 'center',
-              background: 'rgba(255, 255, 255, 0.02)',
-              borderRadius: 12,
-              border: '1px dashed rgba(255, 255, 255, 0.08)',
-            }}
-          >
-            <div style={{ fontSize: 24, marginBottom: 6 }}>📅</div>
-            <div style={{ fontSize: 14, fontWeight: 600, color: C.text, marginBottom: 4 }}>
-              Nothing scheduled for this week
-            </div>
-            <div style={{ fontSize: 12, color: C.dim }}>
-              Your upcoming 7 days are completely clear of booked meetings.
-            </div>
+          /*
+            One line, not a bordered card with an emoji. The headline above
+            already says the day is clear; this said the same thing a second time
+            in a bigger box.
+          */
+          <div style={{ fontSize: 12.5, color: C.faint, padding: '4px 2px 2px' }}>
+            Nothing booked in the next seven days. Mochi will speak up five minutes before anything
+            that appears.
           </div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
@@ -990,141 +989,147 @@ export function CalendarTab(): JSX.Element {
         )}
       </div>
 
-      {/* ---- 30-DAY RETROSPECTIVE CHART ---- */}
-      <div style={{ ...card, marginBottom: 20, padding: '20px 22px', borderRadius: 16 }}>
-        <div
-          style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            marginBottom: 14,
-          }}
-        >
-          <div>
-            <div style={{ fontSize: 14, fontWeight: 700, color: C.text }}>
-              30-Day Activity Retrospective
-            </div>
-            <div style={{ fontSize: 12, color: C.dim, marginTop: 2 }}>
-              Comparing tracked focus work against meeting hours over the last {RETRO_DAYS} days (
-              {retro.activeDays} active days).
-            </div>
-          </div>
-          <div style={{ display: 'flex', gap: 14, fontSize: 11.5, fontWeight: 500 }}>
-            <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-              <span style={{ width: 10, height: 10, borderRadius: 2, background: C.accent }} />
-              Tracked
-            </span>
-            <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-              <span
-                style={{
-                  width: 10,
-                  height: 10,
-                  borderRadius: 2,
-                  background: 'rgba(255, 179, 193, 0.55)',
-                }}
-              />
-              Meetings
-            </span>
-          </div>
-        </div>
+      {/*
+        ---- LAST 30 DAYS ----
 
-        {/* 3 Retro Headline Summary Cards */}
-        <div style={{ display: 'flex', gap: 12, marginBottom: 20 }}>
-          <Stat value={humanDuration(retro.totalTrackedMs)} caption="Total Tracked Work" accent />
-          <Stat value={humanDuration(retro.totalMeetingMs)} caption="Total Meeting Time" />
-          <Stat
-            value={humanDuration(retro.avgTrackedMs)}
-            caption="Avg per Active Day"
-            color={C.good}
-          />
-        </div>
-
-        {/* Interactive Bar Chart Container */}
-        <div
-          style={{
-            position: 'relative',
-            background: 'rgba(0, 0, 0, 0.15)',
-            padding: '16px 14px',
-            borderRadius: 12,
-            border: '1px solid rgba(255, 255, 255, 0.04)',
-          }}
-        >
-          {/* Tooltip Overlay */}
-          {hoveredBarIndex !== null && retro.records[hoveredBarIndex] && (
-            <div
-              style={{
-                position: 'absolute',
-                top: 10,
-                right: 14,
-                background: 'rgba(36, 31, 43, 0.95)',
-                border: '1px solid rgba(242, 166, 179, 0.3)',
-                borderRadius: 8,
-                padding: '6px 12px',
-                fontSize: 11.5,
-                color: C.text,
-                boxShadow: '0 4px 16px rgba(0, 0, 0, 0.4)',
-                zIndex: 10,
-                pointerEvents: 'none',
-              }}
-            >
-              <strong style={{ color: C.accent }}>
-                {shortDay(retro.records[hoveredBarIndex]!.at)}
-              </strong>{' '}
-              · {humanDuration(retro.records[hoveredBarIndex]!.trackedMs)} tracked ·{' '}
-              {humanDuration(retro.records[hoveredBarIndex]!.meetingMs)} in meetings
-            </div>
-          )}
-
-          {/* Bar Chart Visualization */}
+        Kept, but hidden until there is something to compare. Thirty empty columns
+        read as a broken chart rather than as a new install, and this was the
+        largest block on the page.
+      */}
+      {retro.activeDays > 0 && (
+        <div style={{ ...card, marginBottom: 20, padding: '20px 22px', borderRadius: 16 }}>
           <div
             style={{
               display: 'flex',
-              alignItems: 'flex-end',
-              gap: 4,
-              height: 110,
-              paddingBottom: 4,
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              marginBottom: 14,
             }}
           >
-            {retro.records.map((r, idx) => (
+            <div>
+              <div style={{ fontSize: 14, fontWeight: 700, color: C.text }}>Last 30 days</div>
+              <div style={{ fontSize: 12, color: C.dim, marginTop: 2 }}>
+                Comparing tracked focus work against meeting hours over the last {RETRO_DAYS} days (
+                {retro.activeDays} active days).
+              </div>
+            </div>
+            <div style={{ display: 'flex', gap: 14, fontSize: 11.5, fontWeight: 500 }}>
+              <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                <span style={{ width: 10, height: 10, borderRadius: 2, background: C.accent }} />
+                Tracked
+              </span>
+              <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                <span
+                  style={{
+                    width: 10,
+                    height: 10,
+                    borderRadius: 2,
+                    background: 'rgba(255, 179, 193, 0.55)',
+                  }}
+                />
+                Meetings
+              </span>
+            </div>
+          </div>
+
+          {/* 3 Retro Headline Summary Cards */}
+          <div style={{ display: 'flex', gap: 12, marginBottom: 20 }}>
+            <Stat value={humanDuration(retro.totalTrackedMs)} caption="Total Tracked Work" accent />
+            <Stat value={humanDuration(retro.totalMeetingMs)} caption="Total Meeting Time" />
+            <Stat
+              value={humanDuration(retro.avgTrackedMs)}
+              caption="Avg per Active Day"
+              color={C.good}
+            />
+          </div>
+
+          {/* Interactive Bar Chart Container */}
+          <div
+            style={{
+              position: 'relative',
+              background: 'rgba(0, 0, 0, 0.15)',
+              padding: '16px 14px',
+              borderRadius: 12,
+              border: '1px solid rgba(255, 255, 255, 0.04)',
+            }}
+          >
+            {/* Tooltip Overlay */}
+            {hoveredBarIndex !== null && retro.records[hoveredBarIndex] && (
               <div
-                key={r.day}
-                onMouseEnter={() => setHoveredBarIndex(idx)}
-                onMouseLeave={() => setHoveredBarIndex(null)}
                 style={{
-                  flex: 1,
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: 2,
-                  height: '100%',
-                  justifyContent: 'flex-end',
-                  cursor: 'pointer',
-                  opacity: hoveredBarIndex === null || hoveredBarIndex === idx ? 1 : 0.45,
-                  transition: 'opacity 0.15s ease',
+                  position: 'absolute',
+                  top: 10,
+                  right: 14,
+                  background: 'rgba(36, 31, 43, 0.95)',
+                  border: '1px solid rgba(242, 166, 179, 0.3)',
+                  borderRadius: 8,
+                  padding: '6px 12px',
+                  fontSize: 11.5,
+                  color: C.text,
+                  boxShadow: '0 4px 16px rgba(0, 0, 0, 0.4)',
+                  zIndex: 10,
+                  pointerEvents: 'none',
                 }}
               >
-                {/* Meeting Bar (top) */}
-                <div
-                  style={{
-                    height: Math.round((r.meetingMs / peak) * 50),
-                    background: 'rgba(255, 179, 193, 0.55)',
-                    borderRadius: '4px 4px 0 0',
-                    transition: 'height 0.2s ease',
-                  }}
-                />
-                {/* Tracked Bar (bottom) */}
-                <div
-                  style={{
-                    height: Math.max(r.trackedMs > 0 ? 4 : 0, (r.trackedMs / peak) * 54),
-                    background: C.accent,
-                    borderRadius: '0 0 4px 4px',
-                    transition: 'height 0.2s ease',
-                  }}
-                />
+                <strong style={{ color: C.accent }}>
+                  {shortDay(retro.records[hoveredBarIndex]!.at)}
+                </strong>{' '}
+                · {humanDuration(retro.records[hoveredBarIndex]!.trackedMs)} tracked ·{' '}
+                {humanDuration(retro.records[hoveredBarIndex]!.meetingMs)} in meetings
               </div>
-            ))}
+            )}
+
+            {/* Bar Chart Visualization */}
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'flex-end',
+                gap: 4,
+                height: 110,
+                paddingBottom: 4,
+              }}
+            >
+              {retro.records.map((r, idx) => (
+                <div
+                  key={r.day}
+                  onMouseEnter={() => setHoveredBarIndex(idx)}
+                  onMouseLeave={() => setHoveredBarIndex(null)}
+                  style={{
+                    flex: 1,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: 2,
+                    height: '100%',
+                    justifyContent: 'flex-end',
+                    cursor: 'pointer',
+                    opacity: hoveredBarIndex === null || hoveredBarIndex === idx ? 1 : 0.45,
+                    transition: 'opacity 0.15s ease',
+                  }}
+                >
+                  {/* Meeting Bar (top) */}
+                  <div
+                    style={{
+                      height: Math.round((r.meetingMs / peak) * 50),
+                      background: 'rgba(255, 179, 193, 0.55)',
+                      borderRadius: '4px 4px 0 0',
+                      transition: 'height 0.2s ease',
+                    }}
+                  />
+                  {/* Tracked Bar (bottom) */}
+                  <div
+                    style={{
+                      height: Math.max(r.trackedMs > 0 ? 4 : 0, (r.trackedMs / peak) * 54),
+                      background: C.accent,
+                      borderRadius: '0 0 4px 4px',
+                      transition: 'height 0.2s ease',
+                    }}
+                  />
+                </div>
+              ))}
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
       {/* ---- PATTERN & HIGHLIGHT INSIGHTS ---- */}
       {impactText !== null && (
