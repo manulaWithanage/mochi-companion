@@ -474,108 +474,232 @@ export function TimeTab(): JSX.Element {
             </button>
           </div>
 
-          {/*
-            What Mochi is actually carrying.
-
-            Not a list of names: the badges under the mascot are icon-only
-            circles, and clicking one starts tracking. Drawing them the same way
-            here — same order, same shapes, same active ring — means this
-            answers "what will I see, and what will I be clicking" rather than
-            restating the three rows below. categoryIcon() is the same call the
-            overlay makes, so the two cannot drift.
-          */}
+          {/* Hero Deck Card: Mochi Desktop Overlay Quick Slots */}
           <div
             style={{
-              padding: '2px 10px 16px',
-              marginBottom: 6,
-              display: 'flex',
-              alignItems: 'center',
-              gap: 14,
-              flexWrap: 'wrap',
+              ...card,
+              padding: '18px 20px',
+              marginBottom: 24,
+              background: 'rgba(34, 29, 41, 0.75)',
+              backdropFilter: 'blur(12px)',
+              border: '1px solid rgba(255, 255, 255, 0.08)',
+              boxShadow: '0 8px 24px rgba(0, 0, 0, 0.35)',
             }}
           >
-            <span style={{ fontSize: 12, color: C.dim, whiteSpace: 'nowrap' }}>
-              On Mochi&apos;s overlay
-            </span>
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                marginBottom: 14,
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <span style={{ fontSize: 16 }}>🤖</span>
+                <span style={{ fontSize: 13.5, fontWeight: 700, color: C.text }}>
+                  Mochi Desktop Overlay Slots
+                </span>
+                <span
+                  style={{
+                    fontSize: 11,
+                    padding: '2px 8px',
+                    borderRadius: 12,
+                    background: 'rgba(242, 166, 179, 0.15)',
+                    color: C.accent,
+                    fontWeight: 700,
+                  }}
+                >
+                  {primaryCount} of 3 Pinned
+                </span>
+              </div>
+              <span style={{ fontSize: 12, color: C.dim }}>
+                Pin categories below to show them directly under Mochi on your desktop
+              </span>
+            </div>
 
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            {/* 3 Interactive Slot Cards */}
+            <div
+              style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(3, 1fr)',
+                gap: 12,
+              }}
+            >
               {[0, 1, 2].map((slotIdx) => {
                 const id = settings?.primaryProjectIds?.[slotIdx];
                 const p = id === undefined ? null : (projects.find((x) => x.id === id) ?? null);
                 const currentId = timer?.projectId || timer?.session?.projectId || null;
                 const isRunning = p !== null && timer?.running === true && currentId === p.id;
+                const pTotals = p ? totals.rows.find((r) => r.project.id === p.id) : null;
 
                 if (p === null) {
                   return (
-                    <span
+                    <div
                       key={slotIdx}
-                      title={`Slot ${slotIdx + 1} is empty — pin a category below`}
                       style={{
-                        width: 30,
-                        height: 30,
-                        borderRadius: '50%',
-                        border: `1px dashed ${C.border}`,
-                        display: 'inline-flex',
+                        padding: '14px 16px',
+                        borderRadius: 12,
+                        border: '1px dashed rgba(255, 255, 255, 0.15)',
+                        background: 'rgba(0, 0, 0, 0.2)',
+                        display: 'flex',
+                        flexDirection: 'column',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        fontSize: 12,
-                        color: C.faint,
+                        minHeight: 110,
+                        gap: 6,
+                        textAlign: 'center',
                       }}
                     >
-                      +
-                    </span>
+                      <span style={{ fontSize: 11, fontWeight: 700, color: C.faint }}>
+                        SLOT {slotIdx + 1}
+                      </span>
+                      <span style={{ fontSize: 12.5, color: C.dim }}>Empty Slot</span>
+                      <span style={{ fontSize: 11, color: C.faint }}>Pin a category below</span>
+                    </div>
                   );
                 }
 
                 return (
-                  <span
+                  <div
                     key={slotIdx}
-                    title={`${categoryLabel(p.name) || p.name} — slot ${slotIdx + 1}`}
                     style={{
-                      width: 30,
-                      height: 30,
-                      borderRadius: '50%',
-                      // Mirrors OverlayCategoryPills: dark disc normally, lit
-                      // with the category's colour while it is the one running.
-                      background: isRunning
-                        ? `radial-gradient(circle at 30% 30%, ${p.colour}, #1a1625)`
-                        : 'rgba(23, 19, 30, 0.92)',
+                      padding: '14px 16px',
+                      borderRadius: 12,
                       border: isRunning
-                        ? `2px solid ${p.colour}`
-                        : `1px solid rgba(255, 255, 255, 0.22)`,
-                      boxShadow: isRunning ? `0 0 10px ${p.colour}88` : 'none',
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      fontSize: 14,
-                      flexShrink: 0,
+                        ? `1.5px solid ${p.colour}`
+                        : '1px solid rgba(255, 255, 255, 0.1)',
+                      background: isRunning
+                        ? `radial-gradient(circle at top left, ${p.colour}22, rgba(23, 19, 30, 0.9))`
+                        : 'rgba(23, 19, 30, 0.6)',
+                      boxShadow: isRunning ? `0 4px 18px ${p.colour}33` : '0 2px 8px rgba(0,0,0,0.2)',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      justifyContent: 'space-between',
+                      minHeight: 110,
+                      gap: 10,
+                      transition: 'all 200ms ease',
                     }}
                   >
-                    {categoryIcon(p.name)}
-                  </span>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                      <span style={{ fontSize: 10.5, fontWeight: 800, color: p.colour, opacity: 0.9 }}>
+                        SLOT {slotIdx + 1}
+                      </span>
+                      {isRunning && (
+                        <span
+                          style={{
+                            fontSize: 10.5,
+                            fontWeight: 700,
+                            color: '#a8e6b8',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 4,
+                          }}
+                        >
+                          ● LIVE
+                        </span>
+                      )}
+                    </div>
+
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                      <div
+                        style={{
+                          width: 34,
+                          height: 34,
+                          borderRadius: '50%',
+                          background: `${p.colour}28`,
+                          border: `1.5px solid ${p.colour}`,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          fontSize: 16,
+                          flexShrink: 0,
+                        }}
+                      >
+                        {categoryIcon(p.name)}
+                      </div>
+                      <div style={{ minWidth: 0, flex: 1 }}>
+                        <div
+                          style={{
+                            fontSize: 13.5,
+                            fontWeight: 700,
+                            color: C.text,
+                            whiteSpace: 'nowrap',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                          }}
+                        >
+                          {formatCategoryName(p.name)}
+                        </div>
+                        <div style={{ fontSize: 11.5, color: C.dim, marginTop: 1 }}>
+                          {humanDuration(pTotals?.ms || 0)} today
+                        </div>
+                      </div>
+                    </div>
+
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 2 }}>
+                      <button
+                        type="button"
+                        onClick={() => void startOrStopSession(p.id)}
+                        style={{
+                          flex: 1,
+                          padding: '6px 10px',
+                          borderRadius: 8,
+                          border: isRunning
+                            ? '1px solid rgba(230, 57, 86, 0.5)'
+                            : '1px solid rgba(242, 166, 179, 0.4)',
+                          background: isRunning
+                            ? 'linear-gradient(180deg, #4d232c 0%, #30141a 100%)'
+                            : 'linear-gradient(180deg, #3f334c 0%, #282032 100%)',
+                          color: isRunning ? '#ffb3c1' : '#ffffff',
+                          fontSize: 11.5,
+                          fontWeight: 700,
+                          cursor: 'pointer',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: 5,
+                        }}
+                      >
+                        {isRunning ? '⏸ Pause' : '▶ Track'}
+                      </button>
+                      <button
+                        type="button"
+                        title="Unpin from overlay"
+                        onClick={() => void togglePrimaryProject(p.id)}
+                        style={{
+                          padding: '6px 10px',
+                          borderRadius: 8,
+                          border: '1px solid rgba(255, 255, 255, 0.1)',
+                          background: 'rgba(255, 255, 255, 0.05)',
+                          color: C.dim,
+                          fontSize: 11.5,
+                          fontWeight: 600,
+                          cursor: 'pointer',
+                        }}
+                      >
+                        Unpin
+                      </button>
+                    </div>
+                  </div>
                 );
               })}
             </div>
-
-            <span style={{ fontSize: 11.5, color: C.faint }}>
-              Click a badge under Mochi to start tracking
-            </span>
           </div>
 
           {/* Inline Create Category Form */}
           {showCreateForm && (
-            <div style={{ ...card, marginBottom: 20, border: `1px solid ${C.accent}` }}>
-              <div style={{ fontSize: 13, fontWeight: 600, color: C.text, marginBottom: 12 }}>
-                ✨ Create New Category
+            <div style={{ ...card, marginBottom: 24, border: `1px solid ${C.accent}` }}>
+              <div style={{ fontSize: 13.5, fontWeight: 700, color: C.text, marginBottom: 14 }}>
+                ✨ Create New Focus Category
               </div>
 
               {/* Quick Presets */}
-              <div style={{ marginBottom: 14 }}>
+              <div style={{ marginBottom: 16 }}>
                 <span style={label}>Or Pick a Quick Preset</span>
-                <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 6 }}>
+                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 8 }}>
                   {QUICK_PRESETS.map((preset) => {
-                    const exists = projects.some((p) =>
-                      p.name.toLowerCase().includes(preset.name.toLowerCase()),
+                    const exists = projects.some(
+                      (p) => p.name.toLowerCase() === preset.name.toLowerCase()
                     );
                     return (
                       <button
@@ -584,17 +708,18 @@ export function TimeTab(): JSX.Element {
                         disabled={busy}
                         onClick={() => void createCategory(preset.name, preset.colour, preset.icon)}
                         style={{
-                          background: exists ? `${preset.colour}22` : '#1c1724',
-                          border: `1px solid ${exists ? preset.colour : C.border}`,
+                          background: exists ? `${preset.colour}22` : 'rgba(255, 255, 255, 0.04)',
+                          border: `1px solid ${exists ? preset.colour : 'rgba(255, 255, 255, 0.1)'}`,
                           borderRadius: 8,
-                          padding: '6px 12px',
+                          padding: '7px 14px',
                           fontSize: 12,
-                          fontWeight: 500,
+                          fontWeight: 600,
                           color: C.text,
                           cursor: 'pointer',
                           display: 'flex',
                           alignItems: 'center',
                           gap: 6,
+                          transition: 'all 160ms ease',
                         }}
                       >
                         <span>{preset.icon}</span>
@@ -606,24 +731,27 @@ export function TimeTab(): JSX.Element {
                 </div>
               </div>
 
-              <div style={{ borderTop: `1px solid ${C.border}`, paddingTop: 14 }}>
+              <div style={{ borderTop: `1px solid ${C.border}`, paddingTop: 16 }}>
                 <span style={label}>Icon & Colour</span>
 
                 {/* Icon Row */}
-                <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 10 }}>
+                <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 12 }}>
                   {EMOJI_OPTIONS.map((ico) => (
                     <button
                       key={ico}
                       type="button"
                       onClick={() => setSelectedIcon(ico)}
                       style={{
-                        width: 32,
-                        height: 32,
-                        borderRadius: 6,
-                        border: `1px solid ${selectedIcon === ico ? C.accent : C.border}`,
-                        background: selectedIcon === ico ? `${C.accent}33` : '#1c1724',
-                        fontSize: 15,
+                        width: 34,
+                        height: 34,
+                        borderRadius: 8,
+                        border: `1px solid ${selectedIcon === ico ? C.accent : 'rgba(255, 255, 255, 0.1)'}`,
+                        background: selectedIcon === ico ? `${C.accent}33` : 'rgba(255, 255, 255, 0.04)',
+                        fontSize: 16,
                         cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
                       }}
                     >
                       {ico}
@@ -632,18 +760,19 @@ export function TimeTab(): JSX.Element {
                 </div>
 
                 {/* Colour Swatches */}
-                <div style={{ display: 'flex', gap: 8, marginBottom: 14 }}>
-                  {SWATCH_OPTIONS.map((sw) => (
+                <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 16 }}>
+                  {SWATCH_OPTIONS.map((hex) => (
                     <button
-                      key={sw}
+                      key={hex}
                       type="button"
-                      onClick={() => setSelectedColour(sw)}
+                      onClick={() => setSelectedColour(hex)}
                       style={{
                         width: 24,
                         height: 24,
                         borderRadius: '50%',
-                        background: sw,
-                        border: `2px solid ${selectedColour === sw ? C.text : 'transparent'}`,
+                        background: hex,
+                        border: selectedColour === hex ? `2px solid ${C.text}` : 'none',
+                        boxShadow: selectedColour === hex ? `0 0 10px ${hex}` : 'none',
                         cursor: 'pointer',
                       }}
                     />
@@ -652,10 +781,11 @@ export function TimeTab(): JSX.Element {
 
                 <div style={{ display: 'flex', gap: 10 }}>
                   <input
-                    style={{ ...input, flex: 1 }}
-                    placeholder="Category name (e.g. Deep Work, Reading, Gym)"
+                    type="text"
+                    style={{ ...input, flex: 1, marginBottom: 0 }}
+                    placeholder="Category Name (e.g., Client Work, Exercise)"
                     value={newName}
-                    maxLength={60}
+                    maxLength={30}
                     onChange={(e) => setNewName(e.target.value)}
                     onKeyDown={(e) => {
                       if (e.key === 'Enter') void createCategory();
@@ -674,8 +804,7 @@ export function TimeTab(): JSX.Element {
             </div>
           )}
 
-          {/* The list is the page. It does not need a box drawn around it as
-              well as around every row inside it. */}
+          {/* Structured Category List Cards Grid */}
           <div style={{ marginBottom: 20 }}>
             <div
               style={{
@@ -683,74 +812,83 @@ export function TimeTab(): JSX.Element {
                 justifyContent: 'space-between',
                 alignItems: 'center',
                 marginBottom: 14,
+                padding: '0 4px',
               }}
             >
-              <div style={{ fontSize: 12.5, fontWeight: 600, color: C.dim }}>
-                Categories <span style={{ color: C.faint }}>({projects.length})</span>
+              <div style={{ fontSize: 13, fontWeight: 700, color: C.text }}>
+                All Categories <span style={{ color: C.dim, fontWeight: 500 }}>({projects.length})</span>
               </div>
-              <div style={{ fontSize: 11.5, color: C.faint }}>
-                {primaryCount} of 3 overlay slots used
-              </div>
+              <span style={{ fontSize: 12, color: C.dim }}>
+                Pin up to 3 categories to Mochi&apos;s desktop overlay
+              </span>
             </div>
 
             {totals.rows.length === 0 ? (
-              <div style={{ fontSize: 13, color: C.faint, padding: '12px 0' }}>
-                No categories yet. Click &quot;+ New Category&quot; above to get started.
+              <div
+                style={{
+                  ...card,
+                  padding: '30px',
+                  textAlign: 'center',
+                  color: C.dim,
+                  fontSize: 13,
+                }}
+              >
+                No categories created yet. Click &quot;+ New Category&quot; above to add your first topic!
               </div>
             ) : (
-              <div>
-                {totals.rows.map(({ project, ms, count }, rowIndex) => {
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                {totals.rows.map(({ project, ms, count }) => {
                   const pct = totals.grand > 0 ? (ms / totals.grand) * 100 : 0;
                   const primaryIndex = settings?.primaryProjectIds?.indexOf(project.id) ?? -1;
                   const isPrimary = primaryIndex !== -1;
                   const currentProjectId = timer?.projectId || timer?.session?.projectId || null;
                   const isRunningThis = timer?.running === true && currentProjectId === project.id;
-                  const isLast = rowIndex === totals.rows.length - 1;
                   const asking = confirmArchive === project.id;
-                  // Secondary controls stay in the DOM and fade, so the row does
-                  // not reflow under the cursor. Five rows of six always-visible
-                  // buttons was most of the noise on this page.
-                  const showSecondary = hoveredRow === project.id || asking;
 
                   return (
                     <div
                       key={project.id}
-                      onMouseEnter={() => setHoveredRow(project.id)}
-                      onMouseLeave={() => setHoveredRow(null)}
                       style={{
+                        ...card,
+                        padding: '14px 18px',
                         display: 'flex',
                         alignItems: 'center',
-                        gap: 14,
-                        padding: '12px 10px',
-                        borderRadius: 8,
-                        // No card, no outline. Rows are told apart by space and
-                        // one hairline; the running one by a faint wash of its
-                        // own colour.
+                        gap: 16,
                         background: isRunningThis
-                          ? `${project.colour}14`
-                          : hoveredRow === project.id
-                            ? 'rgba(255, 255, 255, 0.025)'
-                            : 'transparent',
-                        boxShadow: isLast ? 'none' : 'inset 0 -1px 0 rgba(255, 255, 255, 0.045)',
-                        transition: 'background 140ms ease',
+                          ? `radial-gradient(circle at left, ${project.colour}22, ${C.panel})`
+                          : C.panel,
+                        border: isRunningThis
+                          ? `1.5px solid ${project.colour}`
+                          : '1px solid rgba(255, 255, 255, 0.08)',
+                        boxShadow: isRunningThis
+                          ? `0 4px 16px ${project.colour}28`
+                          : '0 2px 8px rgba(0, 0, 0, 0.2)',
+                        transition: 'all 180ms ease',
                       }}
                     >
-                      <span
-                        style={{
-                          width: 8,
-                          height: 8,
-                          borderRadius: '50%',
-                          background: project.colour,
-                          flexShrink: 0,
-                        }}
-                      />
-
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                          <span
+                      {/* Left: Icon & Title */}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 12, width: 220, flexShrink: 0 }}>
+                        <div
+                          style={{
+                            width: 38,
+                            height: 38,
+                            borderRadius: 10,
+                            background: `${project.colour}22`,
+                            border: `1px solid ${project.colour}66`,
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            fontSize: 18,
+                            flexShrink: 0,
+                          }}
+                        >
+                          {categoryIcon(project.name)}
+                        </div>
+                        <div style={{ minWidth: 0, flex: 1 }}>
+                          <div
                             style={{
-                              fontSize: 13.5,
-                              fontWeight: 550,
+                              fontSize: 14,
+                              fontWeight: 700,
                               color: C.text,
                               whiteSpace: 'nowrap',
                               overflow: 'hidden',
@@ -758,220 +896,180 @@ export function TimeTab(): JSX.Element {
                             }}
                           >
                             {formatCategoryName(project.name)}
-                          </span>
-                          {isPrimary && (
-                            <span
-                              title={`Overlay slot ${primaryIndex + 1}`}
-                              style={{
-                                fontSize: 10,
-                                fontWeight: 700,
-                                color: project.colour,
-                                opacity: 0.85,
-                                flexShrink: 0,
-                              }}
-                            >
-                              ★{primaryIndex + 1}
-                            </span>
-                          )}
+                          </div>
                           {isRunningThis && (
-                            <span
-                              style={{
-                                fontSize: 11,
-                                color: project.colour,
-                                fontWeight: 600,
-                                flexShrink: 0,
-                              }}
-                            >
-                              tracking
-                            </span>
+                            <div style={{ fontSize: 11, fontWeight: 700, color: project.colour, marginTop: 2 }}>
+                              ● Active Session
+                            </div>
                           )}
                         </div>
+                      </div>
 
+                      {/* Center: Progress & Stats */}
+                      <div style={{ flex: 1, minWidth: 0 }}>
                         <div
                           style={{
-                            height: 3,
-                            borderRadius: 2,
-                            background: 'rgba(255, 255, 255, 0.05)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            marginBottom: 6,
+                          }}
+                        >
+                          <span style={{ fontSize: 13, fontWeight: 700, color: C.text, fontVariantNumeric: 'tabular-nums' }}>
+                            {humanDuration(ms)}
+                          </span>
+                          <span style={{ fontSize: 11.5, color: C.dim, fontVariantNumeric: 'tabular-nums' }}>
+                            {pct < 1 && pct > 0 ? '<1' : Math.round(pct)}% · {count} session{count === 1 ? '' : 's'}
+                          </span>
+                        </div>
+                        {/* Thick Rounded Progress Bar */}
+                        <div
+                          style={{
+                            height: 6,
+                            borderRadius: 4,
+                            background: 'rgba(255, 255, 255, 0.08)',
                             overflow: 'hidden',
-                            marginTop: 7,
                           }}
                         >
                           <div
                             style={{
                               width: `${pct}%`,
                               height: '100%',
-                              background: project.colour,
-                              opacity: 0.75,
+                              borderRadius: 4,
+                              background: `linear-gradient(90deg, ${project.colour}, ${project.colour}dd)`,
+                              boxShadow: `0 0 8px ${project.colour}66`,
+                              transition: 'width 300ms ease',
                             }}
                           />
                         </div>
                       </div>
 
-                      {/*
-                        Numbers and hover actions share one slot rather than
-                        each reserving their own.
+                      {/* Right: Permanent Action Bar (No Hover Required!) */}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
+                        {asking ? (
+                          <>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setConfirmArchive(null);
+                                void archiveCategory(project.id);
+                              }}
+                              style={{
+                                ...button('danger'),
+                                padding: '6px 12px',
+                                fontSize: 11.5,
+                              }}
+                            >
+                              Confirm Delete
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setConfirmArchive(null)}
+                              style={{
+                                ...button('ghost'),
+                                padding: '6px 12px',
+                                fontSize: 11.5,
+                              }}
+                            >
+                              Cancel
+                            </button>
+                          </>
+                        ) : (
+                          <>
+                            {/* Pin / Unpin Overlay Control */}
+                            <button
+                              type="button"
+                              disabled={!isPrimary && primaryCount >= 3}
+                              title={
+                                isPrimary
+                                  ? `Overlay slot ${primaryIndex + 1} — click to unpin`
+                                  : primaryCount >= 3
+                                    ? 'All 3 overlay slots are full. Unpin one first.'
+                                    : 'Pin to Mochi desktop overlay'
+                              }
+                              onClick={() => void togglePrimaryProject(project.id)}
+                              style={{
+                                padding: '6px 12px',
+                                borderRadius: 8,
+                                border: isPrimary
+                                  ? `1px solid ${project.colour}88`
+                                  : '1px solid rgba(255, 255, 255, 0.1)',
+                                background: isPrimary
+                                  ? `${project.colour}22`
+                                  : 'rgba(255, 255, 255, 0.04)',
+                                color: isPrimary ? project.colour : primaryCount >= 3 ? C.faint : C.dim,
+                                fontSize: 12,
+                                fontWeight: isPrimary ? 750 : 500,
+                                cursor: !isPrimary && primaryCount >= 3 ? 'not-allowed' : 'pointer',
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: 5,
+                                transition: 'all 160ms ease',
+                              }}
+                            >
+                              {isPrimary ? `📌 Pinned #${primaryIndex + 1}` : '＋ Pin Overlay'}
+                            </button>
 
-                        Reserving a lane for the actions kept the row from
-                        reflowing, but left a permanent empty gap between the
-                        figures and Track whenever the cursor was elsewhere —
-                        which is almost always. Stacked in the same box they
-                        cross-fade in place: nothing moves, and there is no hole
-                        to explain.
-                      */}
-                      <div
-                        style={{
-                          position: 'relative',
-                          width: 196,
-                          height: 34,
-                          flexShrink: 0,
-                        }}
-                      >
-                        <div
-                          style={{
-                            position: 'absolute',
-                            inset: 0,
-                            display: 'flex',
-                            flexDirection: 'column',
-                            justifyContent: 'center',
-                            alignItems: 'flex-end',
-                            textAlign: 'right',
-                            fontVariantNumeric: 'tabular-nums',
-                            opacity: showSecondary ? 0 : 1,
-                            transition: 'opacity 140ms ease',
-                            pointerEvents: 'none',
-                          }}
-                        >
-                          <div style={{ fontSize: 13, color: C.text, fontWeight: 550 }}>
-                            {humanDuration(ms)}
-                          </div>
-                          <div style={{ fontSize: 11, color: C.faint, marginTop: 2 }}>
-                            {pct < 1 && pct > 0 ? '<1' : Math.round(pct)}% · {count} session
-                            {count === 1 ? '' : 's'}
-                          </div>
-                        </div>
+                            {/* Main Track Session CTA */}
+                            <button
+                              type="button"
+                              onClick={() => void startOrStopSession(project.id)}
+                              style={{
+                                padding: '6px 16px',
+                                borderRadius: 8,
+                                border: isRunningThis
+                                  ? '1px solid rgba(230, 57, 86, 0.5)'
+                                  : `1px solid ${project.colour}66`,
+                                background: isRunningThis
+                                  ? 'linear-gradient(180deg, #4d232c 0%, #30141a 100%)'
+                                  : `linear-gradient(180deg, ${project.colour}33 0%, ${project.colour}11 100%)`,
+                                color: isRunningThis ? '#ffb3c1' : C.text,
+                                fontSize: 12,
+                                fontWeight: 750,
+                                cursor: 'pointer',
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: 6,
+                                boxShadow: isRunningThis
+                                  ? '0 3px 10px rgba(230, 57, 86, 0.4)'
+                                  : '0 2px 6px rgba(0, 0, 0, 0.3)',
+                                transition: 'all 160ms ease',
+                              }}
+                            >
+                              {isRunningThis ? '⏸ Pause' : '▶ Track'}
+                            </button>
 
-                        <div
-                          style={{
-                            position: 'absolute',
-                            inset: 0,
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'flex-end',
-                            gap: 6,
-                            opacity: showSecondary ? 1 : 0,
-                            pointerEvents: showSecondary ? 'auto' : 'none',
-                            transition: 'opacity 140ms ease',
-                          }}
-                        >
-                          {asking ? (
-                            <>
+                            {/* Archive Trash Button */}
+                            {project.name !== 'General' && (
                               <button
                                 type="button"
-                                onClick={() => {
-                                  setConfirmArchive(null);
-                                  void archiveCategory(project.id);
-                                }}
-                                style={{ ...quietButton, color: C.warn, borderColor: C.warn }}
-                              >
-                                Remove
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => setConfirmArchive(null)}
-                                style={quietButton}
-                              >
-                                Cancel
-                              </button>
-                            </>
-                          ) : (
-                            <>
-                              {isPrimary && (
-                                <>
-                                  <button
-                                    type="button"
-                                    title="Move earlier on the overlay"
-                                    disabled={primaryIndex === 0}
-                                    onClick={() => void movePrimaryProject(primaryIndex, 'left')}
-                                    style={slotArrow(primaryIndex === 0)}
-                                  >
-                                    ◀
-                                  </button>
-                                  <button
-                                    type="button"
-                                    title="Move later on the overlay"
-                                    disabled={primaryIndex === primaryCount - 1}
-                                    onClick={() => void movePrimaryProject(primaryIndex, 'right')}
-                                    style={slotArrow(primaryIndex === primaryCount - 1)}
-                                  >
-                                    ▶
-                                  </button>
-                                </>
-                              )}
-                              <button
-                                type="button"
-                                disabled={!isPrimary && primaryCount >= 3}
-                                title={
-                                  isPrimary
-                                    ? `Overlay slot ${primaryIndex + 1} — click to unpin`
-                                    : primaryCount >= 3
-                                      ? 'All 3 overlay slots are used. Unpin one first.'
-                                      : 'Pin to Mochi’s overlay'
-                                }
-                                onClick={() => void togglePrimaryProject(project.id)}
+                                onClick={() => setConfirmArchive(project.id)}
+                                title={`Delete ${formatCategoryName(project.name)}`}
                                 style={{
-                                  ...quietButton,
-                                  color: isPrimary ? C.text : primaryCount >= 3 ? C.faint : C.dim,
-                                  cursor:
-                                    !isPrimary && primaryCount >= 3 ? 'not-allowed' : 'pointer',
+                                  background: 'transparent',
+                                  border: 'none',
+                                  color: C.faint,
+                                  fontSize: 14,
+                                  cursor: 'pointer',
+                                  padding: '4px 6px',
+                                  opacity: 0.7,
+                                  transition: 'opacity 160ms ease',
+                                }}
+                                onMouseEnter={(e) => {
+                                  e.currentTarget.style.opacity = '1';
+                                  e.currentTarget.style.color = '#ff8095';
+                                }}
+                                onMouseLeave={(e) => {
+                                  e.currentTarget.style.opacity = '0.7';
+                                  e.currentTarget.style.color = C.faint;
                                 }}
                               >
-                                {isPrimary ? 'Unpin' : 'Pin'}
+                                🗑️
                               </button>
-                              {project.name !== 'General' && (
-                                <button
-                                  type="button"
-                                  onClick={() => setConfirmArchive(project.id)}
-                                  title={`Remove ${formatCategoryName(project.name)}`}
-                                  style={{
-                                    ...quietButton,
-                                    borderColor: 'transparent',
-                                    color: C.faint,
-                                    padding: '4px 6px',
-                                  }}
-                                >
-                                  🗑
-                                </button>
-                              )}
-                            </>
-                          )}
-                        </div>
+                            )}
+                          </>
+                        )}
                       </div>
-
-                      {/* The one action that is always available, and the only
-                          thing on the row that never moves. */}
-                      <button
-                        type="button"
-                        onClick={() => void startOrStopSession(project.id)}
-                        style={{
-                          background: isRunningThis
-                            ? 'rgba(230, 57, 86, 0.16)'
-                            : `${project.colour}1f`,
-                          border: `1px solid ${isRunningThis ? 'rgba(230, 57, 86, 0.55)' : `${project.colour}66`}`,
-                          color: isRunningThis ? '#ff9aad' : C.text,
-                          borderRadius: 7,
-                          padding: '5px 13px',
-                          fontSize: 12,
-                          fontWeight: 600,
-                          cursor: 'pointer',
-                          whiteSpace: 'nowrap',
-                          // Fixed width so Stop and Track occupy the same space
-                          // and the row does not twitch when tracking starts.
-                          minWidth: 64,
-                          flexShrink: 0,
-                        }}
-                      >
-                        {isRunningThis ? 'Stop' : 'Track'}
-                      </button>
                     </div>
                   );
                 })}
