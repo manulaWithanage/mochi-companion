@@ -106,10 +106,10 @@ export const LandingPage: React.FC = () => {
                 <strong>A lighter plan for today.</strong>
                 <div className="promise-preview__tasks">
                   <span>
-                    <b>✓</b> Finish the landing page polish
+                    <b>✓</b> Finish top priorities first
                   </span>
                   <span>
-                    <b>✓</b> Reply to design feedback
+                    <b>✓</b> Plan 2 focus sessions
                   </span>
                 </div>
                 <div className="promise-preview__bars">
@@ -121,9 +121,34 @@ export const LandingPage: React.FC = () => {
               </div>
               <div className="promise-card__copy">
                 <small>01 · START CLEAR</small>
-                <h3>Organizes your day at a glance.</h3>
+                <h3>Know your top priorities first.</h3>
                 <p>
-                  Press your hotkey to view a calm floating window with your top priorities, today’s schedule, and focus progress without opening extra tabs.
+                  See your top tasks and daily plan as soon as you sit down at your computer, so you know where to start without feeling overwhelmed.
+                </p>
+              </div>
+            </article>
+
+            <article className="promise-card promise-card--routines">
+              <div className="promise-preview promise-preview--routines" aria-hidden="true">
+                <div className="promise-preview__top">
+                  <span>Routines</span>
+                  <i>Active</i>
+                </div>
+                <strong>Gentle care during work.</strong>
+                <div className="promise-preview__tasks">
+                  <span>
+                    <b>💧</b> Drink a glass of water
+                  </span>
+                  <span>
+                    <b>🌿</b> Take a 5-min stretch break
+                  </span>
+                </div>
+              </div>
+              <div className="promise-card__copy">
+                <small>02 · KEEP BALANCE</small>
+                <h3>Nurture your work-life balance.</h3>
+                <p>
+                  Mochi gently reminds you to drink water, stretch, and take honest breaks, keeping your health and daily routines naturally in sync.
                 </p>
               </div>
             </article>
@@ -148,42 +173,12 @@ export const LandingPage: React.FC = () => {
                     <em>A few final notes</em>
                   </span>
                 </div>
-                <div className="promise-preview__mail">
-                  <b>A</b>
-                  <span>
-                    <strong>Meeting notes</strong>
-                    <em>For your reference</em>
-                  </span>
-                </div>
               </div>
               <div className="promise-card__copy">
-                <small>02 · KEEP FOCUS</small>
-                <h3>Filters out inbox noise automatically.</h3>
+                <small>03 · STAY FOCUSED</small>
+                <h3>Organizes your inbox and alerts.</h3>
                 <p>
-                  Mochi checks your inbox locally and surfaces only urgent emails that need your reply today, keeping newsletters and promotional noise away.
-                </p>
-              </div>
-            </article>
-
-            <article className="promise-card promise-card--private">
-              <div className="promise-preview promise-preview--private" aria-hidden="true">
-                <div className="promise-preview__top">
-                  <span>On your computer</span>
-                  <i>Local</i>
-                </div>
-                <div className="promise-preview__lock">⌂</div>
-                <strong>Your day stays close.</strong>
-                <div className="promise-preview__chips">
-                  <span>Tasks</span>
-                  <span>Focus</span>
-                  <span>History</span>
-                </div>
-              </div>
-              <div className="promise-card__copy">
-                <small>03 · STAY YOURS</small>
-                <h3>Runs 100% locally on your computer.</h3>
-                <p>
-                  Your tasks, focus history, and email summaries stay encrypted inside a local database on your PC. No accounts, no cloud servers, no tracking.
+                  Mochi highlights urgent emails and critical alerts that need your reply today, while filtering out newsletter noise and distractions.
                 </p>
               </div>
             </article>
