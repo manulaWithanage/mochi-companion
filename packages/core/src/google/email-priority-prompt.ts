@@ -13,6 +13,16 @@ export interface LlmPriorityDecision {
   readonly reason: string;
 }
 
+/**
+ * How many emails one prompt carries.
+ *
+ * Exported so a caller cannot ask about more than this and then assume every one
+ * was asked. The prompt silently truncates past it, and a caller marking the
+ * overflow as "the model had no opinion" would write off emails no model ever
+ * saw.
+ */
+export const EMAIL_PRIORITY_PROMPT_LIMIT = 10;
+
 export function buildEmailPriorityPrompt(items: readonly PriorityPromptItem[]): {
   readonly system: string;
   readonly prompt: string;
@@ -25,7 +35,7 @@ export function buildEmailPriorityPrompt(items: readonly PriorityPromptItem[]): 
     'Use confidence from 0 to 1. Keep each reason under 12 words.',
   ].join('\n');
   const prompt = items
-    .slice(0, 10)
+    .slice(0, EMAIL_PRIORITY_PROMPT_LIMIT)
     .map(({ email, snippet }) =>
       [
         `ID: ${email.emailId}`,

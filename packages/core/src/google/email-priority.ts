@@ -54,9 +54,14 @@ export const SIGNAL_LABELS: Readonly<Record<PrioritySignal, string>> = {
   low_attention_category: 'low-attention Gmail category',
 };
 
-/** `llm_refined` is appended by the triage service, so it is not a scorer signal. */
+/**
+ * The triage service appends provenance markers, so not every signal is a scorer
+ * signal. Both are worth showing: knowing the model looked and could not decide
+ * is exactly why a borderline email is being asked about rather than asserted.
+ */
 export function describeSignal(signal: string): string {
   if (signal === 'llm_refined') return 'checked by the model';
+  if (signal === 'llm_declined') return 'the model was unsure too';
   return SIGNAL_LABELS[signal as PrioritySignal] ?? signal;
 }
 
