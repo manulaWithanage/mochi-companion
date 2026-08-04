@@ -109,16 +109,19 @@ function formatTime12h(time24: string): string {
   return `${h}:${m} ${ampm}`;
 }
 
+/** Helper to parse HH:mm time string into total minutes from midnight */
+function parseMins(tStr: string): number {
+  if (!tStr) return 0;
+  const parts = tStr.split(':');
+  return parseInt(parts[0] || '0', 10) * 60 + parseInt(parts[1] || '0', 10);
+}
+
 /** Generates recurring times at a set interval in minutes between start24 and end24 */
 function generateIntervalTimes(
   intervalMinutes: number,
   start24: string = '09:00',
   end24: string = '18:00',
 ): string[] {
-  const parseMins = (tStr: string) => {
-    const parts = tStr.split(':');
-    return parseInt(parts[0] || '0', 10) * 60 + parseInt(parts[1] || '0', 10);
-  };
   const formatMins = (totalMins: number) => {
     const h = Math.floor(totalMins / 60) % 24;
     const m = totalMins % 60;
