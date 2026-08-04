@@ -46,8 +46,21 @@ export class OverlayWindow {
   private win: BrowserWindow | null = null;
   private saveTimer: NodeJS.Timeout | null = null;
   private visible = true;
+  private rendererLoaded: (() => void) | null = null;
 
   constructor(private readonly callbacks: OverlayCallbacks) {}
+
+  /**
+   * Called whenever the renderer finishes loading, including reloads.
+   *
+   * A reload wipes whatever bubble was on screen without telling main, so
+   * anything tracking what is being displayed has to be told to forget it.
+   * Registered after construction because the things that care are built later
+   * in bootstrap than the window is.
+   */
+  onRendererLoad(handler: () => void): void {
+    this.rendererLoaded = handler;
+  }
 
   create(saved: OverlayPosition | null, alwaysOnTop = true): BrowserWindow {
     const placement = resolvePlacement(
@@ -132,6 +145,13 @@ export class OverlayWindow {
     });
     win.webContents.on('render-process-gone', (_e, details) => {
       console.error(`[overlay-web] RENDER PROCESS GONE:`, details);
+    });
+
+    // Fires on the first load and on every reload — a dev hot reload, or a
+    // rebuild after the renderer crashed. Either way nothing that was on screen
+    // is still there.
+    win.webContents.on('did-finish-load', () => {
+      this.rendererLoaded?.();
     });
 
     win.once('ready-to-show', () => {

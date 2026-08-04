@@ -38,6 +38,7 @@ import { RoutineService } from './services/routine-service.js';
 import { UserRoutineScheduler } from './services/user-routine-scheduler.js';
 import { TaskReminderScheduler } from './services/task-reminder-scheduler.js';
 import { BubbleActions, actionsForEvent } from './services/bubble-actions.js';
+import { BubbleQueue } from './services/bubble-queue.js';
 import { LlmService } from './services/llm-service.js';
 import { KeyVault } from './storage/key-vault.js';
 import { ProviderService } from './services/provider-service.js';
@@ -157,6 +158,24 @@ async function bootstrap(): Promise<void> {
   taskReminders.start();
 
   const bubbleActions = new BubbleActions();
+  // A question keeps the floor until it is answered, so a second alert cannot
+  // silently replace an unanswered reminder.
+  const bubbleQueue = new BubbleQueue((actions) => bubbleActions.offer(actions));
+
+  // A reload takes the bubble off screen without any dismissal reaching main.
+  // Without this the queue would wait for an answer to a question nobody can
+  // see any more, and every later reminder would be held behind it for ever.
+  overlay.onRendererLoad(() => {
+    if (bubbleQueue.pendingSubject !== null) {
+      console.log(
+        `[bubble] overlay reloaded — dropping unanswered "${bubbleQueue.pendingSubject}"`,
+      );
+    }
+    bubbleQueue.clear();
+    // Those buttons are gone from the screen, so the ids for them must stop
+    // being pressable.
+    bubbleActions.clear();
+  });
 
   const google = new GoogleService(join(app.getPath('userData'), 'google.enc.json'));
   // Local base URLs are a host and port, not a secret, so they live in
@@ -239,6 +258,7 @@ async function bootstrap(): Promise<void> {
 
   registerIpc({
     bubbleActions,
+    bubbleQueue,
     google: {
       status: () => google.status(),
       openStep: (url) => google.openStep(url),
@@ -319,30 +339,44 @@ async function bootstrap(): Promise<void> {
       // The global centerScreenAlerts flag controls routine/timer alerts only.
       const useCenterEntrance = isMailReminder && mailPreferences.centerScreenAlertsEnabled;
       // What the user can do about this, resolved in main so the renderer only
-      // ever receives opaque ids.
-      const offered = bubbleActions.offer(
-        actionsForEvent(event, {
-          storage,
-          undismiss: (subject) => governor.undismiss(subject),
-          notifyTasks,
-        }),
-      );
-
-      overlay.send('bubble:show', {
-        text: event.text,
-        ttlMs: event.userInitiated === true ? BUBBLE_TTL_LONG_MS : BUBBLE_TTL_MS,
-        subject: event.subject,
-        ...(offered.length > 0 ? { actions: offered } : {}),
-        ...(isMailReminder && mailPreferences.alertToneEnabled
-          ? {
-              alertTone: 'gentle' as const,
-              alertToneDelayMs: useCenterEntrance ? 1_150 : 0,
-            }
-          : {}),
+      // ever receives opaque ids. Registered at presentation rather than here,
+      // because a queued bubble's buttons are not on screen yet.
+      const actions = actionsForEvent(event, {
+        storage,
+        undismiss: (subject) => governor.undismiss(subject),
+        notifyTasks,
       });
-      if (useCenterEntrance) {
-        console.log('[mail-alert] presenting with routine magician entrance');
-        void overlay.performMagicianAlert(BUBBLE_TTL_MS);
+
+      const outcome = bubbleQueue.present({
+        subject: event.subject,
+        actions,
+        present: (offered) => {
+          overlay.send('bubble:show', {
+            text: event.text,
+            ttlMs: event.userInitiated === true ? BUBBLE_TTL_LONG_MS : BUBBLE_TTL_MS,
+            subject: event.subject,
+            ...(offered.length > 0 ? { actions: offered } : {}),
+            ...(isMailReminder && mailPreferences.alertToneEnabled
+              ? {
+                  alertTone: 'gentle' as const,
+                  alertToneDelayMs: useCenterEntrance ? 1_150 : 0,
+                }
+              : {}),
+          });
+          if (useCenterEntrance) {
+            console.log('[mail-alert] presenting with routine magician entrance');
+            void overlay.performMagicianAlert(BUBBLE_TTL_MS);
+          }
+        },
+      });
+
+      // Said out loud, because a held or dropped alert must not look like a
+      // delivered one in the log either.
+      if (outcome !== 'shown') {
+        console.log(
+          `[bubble] ${outcome} "${event.subject}" — waiting on "${bubbleQueue.pendingSubject}"` +
+            ` (${bubbleQueue.waitingCount} queued)`,
+        );
       }
       return;
     }

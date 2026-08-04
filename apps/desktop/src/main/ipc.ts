@@ -73,6 +73,7 @@ export interface IpcContext {
   activity: import('./services/activity-service.js').ActivityService;
   userRoutineScheduler: import('./services/user-routine-scheduler.js').UserRoutineScheduler;
   bubbleActions: import('./services/bubble-actions.js').BubbleActions;
+  bubbleQueue: import('./services/bubble-queue.js').BubbleQueue;
 }
 
 const asString = (value: unknown, fallback: string): string =>
@@ -347,12 +348,16 @@ export function registerIpc(ctx: IpcContext): void {
   ipcMain.on('bubble:act', (_e, actionId: unknown) => {
     if (typeof actionId === 'string' && actionId.length > 0) {
       void ctx.bubbleActions.run(actionId);
+      // Answered, so the floor is free and anything queued behind it can speak.
+      ctx.bubbleQueue.resolvePending();
     }
   });
 
   ipcMain.on('bubble:dismiss', (_e, subject: unknown) => {
     if (typeof subject === 'string' && subject.length > 0) {
       ctx.governor.dismiss(subject);
+      // Waved away is still resolved: the question is no longer waiting.
+      ctx.bubbleQueue.resolve(subject);
       if (subject.startsWith('mail-thread:')) {
         void ctx.gmail.dismissReminderThread(subject.slice('mail-thread:'.length));
       }
