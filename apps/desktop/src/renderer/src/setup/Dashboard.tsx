@@ -22,7 +22,7 @@ type TabId =
   'today' | 'calendar' | 'tasks' | 'activity' | 'time' | 'routines' | 'gmail' | 'settings';
 
 const PRIMARY_TABS: readonly { id: TabId; label: string }[] = [
-  { id: 'today', label: 'Today' },
+  { id: 'today', label: 'Overview' },
   { id: 'calendar', label: 'Calendar' },
   { id: 'tasks', label: 'Tasks' },
   { id: 'time', label: 'Time' },

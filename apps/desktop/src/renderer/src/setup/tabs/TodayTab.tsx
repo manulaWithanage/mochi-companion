@@ -354,12 +354,52 @@ export function TodayTab(): JSX.Element {
 
   return (
     <div>
-      <h2 style={h2}>Today</h2>
-      <p style={sub}>
-        {timer?.running === true
-          ? `Tracking ${projectName(timer.session?.projectId ?? '')} right now.`
-          : 'Click Mochi on your desktop to start tracking.'}
-      </p>
+      {/* Welcome & Live Status Header Banner */}
+      <div
+        style={{
+          background: 'linear-gradient(135deg, rgba(46,38,60,0.85), rgba(30,24,42,0.95))',
+          border: '1px solid rgba(242,166,179,0.22)',
+          borderRadius: 14,
+          padding: '18px 22px',
+          marginBottom: 20,
+          boxShadow: '0 10px 26px rgba(10,8,16,0.25)',
+        }}
+      >
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div>
+            <h2 style={{ margin: 0, fontSize: 20, fontWeight: 700, color: C.text, display: 'flex', alignItems: 'center', gap: 10 }}>
+              <span>☀️ Welcome to Mochi</span>
+              <span style={{ fontSize: 11, padding: '3px 9px', borderRadius: 999, background: 'rgba(16,185,129,0.15)', color: '#10b981', border: '1px solid rgba(16,185,129,0.3)', fontWeight: 600 }}>
+                🟢 Active in Background
+              </span>
+            </h2>
+            <p style={{ margin: '6px 0 0', fontSize: 13, color: C.dim, lineHeight: 1.45 }}>
+              {timer?.running === true
+                ? `Tracking ${projectName(timer.session?.projectId ?? '')} right now.`
+                : 'Mochi is quietly observing your workday, keeping your priorities clear and reminding you to stay balanced.'}
+            </p>
+          </div>
+          <div style={{ padding: '6px 12px', background: 'rgba(124,108,169,0.18)', border: '1px solid rgba(124,108,169,0.3)', borderRadius: 9, fontSize: 12, fontWeight: 650, color: C.accent, whiteSpace: 'nowrap' }}>
+            ⌨️ Open Overlay: <code style={{ background: 'rgba(0,0,0,0.3)', padding: '2px 6px', borderRadius: 4, fontFamily: 'monospace' }}>Alt + M</code>
+          </div>
+        </div>
+
+        {/* 3 Quick Action Guide Cards */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginTop: 16 }}>
+          <div style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 10, padding: '12px 14px' }}>
+            <div style={{ fontSize: 12.5, fontWeight: 650, color: C.text, marginBottom: 4 }}>📌 1. Set 3 Priorities</div>
+            <div style={{ fontSize: 11, color: C.dim, lineHeight: 1.35 }}>Add your top tasks below so you know where to start without feeling overwhelmed.</div>
+          </div>
+          <div style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 10, padding: '12px 14px' }}>
+            <div style={{ fontSize: 12.5, fontWeight: 650, color: C.text, marginBottom: 4 }}>💧 2. Wellness Routines</div>
+            <div style={{ fontSize: 11, color: C.dim, lineHeight: 1.35 }}>Water & break nudges are active to protect your health during work.</div>
+          </div>
+          <div style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 10, padding: '12px 14px' }}>
+            <div style={{ fontSize: 12.5, fontWeight: 650, color: C.text, marginBottom: 4 }}>🤖 3. AI & Smart Inbox</div>
+            <div style={{ fontSize: 11, color: C.dim, lineHeight: 1.35 }}>Connect OpenAI or LM Studio in Settings to auto-flag urgent emails & drafts.</div>
+          </div>
+        </div>
+      </div>
 
       <div style={{ display: 'flex', gap: 10, marginBottom: 14 }}>
         <Stat value={humanDuration(todayMs)} caption="tracked today" accent />
