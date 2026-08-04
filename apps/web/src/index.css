@@ -1149,8 +1149,8 @@ h1, h2, h3, h4, h5, h6 {
 /* A concise bridge between the hero promise and Mochi's deeper feature story. */
 .story-section--purpose, .story-section--promise { position: relative; z-index: 0; isolation: isolate; width: min(1180px, calc(100% - 48px)); padding: clamp(100px, 10vw, 135px) 0 clamp(70px, 7vw, 95px); overflow: visible; background: #fbfaf6; box-shadow: 0 0 0 100vmax #fbfaf6; clip-path: inset(0 -100vmax); }
 .story-section--purpose::before, .story-section--promise::before { position: absolute; z-index: -1; inset: 0; width: 100vw; margin-left: calc((100% - 100vw) / 2); background: radial-gradient(circle at 13% 25%, rgba(201,166,242,.12), transparent 19%), radial-gradient(circle at 87% 76%, rgba(168,230,184,.15), transparent 22%), linear-gradient(#fbfaf6,#f8fbf7); content: ''; pointer-events: none; }
-.story-section--purpose .story-intro { max-width: 980px; }
-.hero-purpose-quote { margin: 18px auto 0; max-width: 940px; color: #122139; font-size: clamp(21px, 2.6vw, 33px); font-weight: 600; line-height: 1.38; letter-spacing: -.03em; text-align: center; text-wrap: balance; }
+.story-section--purpose .story-intro { max-width: 1140px; }
+.hero-purpose-quote { margin: 18px auto 0; max-width: 1120px; color: #122139; font-size: clamp(19px, 2.2vw, 29px); font-weight: 600; line-height: 1.48; letter-spacing: -.025em; text-align: center; text-wrap: balance; }
 .hero-purpose-quote em { color: #6555dc; font-style: normal; background: linear-gradient(135deg, #6555dc, #cd7187); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
 .promise-grid { display: grid; width: min(1060px,100%); margin: 0 auto; grid-template-columns: repeat(3,1fr); gap: 24px; }
 .promise-card { overflow: hidden; border: 1px solid rgba(55,59,87,.12); border-radius: 22px; background: rgba(255,255,255,.92); box-shadow: 0 20px 42px rgba(47,57,73,.075), inset 0 1px rgba(255,255,255,.94); transition: transform 220ms ease, box-shadow 220ms ease; }
