@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 
 export interface SegmentOption<T extends string = string> {
   id: T;
@@ -21,17 +21,42 @@ export function SegmentedControl<T extends string = string>({
   size = 'md',
   style,
 }: SegmentedControlProps<T>): JSX.Element {
-  const activeIndex = Math.max(
-    0,
-    options.findIndex((o) => o.id === value)
-  );
-  const count = options.length;
+  const containerRef = useRef<HTMLDivElement>(null);
+  const itemRefs = useRef<Map<T, HTMLButtonElement>>(new Map());
+
+  const [pillStyle, setPillStyle] = useState<{ left: number; width: number; ready: boolean }>({
+    left: 3,
+    width: 0,
+    ready: false,
+  });
+
+  const updatePillPosition = () => {
+    const activeEl = itemRefs.current.get(value);
+    if (activeEl && containerRef.current) {
+      const containerRect = containerRef.current.getBoundingClientRect();
+      const activeRect = activeEl.getBoundingClientRect();
+
+      const left = activeRect.left - containerRect.left;
+      const width = activeRect.width;
+
+      setPillStyle({ left, width, ready: true });
+    }
+  };
+
+  useEffect(() => {
+    updatePillPosition();
+
+    // Re-measure on window resize to ensure precision
+    window.addEventListener('resize', updatePillPosition);
+    return () => window.removeEventListener('resize', updatePillPosition);
+  }, [value, options]);
 
   const height = size === 'sm' ? 32 : 36;
   const fontSize = size === 'sm' ? 11.5 : 12.5;
 
   return (
     <div
+      ref={containerRef}
       style={{
         position: 'relative',
         display: 'inline-flex',
@@ -47,24 +72,28 @@ export function SegmentedControl<T extends string = string>({
         ...style,
       }}
     >
-      {/* Sliding Active Pill Indicator */}
-      <div
-        style={{
-          position: 'absolute',
-          top: 3,
-          bottom: 3,
-          left: `calc(3px + ${activeIndex} * ((100% - 6px) / ${count}))`,
-          width: `calc((100% - 6px) / ${count})`,
-          background: 'linear-gradient(180deg, #3f334c 0%, #282032 100%)',
-          borderRadius: 7,
-          border: '1px solid rgba(242, 166, 179, 0.45)',
-          borderTop: '1px solid rgba(255, 255, 255, 0.3)',
-          boxShadow: '0 4px 12px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.2)',
-          transition: 'left 260ms cubic-bezier(0.16, 1, 0.3, 1), width 260ms ease',
-          pointerEvents: 'none',
-          zIndex: 1,
-        }}
-      />
+      {/* Dynamic Measured Sliding Active Pill */}
+      {pillStyle.width > 0 && (
+        <div
+          style={{
+            position: 'absolute',
+            top: 3,
+            bottom: 3,
+            left: pillStyle.left,
+            width: pillStyle.width,
+            background: 'linear-gradient(180deg, #3f334c 0%, #282032 100%)',
+            borderRadius: 7,
+            border: '1px solid rgba(242, 166, 179, 0.45)',
+            borderTop: '1px solid rgba(255, 255, 255, 0.3)',
+            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.2)',
+            transition: pillStyle.ready
+              ? 'left 260ms cubic-bezier(0.16, 1, 0.3, 1), width 260ms cubic-bezier(0.16, 1, 0.3, 1)'
+              : 'none',
+            pointerEvents: 'none',
+            zIndex: 1,
+          }}
+        />
+      )}
 
       {/* Option Buttons */}
       {options.map((opt) => {
@@ -72,17 +101,20 @@ export function SegmentedControl<T extends string = string>({
         return (
           <button
             key={opt.id}
+            ref={(el) => {
+              if (el) itemRefs.current.set(opt.id, el);
+              else itemRefs.current.delete(opt.id);
+            }}
             type="button"
             onClick={() => onChange(opt.id)}
             style={{
               position: 'relative',
               zIndex: 2,
-              flex: 1,
               height: '100%',
               background: 'transparent',
               border: 'none',
               borderRadius: 7,
-              padding: '0 14px',
+              padding: '0 16px',
               fontSize,
               fontWeight: active ? 750 : 500,
               color: active ? '#ffffff' : 'rgba(244, 238, 246, 0.55)',
