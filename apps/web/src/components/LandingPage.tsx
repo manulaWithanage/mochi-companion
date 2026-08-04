@@ -80,7 +80,7 @@ export const LandingPage: React.FC = () => {
           <div className="story-intro story-intro--center">
             <p className="story-eyebrow">WHY WE BUILT MOCHI</p>
             <h2 className="hero-purpose-quote">
-              “We didn’t build Mochi to add another system to your workday. We built it so you can <em>focus on what matters</em>, close your computer on time, and <em>feel good about your day</em>.”
+              “We didn’t build Mochi to add another system to your workday. We built it so you can <em>focus on what matters</em>, close your computer on time, and <em>feel good about&nbsp;your&nbsp;day.”</em>
             </h2>
           </div>
         </section>
