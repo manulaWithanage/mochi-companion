@@ -14,6 +14,7 @@ import {
   type MochiSettings,
 } from '@mochi/core';
 import { button, C, card, humanDuration, WEEKDAYS } from '../ui.js';
+import { NothingYet } from '../Emptiness.js';
 import { SegmentedControl } from '../SegmentedControl.js';
 
 const CATEGORY_COLOUR: Record<ActivityCategory, string> = {
@@ -495,31 +496,11 @@ export function ActivityTab(): JSX.Element {
       {tracking ? (
         <>
           {totalMs === 0 ? (
-            <div
-              style={{
-                ...card,
-                borderStyle: 'dashed',
-                background: 'transparent',
-                textAlign: 'center',
-                padding: '40px 24px',
-                margin: '20px 0',
-              }}
-            >
-              <div style={{ fontSize: 14, fontWeight: 600, color: C.text, marginBottom: 4 }}>
-                No Activity Recorded Yet
-              </div>
-              <div
-                style={{
-                  fontSize: 12.5,
-                  color: C.dim,
-                  lineHeight: 1.55,
-                  maxWidth: 420,
-                  margin: '0 auto',
-                }}
-              >
-                Activity samples arrive automatically every couple of minutes while you work. Keep
-                working and check back shortly!
-              </div>
+            <div style={{ margin: '20px 0' }}>
+              <NothingYet
+                headline="Nothing recorded yet"
+                detail="Samples arrive every few minutes while you work. Your timeline, categories and app list will fill in on their own."
+              />
             </div>
           ) : (
             <>

@@ -9,6 +9,7 @@ import {
   type WorkSession,
 } from '@mochi/core';
 import { button, C, card, h2, humanDuration, input, label, sub } from '../ui.js';
+import { NothingYet } from '../Emptiness.js';
 import { SegmentedControl } from '../SegmentedControl.js';
 
 const QUICK_PRESETS = [
@@ -1230,235 +1231,250 @@ export function TimeTab(): JSX.Element {
               )}
             </div>
           </div>
-          {/* KPI Stat Cards Grid */}
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-              gap: 14,
-              marginBottom: 24,
-            }}
-          >
-            {/* Total Focus Time */}
-            <div
-              style={{
-                ...card,
-                display: 'flex',
-                flexDirection: 'column',
-                gap: 8,
-                background: 'rgba(34, 29, 41, 0.6)',
-                backdropFilter: 'blur(8px)',
-                border: '1px solid rgba(242, 166, 179, 0.25)',
-                boxShadow: '0 4px 16px rgba(0, 0, 0, 0.25)',
-              }}
-            >
-              <div
-                style={{
-                  fontSize: 11,
-                  fontWeight: 750,
-                  color: C.dim,
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.05em',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 6,
-                }}
-              >
-                <svg
-                  width="14"
-                  height="14"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke={C.accent}
-                  strokeWidth="2.2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <circle cx="12" cy="12" r="10" />
-                  <polyline points="12 6 12 12 16 14" />
-                </svg>
-                <span>Total Focus Time</span>
-              </div>
-              <div
-                style={{
-                  fontSize: 26,
-                  fontWeight: 800,
-                  color: '#ffffff',
-                  fontVariantNumeric: 'tabular-nums',
-                  letterSpacing: '-0.02em',
-                }}
-              >
-                {humanDuration(performanceStats.totalMs)}
-              </div>
-            </div>
+          {/*
+            KPI Stat Cards Grid — only once there is something to report.
 
-            {/* Total Sessions */}
+            Ungated, this rendered four cards reading 0m, 0, 0m and "No data yet"
+            on a fresh install. Four cards saying nothing take the same space as
+            four saying something, and the grid was the first thing on the page.
+          */}
+          {sessions.length === 0 ? (
+            <div style={{ marginBottom: 24 }}>
+              <NothingYet
+                headline="No focus sessions yet"
+                detail="Start the timer on a category and your totals, average session length and peak focus window will appear here."
+              />
+            </div>
+          ) : (
             <div
               style={{
-                ...card,
-                display: 'flex',
-                flexDirection: 'column',
-                gap: 8,
-                background: 'rgba(34, 29, 41, 0.6)',
-                backdropFilter: 'blur(8px)',
-                border: '1px solid rgba(168, 230, 184, 0.25)',
-                boxShadow: '0 4px 16px rgba(0, 0, 0, 0.25)',
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+                gap: 14,
+                marginBottom: 24,
               }}
             >
+              {/* Total Focus Time */}
               <div
                 style={{
-                  fontSize: 11,
-                  fontWeight: 750,
-                  color: C.dim,
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.05em',
+                  ...card,
                   display: 'flex',
-                  alignItems: 'center',
-                  gap: 6,
+                  flexDirection: 'column',
+                  gap: 8,
+                  background: 'rgba(34, 29, 41, 0.6)',
+                  backdropFilter: 'blur(8px)',
+                  border: '1px solid rgba(242, 166, 179, 0.25)',
+                  boxShadow: '0 4px 16px rgba(0, 0, 0, 0.25)',
                 }}
               >
-                <svg
-                  width="14"
-                  height="14"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="#a8e6b8"
-                  strokeWidth="2.2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
+                <div
+                  style={{
+                    fontSize: 11,
+                    fontWeight: 750,
+                    color: C.dim,
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.05em',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 6,
+                  }}
                 >
-                  <line x1="18" y1="20" x2="18" y2="10" />
-                  <line x1="12" y1="20" x2="12" y2="4" />
-                  <line x1="6" y1="20" x2="6" y2="14" />
-                </svg>
-                <span>Focus Sessions</span>
+                  <svg
+                    width="14"
+                    height="14"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke={C.accent}
+                    strokeWidth="2.2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <circle cx="12" cy="12" r="10" />
+                    <polyline points="12 6 12 12 16 14" />
+                  </svg>
+                  <span>Total Focus Time</span>
+                </div>
+                <div
+                  style={{
+                    fontSize: 26,
+                    fontWeight: 800,
+                    color: '#ffffff',
+                    fontVariantNumeric: 'tabular-nums',
+                    letterSpacing: '-0.02em',
+                  }}
+                >
+                  {humanDuration(performanceStats.totalMs)}
+                </div>
               </div>
-              <div
-                style={{
-                  fontSize: 26,
-                  fontWeight: 800,
-                  color: '#ffffff',
-                  letterSpacing: '-0.02em',
-                }}
-              >
-                {performanceStats.sessionCount}{' '}
-                <span style={{ fontSize: 14, color: C.dim, fontWeight: 600 }}>
-                  {performanceStats.sessionCount === 1 ? 'session' : 'sessions'}
-                </span>
-              </div>
-            </div>
 
-            {/* Avg Session Length */}
-            <div
-              style={{
-                ...card,
-                display: 'flex',
-                flexDirection: 'column',
-                gap: 8,
-                background: 'rgba(34, 29, 41, 0.6)',
-                backdropFilter: 'blur(8px)',
-                border: '1px solid rgba(139, 92, 246, 0.25)',
-                boxShadow: '0 4px 16px rgba(0, 0, 0, 0.25)',
-              }}
-            >
+              {/* Total Sessions */}
               <div
                 style={{
-                  fontSize: 11,
-                  fontWeight: 750,
-                  color: C.dim,
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.05em',
+                  ...card,
                   display: 'flex',
-                  alignItems: 'center',
-                  gap: 6,
+                  flexDirection: 'column',
+                  gap: 8,
+                  background: 'rgba(34, 29, 41, 0.6)',
+                  backdropFilter: 'blur(8px)',
+                  border: '1px solid rgba(168, 230, 184, 0.25)',
+                  boxShadow: '0 4px 16px rgba(0, 0, 0, 0.25)',
                 }}
               >
-                <svg
-                  width="14"
-                  height="14"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="#8b5cf6"
-                  strokeWidth="2.2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
+                <div
+                  style={{
+                    fontSize: 11,
+                    fontWeight: 750,
+                    color: C.dim,
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.05em',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 6,
+                  }}
                 >
-                  <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
-                </svg>
-                <span>Avg Session Length</span>
+                  <svg
+                    width="14"
+                    height="14"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="#a8e6b8"
+                    strokeWidth="2.2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <line x1="18" y1="20" x2="18" y2="10" />
+                    <line x1="12" y1="20" x2="12" y2="4" />
+                    <line x1="6" y1="20" x2="6" y2="14" />
+                  </svg>
+                  <span>Focus Sessions</span>
+                </div>
+                <div
+                  style={{
+                    fontSize: 26,
+                    fontWeight: 800,
+                    color: '#ffffff',
+                    letterSpacing: '-0.02em',
+                  }}
+                >
+                  {performanceStats.sessionCount}{' '}
+                  <span style={{ fontSize: 14, color: C.dim, fontWeight: 600 }}>
+                    {performanceStats.sessionCount === 1 ? 'session' : 'sessions'}
+                  </span>
+                </div>
               </div>
-              <div
-                style={{
-                  fontSize: 26,
-                  fontWeight: 800,
-                  color: '#ffffff',
-                  fontVariantNumeric: 'tabular-nums',
-                  letterSpacing: '-0.02em',
-                }}
-              >
-                {humanDuration(performanceStats.avgSessionMs)}
-              </div>
-            </div>
 
-            {/* Peak Focus Window */}
-            <div
-              style={{
-                ...card,
-                display: 'flex',
-                flexDirection: 'column',
-                gap: 8,
-                background: 'rgba(34, 29, 41, 0.6)',
-                backdropFilter: 'blur(8px)',
-                border: '1px solid rgba(255, 179, 193, 0.25)',
-                boxShadow: '0 4px 16px rgba(0, 0, 0, 0.25)',
-              }}
-            >
+              {/* Avg Session Length */}
               <div
                 style={{
-                  fontSize: 11,
-                  fontWeight: 750,
-                  color: C.dim,
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.05em',
+                  ...card,
                   display: 'flex',
-                  alignItems: 'center',
-                  gap: 6,
+                  flexDirection: 'column',
+                  gap: 8,
+                  background: 'rgba(34, 29, 41, 0.6)',
+                  backdropFilter: 'blur(8px)',
+                  border: '1px solid rgba(139, 92, 246, 0.25)',
+                  boxShadow: '0 4px 16px rgba(0, 0, 0, 0.25)',
                 }}
               >
-                <svg
-                  width="14"
-                  height="14"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="#ffb3c1"
-                  strokeWidth="2.2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
+                <div
+                  style={{
+                    fontSize: 11,
+                    fontWeight: 750,
+                    color: C.dim,
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.05em',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 6,
+                  }}
                 >
-                  <path d="M6 9H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h2" />
-                  <path d="M18 9h2a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2h-2" />
-                  <path d="M4 22h16" />
-                  <path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22" />
-                  <path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22" />
-                  <path d="M18 2H6v7a6 6 0 0 0 12 0V2z" />
-                </svg>
-                <span>Peak Focus Window</span>
+                  <svg
+                    width="14"
+                    height="14"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="#8b5cf6"
+                    strokeWidth="2.2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+                  </svg>
+                  <span>Avg Session Length</span>
+                </div>
+                <div
+                  style={{
+                    fontSize: 26,
+                    fontWeight: 800,
+                    color: '#ffffff',
+                    fontVariantNumeric: 'tabular-nums',
+                    letterSpacing: '-0.02em',
+                  }}
+                >
+                  {humanDuration(performanceStats.avgSessionMs)}
+                </div>
               </div>
+
+              {/* Peak Focus Window */}
               <div
                 style={{
-                  fontSize: 14,
-                  fontWeight: 750,
-                  color: C.accent,
-                  whiteSpace: 'nowrap',
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                  marginTop: 4,
+                  ...card,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: 8,
+                  background: 'rgba(34, 29, 41, 0.6)',
+                  backdropFilter: 'blur(8px)',
+                  border: '1px solid rgba(255, 179, 193, 0.25)',
+                  boxShadow: '0 4px 16px rgba(0, 0, 0, 0.25)',
                 }}
               >
-                {performanceStats.peakPeriod}
+                <div
+                  style={{
+                    fontSize: 11,
+                    fontWeight: 750,
+                    color: C.dim,
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.05em',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 6,
+                  }}
+                >
+                  <svg
+                    width="14"
+                    height="14"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="#ffb3c1"
+                    strokeWidth="2.2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <path d="M6 9H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h2" />
+                    <path d="M18 9h2a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2h-2" />
+                    <path d="M4 22h16" />
+                    <path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22" />
+                    <path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22" />
+                    <path d="M18 2H6v7a6 6 0 0 0 12 0V2z" />
+                  </svg>
+                  <span>Peak Focus Window</span>
+                </div>
+                <div
+                  style={{
+                    fontSize: 14,
+                    fontWeight: 750,
+                    color: C.accent,
+                    whiteSpace: 'nowrap',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    marginTop: 4,
+                  }}
+                >
+                  {performanceStats.peakPeriod}
+                </div>
               </div>
             </div>
-          </div>
+          )}
 
           {/* Analytics Visual Grid: Donut Breakdown + Mochi Coach */}
           <div
