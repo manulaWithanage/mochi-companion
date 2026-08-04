@@ -218,9 +218,10 @@ export function RoutinesTab(): JSX.Element {
   const [mochiReminder, setMochiReminder] = useState(true);
   const [reminderMessage, setReminderMessage] = useState('');
 
-  // Popover State
+  // Schedule Mode & Popover State
+  const [scheduleMode, setScheduleMode] = useState<'specific' | 'interval'>('specific');
+  const [selectedIntervalMins, setSelectedIntervalMins] = useState<number>(30);
   const [showIconPicker, setShowIconPicker] = useState(false);
-  const [showIntervalBuilder, setShowIntervalBuilder] = useState(false);
   const [customIntervalMinsInput, setCustomIntervalMinsInput] = useState('30');
   const [intervalStartInput, setIntervalStartInput] = useState('09:00 AM');
   const [intervalEndInput, setIntervalEndInput] = useState('06:00 PM');
@@ -506,388 +507,409 @@ export function RoutinesTab(): JSX.Element {
             {editingId ? 'Edit Routine' : 'Create New Routine'}
           </div>
 
-          {/* Title Row */}
-          <div style={{ marginBottom: 14 }}>
-            <span style={label}>Routine Title</span>
-            <input
-              style={input}
-              placeholder="e.g., Water & Hydration Break"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-            />
-          </div>
-
-          {/* Custom Emoji Selector Popover Grid */}
-          <div style={{ marginBottom: 14, position: 'relative' }}>
-            <span style={label}>Choose Icon</span>
-            <button
-              type="button"
-              onClick={() => setShowIconPicker(!showIconPicker)}
-              style={{
-                padding: '7px 14px',
-                borderRadius: 10,
-                border: '1px solid rgba(242, 166, 179, 0.4)',
-                borderTop: '1px solid rgba(255, 255, 255, 0.3)',
-                background: 'linear-gradient(180deg, #3f334c 0%, #282032 100%)',
-                color: '#ffffff',
-                fontSize: 13.5,
-                fontWeight: 700,
-                cursor: 'pointer',
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: 8,
-                boxShadow: '0 2px 6px rgba(0, 0, 0, 0.3)',
-              }}
-            >
-              <span style={{ fontSize: 18 }}>{selectedIcon}</span>
-              <span>Change Icon</span>
-              <span style={{ fontSize: 10, color: C.dim, marginLeft: 4 }}>
-                {showIconPicker ? '▲' : '▼'}
-              </span>
-            </button>
-
-            {showIconPicker && (
-              <div
-                style={{
-                  position: 'absolute',
-                  top: '100%',
-                  left: 0,
-                  marginTop: 6,
-                  zIndex: 100,
-                  padding: 12,
-                  borderRadius: 14,
-                  background: 'rgba(26, 22, 34, 0.96)',
-                  backdropFilter: 'blur(16px)',
-                  border: '1px solid rgba(242, 166, 179, 0.35)',
-                  boxShadow: '0 8px 24px rgba(0, 0, 0, 0.5)',
-                  width: 320,
-                }}
-              >
-                <div
+          {/* Title & Icon Row (Combined) */}
+          <div style={{ marginBottom: 16 }}>
+            <span style={label}>Routine Title & Icon</span>
+            <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+              {/* Icon Picker Trigger */}
+              <div style={{ position: 'relative' }}>
+                <button
+                  type="button"
+                  onClick={() => setShowIconPicker(!showIconPicker)}
                   style={{
-                    fontSize: 11,
-                    fontWeight: 750,
-                    color: C.dim,
-                    marginBottom: 8,
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.05em',
-                  }}
-                >
-                  Select Icon ({EMOJI_OPTIONS.length})
-                </div>
-
-                <div
-                  style={{
-                    display: 'grid',
-                    gridTemplateColumns: 'repeat(7, 1fr)',
-                    gap: 6,
-                  }}
-                >
-                  {EMOJI_OPTIONS.map((emoji) => (
-                    <button
-                      key={emoji}
-                      type="button"
-                      onClick={() => {
-                        setSelectedIcon(emoji);
-                        setShowIconPicker(false);
-                      }}
-                      style={{
-                        width: 36,
-                        height: 36,
-                        borderRadius: 8,
-                        border: selectedIcon === emoji
-                          ? `2px solid ${C.accent}`
-                          : '1px solid rgba(255, 255, 255, 0.08)',
-                        background: selectedIcon === emoji
-                          ? 'rgba(242, 166, 179, 0.25)'
-                          : 'rgba(255, 255, 255, 0.04)',
-                        boxShadow: selectedIcon === emoji
-                          ? '0 0 10px rgba(242, 166, 179, 0.4)'
-                          : 'none',
-                        fontSize: 18,
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        transition: 'all 140ms ease',
-                      }}
-                      onMouseEnter={(e) => {
-                        if (selectedIcon !== emoji) {
-                          e.currentTarget.style.background = 'rgba(255, 255, 255, 0.12)';
-                        }
-                      }}
-                      onMouseLeave={(e) => {
-                        if (selectedIcon !== emoji) {
-                          e.currentTarget.style.background = 'rgba(255, 255, 255, 0.04)';
-                        }
-                      }}
-                    >
-                      {emoji}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Multiple Times Selector */}
-          <div style={{ marginBottom: 14 }}>
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                marginBottom: 6,
-              }}
-            >
-              <span style={label}>Reminder Times</span>
-              <button
-                type="button"
-                onClick={() => setShowIntervalBuilder(!showIntervalBuilder)}
-                style={{
-                  background: 'none',
-                  border: 'none',
-                  color: C.accent,
-                  fontSize: 11.5,
-                  fontWeight: 650,
-                  cursor: 'pointer',
-                  padding: 0,
-                }}
-              >
-                {showIntervalBuilder ? '▲ Hide Interval Builder' : '⚙️ Custom Interval Builder...'}
-              </button>
-            </div>
-
-            {/* Active Time Chips */}
-            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 10 }}>
-              {times.map((t) => (
-                <div
-                  key={t}
-                  style={{
-                    background: '#2a2236',
-                    border: `1px solid ${C.accent}`,
-                    borderRadius: 20,
-                    padding: '5px 12px',
-                    display: 'flex',
+                    padding: '8px 14px',
+                    borderRadius: 10,
+                    border: '1px solid rgba(242, 166, 179, 0.4)',
+                    borderTop: '1px solid rgba(255, 255, 255, 0.3)',
+                    background: 'linear-gradient(180deg, #3f334c 0%, #282032 100%)',
+                    color: '#ffffff',
+                    fontSize: 14,
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    display: 'inline-flex',
                     alignItems: 'center',
-                    gap: 8,
-                    fontSize: 12.5,
-                    fontWeight: 650,
-                    color: C.accent,
+                    gap: 6,
+                    height: 40,
+                    boxShadow: '0 2px 6px rgba(0, 0, 0, 0.3)',
                   }}
                 >
-                  <span>
-                    🕒 {formatTime12h(t)} <span style={{ opacity: 0.6, fontSize: 11 }}>({t})</span>
-                  </span>
-                  {times.length > 1 && (
-                    <button
-                      type="button"
-                      onClick={() => removeTimeSlot(t)}
-                      style={{
-                        background: 'none',
-                        border: 'none',
-                        color: C.warn,
-                        cursor: 'pointer',
-                        padding: 0,
-                        fontSize: 14,
-                        lineHeight: 1,
-                        marginLeft: 2,
-                      }}
-                    >
-                      ×
-                    </button>
-                  )}
-                </div>
-              ))}
-            </div>
+                  <span style={{ fontSize: 18 }}>{selectedIcon}</span>
+                  <span style={{ fontSize: 10, color: C.dim }}>{showIconPicker ? '▲' : '▼'}</span>
+                </button>
 
-            {/* Combined Add Time Input + Presets Dropdown */}
-            <div
-              style={{
-                display: 'flex',
-                gap: 8,
-                alignItems: 'center',
-                flexWrap: 'wrap',
-                marginBottom: 8,
-              }}
-            >
-              <div style={{ position: 'relative', flex: 1, minWidth: 180 }}>
-                <input
-                  style={{ ...input, marginBottom: 0, paddingRight: 90 }}
-                  type="text"
-                  placeholder="Type e.g., 2:30 PM, 14:00, 9am"
-                  value={newTimeInput}
-                  onChange={(e) => setNewTimeInput(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
-                      e.preventDefault();
-                      addTimeSlot();
-                    }
-                  }}
-                />
-                {newTimeInput.trim().length > 0 && (
+                {showIconPicker && (
                   <div
                     style={{
                       position: 'absolute',
-                      right: 10,
-                      top: '50%',
-                      transform: 'translateY(-50%)',
-                      fontSize: 11,
-                      fontWeight: 600,
-                      color: parseFlexibleTime(newTimeInput) ? C.good : C.warn,
-                      pointerEvents: 'none',
+                      top: '100%',
+                      left: 0,
+                      marginTop: 6,
+                      zIndex: 100,
+                      padding: 12,
+                      borderRadius: 14,
+                      background: 'rgba(26, 22, 34, 0.96)',
+                      backdropFilter: 'blur(16px)',
+                      border: '1px solid rgba(242, 166, 179, 0.35)',
+                      boxShadow: '0 8px 24px rgba(0, 0, 0, 0.5)',
+                      width: 320,
                     }}
                   >
-                    {parseFlexibleTime(newTimeInput)
-                      ? `✓ ${formatTime12h(parseFlexibleTime(newTimeInput)!)}`
-                      : 'Invalid format'}
+                    <div
+                      style={{
+                        fontSize: 11,
+                        fontWeight: 750,
+                        color: C.dim,
+                        marginBottom: 8,
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.05em',
+                      }}
+                    >
+                      Select Icon ({EMOJI_OPTIONS.length})
+                    </div>
+
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 6 }}>
+                      {EMOJI_OPTIONS.map((emoji) => (
+                        <button
+                          key={emoji}
+                          type="button"
+                          onClick={() => {
+                            setSelectedIcon(emoji);
+                            setShowIconPicker(false);
+                          }}
+                          style={{
+                            width: 36,
+                            height: 36,
+                            borderRadius: 8,
+                            border:
+                              selectedIcon === emoji
+                                ? `2px solid ${C.accent}`
+                                : '1px solid rgba(255, 255, 255, 0.08)',
+                            background:
+                              selectedIcon === emoji
+                                ? 'rgba(242, 166, 179, 0.25)'
+                                : 'rgba(255, 255, 255, 0.04)',
+                            fontSize: 18,
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                          }}
+                        >
+                          {emoji}
+                        </button>
+                      ))}
+                    </div>
                   </div>
                 )}
               </div>
+
+              {/* Title Input */}
+              <input
+                style={{ ...input, flex: 1, marginBottom: 0, height: 40, fontSize: 14, fontWeight: 700 }}
+                placeholder="Routine Title (e.g. Hydration Break, Eye Stretch)"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+              />
+            </div>
+          </div>
+
+          {/* Schedule Mode Switcher (Segmented Control) */}
+          <div style={{ marginBottom: 16 }}>
+            <span style={label}>Reminder Schedule Mode</span>
+            <div
+              style={{
+                display: 'inline-flex',
+                background: 'rgba(255, 255, 255, 0.05)',
+                border: '1px solid rgba(255, 255, 255, 0.1)',
+                borderRadius: 10,
+                padding: 3,
+                gap: 4,
+              }}
+            >
               <button
                 type="button"
-                disabled={!parseFlexibleTime(newTimeInput)}
+                onClick={() => setScheduleMode('specific')}
                 style={{
-                  ...button('primary'),
-                  padding: '8px 14px',
-                  fontSize: 12,
-                  opacity: parseFlexibleTime(newTimeInput) ? 1 : 0.5,
-                }}
-                onClick={() => addTimeSlot()}
-              >
-                + Add Time
-              </button>
-
-              {/* Presets & Recurring Intervals Dropdown */}
-              <select
-                value=""
-                onChange={(e) => {
-                  const val = e.target.value;
-                  if (!val) return;
-                  if (val.startsWith('interval-')) {
-                    const mins = parseInt(val.replace('interval-', ''), 10);
-                    setTimes(generateIntervalTimes(mins, '09:00', '18:00'));
-                  } else {
-                    addTimeSlot(val);
-                  }
-                  e.target.value = '';
-                }}
-                style={{
-                  ...input,
-                  marginBottom: 0,
-                  width: 'auto',
-                  fontSize: 12,
-                  fontWeight: 650,
-                  color: C.accent,
-                  background: 'rgba(242, 166, 179, 0.08)',
-                  border: '1px solid rgba(242, 166, 179, 0.3)',
+                  padding: '7px 16px',
                   borderRadius: 8,
+                  border: scheduleMode === 'specific' ? '1px solid rgba(242, 166, 179, 0.4)' : 'none',
+                  background: scheduleMode === 'specific' ? 'linear-gradient(180deg, #3f334c 0%, #282032 100%)' : 'transparent',
+                  color: scheduleMode === 'specific' ? '#ffffff' : C.dim,
+                  fontSize: 12.5,
+                  fontWeight: scheduleMode === 'specific' ? 750 : 500,
                   cursor: 'pointer',
-                  padding: '8px 12px',
+                  transition: 'all 160ms ease',
                 }}
               >
-                <option value="">⚡ Add Presets & Recurring Intervals...</option>
-                <optgroup label="🔄 Recurring Intervals (9am - 6pm)">
-                  <option value="interval-5">🔄 Every 5 minutes</option>
-                  <option value="interval-10">🔄 Every 10 minutes</option>
-                  <option value="interval-15">🔄 Every 15 minutes</option>
-                  <option value="interval-30">🔄 Every 30 minutes</option>
-                  <option value="interval-45">🔄 Every 45 minutes</option>
-                  <option value="interval-60">🔄 Every 1 hour</option>
-                  <option value="interval-120">🔄 Every 2 hours</option>
-                </optgroup>
-                <optgroup label="🕒 Daily Clock Suggestions">
+                🕒 Specific Clock Times
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setScheduleMode('interval');
+                  const generated = generateIntervalTimes(selectedIntervalMins, '09:00', '18:00');
+                  setTimes(generated);
+                }}
+                style={{
+                  padding: '7px 16px',
+                  borderRadius: 8,
+                  border: scheduleMode === 'interval' ? '1px solid rgba(242, 166, 179, 0.4)' : 'none',
+                  background: scheduleMode === 'interval' ? 'linear-gradient(180deg, #3f334c 0%, #282032 100%)' : 'transparent',
+                  color: scheduleMode === 'interval' ? '#ffffff' : C.dim,
+                  fontSize: 12.5,
+                  fontWeight: scheduleMode === 'interval' ? 750 : 500,
+                  cursor: 'pointer',
+                  transition: 'all 160ms ease',
+                }}
+              >
+                🔄 Recurring Interval (e.g. Every 30m)
+              </button>
+            </div>
+          </div>
+
+          {/* Mode A: Specific Clock Times */}
+          {scheduleMode === 'specific' ? (
+            <div style={{ marginBottom: 16 }}>
+              <span style={label}>Set Reminder Times</span>
+
+              {/* Active Time Chips */}
+              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 10 }}>
+                {times.map((t) => (
+                  <div
+                    key={t}
+                    style={{
+                      background: '#2a2236',
+                      border: `1px solid ${C.accent}`,
+                      borderRadius: 20,
+                      padding: '5px 12px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 8,
+                      fontSize: 12.5,
+                      fontWeight: 650,
+                      color: C.accent,
+                    }}
+                  >
+                    <span>
+                      🕒 {formatTime12h(t)} <span style={{ opacity: 0.6, fontSize: 11 }}>({t})</span>
+                    </span>
+                    {times.length > 1 && (
+                      <button
+                        type="button"
+                        onClick={() => removeTimeSlot(t)}
+                        style={{
+                          background: 'none',
+                          border: 'none',
+                          color: C.warn,
+                          cursor: 'pointer',
+                          padding: 0,
+                          fontSize: 14,
+                          lineHeight: 1,
+                          marginLeft: 2,
+                        }}
+                      >
+                        ×
+                      </button>
+                    )}
+                  </div>
+                ))}
+              </div>
+
+              {/* Add Time Input + Presets Dropdown */}
+              <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+                <div style={{ position: 'relative', flex: 1, minWidth: 180 }}>
+                  <input
+                    style={{ ...input, marginBottom: 0, paddingRight: 90 }}
+                    type="text"
+                    placeholder="Type e.g., 2:30 PM, 14:00, 9am"
+                    value={newTimeInput}
+                    onChange={(e) => setNewTimeInput(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        addTimeSlot();
+                      }
+                    }}
+                  />
+                  {newTimeInput.trim().length > 0 && (
+                    <div
+                      style={{
+                        position: 'absolute',
+                        right: 10,
+                        top: '50%',
+                        transform: 'translateY(-50%)',
+                        fontSize: 11,
+                        fontWeight: 600,
+                        color: parseFlexibleTime(newTimeInput) ? C.good : C.warn,
+                        pointerEvents: 'none',
+                      }}
+                    >
+                      {parseFlexibleTime(newTimeInput)
+                        ? `✓ ${formatTime12h(parseFlexibleTime(newTimeInput)!)}`
+                        : 'Invalid'}
+                    </div>
+                  )}
+                </div>
+                <button
+                  type="button"
+                  disabled={!parseFlexibleTime(newTimeInput)}
+                  style={{
+                    ...button('primary'),
+                    padding: '8px 14px',
+                    fontSize: 12,
+                    opacity: parseFlexibleTime(newTimeInput) ? 1 : 0.5,
+                  }}
+                  onClick={() => addTimeSlot()}
+                >
+                  + Add Time
+                </button>
+
+                {/* Quick Presets Dropdown */}
+                <select
+                  value=""
+                  onChange={(e) => {
+                    if (e.target.value) {
+                      addTimeSlot(e.target.value);
+                      e.target.value = '';
+                    }
+                  }}
+                  style={{
+                    ...input,
+                    marginBottom: 0,
+                    width: 'auto',
+                    fontSize: 12,
+                    fontWeight: 650,
+                    color: C.text,
+                    background: 'rgba(255, 255, 255, 0.05)',
+                    border: '1px solid rgba(255, 255, 255, 0.15)',
+                    borderRadius: 8,
+                    cursor: 'pointer',
+                    padding: '8px 12px',
+                  }}
+                >
+                  <option value="">+ Add Quick Time Preset...</option>
                   {TIME_SUGGESTIONS.map((sug) => (
                     <option key={sug.value} value={sug.value}>
                       + {sug.label}
                     </option>
                   ))}
-                </optgroup>
-              </select>
+                </select>
+              </div>
             </div>
+          ) : (
+            /* Mode B: Recurring Interval */
+            <div style={{ marginBottom: 16 }}>
+              <span style={label}>Recurring Interval Schedule</span>
 
-            {/* Custom Interval Builder Accordion Panel */}
-            {showIntervalBuilder && (
               <div
                 style={{
-                  marginTop: 12,
                   padding: '14px 16px',
                   borderRadius: 12,
                   background: 'rgba(34, 29, 41, 0.75)',
                   border: '1px solid rgba(242, 166, 179, 0.25)',
-                  boxShadow: '0 4px 14px rgba(0, 0, 0, 0.25)',
                   display: 'flex',
                   flexDirection: 'column',
                   gap: 12,
                 }}
               >
-                <div style={{ fontSize: 12, fontWeight: 750, color: C.accent }}>
-                  🛠️ Configure Custom Recurring Interval Window
+                {/* Interval Preset Chips */}
+                <div>
+                  <div style={{ fontSize: 11.5, fontWeight: 700, color: C.dim, marginBottom: 8 }}>
+                    Pick Interval Duration:
+                  </div>
+                  <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                    {[
+                      { label: 'Every 15m', mins: 15 },
+                      { label: 'Every 30m', mins: 30 },
+                      { label: 'Every 45m', mins: 45 },
+                      { label: 'Every 1h', mins: 60 },
+                      { label: 'Every 2h', mins: 120 },
+                    ].map((item) => (
+                      <button
+                        key={item.label}
+                        type="button"
+                        onClick={() => {
+                          setSelectedIntervalMins(item.mins);
+                          const parsedStart = parseFlexibleTime(intervalStartInput) || '09:00';
+                          const parsedEnd = parseFlexibleTime(intervalEndInput) || '18:00';
+                          const generated = generateIntervalTimes(item.mins, parsedStart, parsedEnd);
+                          setTimes(generated);
+                        }}
+                        style={{
+                          padding: '6px 14px',
+                          borderRadius: 8,
+                          border:
+                            selectedIntervalMins === item.mins
+                              ? '1.5px solid #f2a6b3'
+                              : '1px solid rgba(255, 255, 255, 0.1)',
+                          background:
+                            selectedIntervalMins === item.mins
+                              ? 'linear-gradient(180deg, #3f334c 0%, #282032 100%)'
+                              : 'rgba(255, 255, 255, 0.04)',
+                          color: selectedIntervalMins === item.mins ? '#ffffff' : C.text,
+                          fontSize: 12,
+                          fontWeight: 750,
+                          cursor: 'pointer',
+                          boxShadow:
+                            selectedIntervalMins === item.mins
+                              ? '0 2px 8px rgba(242, 166, 179, 0.3)'
+                              : 'none',
+                        }}
+                      >
+                        🔄 {item.label}
+                      </button>
+                    ))}
+                  </div>
                 </div>
 
-                <div style={{ display: 'flex', gap: 12, alignItems: 'flex-end', flexWrap: 'wrap' }}>
-                  <div style={{ flex: 1, minWidth: 130 }}>
-                    <span style={{ ...label, marginBottom: 4 }}>Interval (Minutes)</span>
-                    <input
-                      type="number"
-                      min="1"
-                      max="720"
-                      style={{ ...input, marginBottom: 0 }}
-                      placeholder="e.g. 5, 10, 15, 30"
-                      value={customIntervalMinsInput}
-                      onChange={(e) => setCustomIntervalMinsInput(e.target.value)}
-                    />
-                  </div>
-
+                {/* Active Window Inputs */}
+                <div style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
                   <div style={{ flex: 1, minWidth: 130 }}>
                     <span style={{ ...label, marginBottom: 4 }}>Start Time</span>
                     <input
                       type="text"
                       style={{ ...input, marginBottom: 0 }}
-                      placeholder="e.g. 09:00 AM"
                       value={intervalStartInput}
-                      onChange={(e) => setIntervalStartInput(e.target.value)}
+                      onChange={(e) => {
+                        setIntervalStartInput(e.target.value);
+                        const parsedStart = parseFlexibleTime(e.target.value) || '09:00';
+                        const parsedEnd = parseFlexibleTime(intervalEndInput) || '18:00';
+                        setTimes(generateIntervalTimes(selectedIntervalMins, parsedStart, parsedEnd));
+                      }}
                     />
                   </div>
-
                   <div style={{ flex: 1, minWidth: 130 }}>
                     <span style={{ ...label, marginBottom: 4 }}>End Time</span>
                     <input
                       type="text"
                       style={{ ...input, marginBottom: 0 }}
-                      placeholder="e.g. 06:00 PM"
                       value={intervalEndInput}
-                      onChange={(e) => setIntervalEndInput(e.target.value)}
+                      onChange={(e) => {
+                        setIntervalEndInput(e.target.value);
+                        const parsedStart = parseFlexibleTime(intervalStartInput) || '09:00';
+                        const parsedEnd = parseFlexibleTime(e.target.value) || '18:00';
+                        setTimes(generateIntervalTimes(selectedIntervalMins, parsedStart, parsedEnd));
+                      }}
                     />
                   </div>
+                </div>
 
-                  <div>
-                    <button
-                      type="button"
-                      style={{ ...button('primary'), whiteSpace: 'nowrap' }}
-                      onClick={() => {
-                        const mins = parseInt(customIntervalMinsInput, 10) || 30;
-                        const parsedStart = parseFlexibleTime(intervalStartInput) || '09:00';
-                        const parsedEnd = parseFlexibleTime(intervalEndInput) || '18:00';
-                        const generated = generateIntervalTimes(mins, parsedStart, parsedEnd);
-                        setTimes(generated);
-                      }}
-                    >
-                      ⚡ Apply (
-                      {
-                        generateIntervalTimes(
-                          parseInt(customIntervalMinsInput, 10) || 30,
-                          parseFlexibleTime(intervalStartInput) || '09:00',
-                          parseFlexibleTime(intervalEndInput) || '18:00',
-                        ).length
-                      }{' '}
-                      Slots)
-                    </button>
-                  </div>
+                {/* Summary Box */}
+                <div
+                  style={{
+                    padding: '8px 12px',
+                    borderRadius: 8,
+                    background: 'rgba(242, 166, 179, 0.1)',
+                    fontSize: 12,
+                    fontWeight: 650,
+                    color: C.accent,
+                  }}
+                >
+                  ⚡ Mochi will remind you {times.length} times every {selectedIntervalMins} minutes between {intervalStartInput} and {intervalEndInput}.
                 </div>
               </div>
-            )}
-          </div>
+            </div>
+          )}
 
           <div style={{ marginBottom: 14 }}>
             <span style={label}>Category</span>
