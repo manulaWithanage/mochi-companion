@@ -79,13 +79,6 @@ export const LandingPage: React.FC = () => {
         >
           <div className="story-intro story-intro--center">
             <p className="story-eyebrow">WHY WE BUILT MOCHI</p>
-            <h2>
-              Your day should not depend on <em>more tabs, more noise,</em> and more to remember.
-            </h2>
-            <p>
-              Mochi brings your plan, important messages, focus time, and small moments of care into
-              one calm place on your computer.
-            </p>
           </div>
 
           <blockquote className="promise-quote">
