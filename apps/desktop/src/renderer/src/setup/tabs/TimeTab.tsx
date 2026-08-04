@@ -418,19 +418,47 @@ export function TimeTab(): JSX.Element {
           width: 'fit-content',
         }}
       >
-        {(
-          [
-            { id: 'categories', icon: '▤', label: 'Categories & Mascot Badges' },
-            { id: 'performance', icon: '📊', label: 'Performance & Reports' },
-            { id: 'history', icon: '🕒', label: `Session History (${sessions.length})` },
-          ] as const
-        ).map((t) => {
+        {[
+          {
+            id: 'categories',
+            label: 'Categories & Mascot Badges',
+            icon: (
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                <rect width="7" height="7" x="3" y="3" rx="1.5" />
+                <rect width="7" height="7" x="14" y="3" rx="1.5" />
+                <rect width="7" height="7" x="14" y="14" rx="1.5" />
+                <rect width="7" height="7" x="3" y="14" rx="1.5" />
+              </svg>
+            ),
+          },
+          {
+            id: 'performance',
+            label: 'Performance & Reports',
+            icon: (
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="18" y1="20" x2="18" y2="10" />
+                <line x1="12" y1="20" x2="12" y2="4" />
+                <line x1="6" y1="20" x2="6" y2="14" />
+              </svg>
+            ),
+          },
+          {
+            id: 'history',
+            label: `Session History (${sessions.length})`,
+            icon: (
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="10" />
+                <polyline points="12 6 12 12 16 14" />
+              </svg>
+            ),
+          },
+        ].map((t) => {
           const active = subTab === t.id;
           return (
             <button
               key={t.id}
               type="button"
-              onClick={() => setSubTab(t.id)}
+              onClick={() => setSubTab(t.id as TimeSubTab)}
               style={{
                 background: active
                   ? 'linear-gradient(135deg, #f2a6b3, #e58597)'
@@ -462,7 +490,9 @@ export function TimeTab(): JSX.Element {
                 }
               }}
             >
-              <span>{t.icon}</span>
+              <span style={{ display: 'flex', alignItems: 'center', opacity: active ? 1 : 0.75 }}>
+                {t.icon}
+              </span>
               <span>{t.label}</span>
             </button>
           );
