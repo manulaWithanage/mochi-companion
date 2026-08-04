@@ -93,12 +93,6 @@ export const LandingPage: React.FC = () => {
           id="how-mochi-helps"
           data-mochi-story="pillars"
         >
-          <img
-            className="pillars-accent pillars-accent--sakura"
-            src="/paper-accent-sakura-cluster-v1.png"
-            alt=""
-            aria-hidden="true"
-          />
           <div className="story-intro story-intro--center">
             <p className="story-eyebrow">HOW MOCHI HELPS YOU</p>
             <h2>Three simple ways Mochi helps you.</h2>
@@ -200,6 +194,13 @@ export const LandingPage: React.FC = () => {
                 </p>
               </div>
             </article>
+
+            <img
+              className="pillars-accent pillars-accent--sakura"
+              src="/paper-accent-sakura-cluster-v1.png"
+              alt=""
+              aria-hidden="true"
+            />
           </div>
         </section>
 

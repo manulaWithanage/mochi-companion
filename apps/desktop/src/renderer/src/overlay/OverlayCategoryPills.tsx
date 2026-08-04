@@ -1,6 +1,5 @@
 import { useEffect, useState, type JSX } from 'react';
 import { categoryIcon, categoryLabel, type Project, type TimerSnapshot } from '@mochi/core';
-import { CategoryIcon } from '../setup/CategoryIcon.js';
 
 interface OverlayCategoryPillsProps {
   timer: TimerSnapshot | null;
@@ -119,11 +118,7 @@ export function OverlayCategoryPills({
               padding: 0,
             }}
           >
-            <CategoryIcon
-              icon={iconChar}
-              color={isActive ? '#ffffff' : project.colour}
-              size={isActive ? 16 : 14}
-            />
+            {iconChar}
           </button>
         );
       })}

@@ -99,15 +99,11 @@ const Tooltip = ({
 const Stat = ({
   value,
   caption,
-  icon,
-  borderColour,
   accent,
   tooltip,
 }: {
   readonly value: string;
   readonly caption: string;
-  readonly icon?: React.ReactNode;
-  readonly borderColour?: string;
   readonly accent?: boolean;
   readonly tooltip?: string;
 }): JSX.Element => (
@@ -116,14 +112,10 @@ const Stat = ({
       ...card,
       flex: 1,
       padding: '16px 18px',
-      background: 'rgba(34, 29, 41, 0.75)',
-      backdropFilter: 'blur(12px)',
-      border: `1px solid ${borderColour || 'rgba(255, 255, 255, 0.08)'}`,
-      boxShadow: '0 4px 16px rgba(0, 0, 0, 0.25)',
-      display: 'flex',
-      flexDirection: 'column',
-      justifyContent: 'space-between',
-      gap: 8,
+      background: 'rgba(34, 29, 41, 0.6)',
+      backdropFilter: 'blur(8px)',
+      border: `1px solid ${C.border}`,
+      transition: 'border-color 0.2s, transform 0.2s',
     }}
   >
     <div
@@ -131,40 +123,26 @@ const Stat = ({
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
+        marginBottom: 4,
       }}
     >
       <div
         style={{
-          fontSize: 11,
-          fontWeight: 750,
-          color: C.dim,
-          textTransform: 'uppercase',
-          letterSpacing: '0.05em',
-          display: 'flex',
-          alignItems: 'center',
-          gap: 6,
+          fontSize: 24,
+          fontWeight: 700,
+          letterSpacing: '-0.02em',
+          color: accent === true ? C.accent : C.text,
         }}
       >
-        {icon}
-        <span>{caption}</span>
+        {value}
       </div>
       {tooltip !== undefined && (
         <Tooltip content={tooltip} width={220} align="right">
-          <span style={{ fontSize: 11.5, color: C.faint, cursor: 'help' }}>ⓘ</span>
+          <span style={{ fontSize: 12, color: C.faint, cursor: 'help' }}>ⓘ</span>
         </Tooltip>
       )}
     </div>
-    <div
-      style={{
-        fontSize: 26,
-        fontWeight: 800,
-        letterSpacing: '-0.02em',
-        color: accent === true ? C.accent : '#ffffff',
-        fontVariantNumeric: 'tabular-nums',
-      }}
-    >
-      {value}
-    </div>
+    <div style={{ fontSize: 12, color: C.dim, fontWeight: 450 }}>{caption}</div>
   </div>
 );
 
@@ -195,46 +173,35 @@ const Timeline = ({
   }
 
   return (
-    <div
-      style={{
-        ...card,
-        marginBottom: 20,
-        padding: '18px 20px',
-        background: 'rgba(34, 29, 41, 0.75)',
-        backdropFilter: 'blur(12px)',
-        border: '1px solid rgba(255, 255, 255, 0.08)',
-        boxShadow: '0 6px 20px rgba(0, 0, 0, 0.3)',
-      }}
-    >
+    <div style={{ ...card, marginBottom: 16, background: 'rgba(34, 29, 41, 0.6)' }}>
       <div
         style={{
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          marginBottom: 14,
+          marginBottom: 12,
         }}
       >
-        <span style={{ fontSize: 13.5, fontWeight: 750, color: C.text }}>
-          📊 Daily Activity Timeline
+        <span style={{ fontSize: 12.5, fontWeight: 600, color: C.text, letterSpacing: '0.01em' }}>
+          Daily Timeline
         </span>
         <Tooltip
-          content="Shows continuous active blocks throughout today. Keyboard/mouse idle time is automatically filtered out."
+          content="Shows continuous active blocks throughout today. Keyboard idle time is automatically filtered out."
           width={260}
           align="right"
         >
-          <span style={{ fontSize: 12, color: C.dim, cursor: 'help' }}>How it works ⓘ</span>
+          <span style={{ fontSize: 11.5, color: C.faint, cursor: 'help' }}>How it works ⓘ</span>
         </Tooltip>
       </div>
 
       <div
         style={{
           position: 'relative',
-          height: 28,
-          borderRadius: 8,
-          background: 'rgba(0, 0, 0, 0.35)',
+          height: 24,
+          borderRadius: 6,
+          background: 'rgba(0, 0, 0, 0.25)',
           overflow: 'hidden',
-          border: '1px solid rgba(255, 255, 255, 0.08)',
-          boxShadow: 'inset 0 2px 6px rgba(0, 0, 0, 0.5)',
+          border: '1px solid rgba(255, 255, 255, 0.05)',
         }}
       >
         {spans.map((s) => (
@@ -248,14 +215,13 @@ const Timeline = ({
               top: 0,
               bottom: 0,
               background: CATEGORY_COLOUR[s.category],
-              boxShadow: `0 0 8px ${CATEGORY_COLOUR[s.category]}88`,
               opacity: 0.9,
             }}
           />
         ))}
       </div>
 
-      <div style={{ position: 'relative', height: 16, marginTop: 8 }}>
+      <div style={{ position: 'relative', height: 14, marginTop: 6 }}>
         {hours.map((h) => (
           <span
             key={h}
@@ -263,9 +229,8 @@ const Timeline = ({
               position: 'absolute',
               left: `${((h - start) / span) * 100}%`,
               transform: 'translateX(-50%)',
-              fontSize: 10.5,
-              fontWeight: 600,
-              color: C.dim,
+              fontSize: 10,
+              color: C.faint,
               whiteSpace: 'nowrap',
             }}
           >
@@ -365,14 +330,14 @@ export function ActivityTab(): JSX.Element {
   }, []);
 
   return (
-    <div style={{ maxWidth: 900, margin: '0 auto' }}>
+    <div style={{ maxWidth: 880, margin: '0 auto' }}>
       {/* Sleek Minimalist Header */}
       <div
         style={{
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          marginBottom: 18,
+          marginBottom: 20,
         }}
       >
         <div>
@@ -380,12 +345,12 @@ export function ActivityTab(): JSX.Element {
             style={{
               margin: 0,
               fontSize: 22,
-              fontWeight: 800,
+              fontWeight: 700,
               letterSpacing: '-0.02em',
               color: C.text,
             }}
           >
-            Activity & App Tracking
+            Activity
           </h2>
         </div>
 
@@ -403,19 +368,15 @@ export function ActivityTab(): JSX.Element {
         />
       </div>
 
-      {/* Frosted Glass Status Banner */}
+      {/* Clean Single-Row Toolbar (No bulky container card) */}
       <div
         style={{
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          padding: '12px 18px',
-          marginBottom: 24,
-          borderRadius: 12,
-          background: 'rgba(34, 29, 41, 0.75)',
-          backdropFilter: 'blur(12px)',
-          border: '1px solid rgba(255, 255, 255, 0.08)',
-          boxShadow: '0 4px 16px rgba(0, 0, 0, 0.25)',
+          padding: '10px 0 18px',
+          marginBottom: 16,
+          borderBottom: `1px solid ${C.border}`,
         }}
       >
         {/* Left: Status & Local Privacy Tooltip */}
@@ -423,24 +384,24 @@ export function ActivityTab(): JSX.Element {
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <span
               style={{
-                width: 9,
-                height: 9,
+                width: 8,
+                height: 8,
                 borderRadius: '50%',
-                background: tracking ? '#a8e6b8' : C.warn,
-                boxShadow: tracking ? '0 0 10px rgba(168, 230, 184, 0.8)' : 'none',
+                background: tracking ? C.good : C.warn,
+                boxShadow: tracking ? '0 0 10px rgba(168, 230, 184, 0.6)' : 'none',
               }}
             />
-            <span style={{ fontSize: 13, fontWeight: 750, color: C.text }}>
+            <span style={{ fontSize: 13, fontWeight: 600, color: C.text }}>
               {tracking ? 'Tracking Active' : 'Tracking Paused'}
             </span>
           </div>
 
-          <span style={{ color: 'rgba(255, 255, 255, 0.15)', fontSize: 12 }}>|</span>
+          <span style={{ color: C.borderStrong, fontSize: 12 }}>|</span>
 
           <Tooltip
             content={
               <div>
-                <strong style={{ color: '#a8e6b8', display: 'block', marginBottom: 4 }}>
+                <strong style={{ color: C.good, display: 'block', marginBottom: 4 }}>
                   🔒 100% Local Privacy
                 </strong>
                 Only application names in front are recorded. Idle time is discarded. Data is kept
@@ -489,11 +450,11 @@ export function ActivityTab(): JSX.Element {
               <button
                 onClick={() => void toggleSites(!sites)}
                 style={{
-                  border: `1px solid ${sites ? 'rgba(242, 166, 179, 0.4)' : 'rgba(255, 255, 255, 0.1)'}`,
-                  background: sites ? 'rgba(242, 166, 179, 0.12)' : 'rgba(255, 255, 255, 0.04)',
+                  border: `1px solid ${sites ? 'rgba(242, 166, 179, 0.35)' : C.border}`,
+                  background: sites ? 'rgba(242, 166, 179, 0.1)' : 'transparent',
                   color: sites ? C.accent : C.dim,
                   fontSize: 12,
-                  fontWeight: 650,
+                  fontWeight: 550,
                   padding: '5px 12px',
                   borderRadius: 8,
                   cursor: 'pointer',
@@ -511,17 +472,16 @@ export function ActivityTab(): JSX.Element {
 
           <button
             style={{
-              padding: '6px 16px',
+              padding: '6px 14px',
               borderRadius: 8,
-              border: tracking ? '1px solid rgba(255, 255, 255, 0.15)' : '1px solid rgba(242, 166, 179, 0.45)',
-              background: tracking ? 'rgba(255, 255, 255, 0.05)' : 'linear-gradient(180deg, #3f334c 0%, #282032 100%)',
-              color: tracking ? C.text : '#ffffff',
+              border: tracking ? `1px solid ${C.borderStrong}` : 'none',
+              background: tracking ? 'transparent' : C.accent,
+              color: tracking ? C.text : '#241f2b',
               fontSize: 12.5,
-              fontWeight: 750,
+              fontWeight: 600,
               cursor: supported === false ? 'default' : 'pointer',
               opacity: supported === false ? 0.5 : 1,
               transition: 'all 0.15s ease',
-              boxShadow: tracking ? 'none' : '0 3px 10px rgba(0,0,0,0.3)',
             }}
             disabled={supported === false}
             onClick={() => void toggle(!tracking)}
@@ -539,13 +499,13 @@ export function ActivityTab(): JSX.Element {
               style={{
                 ...card,
                 borderStyle: 'dashed',
-                background: 'rgba(34, 29, 41, 0.4)',
+                background: 'transparent',
                 textAlign: 'center',
                 padding: '40px 24px',
                 margin: '20px 0',
               }}
             >
-              <div style={{ fontSize: 14, fontWeight: 700, color: C.text, marginBottom: 4 }}>
+              <div style={{ fontSize: 14, fontWeight: 600, color: C.text, marginBottom: 4 }}>
                 No Activity Recorded Yet
               </div>
               <div
@@ -569,113 +529,71 @@ export function ActivityTab(): JSX.Element {
               )}
 
               {/* Core Key Stats */}
-              <div style={{ display: 'flex', gap: 14, marginBottom: 20 }}>
+              <div style={{ display: 'flex', gap: 12, marginBottom: 16 }}>
                 <Stat
                   value={humanDuration(totalMs)}
                   caption="Active Time"
                   accent
-                  borderColour="rgba(242, 166, 179, 0.3)"
-                  icon={
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={C.accent} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                      <circle cx="12" cy="12" r="10" />
-                      <polyline points="12 6 12 12 16 14" />
-                    </svg>
-                  }
                   tooltip="Total time active at the keyboard/mouse."
                 />
                 <Stat
                   value={humanDuration(focused)}
                   caption="Focused Apps"
-                  borderColour="rgba(168, 230, 184, 0.3)"
-                  icon={
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#a8e6b8" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                      <circle cx="12" cy="12" r="10" />
-                      <circle cx="12" cy="12" r="6" />
-                      <circle cx="12" cy="12" r="2" />
-                    </svg>
-                  }
                   tooltip="Time spent inside productivity and work apps."
                 />
                 <Stat
                   value={humanDuration(longest)}
                   caption="Longest Stretch"
-                  borderColour="rgba(139, 92, 246, 0.3)"
-                  icon={
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#8b5cf6" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                      <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
-                    </svg>
-                  }
                   tooltip="Your single longest continuous block of focus today."
                 />
                 <Stat
                   value={String(switches)}
                   caption="App Switches"
-                  borderColour="rgba(255, 179, 193, 0.3)"
-                  icon={
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#ffb3c1" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                      <polyline points="16 3 21 3 21 8" />
-                      <line x1="4" y1="20" x2="21" y2="3" />
-                      <polyline points="21 16 21 21 16 21" />
-                      <line x1="15" y1="15" x2="21" y2="21" />
-                      <line x1="4" y1="4" x2="9" y2="9" />
-                    </svg>
-                  }
                   tooltip="Total number of app switches."
                 />
               </div>
 
               {/* Work Category Breakdown */}
-              <div
-                style={{
-                  ...card,
-                  marginBottom: 20,
-                  padding: '18px 20px',
-                  background: 'rgba(34, 29, 41, 0.75)',
-                  backdropFilter: 'blur(12px)',
-                  border: '1px solid rgba(255, 255, 255, 0.08)',
-                  boxShadow: '0 6px 20px rgba(0, 0, 0, 0.3)',
-                }}
-              >
+              <div style={{ ...card, marginBottom: 16, background: 'rgba(34, 29, 41, 0.6)' }}>
                 <div
                   style={{
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'space-between',
-                    marginBottom: 14,
+                    marginBottom: 12,
                   }}
                 >
-                  <span style={{ fontSize: 13.5, fontWeight: 750, color: C.text }}>
-                    💼 Work Breakdown
+                  <span style={{ fontSize: 12.5, fontWeight: 600, color: C.text }}>
+                    Work Breakdown
                   </span>
                   <Tooltip
                     content="Automatically categorized from active app names. You can reassign categories below."
                     width={250}
                     align="right"
                   >
-                    <span style={{ fontSize: 12, color: C.dim, cursor: 'help' }}>ⓘ</span>
+                    <span style={{ fontSize: 11.5, color: C.faint, cursor: 'help' }}>ⓘ</span>
                   </Tooltip>
                 </div>
 
                 <div
                   style={{
                     display: 'flex',
-                    height: 14,
-                    borderRadius: 7,
+                    height: 12,
+                    borderRadius: 6,
                     overflow: 'hidden',
-                    background: 'rgba(0, 0, 0, 0.35)',
+                    background: 'rgba(0, 0, 0, 0.3)',
                     marginBottom: 16,
-                    border: '1px solid rgba(255, 255, 255, 0.08)',
-                    boxShadow: 'inset 0 2px 4px rgba(0, 0, 0, 0.4)',
+                    boxShadow: 'inset 0 1px 3px rgba(0, 0, 0, 0.4)',
                   }}
                 >
                   {categories.map((c) => (
                     <div
                       key={c.category}
-                      title={`${c.label}: ${humanDuration(c.ms)} (${(c.share * 100).toFixed(1)}%)`}
+                      title={`${c.label}: ${humanDuration(c.ms)}`}
                       style={{
                         width: `${c.share * 100}%`,
                         background: CATEGORY_COLOUR[c.category],
-                        boxShadow: `0 0 8px ${CATEGORY_COLOUR[c.category]}66`,
+                        boxShadow: `0 0 8px ${CATEGORY_COLOUR[c.category]}44`,
                         transition: 'width 240ms ease',
                       }}
                     />
@@ -696,18 +614,18 @@ export function ActivityTab(): JSX.Element {
                     >
                       <span
                         style={{
-                          width: 8,
-                          height: 8,
-                          borderRadius: '50%',
+                          width: 9,
+                          height: 9,
+                          borderRadius: 3,
                           background: CATEGORY_COLOUR[c.category],
-                          boxShadow: `0 0 6px ${CATEGORY_COLOUR[c.category]}`,
+                          boxShadow: `0 0 6px ${CATEGORY_COLOUR[c.category]}88`,
                         }}
                       />
                       <span>{c.label}</span>
                       <strong
                         style={{
                           color: C.text,
-                          fontWeight: 750,
+                          fontWeight: 650,
                           fontVariantNumeric: 'tabular-nums',
                         }}
                       >
@@ -719,168 +637,117 @@ export function ActivityTab(): JSX.Element {
               </div>
 
               {/* Applications List */}
-              <div
-                style={{
-                  ...card,
-                  marginBottom: 20,
-                  padding: '18px 20px',
-                  background: 'rgba(34, 29, 41, 0.75)',
-                  backdropFilter: 'blur(12px)',
-                  border: '1px solid rgba(255, 255, 255, 0.08)',
-                  boxShadow: '0 6px 20px rgba(0, 0, 0, 0.3)',
-                }}
-              >
+              <div style={{ ...card, marginBottom: 20, background: 'rgba(34, 29, 41, 0.6)' }}>
                 <div
                   style={{
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'space-between',
-                    marginBottom: 16,
+                    marginBottom: 14,
                   }}
                 >
-                  <span style={{ fontSize: 13.5, fontWeight: 750, color: C.text }}>
-                    📱 Applications Used ({apps.length})
+                  <span style={{ fontSize: 12.5, fontWeight: 600, color: C.text }}>
+                    Applications Used
                   </span>
                   <Tooltip
                     content="Reassign an application's category using the dropdown if Mochi categorized it incorrectly."
                     width={260}
                     align="right"
                   >
-                    <span style={{ fontSize: 12, color: C.dim, cursor: 'help' }}>
+                    <span style={{ fontSize: 11.5, color: C.faint, cursor: 'help' }}>
                       Category Help ⓘ
                     </span>
                   </Tooltip>
                 </div>
 
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                  {apps.slice(0, 15).map((a) => {
-                    const catColour = CATEGORY_COLOUR[a.category];
-                    const initialChar = a.app.charAt(0).toUpperCase();
-
-                    return (
-                      <div
-                        key={a.app}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                  {apps.slice(0, 12).map((a) => (
+                    <div key={a.app} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                      <span
                         style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: 14,
-                          background: 'rgba(24, 20, 34, 0.95)',
-                          border: '1px solid rgba(255, 255, 255, 0.08)',
-                          borderRadius: 12,
-                          padding: '10px 16px',
-                          boxShadow: '0 2px 6px rgba(0, 0, 0, 0.2)',
+                          fontSize: 12.5,
+                          color: C.text,
+                          minWidth: 140,
+                          maxWidth: 180,
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          whiteSpace: 'nowrap',
+                          fontWeight: 500,
+                        }}
+                        title={a.app}
+                      >
+                        {a.app}
+                      </span>
+                      <div
+                        style={{
+                          flex: 1,
+                          height: 8,
+                          borderRadius: 4,
+                          background: 'rgba(0, 0, 0, 0.3)',
+                          overflow: 'hidden',
+                          boxShadow: 'inset 0 1px 2px rgba(0, 0, 0, 0.3)',
                         }}
                       >
-                        {/* Left: App Avatar + Name */}
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 12, width: 200, flexShrink: 0 }}>
-                          <div
-                            style={{
-                              width: 32,
-                              height: 32,
-                              borderRadius: 8,
-                              background: `${catColour}22`,
-                              border: `1px solid ${catColour}66`,
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              fontSize: 13,
-                              fontWeight: 800,
-                              color: catColour,
-                              flexShrink: 0,
-                            }}
-                          >
-                            {initialChar}
-                          </div>
-                          <span
-                            style={{
-                              fontSize: 13.5,
-                              fontWeight: 700,
-                              color: C.text,
-                              overflow: 'hidden',
-                              textOverflow: 'ellipsis',
-                              whiteSpace: 'nowrap',
-                            }}
-                            title={a.app}
-                          >
-                            {a.app}
-                          </span>
-                        </div>
-
-                        {/* Center: Thick Progress Bar */}
-                        <div style={{ flex: 1, minWidth: 0 }}>
-                          <div
-                            style={{
-                              height: 6,
-                              borderRadius: 4,
-                              background: 'rgba(255, 255, 255, 0.08)',
-                              overflow: 'hidden',
-                            }}
-                          >
-                            <div
-                              style={{
-                                width: `${Math.max(2, a.share * 100)}%`,
-                                height: '100%',
-                                borderRadius: 4,
-                                background: `linear-gradient(90deg, ${catColour}, ${catColour}dd)`,
-                                boxShadow: `0 0 8px ${catColour}66`,
-                                transition: 'width 240ms ease',
-                              }}
-                            />
-                          </div>
-                        </div>
-
-                        {/* Right: Duration + Reassign Dropdown */}
-                        <span
+                        <div
                           style={{
-                            fontSize: 12,
-                            color: C.text,
-                            minWidth: 54,
-                            textAlign: 'right',
-                            fontVariantNumeric: 'tabular-nums',
-                            fontWeight: 750,
+                            width: `${Math.max(2, a.share * 100)}%`,
+                            height: '100%',
+                            borderRadius: 4,
+                            background: CATEGORY_COLOUR[a.category],
+                            boxShadow: `0 0 8px ${CATEGORY_COLOUR[a.category]}66`,
+                            transition: 'width 240ms ease, background-color 240ms ease',
                           }}
-                        >
-                          {humanDuration(a.ms)}
-                        </span>
-
-                        <select
-                          value={a.category}
-                          onChange={(e) =>
-                            void recategorise(a.app, e.target.value as ActivityCategory)
-                          }
-                          title={`Categorized as ${activityCategoryInfo(a.category).label}. Click to reassign.`}
-                          style={{
-                            background: `linear-gradient(180deg, #3f334c 0%, #282032 100%)`,
-                            border: `1px solid ${catColour}88`,
-                            borderRadius: 8,
-                            color: '#ffffff',
-                            fontSize: 11.5,
-                            fontWeight: 700,
-                            padding: '5px 10px',
-                            cursor: 'pointer',
-                            fontFamily: 'inherit',
-                            outline: 'none',
-                            boxShadow: '0 2px 6px rgba(0, 0, 0, 0.35)',
-                            transition: 'all 0.15s ease',
-                          }}
-                        >
-                          {ACTIVITY_CATEGORIES.map((c) => (
-                            <option
-                              key={c.id}
-                              value={c.id}
-                              style={{ background: '#241f2b', color: C.text }}
-                            >
-                              {c.label}
-                            </option>
-                          ))}
-                        </select>
+                        />
                       </div>
-                    );
-                  })}
+                      <span
+                        style={{
+                          fontSize: 11.5,
+                          color: C.text,
+                          minWidth: 54,
+                          textAlign: 'right',
+                          fontVariantNumeric: 'tabular-nums',
+                          fontWeight: 600,
+                        }}
+                      >
+                        {humanDuration(a.ms)}
+                      </span>
+
+                      <select
+                        value={a.category}
+                        onChange={(e) =>
+                          void recategorise(a.app, e.target.value as ActivityCategory)
+                        }
+                        title={`Categorized as ${activityCategoryInfo(a.category).label}. Click to reassign.`}
+                        style={{
+                          background: `${CATEGORY_COLOUR[a.category]}1e`,
+                          border: `1px solid ${CATEGORY_COLOUR[a.category]}55`,
+                          borderRadius: 7,
+                          color: '#ffffff',
+                          fontSize: 11.5,
+                          fontWeight: 600,
+                          padding: '4px 8px',
+                          cursor: 'pointer',
+                          fontFamily: 'inherit',
+                          outline: 'none',
+                          boxShadow: '0 2px 6px rgba(0, 0, 0, 0.25)',
+                          transition: 'all 0.15s ease',
+                        }}
+                      >
+                        {ACTIVITY_CATEGORIES.map((c) => (
+                          <option
+                            key={c.id}
+                            value={c.id}
+                            style={{ background: '#241f2b', color: C.text }}
+                          >
+                            {c.label}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  ))}
                 </div>
               </div>
             </>
-
           )}
         </>
       ) : (
