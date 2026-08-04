@@ -1056,10 +1056,11 @@ export function TimeTab(): JSX.Element {
                 style={{
                   display: 'flex',
                   gap: 4,
-                  background: '#181422',
-                  padding: 3,
-                  borderRadius: 8,
-                  border: `1px solid ${C.border}`,
+                  background: 'rgba(24, 20, 34, 0.95)',
+                  padding: 4,
+                  borderRadius: 10,
+                  border: '1px solid rgba(255, 255, 255, 0.08)',
+                  boxShadow: 'inset 0 2px 6px rgba(0,0,0,0.4)',
                 }}
               >
                 {(
@@ -1078,15 +1079,35 @@ export function TimeTab(): JSX.Element {
                       type="button"
                       onClick={() => setDateRange(filter.id)}
                       style={{
-                        background: active ? 'rgba(242, 166, 179, 0.18)' : 'transparent',
-                        color: active ? C.accent : C.dim,
-                        border: active ? `1px solid ${C.accent}66` : '1px solid transparent',
-                        borderRadius: 6,
-                        padding: '4px 10px',
-                        fontSize: 11.5,
-                        fontWeight: active ? 700 : 500,
+                        background: active
+                          ? 'linear-gradient(135deg, #f2a6b3, #e58597)'
+                          : 'transparent',
+                        color: active ? '#1c1625' : 'rgba(244, 238, 246, 0.65)',
+                        border: active
+                          ? '1px solid rgba(242, 166, 179, 0.5)'
+                          : '1px solid transparent',
+                        borderRadius: 7,
+                        padding: '5px 14px',
+                        fontSize: 12,
+                        fontWeight: active ? 750 : 550,
                         cursor: 'pointer',
-                        transition: 'all 120ms ease',
+                        boxShadow: active
+                          ? '0 3px 12px rgba(242, 166, 179, 0.38), inset 0 1px 0 rgba(255,255,255,0.4)'
+                          : 'none',
+                        transform: active ? 'translateY(-1px)' : 'translateY(0)',
+                        transition: 'all 180ms cubic-bezier(0.4, 0, 0.2, 1)',
+                      }}
+                      onMouseEnter={(e) => {
+                        if (!active) {
+                          e.currentTarget.style.background = 'rgba(255, 255, 255, 0.07)';
+                          e.currentTarget.style.color = '#f4eef6';
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        if (!active) {
+                          e.currentTarget.style.background = 'transparent';
+                          e.currentTarget.style.color = 'rgba(244, 238, 246, 0.65)';
+                        }
                       }}
                     >
                       {filter.label}
