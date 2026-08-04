@@ -257,6 +257,8 @@ export function RoutinesTab(): JSX.Element {
     setCategory('health');
     setMochiReminder(true);
     setReminderMessage('');
+    setScheduleMode('specific');
+    setSelectedIntervalMins(30);
     setIsEditing(true);
   };
 
@@ -271,6 +273,16 @@ export function RoutinesTab(): JSX.Element {
     setCategory(r.category);
     setMochiReminder(r.mochiReminder);
     setReminderMessage(r.reminderMessage ?? '');
+
+    if (existingTimes.length >= 4) {
+      setScheduleMode('interval');
+      const start = existingTimes[0]!;
+      const end = existingTimes[existingTimes.length - 1]!;
+      setIntervalStartInput(formatTime12h(start));
+      setIntervalEndInput(formatTime12h(end));
+    } else {
+      setScheduleMode('specific');
+    }
     setIsEditing(true);
   };
 
