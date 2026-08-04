@@ -384,19 +384,23 @@ export function TodayTab(): JSX.Element {
           </div>
         </div>
 
-        {/* 3 Quick Action Guide Cards */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginTop: 16 }}>
-          <div style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 10, padding: '12px 14px' }}>
-            <div style={{ fontSize: 12.5, fontWeight: 650, color: C.text, marginBottom: 4 }}>📌 1. Set 3 Priorities</div>
-            <div style={{ fontSize: 11, color: C.dim, lineHeight: 1.35 }}>Add your top tasks below so you know where to start without feeling overwhelmed.</div>
+        {/* 4 Quick Action Guide Cards */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10, marginTop: 16 }}>
+          <div style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 10, padding: '12px 13px' }}>
+            <div style={{ fontSize: 12.5, fontWeight: 650, color: C.text, marginBottom: 4 }}>📌 1. Top Priorities</div>
+            <div style={{ fontSize: 11, color: C.dim, lineHeight: 1.35 }}>Add your top 3 tasks so you know where to start without feeling overwhelmed.</div>
           </div>
-          <div style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 10, padding: '12px 14px' }}>
-            <div style={{ fontSize: 12.5, fontWeight: 650, color: C.text, marginBottom: 4 }}>💧 2. Wellness Routines</div>
-            <div style={{ fontSize: 11, color: C.dim, lineHeight: 1.35 }}>Water & break nudges are active to protect your health during work.</div>
+          <div style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 10, padding: '12px 13px' }}>
+            <div style={{ fontSize: 12.5, fontWeight: 650, color: C.text, marginBottom: 4 }}>⏱️ 2. Time Tracking</div>
+            <div style={{ fontSize: 11, color: C.dim, lineHeight: 1.35 }}>Track focus sessions & see where your screen time goes in real-time.</div>
           </div>
-          <div style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 10, padding: '12px 14px' }}>
-            <div style={{ fontSize: 12.5, fontWeight: 650, color: C.text, marginBottom: 4 }}>🤖 3. AI & Smart Inbox</div>
-            <div style={{ fontSize: 11, color: C.dim, lineHeight: 1.35 }}>Connect OpenAI or LM Studio in Settings to auto-flag urgent emails & drafts.</div>
+          <div style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 10, padding: '12px 13px' }}>
+            <div style={{ fontSize: 12.5, fontWeight: 650, color: C.text, marginBottom: 4 }}>💧 3. Wellness Routines</div>
+            <div style={{ fontSize: 11, color: C.dim, lineHeight: 1.35 }}>Water & stretch reminders protect your health while working at your PC.</div>
+          </div>
+          <div style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 10, padding: '12px 13px' }}>
+            <div style={{ fontSize: 12.5, fontWeight: 650, color: C.text, marginBottom: 4 }}>🤖 4. AI & Smart Inbox</div>
+            <div style={{ fontSize: 11, color: C.dim, lineHeight: 1.35 }}>Connect LM Studio or OpenAI in Settings to flag urgent emails & drafts.</div>
           </div>
         </div>
       </div>
