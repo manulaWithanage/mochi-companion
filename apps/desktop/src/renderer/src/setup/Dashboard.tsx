@@ -17,12 +17,13 @@ import { GmailTab } from './tabs/GmailTab.js';
 import { CalendarTab } from './tabs/CalendarTab.js';
 import { ActivityTab } from './tabs/ActivityTab.js';
 import { TasksTab } from './tabs/TasksTab.js';
+import { useAgenda } from './useAgenda.js';
 
 type TabId =
   'today' | 'calendar' | 'tasks' | 'activity' | 'time' | 'routines' | 'gmail' | 'settings';
 
 const PRIMARY_TABS: readonly { id: TabId; label: string }[] = [
-  { id: 'today', label: 'Overview' },
+  { id: 'today', label: 'Today' },
   { id: 'calendar', label: 'Calendar' },
   { id: 'tasks', label: 'Tasks' },
   { id: 'time', label: 'Time' },
@@ -322,6 +323,11 @@ function SettingsView(): JSX.Element {
 
 export function Dashboard(): JSX.Element {
   const [tab, setTab] = useState<TabId>('today');
+  // Owned here rather than in the tab, so the nav badge is right while you are
+  // looking at some other tab. A count that only becomes correct once you visit
+  // the page is worse than no count.
+  const agendaSources = useAgenda();
+  const { agenda } = agendaSources;
   const [settings, setSettings] = useState<MochiSettings | null>(null);
   const [timer, setTimer] = useState<TimerSnapshot | null>(null);
   const [projects, setProjects] = useState<readonly Project[]>([]);
@@ -615,7 +621,28 @@ export function Dashboard(): JSX.Element {
               >
                 {renderTabIcon(t.id, active)}
               </div>
-              <span>{t.label}</span>
+              <span style={{ flex: 1 }}>{t.label}</span>
+              {/*
+                Only ever the finishable count. Badging the total including
+                meetings would show a number that never reaches zero, which is
+                the one thing this view is for.
+              */}
+              {t.id === 'today' && agenda.needsYou.length > 0 && (
+                <span
+                  style={{
+                    fontSize: 11,
+                    fontWeight: 650,
+                    minWidth: 19,
+                    textAlign: 'center',
+                    padding: '1px 6px',
+                    borderRadius: 999,
+                    background: active ? C.accent : 'rgba(242, 166, 179, 0.18)',
+                    color: active ? '#1a1420' : C.accent,
+                  }}
+                >
+                  {agenda.needsYou.length}
+                </span>
+              )}
             </button>
           );
         })}
@@ -750,13 +777,15 @@ export function Dashboard(): JSX.Element {
             animation: 'fadeInMainTab 240ms cubic-bezier(0.16, 1, 0.3, 1)',
           }}
         >
-          {tab === 'today' && <TodayTab onSelectTab={(t) => setTab(t as TabId)} />}
+          {tab === 'today' && (
+            <TodayTab {...agendaSources} onSelectTab={(t) => setTab(t as TabId)} />
+          )}
           {tab === 'time' && <TimeTab />}
           {tab === 'tasks' && <TasksTab />}
           {tab === 'routines' && <RoutinesTab />}
           {tab === 'calendar' && <CalendarTab />}
           {tab === 'activity' && <ActivityTab />}
-          {tab === 'gmail' && <GmailTab />}
+          {tab === 'gmail' && <GmailTab onSelectTab={(t) => setTab(t as TabId)} />}
           {tab === 'settings' && <SettingsView />}
         </div>
       </main>

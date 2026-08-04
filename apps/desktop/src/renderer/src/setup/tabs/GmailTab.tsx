@@ -31,7 +31,7 @@ interface DraftState {
   suggestedSubject: string;
 }
 
-export function GmailTab(): JSX.Element {
+export function GmailTab({ onSelectTab }: { onSelectTab?: (tab: string) => void }): JSX.Element {
   const [status, setStatus] = useState<GmailStatus | null>(null);
   const [emailInput, setEmailInput] = useState('');
   const [passInput, setPassInput] = useState('');
@@ -441,18 +441,26 @@ export function GmailTab(): JSX.Element {
                         setTone(newTone);
                         const targetEmail = emails.find((e) => e.uid === draft.emailUid);
                         if (targetEmail) {
-                          void window.mochi.gmail.generateDraft(targetEmail.emailId, newTone).then((res) => {
-                            if (res.ok && res.draftReply) {
-                              setDraft((prev) => (prev ? { ...prev, draftReply: res.draftReply! } : null));
-                            }
-                          });
+                          void window.mochi.gmail
+                            .generateDraft(targetEmail.emailId, newTone)
+                            .then((res) => {
+                              if (res.ok && res.draftReply) {
+                                setDraft((prev) =>
+                                  prev ? { ...prev, draftReply: res.draftReply! } : null,
+                                );
+                              }
+                            });
                         }
                       }}
                       style={{
                         padding: '6px 12px',
                         borderRadius: 8,
-                        border: activeTone ? `1.5px solid ${C.accent}` : '1px solid rgba(255, 255, 255, 0.1)',
-                        background: activeTone ? 'rgba(242, 166, 179, 0.2)' : 'rgba(255, 255, 255, 0.04)',
+                        border: activeTone
+                          ? `1.5px solid ${C.accent}`
+                          : '1px solid rgba(255, 255, 255, 0.1)',
+                        background: activeTone
+                          ? 'rgba(242, 166, 179, 0.2)'
+                          : 'rgba(255, 255, 255, 0.04)',
                         color: activeTone ? '#ffffff' : C.text,
                         fontSize: 12,
                         fontWeight: 700,
@@ -628,79 +636,66 @@ export function GmailTab(): JSX.Element {
 
   // ---- Connected + Inbox view ----
   const actionNeeded = emails.filter(
-    (e) => e.priority?.replyLikely === true || e.priority?.tier === 'urgent' || e.priority?.tier === 'review'
+    (e) =>
+      e.priority?.replyLikely === true ||
+      e.priority?.tier === 'urgent' ||
+      e.priority?.tier === 'review',
   );
 
   return (
     <div>
       {connectedHeader}
 
-      {/* Hero AI Action Deck Panel */}
+      {/*
+        The priority view lives on the Today tab now, not here.
+        This used to be a hero "EXECUTIVE AI ACTION DECK" claiming an
+        "Estimated response time" of count x 3 minutes — a number nothing
+        measured — above a button labelled "Auto-Draft All Urgent (6)" that
+        called slice(0, 3) and drafted three. An inbox is for reading mail; what
+        needs answering today is one merged list somewhere else.
+      */}
       {actionNeeded.length > 0 && (
         <div
           style={{
             ...card,
-            marginBottom: 16,
-            padding: '16px 20px',
-            background: 'linear-gradient(135deg, rgba(46, 36, 59, 0.95) 0%, rgba(28, 22, 36, 0.95) 100%)',
-            border: '1px solid rgba(242, 166, 179, 0.35)',
-            boxShadow: '0 8px 24px rgba(0, 0, 0, 0.4)',
+            marginBottom: 14,
+            padding: '11px 14px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: 12,
           }}
         >
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
-            <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-                <span style={{ fontSize: 16 }}>⚡</span>
-                <span style={{ fontSize: 14, fontWeight: 750, color: C.text }}>
-                  EXECUTIVE AI ACTION DECK
-                </span>
-                <span
-                  style={{
-                    fontSize: 11,
-                    fontWeight: 700,
-                    padding: '2px 8px',
-                    borderRadius: 99,
-                    background: 'rgba(255, 80, 80, 0.2)',
-                    color: '#ff8e8e',
-                  }}
-                >
-                  🔴 {actionNeeded.length} Pending Replies
-                </span>
-              </div>
-              <div style={{ fontSize: 12, color: C.dim }}>
-                Mochi detected {actionNeeded.length} urgent email requests requiring your answer today. Estimated response time: ~{actionNeeded.length * 3} mins.
-              </div>
-            </div>
-
+          <span style={{ fontSize: 12.5, color: C.dim }}>
+            {actionNeeded.length} {actionNeeded.length === 1 ? 'thread looks' : 'threads look'} like
+            {actionNeeded.length === 1 ? ' it needs' : ' they need'} a reply.
+          </span>
+          {onSelectTab !== undefined && (
             <button
               type="button"
-              onClick={async () => {
-                for (const item of actionNeeded.slice(0, 3)) {
-                  if (item.draft?.status !== 'ready') {
-                    void handleGenerate(item);
-                  }
-                }
-              }}
+              onClick={() => onSelectTab('today')}
               style={{
-                ...button('primary'),
-                fontSize: 12,
-                padding: '8px 16px',
-                fontWeight: 750,
+                ...button('ghost'),
+                padding: '5px 12px',
+                fontSize: 11.5,
                 whiteSpace: 'nowrap',
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: 6,
               }}
             >
-              ✦ Auto-Draft All Urgent ({actionNeeded.length})
+              See them in Today
             </button>
-          </div>
+          )}
         </div>
       )}
 
       {/* Category & Filter Tabs */}
       <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 14 }}>
-        {CATEGORIES.map((c) => {
+        {/*
+          Empty categories are hidden. "Forums 0" is a button that does nothing
+          taking up the same room as one that does, and the point of this row is
+          to be scannable. The selected one always stays, or clicking through to
+          an empty category would make its own tab vanish under the cursor.
+        */}
+        {CATEGORIES.filter((c) => c.id === active || (counts.get(c.id) ?? 0) > 0).map((c) => {
           const selected = c.id === active;
           const count = counts.get(c.id);
           return (
@@ -782,9 +777,8 @@ export function GmailTab(): JSX.Element {
                   gap: 10,
                   border: `1px solid ${isExpanded ? C.accent : 'rgba(255, 255, 255, 0.1)'}`,
                   transition: 'all 160ms ease',
-                  background: email.priority?.tier === 'urgent'
-                    ? 'rgba(40, 26, 38, 0.85)'
-                    : undefined,
+                  background:
+                    email.priority?.tier === 'urgent' ? 'rgba(40, 26, 38, 0.85)' : undefined,
                 }}
               >
                 <div
@@ -900,65 +894,38 @@ export function GmailTab(): JSX.Element {
                   </div>
                 </div>
 
-                {/* AI Summary / Rationale Box */}
-                {email.priority?.reason && (
-                  <div
-                    style={{
-                      background: 'rgba(242, 166, 179, 0.06)',
-                      border: '1px solid rgba(242, 166, 179, 0.2)',
-                      borderRadius: 8,
-                      padding: '8px 12px',
-                      fontSize: 12,
-                      color: C.accent,
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 6,
-                    }}
-                  >
-                    <span>💡 AI Insights:</span>
-                    <span>{email.priority.reason}</span>
+                {/*
+                  One quiet line, not a callout.
+
+                  This was an accent-bordered "💡 AI Insights" panel on every
+                  row, which at six rows is six highlighted boxes competing with
+                  the mail itself. The weight was the problem rather than the
+                  text: a rules-based reason is a useful signal list ("sent
+                  directly to you, asks you to take action"), while the LLM path
+                  sometimes writes prose that merely restates the subject —
+                  "Urgent request for immediate attention" above "Urgent: action
+                  required now".
+
+                  Filtering the vacuous ones was tried and abandoned: telling a
+                  paraphrase from a genuine summary needs to understand the
+                  sentence, and a word-overlap rule confidently got that exact
+                  case wrong. Showing it quietly costs one dim line when it is
+                  useless and still reads fine when it is not.
+                */}
+                {email.priority?.reason !== undefined && email.priority.reason.length > 0 && (
+                  <div style={{ fontSize: 11.5, color: C.faint, lineHeight: 1.45 }}>
+                    {email.priority.reason}
                   </div>
                 )}
 
-                {/* 1-Click Quick AI Action Chips */}
-                <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 2 }}>
-                  {[
-                    { label: '👍 Confirm & Approve', intent: 'Confirm and approve the request politely.' },
-                    { label: '📅 Schedule & Time Check', intent: 'Check schedule and propose a convenient time.' },
-                    { label: '❓ Ask for Details', intent: 'Ask for additional information or documents.' },
-                  ].map((chip) => (
-                    <button
-                      key={chip.label}
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        openDraft(email);
-                      }}
-                      style={{
-                        padding: '4px 10px',
-                        borderRadius: 6,
-                        border: '1px solid rgba(255, 255, 255, 0.12)',
-                        background: 'rgba(255, 255, 255, 0.04)',
-                        color: C.text,
-                        fontSize: 11.5,
-                        fontWeight: 600,
-                        cursor: 'pointer',
-                        transition: 'all 140ms ease',
-                      }}
-                      onMouseEnter={(evt) => {
-                        evt.currentTarget.style.background = 'rgba(242, 166, 179, 0.15)';
-                        evt.currentTarget.style.borderColor = C.accent;
-                      }}
-                      onMouseLeave={(evt) => {
-                        evt.currentTarget.style.background = 'rgba(255, 255, 255, 0.04)';
-                        evt.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.12)';
-                      }}
-                    >
-                      {chip.label}
-                    </button>
-                  ))}
-                </div>
-
+                {/*
+                  Three chips lived here — "Confirm & Approve", "Schedule & Time
+                  Check", "Ask for Details" — each carrying an `intent` string
+                  that nothing ever read. All three called openDraft(email) and
+                  produced the same draft, so the UI promised a choice it could
+                  not keep. Reply styles belong inside the draft screen, after
+                  you have decided to reply, not as three buttons on every row.
+                */}
                 {email.priority?.replyLikely === true &&
                   email.priority.confidence >= 0.75 &&
                   email.priority.tier !== 'low' &&
