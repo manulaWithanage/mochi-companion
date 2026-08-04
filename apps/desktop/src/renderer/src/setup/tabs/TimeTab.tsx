@@ -10,6 +10,7 @@ import {
   type WorkSession,
 } from '@mochi/core';
 import { button, C, card, h2, humanDuration, input, label, sub } from '../ui.js';
+import { SegmentedControl } from '../SegmentedControl.js';
 
 const QUICK_PRESETS = [
   { name: 'Work Time', colour: '#6366f1', icon: '💼' },
@@ -404,21 +405,10 @@ export function TimeTab(): JSX.Element {
         }
       `}</style>
 
-      {/* Sub-Tab Switcher Header */}
-      <div
-        style={{
-          display: 'flex',
-          gap: 6,
-          marginBottom: 20,
-          background: 'rgba(23, 19, 34, 0.95)',
-          padding: 5,
-          borderRadius: 12,
-          border: `1px solid rgba(255, 255, 255, 0.08)`,
-          boxShadow: '0 4px 16px rgba(0,0,0,0.35)',
-          width: 'fit-content',
-        }}
-      >
-        {[
+      {/* Apple-style Segmented Sub-Tab Switcher */}
+      <SegmentedControl<TimeSubTab>
+        style={{ marginBottom: 20 }}
+        options={[
           {
             id: 'categories',
             label: 'Categories & Mascot Badges',
@@ -452,52 +442,10 @@ export function TimeTab(): JSX.Element {
               </svg>
             ),
           },
-        ].map((t) => {
-          const active = subTab === t.id;
-          return (
-            <button
-              key={t.id}
-              type="button"
-              onClick={() => setSubTab(t.id as TimeSubTab)}
-              style={{
-                background: active
-                  ? 'linear-gradient(135deg, #f2a6b3, #e58597)'
-                  : 'transparent',
-                color: active ? '#1c1625' : C.dim,
-                border: 'none',
-                borderRadius: 8,
-                padding: '7px 16px',
-                fontSize: 12.5,
-                fontWeight: active ? 750 : 550,
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: 7,
-                boxShadow: active ? '0 4px 14px rgba(242, 166, 179, 0.35)' : 'none',
-                transform: active ? 'translateY(-1px)' : 'translateY(0)',
-                transition: 'all 200ms cubic-bezier(0.4, 0, 0.2, 1)',
-              }}
-              onMouseEnter={(e) => {
-                if (!active) {
-                  e.currentTarget.style.background = 'rgba(255, 255, 255, 0.06)';
-                  e.currentTarget.style.color = C.text;
-                }
-              }}
-              onMouseLeave={(e) => {
-                if (!active) {
-                  e.currentTarget.style.background = 'transparent';
-                  e.currentTarget.style.color = C.dim;
-                }
-              }}
-            >
-              <span style={{ display: 'flex', alignItems: 'center', opacity: active ? 1 : 0.75 }}>
-                {t.icon}
-              </span>
-              <span>{t.label}</span>
-            </button>
-          );
-        })}
-      </div>
+        ]}
+        value={subTab}
+        onChange={setSubTab}
+      />
 
       {subTab === 'categories' ? (
         <div key="categories" style={{ animation: 'fadeInSubTab 220ms ease-out' }}>
@@ -1052,73 +1000,17 @@ export function TimeTab(): JSX.Element {
 
             {/* Date Range Filter Switcher */}
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 8 }}>
-              <div
-                style={{
-                  display: 'flex',
-                  gap: 4,
-                  background: 'rgba(24, 20, 34, 0.95)',
-                  padding: 4,
-                  borderRadius: 10,
-                  border: '1px solid rgba(255, 255, 255, 0.08)',
-                  boxShadow: 'inset 0 2px 6px rgba(0,0,0,0.4)',
-                }}
-              >
-                {(
-                  [
-                    { id: 'today', label: 'Today' },
-                    { id: '7days', label: 'Last 7 Days' },
-                    { id: '30days', label: 'Last 30 Days' },
-                    { id: 'custom', label: 'Custom Range 📅' },
-                    { id: 'all', label: 'All Time' },
-                  ] as const
-                ).map((filter) => {
-                  const active = dateRange === filter.id;
-                  return (
-                    <button
-                      key={filter.id}
-                      type="button"
-                      onClick={() => setDateRange(filter.id)}
-                      style={{
-                        background: active
-                          ? 'linear-gradient(180deg, #3d3148 0%, #261f2e 100%)'
-                          : 'transparent',
-                        color: active ? '#ffffff' : 'rgba(244, 238, 246, 0.55)',
-                        border: active
-                          ? '1px solid rgba(242, 166, 179, 0.45)'
-                          : '1px solid transparent',
-                        borderTop: active
-                          ? '1px solid rgba(255, 255, 255, 0.25)'
-                          : '1px solid transparent',
-                        borderRadius: 7,
-                        padding: '5px 14px',
-                        fontSize: 12,
-                        fontWeight: active ? 750 : 500,
-                        cursor: 'pointer',
-                        boxShadow: active
-                          ? '0 4px 10px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.2)'
-                          : 'none',
-                        transform: active ? 'translateY(-1px)' : 'translateY(0)',
-                        transition: 'all 180ms cubic-bezier(0.4, 0, 0.2, 1)',
-                        textShadow: active ? '0 1px 2px rgba(0,0,0,0.6)' : 'none',
-                      }}
-                      onMouseEnter={(e) => {
-                        if (!active) {
-                          e.currentTarget.style.background = 'rgba(255, 255, 255, 0.07)';
-                          e.currentTarget.style.color = '#f4eef6';
-                        }
-                      }}
-                      onMouseLeave={(e) => {
-                        if (!active) {
-                          e.currentTarget.style.background = 'transparent';
-                          e.currentTarget.style.color = 'rgba(244, 238, 246, 0.65)';
-                        }
-                      }}
-                    >
-                      {filter.label}
-                    </button>
-                  );
-                })}
-              </div>
+              <SegmentedControl<DateRangeFilter>
+                options={[
+                  { id: 'today', label: 'Today' },
+                  { id: '7days', label: 'Last 7 Days' },
+                  { id: '30days', label: 'Last 30 Days' },
+                  { id: 'custom', label: 'Custom Range 📅' },
+                  { id: 'all', label: 'All Time' },
+                ]}
+                value={dateRange}
+                onChange={setDateRange}
+              />
 
               {dateRange === 'custom' && (
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>

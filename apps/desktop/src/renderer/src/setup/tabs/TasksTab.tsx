@@ -12,6 +12,7 @@ import {
   type Task,
 } from '@mochi/core';
 import { button, C, input } from '../ui.js';
+import { SegmentedControl } from '../SegmentedControl.js';
 
 type Filter = 'open' | 'today' | 'done';
 
@@ -884,66 +885,15 @@ export function TasksTab(): JSX.Element {
           padding: '0 4px',
         }}
       >
-        <div
-          style={{
-            display: 'flex',
-            gap: 4,
-            background: 'rgba(24, 20, 34, 0.95)',
-            padding: 4,
-            borderRadius: 10,
-            border: '1px solid rgba(255, 255, 255, 0.08)',
-            boxShadow: 'inset 0 2px 6px rgba(0,0,0,0.4)',
-          }}
-        >
-          {(['open', 'today', 'done'] as const).map((f) => {
-            const active = filter === f;
-            return (
-              <button
-                key={f}
-                type="button"
-                onClick={() => setFilter(f)}
-                style={{
-                  background: active
-                    ? 'linear-gradient(180deg, #3d3148 0%, #261f2e 100%)'
-                    : 'transparent',
-                  color: active ? '#ffffff' : 'rgba(244, 238, 246, 0.55)',
-                  border: active
-                    ? '1px solid rgba(242, 166, 179, 0.45)'
-                    : '1px solid transparent',
-                  borderTop: active
-                    ? '1px solid rgba(255, 255, 255, 0.25)'
-                    : '1px solid transparent',
-                  borderRadius: 7,
-                  padding: '5px 14px',
-                  fontSize: 12,
-                  fontWeight: active ? 750 : 500,
-                  cursor: 'pointer',
-                  boxShadow: active
-                    ? '0 4px 10px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.2)'
-                    : 'none',
-                  transform: active ? 'translateY(-1px)' : 'translateY(0)',
-                  transition: 'all 180ms cubic-bezier(0.4, 0, 0.2, 1)',
-                  textTransform: 'capitalize',
-                  textShadow: active ? '0 1px 2px rgba(0,0,0,0.6)' : 'none',
-                }}
-                onMouseEnter={(e) => {
-                  if (!active) {
-                    e.currentTarget.style.background = 'rgba(255, 255, 255, 0.07)';
-                    e.currentTarget.style.color = '#f4eef6';
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  if (!active) {
-                    e.currentTarget.style.background = 'transparent';
-                    e.currentTarget.style.color = 'rgba(244, 238, 246, 0.65)';
-                  }
-                }}
-              >
-                {f}
-              </button>
-            );
-          })}
-        </div>
+        <SegmentedControl<Filter>
+          options={[
+            { id: 'open', label: 'Open' },
+            { id: 'today', label: 'Today' },
+            { id: 'done', label: 'Done' },
+          ]}
+          value={filter}
+          onChange={setFilter}
+        />
         <span style={{ fontSize: 12, color: C.faint }}>{openCount} open tasks</span>
       </div>
 
