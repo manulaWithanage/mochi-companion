@@ -904,23 +904,27 @@ export function TasksTab(): JSX.Element {
                 onClick={() => setFilter(f)}
                 style={{
                   background: active
-                    ? 'linear-gradient(135deg, #f2a6b3, #e58597)'
+                    ? 'linear-gradient(180deg, #3d3148 0%, #261f2e 100%)'
                     : 'transparent',
-                  color: active ? '#1c1625' : 'rgba(244, 238, 246, 0.65)',
+                  color: active ? '#ffffff' : 'rgba(244, 238, 246, 0.55)',
                   border: active
-                    ? '1px solid rgba(242, 166, 179, 0.5)'
+                    ? '1px solid rgba(242, 166, 179, 0.45)'
+                    : '1px solid transparent',
+                  borderTop: active
+                    ? '1px solid rgba(255, 255, 255, 0.25)'
                     : '1px solid transparent',
                   borderRadius: 7,
                   padding: '5px 14px',
                   fontSize: 12,
-                  fontWeight: active ? 750 : 550,
+                  fontWeight: active ? 750 : 500,
                   cursor: 'pointer',
                   boxShadow: active
-                    ? '0 3px 12px rgba(242, 166, 179, 0.38), inset 0 1px 0 rgba(255,255,255,0.4)'
+                    ? '0 4px 10px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.2)'
                     : 'none',
                   transform: active ? 'translateY(-1px)' : 'translateY(0)',
                   transition: 'all 180ms cubic-bezier(0.4, 0, 0.2, 1)',
                   textTransform: 'capitalize',
+                  textShadow: active ? '0 1px 2px rgba(0,0,0,0.6)' : 'none',
                 }}
                 onMouseEnter={(e) => {
                   if (!active) {
