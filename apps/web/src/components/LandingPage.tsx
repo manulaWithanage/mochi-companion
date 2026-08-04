@@ -71,8 +71,9 @@ export const LandingPage: React.FC = () => {
       <main id="top">
         <HeroDiorama />
 
+        {/* Section 1: Purpose & Quote */}
         <section
-          className="story-section story-section--promise"
+          className="story-section story-section--purpose"
           id="why-mochi"
           data-mochi-story="purpose"
         >
@@ -93,6 +94,21 @@ export const LandingPage: React.FC = () => {
             </p>
             <cite>Why Mochi Exists</cite>
           </blockquote>
+        </section>
+
+        {/* Section 2: How Mochi Helps (The 3 Pillars) */}
+        <section
+          className="story-section story-section--pillars"
+          id="how-mochi-helps"
+          data-mochi-story="pillars"
+        >
+          <div className="story-intro story-intro--center">
+            <p className="story-eyebrow">HOW MOCHI HELPS YOU</p>
+            <h2>Three simple ways Mochi brings peace to your workday.</h2>
+            <p>
+              Designed from the ground up to protect your attention, keep your day organized, and stay 100% private on your computer.
+            </p>
+          </div>
 
           <div className="promise-grid">
             <article className="promise-card promise-card--plan">
@@ -121,7 +137,7 @@ export const LandingPage: React.FC = () => {
                 <small>01 · START CLEAR</small>
                 <h3>Know what matters first.</h3>
                 <p>
-                  See priorities, a focus block, and your next meeting before the day gets noisy.
+                  See your top priorities, planned focus time, and next meeting before the morning gets noisy.
                 </p>
               </div>
             </article>
@@ -156,9 +172,9 @@ export const LandingPage: React.FC = () => {
               </div>
               <div className="promise-card__copy">
                 <small>02 · KEEP FOCUS</small>
-                <h3>Bring the right things forward.</h3>
+                <h3>Only what needs your attention.</h3>
                 <p>
-                  Important emails, waiting replies, and focus time are there when you need them.
+                  Important emails, waiting replies, and focus blocks float up when needed. Newsletters and noise stay out of the way.
                 </p>
               </div>
             </article>
@@ -179,8 +195,10 @@ export const LandingPage: React.FC = () => {
               </div>
               <div className="promise-card__copy">
                 <small>03 · STAY YOURS</small>
-                <h3>Private by default.</h3>
-                <p>Core data lives locally. Connections and AI stay optional, on your terms.</p>
+                <h3>Private by default, on your PC.</h3>
+                <p>
+                  Your tasks, focus history, and personal routines stay encrypted in a local database on your computer. No accounts, no cloud tracking.
+                </p>
               </div>
             </article>
           </div>
