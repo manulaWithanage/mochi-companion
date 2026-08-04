@@ -11,6 +11,7 @@ import {
 } from '@mochi/core';
 import { button, C, card, h2, humanDuration, input, label, sub } from '../ui.js';
 import { SegmentedControl } from '../SegmentedControl.js';
+import { CategoryIcon } from '../CategoryIcon.js';
 
 const QUICK_PRESETS = [
   { name: 'Work Time', colour: '#6366f1', icon: '💼' },
@@ -615,7 +616,7 @@ export function TimeTab(): JSX.Element {
                           flexShrink: 0,
                         }}
                       >
-                        {categoryIcon(p.name)}
+                        <CategoryIcon icon={categoryIcon(p.name)} color={p.colour} size={18} />
                       </div>
                       <div style={{ minWidth: 0, flex: 1 }}>
                         <div
@@ -882,7 +883,7 @@ export function TimeTab(): JSX.Element {
                             flexShrink: 0,
                           }}
                         >
-                          {categoryIcon(project.name)}
+                          <CategoryIcon icon={categoryIcon(project.name)} color={project.colour} size={20} />
                         </div>
                         <div style={{ minWidth: 0, flex: 1 }}>
                           <div
