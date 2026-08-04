@@ -78,9 +78,9 @@ export const LandingPage: React.FC = () => {
           data-mochi-story="purpose"
         >
           <div className="story-intro story-intro--center">
-            <p className="story-eyebrow">WHY WE BUILT MOCHI</p>
+            <p className="story-eyebrow">WHAT IS MOCHI</p>
             <h2 className="hero-purpose-quote">
-              “We didn’t build Mochi to add another system to your workday. We built it so you can <em>focus on what matters</em>, close your computer on time, and <em>feel good about&nbsp;your&nbsp;day.”</em>
+              “Mochi is a calm desktop companion that keeps your <em>daily plan, important messages,</em> and focus time right by your side — without noise, accounts, or&nbsp;cloud&nbsp;tracking.”
             </h2>
           </div>
         </section>
