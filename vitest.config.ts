@@ -12,6 +12,9 @@ export default defineConfig({
       // electron-free; anything needing the app object belongs behind a
       // service that takes its inputs as arguments.
       'apps/desktop/src/**/*.{test,spec}.ts',
+      // Release tooling. It decides what version reaches users, and its failure
+      // mode is silent, so it is held to the same standard as the app.
+      'scripts/**/*.{test,spec}.ts',
     ],
     coverage: {
       provider: 'v8',
