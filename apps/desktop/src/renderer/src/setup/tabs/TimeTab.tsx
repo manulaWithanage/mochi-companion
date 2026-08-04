@@ -91,11 +91,17 @@ function slotArrow(disabled: boolean): React.CSSProperties {
 }
 
 type TimeSubTab = 'categories' | 'performance' | 'history';
-type DateRangeFilter = 'today' | '7days' | '30days' | 'all';
+type DateRangeFilter = 'today' | '7days' | '30days' | 'custom' | 'all';
 
 export function TimeTab(): JSX.Element {
   const [subTab, setSubTab] = useState<TimeSubTab>('categories');
   const [dateRange, setDateRange] = useState<DateRangeFilter>('7days');
+  const [customStartDate, setCustomStartDate] = useState(() => {
+    const d = new Date();
+    d.setDate(d.getDate() - 7);
+    return d.toISOString().split('T')[0]!;
+  });
+  const [customEndDate, setCustomEndDate] = useState(() => new Date().toISOString().split('T')[0]!);
   const [sessions, setSessions] = useState<readonly WorkSession[]>([]);
   const [projects, setProjects] = useState<readonly Project[]>([]);
   const [settings, setSettings] = useState<MochiSettings | null>(null);
@@ -289,6 +295,12 @@ export function TimeTab(): JSX.Element {
     const now = Date.now();
     if (dateRange === 'all') return sessions;
 
+    if (dateRange === 'custom') {
+      const startMs = new Date(customStartDate).setHours(0, 0, 0, 0);
+      const endMs = new Date(customEndDate).setHours(23, 59, 59, 999);
+      return sessions.filter((s) => s.startedAt >= startMs && s.startedAt <= endMs);
+    }
+
     let startThreshold = 0;
     const startOfDay = new Date();
     startOfDay.setHours(0, 0, 0, 0);
@@ -302,7 +314,7 @@ export function TimeTab(): JSX.Element {
     }
 
     return sessions.filter((s) => s.startedAt >= startThreshold);
-  }, [sessions, dateRange]);
+  }, [sessions, dateRange, customStartDate, customEndDate]);
 
   const performanceStats = useMemo(() => {
     const now = Date.now();
@@ -1008,46 +1020,88 @@ export function TimeTab(): JSX.Element {
             </div>
 
             {/* Date Range Filter Switcher */}
-            <div
-              style={{
-                display: 'flex',
-                gap: 4,
-                background: '#181422',
-                padding: 3,
-                borderRadius: 8,
-                border: `1px solid ${C.border}`,
-              }}
-            >
-              {(
-                [
-                  { id: 'today', label: 'Today' },
-                  { id: '7days', label: 'Last 7 Days' },
-                  { id: '30days', label: 'Last 30 Days' },
-                  { id: 'all', label: 'All Time' },
-                ] as const
-              ).map((filter) => {
-                const active = dateRange === filter.id;
-                return (
-                  <button
-                    key={filter.id}
-                    type="button"
-                    onClick={() => setDateRange(filter.id)}
-                    style={{
-                      background: active ? 'rgba(242, 166, 179, 0.18)' : 'transparent',
-                      color: active ? C.accent : C.dim,
-                      border: active ? `1px solid ${C.accent}66` : '1px solid transparent',
-                      borderRadius: 6,
-                      padding: '4px 10px',
-                      fontSize: 11.5,
-                      fontWeight: active ? 700 : 500,
-                      cursor: 'pointer',
-                      transition: 'all 120ms ease',
-                    }}
-                  >
-                    {filter.label}
-                  </button>
-                );
-              })}
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 8 }}>
+              <div
+                style={{
+                  display: 'flex',
+                  gap: 4,
+                  background: '#181422',
+                  padding: 3,
+                  borderRadius: 8,
+                  border: `1px solid ${C.border}`,
+                }}
+              >
+                {(
+                  [
+                    { id: 'today', label: 'Today' },
+                    { id: '7days', label: 'Last 7 Days' },
+                    { id: '30days', label: 'Last 30 Days' },
+                    { id: 'custom', label: 'Custom Range 📅' },
+                    { id: 'all', label: 'All Time' },
+                  ] as const
+                ).map((filter) => {
+                  const active = dateRange === filter.id;
+                  return (
+                    <button
+                      key={filter.id}
+                      type="button"
+                      onClick={() => setDateRange(filter.id)}
+                      style={{
+                        background: active ? 'rgba(242, 166, 179, 0.18)' : 'transparent',
+                        color: active ? C.accent : C.dim,
+                        border: active ? `1px solid ${C.accent}66` : '1px solid transparent',
+                        borderRadius: 6,
+                        padding: '4px 10px',
+                        fontSize: 11.5,
+                        fontWeight: active ? 700 : 500,
+                        cursor: 'pointer',
+                        transition: 'all 120ms ease',
+                      }}
+                    >
+                      {filter.label}
+                    </button>
+                  );
+                })}
+              </div>
+
+              {dateRange === 'custom' && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <span style={{ fontSize: 11.5, color: C.dim }}>From:</span>
+                    <input
+                      type="date"
+                      value={customStartDate}
+                      onChange={(e) => setCustomStartDate(e.target.value)}
+                      style={{
+                        padding: '4px 8px',
+                        borderRadius: 6,
+                        background: '#181422',
+                        border: `1px solid ${C.border}`,
+                        color: C.text,
+                        fontSize: 11.5,
+                        outline: 'none',
+                      }}
+                    />
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <span style={{ fontSize: 11.5, color: C.dim }}>To:</span>
+                    <input
+                      type="date"
+                      value={customEndDate}
+                      onChange={(e) => setCustomEndDate(e.target.value)}
+                      style={{
+                        padding: '4px 8px',
+                        borderRadius: 6,
+                        background: '#181422',
+                        border: `1px solid ${C.border}`,
+                        color: C.text,
+                        fontSize: 11.5,
+                        outline: 'none',
+                      }}
+                    />
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 
