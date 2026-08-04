@@ -297,7 +297,10 @@ export function ActivityTab(): JSX.Element {
   }, [spans, settings?.learnedAppCategories]);
 
   const apps = useMemo(() => totalsByApp(effectiveSpans), [effectiveSpans]);
-  const categories = useMemo(() => totalsByCategory(effectiveSpans).filter((c) => c.ms > 0), [effectiveSpans]);
+  const categories = useMemo(
+    () => totalsByCategory(effectiveSpans).filter((c) => c.ms > 0),
+    [effectiveSpans],
+  );
   const totalMs = useMemo(() => apps.reduce((sum, a) => sum + a.ms, 0), [apps]);
   const focused = useMemo(() => focusedMs(effectiveSpans), [effectiveSpans]);
   const switches = useMemo(() => switchCount(effectiveSpans), [effectiveSpans]);
@@ -542,7 +545,9 @@ export function ActivityTab(): JSX.Element {
           ) : (
             <>
               {/* Timeline Chart */}
-              {range === 'today' && <Timeline spans={effectiveSpans} from={bounds.from} to={bounds.to} />}
+              {range === 'today' && (
+                <Timeline spans={effectiveSpans} from={bounds.from} to={bounds.to} />
+              )}
 
               {/* Core Key Stats */}
               <div style={{ display: 'flex', gap: 12, marginBottom: 16 }}>

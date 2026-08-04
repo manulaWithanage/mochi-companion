@@ -19,14 +19,7 @@ import { ActivityTab } from './tabs/ActivityTab.js';
 import { TasksTab } from './tabs/TasksTab.js';
 
 type TabId =
-  | 'today'
-  | 'calendar'
-  | 'tasks'
-  | 'activity'
-  | 'time'
-  | 'routines'
-  | 'gmail'
-  | 'settings';
+  'today' | 'calendar' | 'tasks' | 'activity' | 'time' | 'routines' | 'gmail' | 'settings';
 
 const PRIMARY_TABS: readonly { id: TabId; label: string }[] = [
   { id: 'today', label: 'Today' },

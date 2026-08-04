@@ -101,7 +101,9 @@ type Note = { readonly ok: boolean; readonly text: string } | null;
 
 const NoteLine = ({ note }: { note: Note }): JSX.Element | null =>
   note === null ? null : (
-    <p style={{ margin: '8px 0 0', fontSize: 12.5, lineHeight: 1.5, color: note.ok ? C.ok : C.warn }}>
+    <p
+      style={{ margin: '8px 0 0', fontSize: 12.5, lineHeight: 1.5, color: note.ok ? C.ok : C.warn }}
+    >
       {note.text}
     </p>
   );
@@ -306,7 +308,10 @@ export function AiSection(): JSX.Element {
         });
         setKeyInput('');
       } else {
-        setMessage({ ok: false, text: result.error ?? 'That key did not work. Please check your API key prefix.' });
+        setMessage({
+          ok: false,
+          text: result.error ?? 'That key did not work. Please check your API key prefix.',
+        });
       }
     } finally {
       setBusy(false);
@@ -384,9 +389,7 @@ export function AiSection(): JSX.Element {
           background: status.ready
             ? 'linear-gradient(135deg, rgba(168, 230, 184, 0.12) 0%, rgba(168, 230, 184, 0.04) 100%)'
             : 'rgba(255, 255, 255, 0.03)',
-          border: status.ready
-            ? '1px solid rgba(168, 230, 184, 0.35)'
-            : `1px solid ${C.border}`,
+          border: status.ready ? '1px solid rgba(168, 230, 184, 0.35)' : `1px solid ${C.border}`,
         }}
       >
         <div>
@@ -428,14 +431,22 @@ export function AiSection(): JSX.Element {
 
       {/* ---- On this machine (Local Providers) ------------------------- */}
       <div>
-        <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 4 }}>
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'baseline',
+            justifyContent: 'space-between',
+            marginBottom: 4,
+          }}
+        >
           <span style={sectionTitle}>On This Machine (Local & Free)</span>
           <button style={ghostButton} onClick={() => void rescan()} disabled={scanning}>
             {scanning ? 'Scanning…' : 'Scan Again'}
           </button>
         </div>
         <p style={{ margin: '0 0 12px', fontSize: 12.5, color: C.dim, lineHeight: 1.5 }}>
-          Run AI models locally on your computer. Zero cost, no API keys, and 100% private. Mochi detects running servers automatically.
+          Run AI models locally on your computer. Zero cost, no API keys, and 100% private. Mochi
+          detects running servers automatically.
         </p>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -450,7 +461,8 @@ export function AiSection(): JSX.Element {
         <div style={{ marginBottom: 12 }}>
           <span style={sectionTitle}>Cloud API Providers</span>
           <div style={{ fontSize: 12.5, color: C.dim, marginTop: -4 }}>
-            Connect your own API key for stronger reasoning or email drafting. Keys are saved encrypted on this device.
+            Connect your own API key for stronger reasoning or email drafting. Keys are saved
+            encrypted on this device.
           </div>
         </div>
 
@@ -563,7 +575,14 @@ export function AiSection(): JSX.Element {
             padding: '16px 18px',
           }}
         >
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              marginBottom: 8,
+            }}
+          >
             <span style={{ fontSize: 13.5, fontWeight: 650, color: C.text }}>
               {cloudKeys.length > 0 ? 'Connect Another API Key' : 'Connect a Cloud API Key'}
             </span>
@@ -579,8 +598,17 @@ export function AiSection(): JSX.Element {
               OpenAI · Anthropic · Google Gemini
             </span>
           </div>
-          <p style={{ margin: '0 0 14px', fontSize: 12.5, color: C.text, opacity: 0.65, lineHeight: 1.5 }}>
-            Paste your API key below. Mochi detects the provider automatically from the key prefix (<code>sk-...</code>, <code>sk-ant-...</code>, or <code>AIza...</code>).
+          <p
+            style={{
+              margin: '0 0 14px',
+              fontSize: 12.5,
+              color: C.text,
+              opacity: 0.65,
+              lineHeight: 1.5,
+            }}
+          >
+            Paste your API key below. Mochi detects the provider automatically from the key prefix (
+            <code>sk-...</code>, <code>sk-ant-...</code>, or <code>AIza...</code>).
           </p>
 
           <div style={{ display: 'flex', gap: 10 }}>
@@ -731,8 +759,9 @@ export function AiSection(): JSX.Element {
           </div>
           <p style={{ margin: '6px 0 0', fontSize: 12, opacity: 0.55, lineHeight: 1.5 }}>
             <strong>{status.spentToday.toLocaleString()}</strong> /{' '}
-            {status.dailyTokenCap === 0 ? 'unlimited' : status.dailyTokenCap.toLocaleString()} tokens
-            used today. Local models are free and private; cloud providers bill directly from your own account.
+            {status.dailyTokenCap === 0 ? 'unlimited' : status.dailyTokenCap.toLocaleString()}{' '}
+            tokens used today. Local models are free and private; cloud providers bill directly from
+            your own account.
           </p>
         </div>
       )}

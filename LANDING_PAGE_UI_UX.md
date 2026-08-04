@@ -25,17 +25,17 @@ The page avoids the visual language of a busy productivity dashboard. Instead, i
 
 ## Page flow
 
-| Section | Visitor question | UI treatment | Main message |
-| --- | --- | --- | --- |
-| Hero | What is Mochi? | Large product window in a Japanese zen landscape | A private desktop companion that keeps the day together. |
-| Product promise | Why would I need it? | Editorial headline, short purpose statement, three product cards | Less juggling across tabs, inboxes, and systems. |
-| Daily overview | What will I see when I open it? | “Today” window with priorities, meeting, and suggested next action | Start the day knowing what matters. |
-| Email | How does it help with messages? | Reply-focused message list | Bring important email forward and leave noise behind. |
-| Focus | How does it support deep work? | One-click focus states and companion feedback | Start focus gently and return to the day without friction. |
-| Routines | Does it support wellbeing? | Warm routine card set | Small prompts for breaks, hydration, stretching, and wind-downs. |
-| Privacy | Is my information safe? | Dark, quieter information panel | Data stays on the computer by default. |
-| Optional intelligence | Do I need to connect services? | Three progressive connection cards | Mochi works alone. AI, Gmail, calendar, and providers are opt-in. |
-| Closing CTA and footer | What do I do next? | Sakura-led call to action and compact footer | Download for Windows and begin with one manageable task. |
+| Section                | Visitor question                | UI treatment                                                       | Main message                                                      |
+| ---------------------- | ------------------------------- | ------------------------------------------------------------------ | ----------------------------------------------------------------- |
+| Hero                   | What is Mochi?                  | Large product window in a Japanese zen landscape                   | A private desktop companion that keeps the day together.          |
+| Product promise        | Why would I need it?            | Editorial headline, short purpose statement, three product cards   | Less juggling across tabs, inboxes, and systems.                  |
+| Daily overview         | What will I see when I open it? | “Today” window with priorities, meeting, and suggested next action | Start the day knowing what matters.                               |
+| Email                  | How does it help with messages? | Reply-focused message list                                         | Bring important email forward and leave noise behind.             |
+| Focus                  | How does it support deep work?  | One-click focus states and companion feedback                      | Start focus gently and return to the day without friction.        |
+| Routines               | Does it support wellbeing?      | Warm routine card set                                              | Small prompts for breaks, hydration, stretching, and wind-downs.  |
+| Privacy                | Is my information safe?         | Dark, quieter information panel                                    | Data stays on the computer by default.                            |
+| Optional intelligence  | Do I need to connect services?  | Three progressive connection cards                                 | Mochi works alone. AI, Gmail, calendar, and providers are opt-in. |
+| Closing CTA and footer | What do I do next?              | Sakura-led call to action and compact footer                       | Download for Windows and begin with one manageable task.          |
 
 ## Visual system
 

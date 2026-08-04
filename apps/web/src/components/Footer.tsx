@@ -66,7 +66,9 @@ export const Footer: React.FC = () => {
           }}
         >
           <div className="site-footer__brand">
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '13px' }}>
+            <div
+              style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '13px' }}
+            >
               <MochiIcon size={31} glow={false} />
               <strong
                 style={{
@@ -98,28 +100,88 @@ export const Footer: React.FC = () => {
           <nav aria-label="Product links">
             <p style={headingStyle}>EXPLORE</p>
             <ul style={listStyle}>
-              <li><a href="#your-day" style={linkStyle}>Your day</a></li>
-              <li><a href="#focus" style={linkStyle}>Focus companion</a></li>
-              <li><a href="#routine" style={linkStyle}>Gentle routines</a></li>
-              <li><a href="#privacy" style={linkStyle}>Privacy</a></li>
+              <li>
+                <a href="#your-day" style={linkStyle}>
+                  Your day
+                </a>
+              </li>
+              <li>
+                <a href="#focus" style={linkStyle}>
+                  Focus companion
+                </a>
+              </li>
+              <li>
+                <a href="#routine" style={linkStyle}>
+                  Gentle routines
+                </a>
+              </li>
+              <li>
+                <a href="#privacy" style={linkStyle}>
+                  Privacy
+                </a>
+              </li>
             </ul>
           </nav>
 
           <nav aria-label="Resources links">
             <p style={headingStyle}>RESOURCES</p>
             <ul style={listStyle}>
-              <li><a href="/blog" style={linkStyle}>Blog</a></li>
-              <li><a href="/Mochi-Setup.exe" download style={linkStyle}>Download for Windows</a></li>
-              <li><a href="https://github.com/manulaWithanage/mochi-companion/blob/main/LICENSE" target="_blank" rel="noreferrer" style={linkStyle}>Open-source license</a></li>
+              <li>
+                <a href="/blog" style={linkStyle}>
+                  Blog
+                </a>
+              </li>
+              <li>
+                <a href="/Mochi-Setup.exe" download style={linkStyle}>
+                  Download for Windows
+                </a>
+              </li>
+              <li>
+                <a
+                  href="https://github.com/manulaWithanage/mochi-companion/blob/main/LICENSE"
+                  target="_blank"
+                  rel="noreferrer"
+                  style={linkStyle}
+                >
+                  Open-source license
+                </a>
+              </li>
             </ul>
           </nav>
 
           <nav aria-label="Community links">
             <p style={headingStyle}>COMMUNITY</p>
             <ul style={listStyle}>
-              <li><a href="https://github.com/manulaWithanage/mochi-companion" target="_blank" rel="noreferrer" style={linkStyle}>GitHub</a></li>
-              <li><a href="https://github.com/manulaWithanage/mochi-companion/issues" target="_blank" rel="noreferrer" style={linkStyle}>Report an issue</a></li>
-              <li><a href="https://github.com/manulaWithanage/mochi-companion/discussions" target="_blank" rel="noreferrer" style={linkStyle}>Discussions</a></li>
+              <li>
+                <a
+                  href="https://github.com/manulaWithanage/mochi-companion"
+                  target="_blank"
+                  rel="noreferrer"
+                  style={linkStyle}
+                >
+                  GitHub
+                </a>
+              </li>
+              <li>
+                <a
+                  href="https://github.com/manulaWithanage/mochi-companion/issues"
+                  target="_blank"
+                  rel="noreferrer"
+                  style={linkStyle}
+                >
+                  Report an issue
+                </a>
+              </li>
+              <li>
+                <a
+                  href="https://github.com/manulaWithanage/mochi-companion/discussions"
+                  target="_blank"
+                  rel="noreferrer"
+                  style={linkStyle}
+                >
+                  Discussions
+                </a>
+              </li>
             </ul>
           </nav>
         </div>
