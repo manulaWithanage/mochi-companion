@@ -218,7 +218,8 @@ export function RoutinesTab(): JSX.Element {
   const [mochiReminder, setMochiReminder] = useState(true);
   const [reminderMessage, setReminderMessage] = useState('');
 
-  // Recurring Interval Builder State
+  // Popover State
+  const [showIconPicker, setShowIconPicker] = useState(false);
   const [showIntervalBuilder, setShowIntervalBuilder] = useState(false);
   const [customIntervalMinsInput, setCustomIntervalMinsInput] = useState('30');
   const [intervalStartInput, setIntervalStartInput] = useState('09:00 AM');
@@ -516,31 +517,117 @@ export function RoutinesTab(): JSX.Element {
             />
           </div>
 
-          {/* Custom Emoji Selector Dropdown */}
-          <div style={{ marginBottom: 14 }}>
+          {/* Custom Emoji Selector Popover Grid */}
+          <div style={{ marginBottom: 14, position: 'relative' }}>
             <span style={label}>Choose Icon</span>
-            <select
-              value={selectedIcon}
-              onChange={(e) => setSelectedIcon(e.target.value)}
+            <button
+              type="button"
+              onClick={() => setShowIconPicker(!showIconPicker)}
               style={{
-                ...input,
-                marginBottom: 0,
-                width: 180,
-                fontSize: 14,
-                fontWeight: 600,
-                color: C.text,
+                padding: '7px 14px',
+                borderRadius: 10,
+                border: '1px solid rgba(242, 166, 179, 0.4)',
+                borderTop: '1px solid rgba(255, 255, 255, 0.3)',
+                background: 'linear-gradient(180deg, #3f334c 0%, #282032 100%)',
+                color: '#ffffff',
+                fontSize: 13.5,
+                fontWeight: 700,
                 cursor: 'pointer',
-                background: '#1a1622',
-                border: '1px solid rgba(255, 255, 255, 0.15)',
-                borderRadius: 8,
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 8,
+                boxShadow: '0 2px 6px rgba(0, 0, 0, 0.3)',
               }}
             >
-              {EMOJI_OPTIONS.map((emoji) => (
-                <option key={emoji} value={emoji} style={{ background: '#1a1622', fontSize: 14 }}>
-                  {emoji} Icon
-                </option>
-              ))}
-            </select>
+              <span style={{ fontSize: 18 }}>{selectedIcon}</span>
+              <span>Change Icon</span>
+              <span style={{ fontSize: 10, color: C.dim, marginLeft: 4 }}>
+                {showIconPicker ? '▲' : '▼'}
+              </span>
+            </button>
+
+            {showIconPicker && (
+              <div
+                style={{
+                  position: 'absolute',
+                  top: '100%',
+                  left: 0,
+                  marginTop: 6,
+                  zIndex: 100,
+                  padding: 12,
+                  borderRadius: 14,
+                  background: 'rgba(26, 22, 34, 0.96)',
+                  backdropFilter: 'blur(16px)',
+                  border: '1px solid rgba(242, 166, 179, 0.35)',
+                  boxShadow: '0 8px 24px rgba(0, 0, 0, 0.5)',
+                  width: 320,
+                }}
+              >
+                <div
+                  style={{
+                    fontSize: 11,
+                    fontWeight: 750,
+                    color: C.dim,
+                    marginBottom: 8,
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.05em',
+                  }}
+                >
+                  Select Icon ({EMOJI_OPTIONS.length})
+                </div>
+
+                <div
+                  style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(7, 1fr)',
+                    gap: 6,
+                  }}
+                >
+                  {EMOJI_OPTIONS.map((emoji) => (
+                    <button
+                      key={emoji}
+                      type="button"
+                      onClick={() => {
+                        setSelectedIcon(emoji);
+                        setShowIconPicker(false);
+                      }}
+                      style={{
+                        width: 36,
+                        height: 36,
+                        borderRadius: 8,
+                        border: selectedIcon === emoji
+                          ? `2px solid ${C.accent}`
+                          : '1px solid rgba(255, 255, 255, 0.08)',
+                        background: selectedIcon === emoji
+                          ? 'rgba(242, 166, 179, 0.25)'
+                          : 'rgba(255, 255, 255, 0.04)',
+                        boxShadow: selectedIcon === emoji
+                          ? '0 0 10px rgba(242, 166, 179, 0.4)'
+                          : 'none',
+                        fontSize: 18,
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        transition: 'all 140ms ease',
+                      }}
+                      onMouseEnter={(e) => {
+                        if (selectedIcon !== emoji) {
+                          e.currentTarget.style.background = 'rgba(255, 255, 255, 0.12)';
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        if (selectedIcon !== emoji) {
+                          e.currentTarget.style.background = 'rgba(255, 255, 255, 0.04)';
+                        }
+                      }}
+                    >
+                      {emoji}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Multiple Times Selector */}
