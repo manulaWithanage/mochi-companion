@@ -121,9 +121,9 @@ export const LandingPage: React.FC = () => {
               </div>
               <div className="promise-card__copy">
                 <small>01 · START CLEAR</small>
-                <h3>Know what matters first.</h3>
+                <h3>Organizes your day at a glance.</h3>
                 <p>
-                  See your top priorities, planned focus time, and next meeting before the morning gets noisy.
+                  Press your hotkey to view a calm floating window with your top priorities, today’s schedule, and focus progress—without opening extra tabs.
                 </p>
               </div>
             </article>
@@ -158,9 +158,9 @@ export const LandingPage: React.FC = () => {
               </div>
               <div className="promise-card__copy">
                 <small>02 · KEEP FOCUS</small>
-                <h3>Only what needs your attention.</h3>
+                <h3>Filters out inbox noise automatically.</h3>
                 <p>
-                  Important emails, waiting replies, and focus blocks float up when needed. Newsletters and noise stay out of the way.
+                  Mochi checks your inbox locally and surfaces only urgent emails that need your reply today, keeping newsletters and promotional noise away.
                 </p>
               </div>
             </article>
@@ -181,9 +181,9 @@ export const LandingPage: React.FC = () => {
               </div>
               <div className="promise-card__copy">
                 <small>03 · STAY YOURS</small>
-                <h3>Private by default, on your PC.</h3>
+                <h3>Runs 100% locally on your computer.</h3>
                 <p>
-                  Your tasks, focus history, and personal routines stay encrypted in a local database on your computer. No accounts, no cloud tracking.
+                  Your tasks, focus history, and email summaries stay encrypted inside a local database on your PC. No accounts, no cloud servers, no tracking.
                 </p>
               </div>
             </article>
