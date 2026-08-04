@@ -730,7 +730,26 @@ export function Dashboard(): JSX.Element {
 
       {/* ---- content ---- */}
       <main style={{ flex: 1, overflowY: 'auto', padding: '28px 36px', boxSizing: 'border-box' }}>
-        <div style={{ maxWidth: 1140, margin: '0 auto' }}>
+        <style>{`
+          @keyframes fadeInMainTab {
+            from {
+              opacity: 0;
+              transform: translateY(8px);
+            }
+            to {
+              opacity: 1;
+              transform: translateY(0);
+            }
+          }
+        `}</style>
+        <div
+          key={tab}
+          style={{
+            maxWidth: 1140,
+            margin: '0 auto',
+            animation: 'fadeInMainTab 240ms cubic-bezier(0.16, 1, 0.3, 1)',
+          }}
+        >
           {tab === 'today' && <TodayTab onSelectTab={(t) => setTab(t as TabId)} />}
           {tab === 'time' && <TimeTab />}
           {tab === 'tasks' && <TasksTab />}

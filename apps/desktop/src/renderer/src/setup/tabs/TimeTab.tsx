@@ -390,86 +390,87 @@ export function TimeTab(): JSX.Element {
 
   return (
     <div>
-      {/* Sub-Tab Navigation Pill Switcher */}
+      {/* CSS Animation Keyframes for Smooth Tab Transitions */}
+      <style>{`
+        @keyframes fadeInSubTab {
+          from {
+            opacity: 0;
+            transform: translateY(6px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+      `}</style>
+
+      {/* Sub-Tab Switcher Header */}
       <div
         style={{
           display: 'flex',
           gap: 6,
-          marginBottom: 18,
-          background: 'rgba(23, 19, 34, 0.9)',
-          padding: 4,
-          borderRadius: 10,
-          border: `1px solid ${C.border}`,
+          marginBottom: 20,
+          background: 'rgba(23, 19, 34, 0.95)',
+          padding: 5,
+          borderRadius: 12,
+          border: `1px solid rgba(255, 255, 255, 0.08)`,
+          boxShadow: '0 4px 16px rgba(0,0,0,0.35)',
           width: 'fit-content',
         }}
       >
-        <button
-          type="button"
-          onClick={() => setSubTab('categories')}
-          style={{
-            background: subTab === 'categories' ? C.accent : 'transparent',
-            color: subTab === 'categories' ? '#ffffff' : C.dim,
-            border: 'none',
-            borderRadius: 7,
-            padding: '6px 14px',
-            fontSize: 12.5,
-            fontWeight: 650,
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            gap: 6,
-            transition: 'all 140ms ease',
-          }}
-        >
-          <span>▤</span>
-          <span>Categories & Mascot Badges</span>
-        </button>
-        <button
-          type="button"
-          onClick={() => setSubTab('performance')}
-          style={{
-            background: subTab === 'performance' ? C.accent : 'transparent',
-            color: subTab === 'performance' ? '#ffffff' : C.dim,
-            border: 'none',
-            borderRadius: 7,
-            padding: '6px 14px',
-            fontSize: 12.5,
-            fontWeight: 650,
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            gap: 6,
-            transition: 'all 140ms ease',
-          }}
-        >
-          <span>📊</span>
-          <span>Performance & Reports</span>
-        </button>
-        <button
-          type="button"
-          onClick={() => setSubTab('history')}
-          style={{
-            background: subTab === 'history' ? C.accent : 'transparent',
-            color: subTab === 'history' ? '#ffffff' : C.dim,
-            border: 'none',
-            borderRadius: 7,
-            padding: '6px 14px',
-            fontSize: 12.5,
-            fontWeight: 650,
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            gap: 6,
-            transition: 'all 140ms ease',
-          }}
-        >
-          <span>🕒</span>
-          <span>Session History ({sessions.length})</span>
-        </button>
+        {(
+          [
+            { id: 'categories', icon: '▤', label: 'Categories & Mascot Badges' },
+            { id: 'performance', icon: '📊', label: 'Performance & Reports' },
+            { id: 'history', icon: '🕒', label: `Session History (${sessions.length})` },
+          ] as const
+        ).map((t) => {
+          const active = subTab === t.id;
+          return (
+            <button
+              key={t.id}
+              type="button"
+              onClick={() => setSubTab(t.id)}
+              style={{
+                background: active
+                  ? 'linear-gradient(135deg, #f2a6b3, #e58597)'
+                  : 'transparent',
+                color: active ? '#1c1625' : C.dim,
+                border: 'none',
+                borderRadius: 8,
+                padding: '7px 16px',
+                fontSize: 12.5,
+                fontWeight: active ? 750 : 550,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 7,
+                boxShadow: active ? '0 4px 14px rgba(242, 166, 179, 0.35)' : 'none',
+                transform: active ? 'translateY(-1px)' : 'translateY(0)',
+                transition: 'all 200ms cubic-bezier(0.4, 0, 0.2, 1)',
+              }}
+              onMouseEnter={(e) => {
+                if (!active) {
+                  e.currentTarget.style.background = 'rgba(255, 255, 255, 0.06)';
+                  e.currentTarget.style.color = C.text;
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (!active) {
+                  e.currentTarget.style.background = 'transparent';
+                  e.currentTarget.style.color = C.dim;
+                }
+              }}
+            >
+              <span>{t.icon}</span>
+              <span>{t.label}</span>
+            </button>
+          );
+        })}
       </div>
 
       {subTab === 'categories' ? (
-        <div>
+        <div key="categories" style={{ animation: 'fadeInSubTab 220ms ease-out' }}>
           {/* Header Bar */}
           <div
             style={{
@@ -1002,7 +1003,7 @@ export function TimeTab(): JSX.Element {
         </div>
       ) : subTab === 'performance' ? (
         /* Dedicated Performance & Reports Analytics Sub-Tab */
-        <div>
+        <div key="performance" style={{ animation: 'fadeInSubTab 220ms ease-out' }}>
           {/* Header Bar & Date Period Filters */}
           <div
             style={{
@@ -1566,7 +1567,7 @@ export function TimeTab(): JSX.Element {
         </div>
       ) : (
         /* Dedicated Session History Sub-Tab */
-        <div style={card}>
+        <div key="history" style={{ ...card, animation: 'fadeInSubTab 220ms ease-out' }}>
           <div
             style={{
               display: 'flex',
