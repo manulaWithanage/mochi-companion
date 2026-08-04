@@ -6,6 +6,11 @@ on:
   pull_request:
     branches: [main]
   workflow_dispatch:
+  # Callable, so the release pipeline runs *these* gates rather than a second
+  # copy of them. A release workflow with its own inlined lint/test steps drifts
+  # from this file the first time either changes, and the drift is invisible
+  # until something ships that main would have rejected.
+  workflow_call:
 
 # A new push to the same branch makes the in-flight run obsolete.
 concurrency:

@@ -1,0 +1,84 @@
+name: Release
+
+# Tag pushes only. `git tag v1.0.1 && git push origin v1.0.1`.
+on:
+  push:
+    tags: ['v*']
+
+# Never cancel a half-finished release. The default would let a second tag kill a
+# run that had already built an installer, leaving an unclear result behind.
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+# Read-only for now. Phase 3 adds `contents: write` to the publishing job only,
+# rather than to the whole workflow, so the gates cannot write to the repository.
+permissions:
+  contents: read
+
+jobs:
+  # Two seconds, and it runs before anything is installed or built. Discovering a
+  # version mismatch after a ten-minute Windows build is a worse day, and the
+  # script has no dependencies precisely so it can go first.
+  version:
+    name: Tag matches the manifest
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check the tag against apps/desktop/package.json
+        run: node scripts/release-version.mjs "$GITHUB_REF"
+
+  # The same five gates main is held to, on all three platforms — not a second
+  # copy of them. `needs: version` means an obviously wrong tag does not spend
+  # fifteen minutes of runner time proving the code is fine.
+  gates:
+    name: Gates
+    needs: version
+    uses: ./.github/workflows/ci.yml
+
+  installer:
+    name: Windows installer
+    needs: gates
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          # Same pin as ci.yml. A release built on a different Node than the one
+          # the gates ran under is a release nothing actually verified.
+          node-version: 24
+          cache: pnpm
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      - name: Build the renderer and main bundles
+        run: pnpm --filter @mochi/desktop build
+
+      # `--publish never` is load-bearing, not decoration. electron-builder's
+      # default publish policy is `onTagOrDraft`, so on a tag push in CI it would
+      # try to create a GitHub Release on its own. Publishing arrives in Phase 3,
+      # deliberately, once the pipeline has been proven end to end — a bad
+      # latest.yml reaching users is far harder to undo than a failed build.
+      - name: Package the installer
+        run: pnpm --filter @mochi/desktop exec electron-builder --win --publish never
+
+      # Uploaded to the run rather than to Releases, so a tag can be pushed and
+      # the actual installer downloaded and tried before anything is public.
+      - name: Upload the installer
+        uses: actions/upload-artifact@v4
+        with:
+          name: mochi-windows-${{ github.ref_name }}
+          # latest.yml and the blockmap are what the auto-updater reads. They are
+          # kept here so Phase 3 can be checked against a real build rather than
+          # against an assumption about what electron-builder emits.
+          path: |
+            apps/desktop/release/*.exe
+            apps/desktop/release/*.blockmap
+            apps/desktop/release/latest.yml
+          if-no-files-found: error
+          retention-days: 14
