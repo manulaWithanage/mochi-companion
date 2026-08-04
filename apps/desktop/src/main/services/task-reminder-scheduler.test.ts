@@ -19,9 +19,14 @@ import type { OverlayWindow } from '../windows/overlay.js';
  * — and the watermark had already moved past it.
  */
 
-/** Enough of a settings store for the scheduler; it only reads one flag. */
+/** Enough of a settings store for the scheduler; it reads two flags. */
 const settingsStub = {
-  get: () => ({ centerScreenAlerts: false }),
+  get: () => ({ centerScreenAlerts: false, doNotDisturb: false }),
+} as unknown as SettingsStore;
+
+/** Do Not Disturb on. */
+const silencedStub = {
+  get: () => ({ centerScreenAlerts: false, doNotDisturb: true }),
 } as unknown as SettingsStore;
 
 /** The overlay is never touched because centerScreenAlerts is off. */
@@ -50,7 +55,7 @@ interface RunResult {
  */
 async function launch(
   storage: InMemoryStorageAdapter,
-  { confirm = true }: { confirm?: boolean } = {},
+  { confirm = true, silenced = false }: { confirm?: boolean; silenced?: boolean } = {},
 ): Promise<RunResult> {
   const bus = new EventBus();
   const emitted: string[] = [];
@@ -61,7 +66,12 @@ async function launch(
     if (confirm) scheduler?.confirmDelivered(event.subject);
   });
 
-  scheduler = new TaskReminderScheduler(bus, storage, settingsStub, overlayStub);
+  scheduler = new TaskReminderScheduler(
+    bus,
+    storage,
+    silenced ? silencedStub : settingsStub,
+    overlayStub,
+  );
   scheduler.start();
   // start() kicks off the first check without awaiting it.
   await new Promise((resolve) => setTimeout(resolve, 30));
@@ -211,5 +221,36 @@ describe('a reminder that never reached the screen', () => {
 
     // Still held: nothing confirmed the reminder itself.
     expect(scheduler.outstandingCount).toBe(1);
+  });
+});
+
+describe('do not disturb', () => {
+  it('says nothing while it is on', async () => {
+    const storage = new InMemoryStorageAdapter();
+    await storage.saveTask(taskDueAt('a', Date.now() - 60 * 60_000));
+
+    expect((await launch(storage, { silenced: true })).emitted).toEqual([]);
+  });
+
+  it('delivers it once do not disturb is lifted', async () => {
+    // Delays, never eats. Before scheduled events respected DND at all this was
+    // moot — everything got through — so this is the guarantee that replaces it.
+    const storage = new InMemoryStorageAdapter();
+    await storage.saveTask(taskDueAt('a', Date.now() - 60 * 60_000));
+
+    await launch(storage, { silenced: true });
+    expect((await launch(storage)).emitted).toEqual(['task-reminder:a']);
+  });
+
+  it('does not advance the watermark while silenced', async () => {
+    // Advancing it would skip past everything that fell due during the quiet
+    // period, which is the silent loss this whole path exists to avoid.
+    const storage = new InMemoryStorageAdapter();
+    const before = await storage.getAppState(WATERMARK_KEY);
+
+    await storage.saveTask(taskDueAt('a', Date.now() - 60 * 60_000));
+    await launch(storage, { silenced: true });
+
+    expect(await storage.getAppState(WATERMARK_KEY)).toBe(before);
   });
 });

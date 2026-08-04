@@ -71,20 +71,30 @@ describe('windowEndsAt', () => {
   });
 });
 
-describe('user-initiated events', () => {
+describe('interactive events', () => {
   it('always pass, whatever else is true', () => {
+    // The user just clicked. Their own action is the rate limit.
     const g = gov({ doNotDisturb: true, maxPerHour: 0 });
-    const d = g.admit(ev({ userInitiated: true }), ctx({ fullscreenActive: true, now: at(3) }));
+    const d = g.admit(ev({ origin: 'interactive' }), ctx({ fullscreenActive: true, now: at(3) }));
     expect(d).toEqual({ kind: 'allow', reason: 'user-initiated' });
   });
 
   it('do not consume the interruption budget', () => {
     const g = gov({ maxPerHour: 1 });
-    g.admit(ev({ id: 'a', userInitiated: true }), ctx());
-    g.admit(ev({ id: 'b', userInitiated: true }), ctx());
+    g.admit(ev({ id: 'a', origin: 'interactive' }), ctx());
+    g.admit(ev({ id: 'b', origin: 'interactive' }), ctx());
     expect(g.countInLastHour(T)).toBe(0);
     // The budget is still fully available for a real interruption.
     expect(g.admit(ev({ id: 'c' }), ctx()).kind).toBe('allow');
+  });
+
+  it('are not spaced against each other', () => {
+    // Two clicks deserve two answers, immediately.
+    const g = gov({ minGapMs: 10 * MIN });
+    g.admit(ev({ id: 'a', origin: 'interactive' }), ctx());
+    expect(g.admit(ev({ id: 'b', origin: 'interactive' }), ctx({ now: T + 1000 })).kind).toBe(
+      'allow',
+    );
   });
 });
 
@@ -320,59 +330,106 @@ describe('undismiss', () => {
 });
 
 /**
- * Pinned because it is load-bearing and easy to get wrong from the outside.
+ * Scheduled events: asked for in general, not asked for *now*.
  *
- * A task reminder is something the user asked for, at a time they chose, so it
- * carries `userInitiated` and is allowed before any of the rationing runs. It
- * was tempting to believe DND or an exhausted budget could swallow one — they
- * cannot, and a fix aimed at that would have been aimed at nothing.
+ * These tests replace a block that pinned the opposite behaviour, deliberately.
+ * It asserted that a reminder "is never rationed away" and got through Do Not
+ * Disturb, quiet hours and the budget — which was true, and was the bug. Every
+ * scheduler set `userInitiated`, the governor allowed it before checking
+ * anything, and so the tray's Do Not Disturb toggle silenced nothing that
+ * actually interrupts: a recurring water reminder fired at 3am with it on.
  *
- * What *can* lose a reminder is everything after this point: an overlay window
- * that does not exist yet, or a bubble queue with no room. That is why delivery
- * is confirmed rather than assumed.
+ * The corrected contract distinguishes what the user asked for from when they
+ * asked to be told:
+ *
+ * - "Leave me alone" applies. It is the one control that has to mean what it says.
+ * - The hourly budget does not, because rationing something specifically
+ *   requested is how a reminder silently fails to arrive.
+ * - Quiet hours defers a recurring event and lets a one-shot one through, because
+ *   a routine comes round tomorrow and "take the pills at 23:30" does not.
  */
-describe('a reminder the user asked for is never rationed away', () => {
-  const reminder = (over: Partial<MochiEvent> = {}): MochiEvent =>
-    ev({ subject: 'task-reminder:t1', userInitiated: true, priority: 'high', ...over });
+describe('scheduled events respect being left alone', () => {
+  const routine = (over: Partial<MochiEvent> = {}): MochiEvent =>
+    ev({ subject: 'user-routine:water', origin: 'scheduled', recurring: true, ...over });
 
-  it('gets through do-not-disturb', () => {
-    expect(gov({ doNotDisturb: true }).admit(reminder(), ctx()).kind).toBe('allow');
+  const reminder = (over: Partial<MochiEvent> = {}): MochiEvent =>
+    ev({ subject: 'task-reminder:t1', origin: 'scheduled', priority: 'high', ...over });
+
+  it('do-not-disturb silences a recurring routine', () => {
+    // The bug in one line: this used to be 'allow'.
+    const d = gov({ doNotDisturb: true }).admit(routine(), ctx());
+    expect(d).toEqual({ kind: 'drop', reason: 'do-not-disturb' });
   });
 
-  it('gets through quiet hours', () => {
+  it('do-not-disturb silences a one-shot reminder too', () => {
+    // Absolute means absolute. The scheduler holds it rather than losing it.
+    expect(gov({ doNotDisturb: true }).admit(reminder(), ctx()).kind).toBe('drop');
+  });
+
+  it('quiet hours drops a recurring routine that is hours from the end', () => {
+    // 23:00 to 08:00 is nine hours, past maxDeferMs, so the defer becomes a
+    // drop — which is the right answer for something that repeats. A stretch
+    // reminder delivered at breakfast is not a late reminder, it is a wrong one.
+    const g = gov({ quietHours: { start: '20:00', end: '08:00' } });
+    const d = g.admit(routine(), ctx({ now: at(23) }));
+
+    expect(d).toEqual({ kind: 'drop', reason: 'quiet-hours' });
+  });
+
+  it('quiet hours defers a recurring routine when the window is nearly over', () => {
+    // Within maxDeferMs, so it waits and then arrives rather than being lost.
+    const g = gov({ quietHours: { start: '20:00', end: '08:00' } });
+    const d = g.admit(routine(), ctx({ now: at(7) }));
+
+    expect(d.kind).toBe('defer');
+    expect(d).toMatchObject({ reason: 'quiet-hours', until: at(8) });
+  });
+
+  it('quiet hours lets a one-shot reminder through', () => {
+    // Deferring "take the pills" from 23:30 to 08:00 destroys it rather than
+    // delaying it, and an explicit time outranks a default window.
     const g = gov({ quietHours: { start: '20:00', end: '08:00' } });
     expect(g.admit(reminder(), ctx({ now: at(23) })).kind).toBe('allow');
   });
 
-  it('gets through an exhausted hourly budget', () => {
+  it('are not rationed by the hourly budget', () => {
     const g = gov({ maxPerHour: 1 });
     g.admit(ev({ id: 'filler' }), ctx()); // spends the budget
-    expect(g.admit(reminder(), ctx({ now: T + MIN })).kind).toBe('allow');
+    expect(g.admit(reminder(), ctx({ now: T + 10 * MIN })).kind).toBe('allow');
   });
 
-  it('gets through the minimum gap', () => {
-    const g = gov({ minGapMs: 10 * MIN });
-    g.admit(ev({ id: 'filler' }), ctx());
-    expect(g.admit(reminder(), ctx({ now: T + 1000 })).kind).toBe('allow');
-  });
-
-  it('is not deferred behind a fullscreen app', () => {
-    expect(gov().admit(reminder(), ctx({ fullscreenActive: true })).kind).toBe('allow');
-  });
-
-  it('does not itself spend the budget', () => {
+  it('do not spend the budget themselves', () => {
     // Otherwise a busy morning of reminders would silence everything else.
     const g = gov();
     g.admit(reminder(), ctx());
-    g.admit(reminder({ subject: 'task-reminder:t2' }), ctx());
+    g.admit(reminder({ id: 'r2', subject: 'task-reminder:t2' }), ctx());
     expect(g.countInLastHour(T)).toBe(0);
   });
 
-  it('still gets through after the same subject was dismissed', () => {
-    // The scheduler retries an undelivered reminder. A dismissal recorded for a
-    // bubble the user never saw must not silence the retry.
+  it('are still spaced, so two at once do not stack', () => {
+    // Two routines set for the same minute would otherwise land together.
+    const g = gov({ minGapMs: 10 * MIN });
+    g.admit(routine(), ctx());
+    const d = g.admit(
+      routine({ id: 'r2', subject: 'user-routine:stretch' }),
+      ctx({ now: T + 1000 }),
+    );
+
+    expect(d.kind).toBe('defer');
+    expect(d).toMatchObject({ reason: 'too-soon' });
+  });
+
+  it('are deferred behind a fullscreen app', () => {
+    const d = gov().admit(routine(), ctx({ fullscreenActive: true }));
+    expect(d.kind).toBe('defer');
+  });
+
+  it('still get through after the same subject was dismissed and re-armed', () => {
+    // A snooze re-arms the subject; without undismiss the new time never arrives.
     const g = gov();
     g.dismiss('task-reminder:t1');
-    expect(g.admit(reminder(), ctx()).kind).toBe('allow');
+    expect(g.admit(reminder(), ctx()).kind).toBe('drop');
+    g.undismiss('task-reminder:t1');
+    expect(g.admit(reminder({ id: 'again' }), ctx()).kind).toBe('allow');
   });
 });

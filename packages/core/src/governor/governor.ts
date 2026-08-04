@@ -7,8 +7,19 @@
  * and testable without an API key.
  *
  * The LLM's job (V2) is to phrase a message. Whether and when it reaches the
- * user is decided here and nowhere else. There is no bypass flag, because one
- * bypass becomes ten.
+ * user is decided here and nowhere else.
+ *
+ * There is exactly one bypass — `origin: 'interactive'` — and it is narrow on
+ * purpose: the user just clicked, so their own action is the rate limit and
+ * refusing to answer would be a bug rather than restraint.
+ *
+ * This file used to claim there was no bypass at all. There was: a
+ * `userInitiated` boolean, documented as "a click, a hotkey, launching the app"
+ * and then set by every scheduler in the app — routines, task reminders, mail
+ * reminders, the startup greeting. Because it was checked first, Do Not Disturb,
+ * quiet hours, the hourly budget and the minimum gap applied to almost nothing.
+ * One bypass really did become ten, which is why the replacement is a three-way
+ * origin whose default is the most restrained option.
  */
 
 import type { MochiEvent } from '../events/events.js';
@@ -103,8 +114,21 @@ export function windowEndsAt(now: number, window: TimeWindow): number {
 
 export class InterruptionGovernor {
   private config: GovernorConfig;
-  /** Timestamps of interruptions actually shown, trimmed to the last hour. */
+  /**
+   * Unprompted interruptions shown in the last hour. The budget ledger, and
+   * nothing else — scheduled events are exempt from the budget, so recording
+   * them here would ration Mochi's own initiative on the user's behalf.
+   */
   private shown: number[] = [];
+  /**
+   * When Mochi last said anything at all, for spacing.
+   *
+   * Separate from `shown` because the two questions are different: "have I
+   * interrupted too often this hour" counts only Mochi's own ideas, while "did I
+   * just speak a moment ago" is about not stacking bubbles, and two routines set
+   * for the same minute stack regardless of who asked for them.
+   */
+  private lastSpokeAt: number | null = null;
   private readonly dismissed = new Set<string>();
   private readonly seen = new Set<string>();
 
@@ -165,9 +189,16 @@ export class InterruptionGovernor {
    */
   admit(event: MochiEvent, ctx: GovernorContext): Decision {
     const decision = this.evaluate(event, ctx);
-    if (decision.kind === 'allow' && event.userInitiated !== true) {
+    // Only Mochi's own initiative spends the budget. An answer to a click is
+    // rate-limited by the clicking, and a scheduled reminder was asked for.
+    if (decision.kind === 'allow' && event.origin === 'unprompted') {
       this.shown.push(ctx.now);
       this.trim(ctx.now);
+    }
+    // Spacing counts anything Mochi actually said, except an answer to a click:
+    // two clicks deserve two answers.
+    if (decision.kind === 'allow' && event.origin !== 'interactive') {
+      this.lastSpokeAt = ctx.now;
     }
     if (decision.kind === 'allow') this.remember(event.id);
     return decision;
@@ -190,10 +221,13 @@ export class InterruptionGovernor {
     const { now, fullscreenActive } = ctx;
     const cfg = this.config;
 
-    // The user asked for this. Refusing to answer is a bug, not restraint.
-    if (event.userInitiated === true) {
+    // The user just did something and is waiting for the answer. Refusing is a
+    // bug, not restraint — and their own action is the rate limit.
+    if (event.origin === 'interactive') {
       return { kind: 'allow', reason: 'user-initiated' };
     }
+
+    const scheduled = event.origin === 'scheduled';
 
     if (event.expiresAt !== undefined && event.expiresAt <= now) {
       return { kind: 'drop', reason: 'expired' };
@@ -207,8 +241,9 @@ export class InterruptionGovernor {
       return { kind: 'drop', reason: 'duplicate' };
     }
 
-    // Absolute. An explicit "leave me alone" is not overridable by urgency —
-    // if it were, it would not mean anything.
+    // Absolute, and now genuinely so. An explicit "leave me alone" is not
+    // overridable by urgency, by a routine, or by a reminder — if it were, it
+    // would not mean anything. This is the check every scheduler used to skip.
     if (cfg.doNotDisturb) {
       return { kind: 'drop', reason: 'do-not-disturb' };
     }
@@ -221,16 +256,34 @@ export class InterruptionGovernor {
 
     const urgent = PRIORITY_RANK[event.priority] >= PRIORITY_RANK.urgent;
 
-    // Quiet hours yield to genuinely urgent events — an 08:00 meeting alert
-    // is worth hearing at 07:55 — but nothing else.
-    if (!urgent && cfg.quietHours !== null && isWithinWindow(now, cfg.quietHours)) {
+    /*
+     * Quiet hours yields to genuinely urgent events — an 08:00 meeting alert is
+     * worth hearing at 07:55 — and to a scheduled event that gets only one
+     * chance.
+     *
+     * A recurring routine is deferred: missing tonight's stretch reminder costs
+     * nothing, because it comes round tomorrow. A one-shot reminder is allowed
+     * through, because deferring "take the pills" from 23:30 to 08:00 does not
+     * delay it, it destroys it — and the user naming 23:30 outranks a default
+     * window they probably never opened.
+     */
+    const oneShotReminder = scheduled && event.recurring !== true;
+    if (
+      !urgent &&
+      !oneShotReminder &&
+      cfg.quietHours !== null &&
+      isWithinWindow(now, cfg.quietHours)
+    ) {
       return this.deferTo(windowEndsAt(now, cfg.quietHours), now, 'quiet-hours');
     }
 
     if (!urgent) {
       this.trim(now);
 
-      if (this.shown.length >= cfg.maxPerHour) {
+      // The hourly budget rations Mochi's own initiative, not things the user
+      // asked for. Deferring a reminder because Mochi already spoke three times
+      // is how a requested reminder silently fails to arrive.
+      if (!scheduled && this.shown.length >= cfg.maxPerHour) {
         // Wait for the oldest interruption to fall out of the rolling window.
         const oldest = this.shown[0];
         if (oldest !== undefined) {
@@ -238,9 +291,11 @@ export class InterruptionGovernor {
         }
       }
 
-      const last = this.shown[this.shown.length - 1];
-      if (last !== undefined && now - last < cfg.minGapMs) {
-        // Spacing is what stops deferred events arriving as a burst.
+      const last = this.lastSpokeAt;
+      if (last !== null && now - last < cfg.minGapMs) {
+        // Spacing still applies to scheduled events: two routines set for the
+        // same minute should not arrive on top of each other, and a short defer
+        // costs a reminder nothing.
         return this.deferTo(last + cfg.minGapMs, now, 'too-soon');
       }
     }
@@ -264,6 +319,7 @@ export class InterruptionGovernor {
   /** Test and diagnostics helper. */
   reset(): void {
     this.shown = [];
+    this.lastSpokeAt = null;
     this.dismissed.clear();
     this.seen.clear();
   }

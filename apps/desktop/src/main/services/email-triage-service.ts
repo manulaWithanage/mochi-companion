@@ -108,6 +108,12 @@ export class EmailTriageService {
     const credentials = this.getCredentials();
     if (credentials === null) return;
 
+    // Checked before the candidate list, because building the prompt costs ten
+    // full message downloads over IMAP. Observed on a real inbox with no model
+    // configured: those ten fetches happened every sync and were discarded the
+    // moment `generate` answered "No model is set up yet."
+    if (!this.llm.hasAnyModel) return;
+
     // Drawn from the whole inbox, not just what was rescored this pass — that
     // narrowing is what made the cap permanent.
     const candidates = inbox

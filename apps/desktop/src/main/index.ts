@@ -19,6 +19,7 @@ import {
   InMemoryStorageAdapter,
   InterruptionGovernor,
   makeEvent,
+  type EventOrigin,
   type EventPriority,
   type EventSource,
   type ActivityCategory,
@@ -56,8 +57,8 @@ interface SayOptions {
   readonly subject?: string;
   readonly source?: EventSource;
   readonly priority?: EventPriority;
-  /** The user asked for this directly — a click, a hotkey, launching the app. */
-  readonly userInitiated?: boolean;
+  /** Why it is raised. Omitted means `unprompted` — full governor treatment. */
+  readonly origin?: EventOrigin;
 }
 
 // Disable GPU shader disk cache to prevent file lock conflicts on dev restarts on Windows
@@ -353,7 +354,7 @@ async function bootstrap(): Promise<void> {
         present: (offered) => {
           const reached = overlay.send('bubble:show', {
             text: event.text,
-            ttlMs: event.userInitiated === true ? BUBBLE_TTL_LONG_MS : BUBBLE_TTL_MS,
+            ttlMs: event.origin === 'unprompted' ? BUBBLE_TTL_MS : BUBBLE_TTL_LONG_MS,
             subject: event.subject,
             ...(offered.length > 0 ? { actions: offered } : {}),
             ...(isMailReminder && mailPreferences.alertToneEnabled
@@ -415,7 +416,7 @@ async function bootstrap(): Promise<void> {
           now: new Date(),
           ...(opts.durationMs !== undefined ? { durationMs: opts.durationMs } : {}),
         }),
-        ...(opts.userInitiated === true ? { userInitiated: true } : {}),
+        ...(opts.origin !== undefined ? { origin: opts.origin } : {}),
       }),
     );
   };
@@ -428,7 +429,7 @@ async function bootstrap(): Promise<void> {
     tray.rebuild();
 
     if (snapshot.running && !wasRunning) {
-      say('timer-started', { source: 'timer', subject: 'timer', userInitiated: true });
+      say('timer-started', { source: 'timer', subject: 'timer', origin: 'interactive' });
       if (snapshot.session !== null) routines.onSessionStarted(snapshot.session.startedAt);
     } else if (!snapshot.running && wasRunning) {
       routines.onSessionStopped();
@@ -441,7 +442,7 @@ async function bootstrap(): Promise<void> {
           durationMs: ms,
           source: 'timer',
           subject: 'timer',
-          userInitiated: true,
+          origin: 'interactive',
         });
       });
     }
@@ -481,7 +482,7 @@ async function bootstrap(): Promise<void> {
   overlay.whenReady(() => {
     if (settings.get().paused) return;
     // Launching the app is a user action, so the greeting is user-initiated.
-    say(firstRun ? 'welcome' : 'greeting', { subject: 'greeting', userInitiated: true });
+    say(firstRun ? 'welcome' : 'greeting', { subject: 'greeting', origin: 'interactive' });
   });
 
   app.on('second-instance', () => setup.open());

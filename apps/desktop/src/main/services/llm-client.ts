@@ -119,6 +119,22 @@ export class LlmClient {
   constructor(private readonly llm: LlmService) {}
 
   /**
+   * Whether any model is available at all.
+   *
+   * For callers that have expensive work to do *before* they can ask — the email
+   * triage pass downloads ten message bodies over IMAP to build its prompt. With
+   * no model configured that download happened on every sync and was thrown away
+   * when `generate` immediately answered "No model is set up yet".
+   *
+   * Deliberately not a substitute for checking the result of `generate`: routing,
+   * budget and capability are decided there, and a model existing does not mean
+   * this particular task can use it.
+   */
+  get hasAnyModel(): boolean {
+    return this.llm.models.length > 0;
+  }
+
+  /**
    * Run a task.
    *
    * Never throws. Every failure — no model, wrong capability, budget spent,

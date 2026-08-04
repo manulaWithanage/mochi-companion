@@ -104,6 +104,7 @@ function fakeLlm(
 ): { client: LlmClient; calls: LlmCall[] } {
   const calls: LlmCall[] = [];
   const client = {
+    hasAnyModel: true,
     generate: async (req: { prompt: string }) => {
       calls.push({ prompt: req.prompt });
       // The prompt carries the ids it is asking about.
@@ -289,7 +290,7 @@ describe('a failed call is not an answer', () => {
 describe('without a model', () => {
   it('still scores everything by rules', async () => {
     const store = new FakeStore([email('e1'), email('e2')]);
-    const llm = { generate: vi.fn() } as unknown as LlmClient;
+    const llm = { hasAnyModel: true, generate: vi.fn() } as unknown as LlmClient;
 
     await new EmailTriageService(
       llm,
@@ -317,5 +318,46 @@ describe('force', () => {
     await svc.classifyInbox(ACCOUNT, true);
 
     expect(calls).toHaveLength(2);
+  });
+});
+
+describe('no model configured', () => {
+  it('does not download message bodies it cannot use', async () => {
+    // Observed on a real inbox: ten IMAP fetches per sync, discarded the moment
+    // generate() answered "No model is set up yet."
+    const store = new FakeStore([email('e1'), email('e2')]);
+    const fetchMessage = vi.fn(async () => ({ bodyText: 'body' }));
+    const llm = { hasAnyModel: false, generate: vi.fn() } as unknown as LlmClient;
+
+    await new EmailTriageService(
+      llm,
+      { fetchMessage } as unknown as GmailImapService,
+      store as unknown as EmailStore,
+      settingsStub,
+      () => CREDENTIALS,
+    ).classifyInbox(ACCOUNT);
+
+    expect(fetchMessage).not.toHaveBeenCalled();
+    expect(llm.generate).not.toHaveBeenCalled();
+    // Rules still ran, so the inbox is still triaged.
+    expect(store.saved).toHaveLength(2);
+  });
+
+  it('leaves them unmarked so they escalate once a model appears', async () => {
+    const store = new FakeStore([email('e1')]);
+    const noModel = { hasAnyModel: false, generate: vi.fn() } as unknown as LlmClient;
+    await new EmailTriageService(
+      noModel,
+      imapStub,
+      store as unknown as EmailStore,
+      settingsStub,
+      () => CREDENTIALS,
+    ).classifyInbox(ACCOUNT);
+
+    expect(store.latestFor('e1')?.signals).not.toContain('llm_declined');
+
+    const { client, calls } = fakeLlm((asked) => asked.map((id) => decision(id)));
+    await service(store, client).classifyInbox(ACCOUNT);
+    expect(calls).toHaveLength(1);
   });
 });

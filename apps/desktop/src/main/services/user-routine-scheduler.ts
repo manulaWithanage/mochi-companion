@@ -47,7 +47,11 @@ export class UserRoutineScheduler {
         subject: `user-routine-alert:${Date.now()}`,
         priority: 'high',
         text,
-        userInitiated: true,
+        // Scheduled, and it repeats — so quiet hours defers it and Do Not
+        // Disturb silences it. Missing tonight's costs nothing; it fires again
+        // tomorrow.
+        origin: 'scheduled',
+        recurring: true,
       }),
     );
 
@@ -57,6 +61,11 @@ export class UserRoutineScheduler {
   }
 
   private check(): void {
+    // Pausing Mochi stopped the built-in routines but not the user's own, which
+    // only ever checked `routine.enabled`. Pause is a request for quiet, and it
+    // was being honoured by half the things that speak.
+    if (this.settings.get().paused === true) return;
+
     const now = new Date();
     const hours = String(now.getHours()).padStart(2, '0');
     const mins = String(now.getMinutes()).padStart(2, '0');

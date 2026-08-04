@@ -245,7 +245,10 @@ export class GmailManager {
         at: Date.now(),
         subject: `mail-preview:${Date.now()}`,
         text: 'A quick nudge — this is how an important email reminder will appear',
-        userInitiated: true,
+        // Scheduled: the user turned reply reminders on, but not for this
+        // moment. Recurring, because the reminder is re-planned and comes back.
+        origin: 'scheduled',
+        recurring: true,
       }),
     );
   }

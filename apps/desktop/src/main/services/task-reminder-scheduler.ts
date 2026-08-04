@@ -200,11 +200,42 @@ export class TaskReminderScheduler {
     }
   }
 
+  /**
+   * Hold everything while the user has said to leave them alone.
+   *
+   * A second look at Do Not Disturb outside the governor, and deliberately so.
+   * The governor decides whether Mochi *speaks*; this decides whether to bother
+   * generating work that would certainly be dropped. Without it, reminders that
+   * fall due during Do Not Disturb are announced, dropped, and then aged out by
+   * the ten-minute give-up deadline — losing them exactly the way the delivery
+   * confirmation was built to prevent.
+   *
+   * Safe as a duplicate check because it can only ever make Mochi quieter. A
+   * second check that can only suppress is harmless; one that can only permit is
+   * the kind that turns one bypass into ten.
+   */
+  private silenced(): boolean {
+    return this.settings.get().doNotDisturb === true;
+  }
+
   private async check(): Promise<void> {
     // A slow database read must not overlap itself and deliver twice.
     if (this.checking) return;
     this.checking = true;
     try {
+      if (this.silenced()) {
+        // Nothing is scanned, the watermark does not move, and the give-up clock
+        // is pushed on so it measures time the user was actually available rather
+        // than wall time. Do Not Disturb delays reminders; it must not eat them.
+        for (const [taskId, held] of this.outstanding) {
+          this.outstanding.set(taskId, {
+            ...held,
+            firstAnnouncedAt: held.firstAnnouncedAt + TICK_MS,
+          });
+        }
+        return;
+      }
+
       if (this.deliveredThrough === null) {
         this.deliveredThrough = await this.loadWatermark();
       }
@@ -308,9 +339,11 @@ export class TaskReminderScheduler {
         subject: `task-reminder:${task.id}`,
         priority: 'high',
         text: `⏰ ${task.title}`,
-        // The user asked for this, at this exact time. It goes through rather
-        // than being rationed as an unprompted interruption.
-        userInitiated: true,
+        // The user asked for this at this exact time, so it is not rationed by
+        // the hourly budget — but "leave me alone" still means that. Not
+        // recurring: it has one chance, so deferring it out of quiet hours would
+        // destroy it rather than delay it.
+        origin: 'scheduled',
       }),
     );
 
