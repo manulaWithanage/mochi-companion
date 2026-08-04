@@ -379,32 +379,6 @@ export function TodayTab({ onSelectTab }: { onSelectTab?: (tab: string) => void 
                 : 'Mochi is quietly observing your workday, keeping your priorities clear and reminding you to stay balanced.'}
             </p>
           </div>
-          <button
-            onClick={() => void window.mochi.overlay.show()}
-            title="Click to open overlay now"
-            style={{
-              padding: '6px 12px',
-              background: 'rgba(124,108,169,0.22)',
-              border: '1px solid rgba(242,166,179,0.35)',
-              borderRadius: 9,
-              fontSize: 12,
-              fontWeight: 650,
-              color: C.text,
-              whiteSpace: 'nowrap',
-              cursor: 'pointer',
-              transition: 'all 150ms ease',
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.background = 'rgba(242,166,179,0.25)';
-              e.currentTarget.style.transform = 'translateY(-1px)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.background = 'rgba(124,108,169,0.22)';
-              e.currentTarget.style.transform = 'translateY(0)';
-            }}
-          >
-            ⌨️ Open Overlay: <code style={{ background: 'rgba(0,0,0,0.35)', padding: '2px 6px', borderRadius: 4, fontFamily: 'monospace', color: C.accent }}>Alt + M</code>
-          </button>
         </div>
 
         {/* 4 Clickable Quick Action Guide Cards */}
