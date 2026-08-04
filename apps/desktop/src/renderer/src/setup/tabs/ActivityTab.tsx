@@ -353,7 +353,7 @@ export function ActivityTab(): JSX.Element {
           </h2>
         </div>
 
-        {/* Vibrant 3D Segmented Time Range Selector */}
+        {/* Minimalist Segmented Time Range Selector */}
         <div
           style={{
             display: 'flex',
@@ -370,6 +370,7 @@ export function ActivityTab(): JSX.Element {
             return (
               <button
                 key={r}
+                type="button"
                 onClick={() => {
                   setRange(r);
                   reload(r, new Date());
@@ -383,8 +384,8 @@ export function ActivityTab(): JSX.Element {
                     ? '1px solid rgba(242, 166, 179, 0.5)'
                     : '1px solid transparent',
                   borderRadius: 7,
-                  padding: '6px 16px',
-                  fontSize: 12.5,
+                  padding: '5px 14px',
+                  fontSize: 12,
                   fontWeight: active ? 750 : 550,
                   cursor: 'pointer',
                   boxShadow: active
