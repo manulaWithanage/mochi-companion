@@ -14,7 +14,11 @@
   },
   "// packageManager": "Pins pnpm for CI (pnpm/action-setup reads it) and for anyone cloning, since Corepack enforces it locally.",
   "packageManager": "pnpm@11.17.0",
+  "// prepare": "Points git at the versioned hooks in .githooks so the pre-push gate is shared rather than living in one person's .git/hooks. Never fails the install: a tarball or a non-repo checkout has no git dir, and that is not an error.",
+  "// verify": "Every CI gate, in CI's order, fastest first. Run by the pre-push hook and worth running by hand before asking why CI is red.",
   "scripts": {
+    "prepare": "git config core.hooksPath .githooks || exit 0",
+    "verify": "pnpm lint && pnpm format:check && pnpm typecheck && pnpm test && pnpm build",
     "dev": "pnpm --filter @mochi/desktop dev",
     "build": "pnpm -r build",
     "test": "vitest run",

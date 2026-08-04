@@ -1,0 +1,80 @@
+#!/bin/sh
+#
+# Run every CI gate before a push leaves the machine.
+#
+# Why this exists: main has gone red twice from commits that were never checked
+# locally. Once from a Format check that had simply never been run — twelve
+# consecutive red runs on a gate nobody had thought to try — and once from dead
+# state in RoutinesTab that failed both lint and typecheck. Both were cheap to
+# catch and expensive to notice, because the feedback arrived minutes later in a
+# CI log rather than immediately in the terminal.
+#
+# Versioned in .githooks/ rather than left in .git/hooks so it is shared. Git
+# does not track .git/hooks, so a hook that only exists there protects whoever
+# wrote it and nobody else — which is the wrong person, since the pushes that
+# broke main did not come from that clone. `prepare` in package.json points
+# core.hooksPath here on install.
+#
+# To push anyway: git push --no-verify
+# Prefer fixing the gate. Every one of them takes seconds compared to a red main.
+
+set -e
+
+# Git sends one line per ref as "<local ref> <local sha> <remote ref> <remote
+# sha>", and an all-zero local sha means that ref is being deleted.
+#
+# Two separate facts, because collapsing them into one flag is a trap: an
+# "only deletions" flag defaulting to true skips every gate whenever the loop
+# body does not run, and an empty stdin then looks exactly like a passing check.
+# Skipping is only safe when we positively saw refs and all of them were
+# deletions.
+saw_ref=no
+has_update=no
+while read -r _local_ref local_sha _remote_ref _remote_sha; do
+  saw_ref=yes
+  case "$local_sha" in
+    "" | *[!0]*) has_update=yes ;;
+  esac
+done
+
+if [ "$saw_ref" = no ]; then
+  # Git had no refs to send, so nothing is going anywhere.
+  echo "pre-push: no refs to push, nothing to verify."
+  exit 0
+fi
+
+if [ "$has_update" = no ]; then
+  echo "pre-push: deleting refs only, nothing to verify."
+  exit 0
+fi
+
+# Said out loud because it is a real limitation, not a formality. The gates run
+# against the working tree, which is what `pnpm` can actually build — verifying
+# the pushed commits instead would mean a throwaway worktree with no node_modules
+# and a full install before anything could run. So when the tree is dirty, a pass
+# here is evidence about the files on disk, not about the commits going out.
+if [ -n "$(git status --porcelain)" ]; then
+  echo ""
+  echo "pre-push: WARNING — working tree is not clean."
+  echo "          Gates run against the files on disk, not the commits being pushed."
+  echo "          A pass here does not prove the pushed commits are green."
+  echo ""
+fi
+
+echo "pre-push: running all five CI gates (lint, format:check, typecheck, test, build)..."
+echo ""
+
+if pnpm verify; then
+  echo ""
+  echo "pre-push: all gates passed."
+  exit 0
+fi
+
+# Reached only when pnpm verify failed. `set -e` does not fire here because a
+# command inside `if` is exempt from it, which is exactly what makes room for this
+# message — otherwise the hook would die on the gate's own exit code and say
+# nothing about why the push stopped.
+echo ""
+echo "pre-push: BLOCKED — a gate failed above. Nothing was pushed."
+echo "          Fix it, or push with --no-verify if you know why it is failing."
+exit 1

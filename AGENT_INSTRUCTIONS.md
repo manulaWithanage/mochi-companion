@@ -14,6 +14,29 @@
 
 ---
 
+## ✅ Before You Push: Five Gates, One Command
+
+```bash
+pnpm verify
+```
+
+That runs **lint, format:check, typecheck, test, build** — every gate CI runs, in CI's order. It takes about 20 seconds. A `pre-push` hook runs it automatically and **refuses the push if anything fails**; `pnpm install` wires the hook up via `prepare`.
+
+**Run it before you push, not after CI complains.** `main` has gone red twice from work that was never checked locally:
+
+- **Twelve consecutive red runs** on `format:check` — a gate nobody had thought to run. Reporting "all gates green" after running four of five is not a green build, it is an unchecked one.
+- **Dead state in `RoutinesTab.tsx`** that failed both `lint` and `typecheck`, pushed straight to `main`.
+
+Both were seconds to catch and minutes to notice. The hook exists so the feedback arrives in your terminal instead of a CI log.
+
+Notes that matter:
+
+- **`format:check` runs before `typecheck`.** Prettier reflows are a real failure; run `pnpm format` to fix them.
+- **The hook checks the working tree, not the commits being pushed.** It says so when the tree is dirty. Verifying the actual commits would need a throwaway worktree and a fresh install, which costs more than it buys — so a pass on a dirty tree is evidence about your files, not your push.
+- **`--no-verify` exists.** Use it when you know why a gate is failing, not to make it quiet.
+
+---
+
 ## 🎯 Primary Project Objectives
 
 ### 1. 🎨 3-Step Setup Window & Seamless Companion Experience
