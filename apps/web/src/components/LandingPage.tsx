@@ -93,7 +93,7 @@ export const LandingPage: React.FC = () => {
         >
           <div className="story-intro story-intro--center">
             <p className="story-eyebrow">HOW MOCHI HELPS YOU</p>
-            <h2>Three simple ways Mochi brings peace to your workday.</h2>
+            <h2>Three ways to a calmer workday.</h2>
           </div>
 
           <div className="promise-grid">
