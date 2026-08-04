@@ -1152,6 +1152,9 @@ h1, h2, h3, h4, h5, h6 {
 .story-section--purpose .story-intro { max-width: 1140px; }
 .hero-purpose-quote { margin: 18px auto 0; max-width: 1120px; color: #122139; font-size: clamp(19px, 2.2vw, 29px); font-weight: 600; line-height: 1.48; letter-spacing: -.025em; text-align: center; text-wrap: balance; }
 .hero-purpose-quote em { color: #6555dc; font-style: normal; background: linear-gradient(135deg, #6555dc, #cd7187); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+.story-section--pillars { position: relative; z-index: 0; isolation: isolate; width: min(1180px, calc(100% - 48px)); padding: clamp(80px, 8vw, 110px) 0 clamp(110px, 10vw, 145px); overflow: visible; background: #f8fbf7; box-shadow: 0 0 0 100vmax #f8fbf7; clip-path: inset(0 -100vmax); }
+.story-section--pillars::before { position: absolute; z-index: -1; inset: 0; width: 100vw; margin-left: calc((100% - 100vw) / 2); background: radial-gradient(circle at 50% 30%, rgba(201,166,242,.08), transparent 40%), radial-gradient(circle at 85% 70%, rgba(168,230,184,.18), transparent 25%), linear-gradient(#f8fbf7,#fbfaf6); content: ''; pointer-events: none; }
+.story-section--pillars .story-intro { max-width: 680px; margin-bottom: 64px; }
 .promise-grid { display: grid; width: min(1060px,100%); margin: 0 auto; grid-template-columns: repeat(3,1fr); gap: 24px; }
 .promise-card { overflow: hidden; border: 1px solid rgba(55,59,87,.12); border-radius: 22px; background: rgba(255,255,255,.92); box-shadow: 0 20px 42px rgba(47,57,73,.075), inset 0 1px rgba(255,255,255,.94); transition: transform 220ms ease, box-shadow 220ms ease; }
 .promise-card:hover { transform: translateY(-4px); box-shadow: 0 26px 52px rgba(47,57,73,.12), inset 0 1px rgba(255,255,255,1); }
