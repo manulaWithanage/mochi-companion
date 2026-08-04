@@ -47,16 +47,61 @@ export const input: React.CSSProperties = {
   boxSizing: 'border-box',
 };
 
-export const button = (variant: 'primary' | 'ghost' = 'ghost'): React.CSSProperties => ({
-  padding: '8px 16px',
-  borderRadius: 10,
-  border: variant === 'primary' ? 'none' : `1px solid ${C.borderStrong}`,
-  background: variant === 'primary' ? C.accent : 'transparent',
-  color: variant === 'primary' ? '#241f2b' : C.text,
-  fontSize: 13,
-  fontWeight: 600,
-  cursor: 'pointer',
-});
+export const button = (variant: 'primary' | 'ghost' | 'danger' = 'ghost'): React.CSSProperties => {
+  if (variant === 'primary') {
+    return {
+      padding: '8px 18px',
+      borderRadius: 10,
+      border: '1px solid rgba(242, 166, 179, 0.4)',
+      background: 'linear-gradient(135deg, #f2a6b3, #e58597)',
+      color: '#1c1625',
+      fontSize: 13,
+      fontWeight: 700,
+      cursor: 'pointer',
+      boxShadow: '0 4px 14px rgba(242, 166, 179, 0.35)',
+      transition: 'all 160ms cubic-bezier(0.4, 0, 0.2, 1)',
+      display: 'inline-flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 6,
+    };
+  }
+
+  if (variant === 'danger') {
+    return {
+      padding: '8px 18px',
+      borderRadius: 10,
+      border: '1px solid rgba(230, 57, 86, 0.4)',
+      background: 'linear-gradient(135deg, #ff5e7e, #e63956)',
+      color: '#ffffff',
+      fontSize: 13,
+      fontWeight: 700,
+      cursor: 'pointer',
+      boxShadow: '0 4px 14px rgba(230, 57, 86, 0.35)',
+      transition: 'all 160ms cubic-bezier(0.4, 0, 0.2, 1)',
+      display: 'inline-flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 6,
+    };
+  }
+
+  return {
+    padding: '8px 16px',
+    borderRadius: 10,
+    border: `1px solid ${C.borderStrong}`,
+    background: 'rgba(255, 255, 255, 0.05)',
+    color: C.text,
+    fontSize: 13,
+    fontWeight: 600,
+    cursor: 'pointer',
+    transition: 'all 160ms cubic-bezier(0.4, 0, 0.2, 1)',
+    display: 'inline-flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+  };
+};
 
 export const h2: React.CSSProperties = {
   margin: '0 0 2px',

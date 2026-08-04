@@ -74,27 +74,32 @@ const sectionTitle: React.CSSProperties = {
 };
 
 const primaryButton = (disabled: boolean): React.CSSProperties => ({
-  padding: '10px 16px',
+  padding: '10px 18px',
   borderRadius: 10,
-  border: 'none',
-  background: C.accent,
-  color: C.field,
-  fontWeight: 600,
-  fontSize: 14,
-  cursor: disabled ? 'default' : 'pointer',
-  opacity: disabled ? 0.5 : 1,
+  border: disabled ? '1px solid rgba(255,255,255,0.08)' : '1px solid rgba(242, 166, 179, 0.4)',
+  background: disabled
+    ? 'rgba(255, 255, 255, 0.08)'
+    : 'linear-gradient(135deg, #f2a6b3, #e58597)',
+  color: disabled ? C.faint : '#1c1625',
+  fontWeight: 700,
+  fontSize: 13.5,
+  cursor: disabled ? 'not-allowed' : 'pointer',
+  opacity: disabled ? 0.6 : 1,
   whiteSpace: 'nowrap',
+  boxShadow: disabled ? 'none' : '0 4px 14px rgba(242, 166, 179, 0.35)',
+  transition: 'all 160ms cubic-bezier(0.4, 0, 0.2, 1)',
 });
 
 const ghostButton: React.CSSProperties = {
-  background: 'transparent',
+  background: 'rgba(255, 255, 255, 0.05)',
   border: `1px solid ${C.edge}`,
   color: C.text,
-  borderRadius: 8,
-  padding: '6px 14px',
+  borderRadius: 10,
+  padding: '7px 15px',
   fontSize: 12.5,
+  fontWeight: 600,
   cursor: 'pointer',
-  transition: 'all 140ms ease',
+  transition: 'all 160ms ease',
 };
 
 type Note = { readonly ok: boolean; readonly text: string } | null;
