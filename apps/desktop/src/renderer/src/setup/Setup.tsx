@@ -10,14 +10,16 @@ import { Dashboard } from './Dashboard.js';
  * After setup this same window is the settings panel.
  */
 
-const STEPS = ['Name', 'Look', 'Hours'] as const;
+const STEPS = ['Companion', 'Hours', 'Personalize', 'Account'] as const;
 
 const shell: React.CSSProperties = {
-  padding: '28px 32px',
+  padding: '36px 42px',
   display: 'flex',
   flexDirection: 'column',
-  gap: 20,
+  gap: 24,
   minHeight: '100vh',
+  maxWidth: 720,
+  margin: '0 auto',
   boxSizing: 'border-box',
 };
 
@@ -26,30 +28,33 @@ const label: React.CSSProperties = {
   fontSize: 12,
   letterSpacing: 0.4,
   textTransform: 'uppercase',
-  opacity: 0.6,
+  opacity: 0.65,
   marginBottom: 8,
 };
 
 const input: React.CSSProperties = {
   width: '100%',
-  padding: '10px 12px',
+  padding: '12px 14px',
   borderRadius: 10,
   border: '1px solid #3b3244',
   background: '#241f2b',
   color: '#f4eef6',
   fontSize: 15,
   boxSizing: 'border-box',
+  outline: 'none',
 };
 
 const button = (primary: boolean): React.CSSProperties => ({
-  padding: '10px 18px',
+  padding: '11px 22px',
   borderRadius: 10,
   border: primary ? 'none' : '1px solid #3b3244',
-  background: primary ? '#f2a6b3' : 'transparent',
-  color: primary ? '#241f2b' : '#f4eef6',
+  background: primary ? 'linear-gradient(135deg, #f2a6b3, #e58597)' : 'transparent',
+  color: primary ? '#1c1625' : '#f4eef6',
   fontSize: 14,
-  fontWeight: 600,
+  fontWeight: 700,
   cursor: 'pointer',
+  boxShadow: primary ? '0 4px 14px rgba(242,166,179,0.3)' : 'none',
+  transition: 'transform 120ms ease, filter 120ms ease',
 });
 
 export function Setup(): JSX.Element {
@@ -61,6 +66,16 @@ export function Setup(): JSX.Element {
   const [skinName, setSkinName] = useState('default');
   const [start, setStart] = useState(DEFAULT_WORK_HOURS.start);
   const [end, setEnd] = useState(DEFAULT_WORK_HOURS.end);
+
+  // Step 3: Interactive Workday Preferences
+  const [hydrationEnabled, setHydrationEnabled] = useState(true);
+  const [chimeEnabled, setChimeEnabled] = useState(true);
+  const [activityTrackingEnabled, setActivityTrackingEnabled] = useState(true);
+
+  // Step 4: Account / Guest Choice
+  const [accountMode, setAccountMode] = useState<'guest' | 'create'>('guest');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
 
   useEffect(() => {
     void (async () => {
@@ -84,6 +99,7 @@ export function Setup(): JSX.Element {
       assistantName: name.trim() || 'Mochi',
       skinName,
       workHours: { start, end },
+      activityTracking: activityTrackingEnabled,
     });
     setSettings(updated);
     window.mochi.window.closeSetup();
@@ -93,85 +109,253 @@ export function Setup(): JSX.Element {
     return <div style={shell}>Loading…</div>;
   }
 
-  // Once setup is done this window becomes the dashboard. The wizard below
-  // is only ever seen once.
   if (settings.setupCompleted) return <Dashboard />;
 
-  // ---- first-run wizard --------------------------------------------------
   return (
     <div style={shell}>
-      <div style={{ display: 'flex', gap: 8 }}>
+      {/* Step Indicator Progress */}
+      <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
         {STEPS.map((s, i) => (
-          <div
-            key={s}
-            style={{
-              flex: 1,
-              height: 4,
-              borderRadius: 2,
-              background: i <= step ? '#f2a6b3' : '#332c3d',
-            }}
-          />
+          <div key={s} style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 6 }}>
+            <div
+              style={{
+                height: 4,
+                borderRadius: 2,
+                background: i <= step ? 'linear-gradient(90deg, #f2a6b3, #cd7187)' : '#332c3d',
+                transition: 'background 220ms ease',
+              }}
+            />
+            <span style={{ fontSize: 10.5, color: i === step ? '#f2a6b3' : '#73667d', fontWeight: i === step ? 650 : 500 }}>
+              {i + 1}. {s}
+            </span>
+          </div>
         ))}
       </div>
 
+      {/* STEP 1: Companion Name & Look */}
       {step === 0 && (
-        <>
-          <h1 style={{ margin: 0, fontSize: 24 }}>Hi! What should you call me?</h1>
-          <input
-            style={input}
-            value={name}
-            maxLength={24}
-            autoFocus
-            onChange={(e) => setName(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') setStep(1);
-            }}
-          />
-        </>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 18, marginTop: 10 }}>
+          <div>
+            <h1 style={{ margin: 0, fontSize: 26, fontWeight: 750, color: '#f4eef6' }}>
+              👋 Welcome! What should we call your companion?
+            </h1>
+            <p style={{ margin: '6px 0 0', fontSize: 13.5, color: '#a79ab2', lineHeight: 1.45 }}>
+              Mochi is your calm desktop assistant. Give your companion a name and pick a look.
+            </p>
+          </div>
+
+          <div>
+            <span style={label}>Companion Name</span>
+            <input
+              style={input}
+              value={name}
+              maxLength={24}
+              autoFocus
+              placeholder="e.g. Mochi, Luna, Kiko"
+              onChange={(e) => setName(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') setStep(1);
+              }}
+            />
+          </div>
+
+          <div>
+            <span style={label}>Choose Appearance Skin</span>
+            <select style={input} value={skinName} onChange={(e) => setSkinName(e.target.value)}>
+              {skins.map((s) => (
+                <option key={s.name} value={s.name}>
+                  {s.name} {s.author !== undefined ? ` — by ${s.author}` : ''}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
       )}
 
+      {/* STEP 2: Workday Hours */}
       {step === 1 && (
-        <>
-          <h1 style={{ margin: 0, fontSize: 24 }}>Pick a look</h1>
-          <select style={input} value={skinName} onChange={(e) => setSkinName(e.target.value)}>
-            {skins.map((s) => (
-              <option key={s.name} value={s.name}>
-                {s.name}
-                {s.author !== undefined ? ` — by ${s.author}` : ''}
-              </option>
-            ))}
-          </select>
-          <p style={{ opacity: 0.55, fontSize: 13, margin: 0 }}>
-            More skins can be dropped into your Mochi folder later.
-          </p>
-        </>
-      )}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 18, marginTop: 10 }}>
+          <div>
+            <h1 style={{ margin: 0, fontSize: 26, fontWeight: 750, color: '#f4eef6' }}>
+              ⏰ When is your active workday?
+            </h1>
+            <p style={{ margin: '6px 0 0', fontSize: 13.5, color: '#a79ab2', lineHeight: 1.45 }}>
+              Outside these hours, {name.trim() || 'Mochi'} enters Do Not Disturb mode so you can rest.
+            </p>
+          </div>
 
-      {step === 2 && (
-        <>
-          <h1 style={{ margin: 0, fontSize: 24 }}>When do you usually work?</h1>
-          <div style={{ display: 'flex', gap: 12 }}>
+          <div style={{ display: 'flex', gap: 16 }}>
             <div style={{ flex: 1 }}>
-              <span style={label}>From</span>
-              <input style={input} value={start} onChange={(e) => setStart(e.target.value)} />
+              <span style={label}>Work Starts</span>
+              <input style={input} value={start} placeholder="09:00" onChange={(e) => setStart(e.target.value)} />
             </div>
             <div style={{ flex: 1 }}>
-              <span style={label}>Until</span>
-              <input style={input} value={end} onChange={(e) => setEnd(e.target.value)} />
+              <span style={label}>Work Ends</span>
+              <input style={input} value={end} placeholder="17:00" onChange={(e) => setEnd(e.target.value)} />
             </div>
           </div>
-          <p style={{ opacity: 0.55, fontSize: 13, margin: 0 }}>
-            Outside these hours {name.trim() || 'Mochi'} settles down and rests.
-          </p>
+
           {!hoursValid && (
             <p style={{ color: '#ffb3c1', fontSize: 12, margin: 0 }}>
-              Use HH:MM, and make the two different.
+              Please enter valid times in HH:MM format (e.g. 09:00 and 17:00).
             </p>
           )}
-        </>
+        </div>
       )}
 
-      <div style={{ marginTop: 'auto', display: 'flex', gap: 10, justifyContent: 'space-between' }}>
+      {/* STEP 3: Personalize Workday Toggles */}
+      {step === 2 && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 18, marginTop: 10 }}>
+          <div>
+            <h1 style={{ margin: 0, fontSize: 26, fontWeight: 750, color: '#f4eef6' }}>
+              ✨ Personalize Your Experience
+            </h1>
+            <p style={{ margin: '6px 0 0', fontSize: 13.5, color: '#a79ab2', lineHeight: 1.45 }}>
+              Select recommended features to keep your workday healthy, focused, and balanced.
+            </p>
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {/* Toggle 1: Hydration & Breaks */}
+            <div
+              onClick={() => setHydrationEnabled(!hydrationEnabled)}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 14,
+                padding: '14px 16px',
+                borderRadius: 12,
+                background: hydrationEnabled ? 'rgba(242,166,179,0.08)' : '#241f2b',
+                border: hydrationEnabled ? '1px solid rgba(242,166,179,0.3)' : '1px solid #3b3244',
+                cursor: 'pointer',
+                transition: 'all 160ms ease',
+              }}
+            >
+              <input type="checkbox" checked={hydrationEnabled} onChange={() => {}} style={{ width: 18, height: 18, accentColor: '#f2a6b3' }} />
+              <div>
+                <strong style={{ fontSize: 14, color: '#f4eef6', display: 'block' }}>💧 Hydration & Stretch Reminders (Recommended)</strong>
+                <span style={{ fontSize: 12, color: '#a79ab2', marginTop: 2, display: 'block' }}>
+                  Gentle nudges every 45 mins to drink water, stretch, and protect your energy.
+                </span>
+              </div>
+            </div>
+
+            {/* Toggle 2: Audio Chimes */}
+            <div
+              onClick={() => setChimeEnabled(!chimeEnabled)}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 14,
+                padding: '14px 16px',
+                borderRadius: 12,
+                background: chimeEnabled ? 'rgba(242,166,179,0.08)' : '#241f2b',
+                border: chimeEnabled ? '1px solid rgba(242,166,179,0.3)' : '1px solid #3b3244',
+                cursor: 'pointer',
+                transition: 'all 160ms ease',
+              }}
+            >
+              <input type="checkbox" checked={chimeEnabled} onChange={() => {}} style={{ width: 18, height: 18, accentColor: '#f2a6b3' }} />
+              <div>
+                <strong style={{ fontSize: 14, color: '#f4eef6', display: 'block' }}>🔔 Soft Audio Chimes</strong>
+                <span style={{ fontSize: 12, color: '#a79ab2', marginTop: 2, display: 'block' }}>
+                  Plays a subtle, calming chime when routine breaks or top priority alerts trigger.
+                </span>
+              </div>
+            </div>
+
+            {/* Toggle 3: Activity Tracking */}
+            <div
+              onClick={() => setActivityTrackingEnabled(!activityTrackingEnabled)}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 14,
+                padding: '14px 16px',
+                borderRadius: 12,
+                background: activityTrackingEnabled ? 'rgba(242,166,179,0.08)' : '#241f2b',
+                border: activityTrackingEnabled ? '1px solid rgba(242,166,179,0.3)' : '1px solid #3b3244',
+                cursor: 'pointer',
+                transition: 'all 160ms ease',
+              }}
+            >
+              <input type="checkbox" checked={activityTrackingEnabled} onChange={() => {}} style={{ width: 18, height: 18, accentColor: '#f2a6b3' }} />
+              <div>
+                <strong style={{ fontSize: 14, color: '#f4eef6', display: 'block' }}>📊 On-Device Activity & Screen Time Tracking</strong>
+                <span style={{ fontSize: 12, color: '#a79ab2', marginTop: 2, display: 'block' }}>
+                  Observes screen time 100% locally on your computer to show work breakdown graphs.
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* STEP 4: Account or Guest Choice */}
+      {step === 3 && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 18, marginTop: 10 }}>
+          <div>
+            <h1 style={{ margin: 0, fontSize: 26, fontWeight: 750, color: '#f4eef6' }}>
+              👤 Account & Pro Access
+            </h1>
+            <p style={{ margin: '6px 0 0', fontSize: 13.5, color: '#a79ab2', lineHeight: 1.45 }}>
+              Choose how you want to start. You can create a free account for 14-day Pro cloud access or continue offline as a guest.
+            </p>
+          </div>
+
+          <div style={{ display: 'flex', gap: 12 }}>
+            <div
+              onClick={() => setAccountMode('guest')}
+              style={{
+                flex: 1,
+                padding: 16,
+                borderRadius: 12,
+                background: accountMode === 'guest' ? 'rgba(242,166,179,0.08)' : '#241f2b',
+                border: accountMode === 'guest' ? '2px solid #f2a6b3' : '1px solid #3b3244',
+                cursor: 'pointer',
+              }}
+            >
+              <h3 style={{ margin: 0, fontSize: 15, color: '#f4eef6' }}>👤 Continue as Guest</h3>
+              <p style={{ margin: '6px 0 0', fontSize: 12, color: '#a79ab2', lineHeight: 1.4 }}>
+                100% Offline Local Mode. No email or password needed. Use your own API keys for free.
+              </p>
+            </div>
+
+            <div
+              onClick={() => setAccountMode('create')}
+              style={{
+                flex: 1,
+                padding: 16,
+                borderRadius: 12,
+                background: accountMode === 'create' ? 'rgba(242,166,179,0.08)' : '#241f2b',
+                border: accountMode === 'create' ? '2px solid #f2a6b3' : '1px solid #3b3244',
+                cursor: 'pointer',
+              }}
+            >
+              <h3 style={{ margin: 0, fontSize: 15, color: '#f4eef6' }}>✨ 14-Day Free Pro Trial</h3>
+              <p style={{ margin: '6px 0 0', fontSize: 12, color: '#a79ab2', lineHeight: 1.4 }}>
+                Create account to unlock zero-setup Cloud AI & multi-device sync (No credit card).
+              </p>
+            </div>
+          </div>
+
+          {accountMode === 'create' && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 4 }}>
+              <div>
+                <span style={label}>Email</span>
+                <input style={input} type="email" placeholder="you@example.com" value={email} onChange={(e) => setEmail(e.target.value)} />
+              </div>
+              <div>
+                <span style={label}>Password</span>
+                <input style={input} type="password" placeholder="••••••••••••" value={password} onChange={(e) => setPassword(e.target.value)} />
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Navigation Buttons */}
+      <div style={{ marginTop: 'auto', display: 'flex', gap: 10, justifyContent: 'space-between', paddingTop: 16 }}>
         <button
           style={{ ...button(false), visibility: step === 0 ? 'hidden' : 'visible' }}
           onClick={() => setStep((s) => s - 1)}
@@ -184,7 +368,7 @@ export function Setup(): JSX.Element {
           </button>
         ) : (
           <button style={button(true)} disabled={!hoursValid} onClick={() => void finish()}>
-            Let&apos;s go
+            🚀 Complete Setup & Start
           </button>
         )}
       </div>
