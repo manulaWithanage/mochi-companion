@@ -1150,35 +1150,53 @@ export function TimeTab(): JSX.Element {
               )}
             </div>
           </div>
-
           {/* KPI Stat Cards Grid */}
           <div
             style={{
               display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
               gap: 14,
-              marginBottom: 20,
+              marginBottom: 24,
             }}
           >
             {/* Total Focus Time */}
-            <div style={{ ...card, display: 'flex', flexDirection: 'column', gap: 6 }}>
+            <div
+              style={{
+                ...card,
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 8,
+                background: 'rgba(34, 29, 41, 0.6)',
+                backdropFilter: 'blur(8px)',
+                border: '1px solid rgba(242, 166, 179, 0.25)',
+                boxShadow: '0 4px 16px rgba(0, 0, 0, 0.25)',
+              }}
+            >
               <div
                 style={{
                   fontSize: 11,
-                  fontWeight: 700,
+                  fontWeight: 750,
                   color: C.dim,
                   textTransform: 'uppercase',
-                  letterSpacing: '0.04em',
+                  letterSpacing: '0.05em',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 6,
                 }}
               >
-                ⏱️ Total Focus Time
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={C.accent} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="12" cy="12" r="10" />
+                  <polyline points="12 6 12 12 16 14" />
+                </svg>
+                <span>Total Focus Time</span>
               </div>
               <div
                 style={{
-                  fontSize: 22,
+                  fontSize: 26,
                   fontWeight: 800,
-                  color: C.text,
+                  color: '#ffffff',
                   fontVariantNumeric: 'tabular-nums',
+                  letterSpacing: '-0.02em',
                 }}
               >
                 {humanDuration(performanceStats.totalMs)}
@@ -1186,43 +1204,82 @@ export function TimeTab(): JSX.Element {
             </div>
 
             {/* Total Sessions */}
-            <div style={{ ...card, display: 'flex', flexDirection: 'column', gap: 6 }}>
+            <div
+              style={{
+                ...card,
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 8,
+                background: 'rgba(34, 29, 41, 0.6)',
+                backdropFilter: 'blur(8px)',
+                border: '1px solid rgba(168, 230, 184, 0.25)',
+                boxShadow: '0 4px 16px rgba(0, 0, 0, 0.25)',
+              }}
+            >
               <div
                 style={{
                   fontSize: 11,
-                  fontWeight: 700,
+                  fontWeight: 750,
                   color: C.dim,
                   textTransform: 'uppercase',
-                  letterSpacing: '0.04em',
+                  letterSpacing: '0.05em',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 6,
                 }}
               >
-                🎯 Focus Sessions
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#a8e6b8" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="18" y1="20" x2="18" y2="10" />
+                  <line x1="12" y1="20" x2="12" y2="4" />
+                  <line x1="6" y1="20" x2="6" y2="14" />
+                </svg>
+                <span>Focus Sessions</span>
               </div>
-              <div style={{ fontSize: 22, fontWeight: 800, color: C.text }}>
+              <div style={{ fontSize: 26, fontWeight: 800, color: '#ffffff', letterSpacing: '-0.02em' }}>
                 {performanceStats.sessionCount}{' '}
-                {performanceStats.sessionCount === 1 ? 'session' : 'sessions'}
+                <span style={{ fontSize: 14, color: C.dim, fontWeight: 600 }}>
+                  {performanceStats.sessionCount === 1 ? 'session' : 'sessions'}
+                </span>
               </div>
             </div>
 
             {/* Avg Session Length */}
-            <div style={{ ...card, display: 'flex', flexDirection: 'column', gap: 6 }}>
+            <div
+              style={{
+                ...card,
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 8,
+                background: 'rgba(34, 29, 41, 0.6)',
+                backdropFilter: 'blur(8px)',
+                border: '1px solid rgba(139, 92, 246, 0.25)',
+                boxShadow: '0 4px 16px rgba(0, 0, 0, 0.25)',
+              }}
+            >
               <div
                 style={{
                   fontSize: 11,
-                  fontWeight: 700,
+                  fontWeight: 750,
                   color: C.dim,
                   textTransform: 'uppercase',
-                  letterSpacing: '0.04em',
+                  letterSpacing: '0.05em',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 6,
                 }}
               >
-                ⚡ Avg Session Length
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#8b5cf6" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                  <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+                </svg>
+                <span>Avg Session Length</span>
               </div>
               <div
                 style={{
-                  fontSize: 22,
+                  fontSize: 26,
                   fontWeight: 800,
-                  color: C.text,
+                  color: '#ffffff',
                   fontVariantNumeric: 'tabular-nums',
+                  letterSpacing: '-0.02em',
                 }}
               >
                 {humanDuration(performanceStats.avgSessionMs)}
@@ -1230,17 +1287,39 @@ export function TimeTab(): JSX.Element {
             </div>
 
             {/* Peak Focus Window */}
-            <div style={{ ...card, display: 'flex', flexDirection: 'column', gap: 6 }}>
+            <div
+              style={{
+                ...card,
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 8,
+                background: 'rgba(34, 29, 41, 0.6)',
+                backdropFilter: 'blur(8px)',
+                border: '1px solid rgba(255, 179, 193, 0.25)',
+                boxShadow: '0 4px 16px rgba(0, 0, 0, 0.25)',
+              }}
+            >
               <div
                 style={{
                   fontSize: 11,
-                  fontWeight: 700,
+                  fontWeight: 750,
                   color: C.dim,
                   textTransform: 'uppercase',
-                  letterSpacing: '0.04em',
+                  letterSpacing: '0.05em',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 6,
                 }}
               >
-                🧠 Peak Focus Window
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#ffb3c1" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M6 9H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h2" />
+                  <path d="M18 9h2a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2h-2" />
+                  <path d="M4 22h16" />
+                  <path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22" />
+                  <path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22" />
+                  <path d="M18 2H6v7a6 6 0 0 0 12 0V2z" />
+                </svg>
+                <span>Peak Focus Window</span>
               </div>
               <div
                 style={{
@@ -1250,111 +1329,111 @@ export function TimeTab(): JSX.Element {
                   whiteSpace: 'nowrap',
                   overflow: 'hidden',
                   textOverflow: 'ellipsis',
+                  marginTop: 4,
                 }}
               >
-                {performanceStats.peakPeriod}
+                {performanceStats.peakWindow}
               </div>
             </div>
           </div>
 
-          {/* SVG Donut Pie Chart & Smart User Insights Grid */}
+          {/* Analytics Visual Grid: Donut Breakdown + Mochi Coach */}
           <div
             style={{
               display: 'grid',
               gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
               gap: 16,
-              marginBottom: 20,
+              marginBottom: 24,
             }}
           >
-            {/* SVG Donut Pie Chart Card */}
-            <div style={card}>
+            {/* Category Time Breakdown Donut Chart */}
+            <div style={{ ...card, background: 'rgba(34, 29, 41, 0.75)', padding: '18px 20px' }}>
               <div
                 style={{
                   fontSize: 12,
-                  fontWeight: 700,
-                  color: C.dim,
-                  textTransform: 'uppercase',
+                  fontWeight: 750,
+                  color: C.text,
                   letterSpacing: '0.04em',
                   marginBottom: 16,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 8,
                 }}
               >
-                🎨 Category Time Breakdown (Pie Chart)
+                <span>🍩 Category Time Distribution</span>
               </div>
 
               {performanceStats.categoryBreakdown.length === 0 ? (
-                <div
-                  style={{ fontSize: 13, color: C.faint, padding: '24px 0', textAlign: 'center' }}
-                >
-                  No sessions recorded for this timeframe to render chart.
+                <div style={{ fontSize: 13, color: C.faint, padding: '30px 0', textAlign: 'center' }}>
+                  No focus activity recorded for this period.
                 </div>
               ) : (
-                <div style={{ display: 'flex', alignItems: 'center', gap: 24, flexWrap: 'wrap' }}>
-                  {/* SVG Donut Ring */}
-                  <div style={{ position: 'relative', width: 140, height: 140, flexShrink: 0 }}>
-                    <svg
-                      width="140"
-                      height="140"
-                      viewBox="0 0 140 140"
-                      style={{ transform: 'rotate(-90deg)' }}
-                    >
+                <div style={{ display: 'flex', alignItems: 'center', gap: 20, flexWrap: 'wrap' }}>
+                  {/* SVG Conic Donut Chart */}
+                  <div
+                    style={{
+                      position: 'relative',
+                      width: 140,
+                      height: 140,
+                      flexShrink: 0,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}
+                  >
+                    <svg width="140" height="140" viewBox="0 0 36 36">
+                      <circle
+                        cx="18"
+                        cy="18"
+                        r="15.91549430918954"
+                        fill="transparent"
+                        stroke="rgba(255, 255, 255, 0.05)"
+                        strokeWidth="3.8"
+                      />
                       {(() => {
-                        const radius = 50;
-                        const circumference = 2 * Math.PI * radius; // ~314.15
-                        let accumPct = 0;
-
+                        let accumulatedPct = 0;
                         return performanceStats.categoryBreakdown.map((item) => {
-                          const strokeDash = (item.pct / 100) * circumference;
-                          const strokeOffset = -(accumPct / 100) * circumference;
-                          accumPct += item.pct;
-
+                          const dashArray = `${item.pct} ${100 - item.pct}`;
+                          const dashOffset = 100 - accumulatedPct + 25;
+                          accumulatedPct += item.pct;
                           return (
                             <circle
                               key={item.project.id}
-                              cx="70"
-                              cy="70"
-                              r={radius}
+                              cx="18"
+                              cy="18"
+                              r="15.91549430918954"
                               fill="transparent"
                               stroke={item.project.colour}
-                              strokeWidth="20"
-                              strokeDasharray={`${strokeDash} ${circumference}`}
-                              strokeDashoffset={strokeOffset}
-                              style={{ transition: 'all 300ms ease' }}
+                              strokeWidth="3.8"
+                              strokeDasharray={dashArray}
+                              strokeDashoffset={dashOffset}
+                              style={{ transition: 'stroke-dasharray 400ms ease' }}
                             />
                           );
                         });
                       })()}
                     </svg>
-                    {/* Donut Hole Text */}
+
                     <div
                       style={{
                         position: 'absolute',
-                        inset: 0,
+                        textAlign: 'center',
                         display: 'flex',
                         flexDirection: 'column',
                         alignItems: 'center',
-                        justifyContent: 'center',
-                        textAlign: 'center',
                       }}
                     >
-                      <span style={{ fontSize: 14, fontWeight: 800, color: C.text }}>
+                      <span style={{ fontSize: 18, fontWeight: 800, color: C.text }}>
                         {performanceStats.categoryBreakdown.length}
                       </span>
-                      <span style={{ fontSize: 9.5, color: C.dim, textTransform: 'uppercase' }}>
+                      <span style={{ fontSize: 9.5, fontWeight: 700, color: C.dim, textTransform: 'uppercase' }}>
                         Categories
                       </span>
                     </div>
                   </div>
 
-                  {/* Donut Legend Items */}
-                  <div
-                    style={{
-                      display: 'flex',
-                      flexDirection: 'column',
-                      gap: 8,
-                      flex: 1,
-                      minWidth: 140,
-                    }}
-                  >
+                  {/* Right Donut Legend */}
+                  <div style={{ flex: 1, minWidth: 160, display: 'flex', flexDirection: 'column', gap: 8 }}>
                     {performanceStats.categoryBreakdown.map((item) => (
                       <div
                         key={item.project.id}
@@ -1365,46 +1444,34 @@ export function TimeTab(): JSX.Element {
                           fontSize: 12,
                         }}
                       >
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
                           <span
                             style={{
-                              width: 9,
-                              height: 9,
+                              width: 8,
+                              height: 8,
                               borderRadius: '50%',
                               background: item.project.colour,
                               boxShadow: `0 0 6px ${item.project.colour}`,
+                              flexShrink: 0,
                             }}
                           />
                           <span
                             style={{
                               color: C.text,
-                              fontWeight: 650,
-                              maxWidth: 100,
+                              fontWeight: 600,
+                              whiteSpace: 'nowrap',
                               overflow: 'hidden',
                               textOverflow: 'ellipsis',
-                              whiteSpace: 'nowrap',
                             }}
                           >
                             {formatCategoryName(item.project.name)}
                           </span>
                         </div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                          <span
-                            style={{
-                              color: item.project.colour,
-                              fontWeight: 750,
-                              fontVariantNumeric: 'tabular-nums',
-                            }}
-                          >
+                        <div style={{ fontVariantNumeric: 'tabular-nums', textAlign: 'right' }}>
+                          <span style={{ color: item.project.colour, fontWeight: 750 }}>
                             {item.pct.toFixed(1)}%
                           </span>
-                          <span
-                            style={{
-                              color: C.dim,
-                              fontSize: 11,
-                              fontVariantNumeric: 'tabular-nums',
-                            }}
-                          >
+                          <span style={{ color: C.dim, fontSize: 11, marginLeft: 6 }}>
                             ({humanDuration(item.ms)})
                           </span>
                         </div>
@@ -1415,123 +1482,116 @@ export function TimeTab(): JSX.Element {
               )}
             </div>
 
-            {/* Smart Focus Insights & Ratio Card */}
-            <div
-              style={{
-                ...card,
-                display: 'flex',
-                flexDirection: 'column',
-                justifyContent: 'space-between',
-              }}
-            >
+            {/* Smart Focus Insights & Mochi Productivity Coach Card */}
+            <div style={{ ...card, background: 'rgba(34, 29, 41, 0.75)', padding: '18px 20px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
               <div>
                 <div
                   style={{
                     fontSize: 12,
-                    fontWeight: 700,
-                    color: C.dim,
-                    textTransform: 'uppercase',
+                    fontWeight: 750,
+                    color: C.text,
                     letterSpacing: '0.04em',
-                    marginBottom: 14,
+                    marginBottom: 16,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 8,
                   }}
                 >
-                  🧠 Productivity & Focus Insights
+                  <span>🧠 Productivity & Focus Insights</span>
                 </div>
 
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-                  {/* Focus Ratio Indicator */}
+                <div style={{ marginBottom: 14 }}>
                   <div
                     style={{
-                      background: '#181422',
-                      border: `1px solid ${C.border}`,
-                      borderRadius: 10,
-                      padding: '12px 14px',
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      fontSize: 12,
+                      fontWeight: 700,
+                      marginBottom: 6,
+                    }}
+                  >
+                    <span style={{ color: C.text }}>🎯 Deep Work Focus Ratio</span>
+                    <span style={{ color: C.accent, fontVariantNumeric: 'tabular-nums' }}>
+                      {performanceStats.totalMs > 0 ? '100%' : '0%'}
+                    </span>
+                  </div>
+                  <div
+                    style={{
+                      height: 6,
+                      borderRadius: 4,
+                      background: 'rgba(255, 255, 255, 0.08)',
+                      overflow: 'hidden',
                     }}
                   >
                     <div
                       style={{
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        alignItems: 'center',
-                        marginBottom: 6,
+                        width: performanceStats.totalMs > 0 ? '100%' : '0%',
+                        height: '100%',
+                        borderRadius: 4,
+                        background: 'linear-gradient(90deg, #f2a6b3, #e58597)',
+                        boxShadow: '0 0 8px rgba(242, 166, 179, 0.5)',
                       }}
-                    >
-                      <span style={{ fontSize: 12.5, fontWeight: 650, color: C.text }}>
-                        🎯 Deep Work Focus Ratio
-                      </span>
-                      <span style={{ fontSize: 13, fontWeight: 800, color: C.accent }}>
-                        {performanceStats.focusRatioPct}%
-                      </span>
-                    </div>
-                    <div
-                      style={{
-                        height: 6,
-                        borderRadius: 3,
-                        background: '#262033',
-                        overflow: 'hidden',
-                      }}
-                    >
-                      <div
-                        style={{
-                          width: `${performanceStats.focusRatioPct}%`,
-                          height: '100%',
-                          background: C.accent,
-                          borderRadius: 3,
-                        }}
-                      />
-                    </div>
+                    />
                   </div>
+                </div>
+              </div>
 
-                  {/* Smart Tip */}
-                  <div
-                    style={{
-                      background: 'rgba(242, 166, 179, 0.1)',
-                      border: `1px solid ${C.accent}44`,
-                      borderRadius: 10,
-                      padding: '12px 14px',
-                    }}
-                  >
-                    <div
-                      style={{
-                        fontSize: 12,
-                        fontWeight: 700,
-                        color: C.accent,
-                        marginBottom: 4,
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 6,
-                      }}
-                    >
-                      <span>💡 Mochi Productivity Coach</span>
-                    </div>
-                    <div style={{ fontSize: 12, color: C.text, lineHeight: 1.45 }}>
-                      {performanceStats.topCategory
-                        ? `You perform strongest in "${performanceStats.topCategory.project.name}", your average session length is ${humanDuration(performanceStats.avgSessionMs)}, keeping you in a prime focus flow`
-                        : 'Track a session to unlock personalized Mochi focus recommendations'}
-                    </div>
-                  </div>
+              {/* Mochi Productivity Coach Banner */}
+              <div
+                style={{
+                  padding: '12px 14px',
+                  borderRadius: 10,
+                  background: 'rgba(242, 166, 179, 0.08)',
+                  border: '1px solid rgba(242, 166, 179, 0.25)',
+                  marginTop: 10,
+                }}
+              >
+                <div
+                  style={{
+                    fontSize: 12,
+                    fontWeight: 750,
+                    color: C.accent,
+                    marginBottom: 4,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 6,
+                  }}
+                >
+                  <span>💡 Mochi Productivity Coach</span>
+                </div>
+                <div style={{ fontSize: 12, color: C.text, lineHeight: 1.45 }}>
+                  {performanceStats.topCategory
+                    ? `You perform strongest in "${formatCategoryName(performanceStats.topCategory.project.name)}", your average session length is ${humanDuration(performanceStats.avgSessionMs)}, keeping you in a prime focus flow!`
+                    : 'Track a session to unlock personalized Mochi focus recommendations.'}
                 </div>
               </div>
             </div>
           </div>
 
           {/* Detailed Category Performance Table */}
-          <div style={card}>
+          <div style={{ ...card, padding: '18px 20px' }}>
             <div
               style={{
-                fontSize: 12,
-                fontWeight: 700,
-                color: C.dim,
-                textTransform: 'uppercase',
-                letterSpacing: '0.04em',
-                marginBottom: 14,
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                marginBottom: 16,
               }}
             >
-              Category Performance Table ({performanceStats.categoryBreakdown.length})
+              <div style={{ fontSize: 13, fontWeight: 700, color: C.text }}>
+                Category Breakdown Table{' '}
+                <span style={{ color: C.dim, fontWeight: 500 }}>
+                  ({performanceStats.categoryBreakdown.length})
+                </span>
+              </div>
+              <span style={{ fontSize: 12, color: C.dim }}>
+                Detailed metrics across all tracked activities
+              </span>
             </div>
 
             {performanceStats.categoryBreakdown.length === 0 ? (
-              <div style={{ fontSize: 13, color: C.faint, padding: '16px 0', textAlign: 'center' }}>
+              <div style={{ fontSize: 13, color: C.faint, padding: '24px 0', textAlign: 'center' }}>
                 No focus activity logged for this time range. Select another date filter above!
               </div>
             ) : (
@@ -1540,10 +1600,10 @@ export function TimeTab(): JSX.Element {
                   <div
                     key={item.project.id}
                     style={{
-                      background: '#181422',
-                      border: `1px solid ${C.border}`,
-                      borderRadius: 10,
-                      padding: '12px 14px',
+                      background: 'rgba(24, 20, 34, 0.95)',
+                      border: '1px solid rgba(255, 255, 255, 0.08)',
+                      borderRadius: 12,
+                      padding: '14px 18px',
                     }}
                   >
                     <div
@@ -1551,28 +1611,36 @@ export function TimeTab(): JSX.Element {
                         display: 'flex',
                         justifyContent: 'space-between',
                         alignItems: 'center',
-                        marginBottom: 8,
+                        marginBottom: 10,
                       }}
                     >
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                         <div
                           style={{
-                            width: 10,
-                            height: 10,
-                            borderRadius: '50%',
-                            background: item.project.colour,
-                            boxShadow: `0 0 6px ${item.project.colour}`,
+                            width: 34,
+                            height: 34,
+                            borderRadius: 8,
+                            background: `${item.project.colour}22`,
+                            border: `1px solid ${item.project.colour}66`,
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            fontSize: 16,
+                            flexShrink: 0,
                           }}
-                        />
+                        >
+                          {categoryIcon(item.project.name)}
+                        </div>
                         <span style={{ fontSize: 14, fontWeight: 700, color: C.text }}>
                           {formatCategoryName(item.project.name)}
                         </span>
                       </div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
                         <span
                           style={{
-                            fontSize: 12,
-                            fontWeight: 700,
+                            fontSize: 13.5,
+                            fontWeight: 750,
                             color: item.project.colour,
                             fontVariantNumeric: 'tabular-nums',
                           }}
@@ -1587,12 +1655,13 @@ export function TimeTab(): JSX.Element {
                         </span>
                       </div>
                     </div>
-                    {/* Individual progress bar */}
+
+                    {/* Thick Rounded Progress Bar */}
                     <div
                       style={{
-                        height: 4,
-                        borderRadius: 2,
-                        background: '#262033',
+                        height: 6,
+                        borderRadius: 4,
+                        background: 'rgba(255, 255, 255, 0.08)',
                         overflow: 'hidden',
                       }}
                     >
@@ -1600,7 +1669,10 @@ export function TimeTab(): JSX.Element {
                         style={{
                           width: `${item.pct}%`,
                           height: '100%',
-                          background: item.project.colour,
+                          borderRadius: 4,
+                          background: `linear-gradient(90deg, ${item.project.colour}, ${item.project.colour}dd)`,
+                          boxShadow: `0 0 8px ${item.project.colour}66`,
+                          transition: 'width 300ms ease',
                         }}
                       />
                     </div>
@@ -1612,48 +1684,54 @@ export function TimeTab(): JSX.Element {
         </div>
       ) : (
         /* Dedicated Session History Sub-Tab */
-        <div key="history" style={{ ...card, animation: 'fadeInSubTab 220ms ease-out' }}>
+        <div key="history" style={{ ...card, padding: '20px 24px', animation: 'fadeInSubTab 220ms ease-out' }}>
           <div
             style={{
               display: 'flex',
               justifyContent: 'space-between',
               alignItems: 'center',
-              marginBottom: 16,
+              marginBottom: 20,
+              paddingBottom: 16,
+              borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
             }}
           >
             <div>
-              <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: C.text }}>
+              <h3 style={{ margin: 0, fontSize: 17, fontWeight: 750, color: C.text }}>
                 🕒 Session History Log
               </h3>
-              <p style={{ margin: '4px 0 0', fontSize: 12, color: C.dim }}>
-                {sessions.length} total focus sessions tracked.
+              <p style={{ margin: '4px 0 0', fontSize: 12.5, color: C.dim }}>
+                Detailed chronological timeline of all your recorded focus sessions
               </p>
             </div>
             <div
               style={{
                 fontSize: 12,
-                fontWeight: 700,
+                fontWeight: 750,
                 color: C.accent,
-                background: `${C.accent}22`,
-                padding: '4px 12px',
-                borderRadius: 8,
+                background: 'rgba(242, 166, 179, 0.15)',
+                border: '1px solid rgba(242, 166, 179, 0.3)',
+                padding: '6px 14px',
+                borderRadius: 10,
               }}
             >
-              {humanDuration(totals.grand)} Total Focus
+              {sessions.length} Sessions · {humanDuration(totals.grand)} Total Focus
             </div>
           </div>
 
           {sessions.length === 0 ? (
-            <div style={{ fontSize: 13, color: C.faint, padding: '24px 0', textAlign: 'center' }}>
-              No recorded sessions yet. Start tracking time to build your history log!
+            <div style={{ fontSize: 13, color: C.dim, padding: '40px 0', textAlign: 'center' }}>
+              No recorded focus sessions yet. Click "▶ Track" in Categories to log your first session!
             </div>
           ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
               {sessions.map((s) => {
                 const p = projects.find((x) => x.id === s.projectId);
                 const color = p?.colour ?? C.accent;
-                const name = p?.name ?? 'General Focus';
+                const rawName = p?.name ?? 'General Focus';
+                const name = formatCategoryName(rawName);
+                const icon = categoryIcon(rawName);
                 const dateStr = new Date(s.startedAt).toLocaleString(undefined, {
+                  weekday: 'short',
                   month: 'short',
                   day: 'numeric',
                   hour: '2-digit',
@@ -1669,39 +1747,52 @@ export function TimeTab(): JSX.Element {
                       display: 'flex',
                       justifyContent: 'space-between',
                       alignItems: 'center',
-                      background: '#181422',
-                      border: `1px solid ${C.border}`,
-                      borderRadius: 10,
-                      padding: '10px 14px',
+                      background: 'rgba(24, 20, 34, 0.95)',
+                      border: s.endedAt === null ? `1.5px solid ${color}` : '1px solid rgba(255, 255, 255, 0.08)',
+                      boxShadow: s.endedAt === null ? `0 4px 14px ${color}33` : '0 2px 6px rgba(0,0,0,0.2)',
+                      borderRadius: 12,
+                      padding: '12px 18px',
+                      transition: 'all 160ms ease',
                     }}
                   >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
                       <div
                         style={{
-                          width: 8,
-                          height: 8,
-                          borderRadius: '50%',
-                          background: color,
-                          boxShadow: `0 0 6px ${color}`,
+                          width: 36,
+                          height: 36,
+                          borderRadius: 10,
+                          background: `${color}22`,
+                          border: `1px solid ${color}66`,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          fontSize: 17,
+                          flexShrink: 0,
                         }}
-                      />
-                      <span style={{ fontSize: 13.5, fontWeight: 650, color: C.text }}>{name}</span>
+                      >
+                        {icon}
+                      </div>
+                      <div>
+                        <div style={{ fontSize: 14, fontWeight: 700, color: C.text }}>{name}</div>
+                        <div style={{ fontSize: 11.5, color: C.dim, marginTop: 2 }}>{dateStr}</div>
+                      </div>
                     </div>
 
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-                      <span style={{ fontSize: 12, color: C.dim }}>{dateStr}</span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
                       <span
                         style={{
                           fontSize: 12,
-                          fontWeight: 700,
-                          color: s.endedAt === null ? C.accent : C.text,
+                          fontWeight: 750,
+                          color: s.endedAt === null ? '#a8e6b8' : '#ffffff',
                           fontVariantNumeric: 'tabular-nums',
-                          background: 'rgba(255, 255, 255, 0.04)',
-                          padding: '3px 10px',
-                          borderRadius: 6,
+                          background: s.endedAt === null ? 'rgba(168, 230, 184, 0.18)' : 'linear-gradient(180deg, #3f334c 0%, #282032 100%)',
+                          border: s.endedAt === null ? '1px solid rgba(168, 230, 184, 0.4)' : '1px solid rgba(242, 166, 179, 0.35)',
+                          padding: '5px 14px',
+                          borderRadius: 8,
+                          boxShadow: '0 2px 6px rgba(0,0,0,0.3)',
                         }}
                       >
-                        {dur}
+                        {s.endedAt === null ? '● Running Now' : `${dur} session`}
                       </span>
                     </div>
                   </div>
