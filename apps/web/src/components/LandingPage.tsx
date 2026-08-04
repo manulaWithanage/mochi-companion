@@ -121,9 +121,9 @@ export const LandingPage: React.FC = () => {
               </div>
               <div className="promise-card__copy">
                 <small>01 · START CLEAR</small>
-                <h3>Know your top priorities first.</h3>
+                <h3>Shows your top priorities when you start.</h3>
                 <p>
-                  See your top tasks and daily plan as soon as you sit down at your computer, so you know where to start without feeling overwhelmed.
+                  Mochi opens quietly when you sit at your computer, showing your top tasks for today so you can get right to work without feeling lost.
                 </p>
               </div>
             </article>
@@ -146,9 +146,9 @@ export const LandingPage: React.FC = () => {
               </div>
               <div className="promise-card__copy">
                 <small>02 · KEEP BALANCE</small>
-                <h3>Nurture your work-life balance.</h3>
+                <h3>Reminds you to drink water and take breaks.</h3>
                 <p>
-                  Mochi gently reminds you to drink water, stretch, and take honest breaks, keeping your health and daily routines naturally in sync.
+                  Mochi gently nudges you throughout the workday to drink water, stretch your legs, and step away from your desk before you get exhausted.
                 </p>
               </div>
             </article>
@@ -176,9 +176,9 @@ export const LandingPage: React.FC = () => {
               </div>
               <div className="promise-card__copy">
                 <small>03 · STAY FOCUSED</small>
-                <h3>Organizes your inbox and alerts.</h3>
+                <h3>Surfaces urgent emails and hides the noise.</h3>
                 <p>
-                  Mochi highlights urgent emails and critical alerts that need your reply today, while filtering out newsletter noise and distractions.
+                  Mochi alerts you only when an important message needs your reply today, keeping newsletters and promotional spam out of your way.
                 </p>
               </div>
             </article>
