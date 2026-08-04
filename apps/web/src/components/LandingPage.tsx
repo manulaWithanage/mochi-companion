@@ -80,7 +80,9 @@ export const LandingPage: React.FC = () => {
           <div className="story-intro story-intro--center">
             <p className="story-eyebrow">WHAT IS MOCHI</p>
             <h2 className="hero-purpose-quote">
-              “Mochi is a calm desktop companion that keeps your <em>plan, priorities, and important emails</em> in one quiet place. It helps you <em>take breaks honestly and end your day in&nbsp;peace.”</em>
+              Mochi is a calm desktop companion that keeps your{' '}
+              <em>plan, priorities, and important emails</em> in one quiet place. It helps you{' '}
+              <em>take breaks honestly and end your day in peace.</em>
             </h2>
           </div>
         </section>
@@ -124,7 +126,8 @@ export const LandingPage: React.FC = () => {
                 <small>01 · START CLEAR</small>
                 <h3>Shows your top priorities when you start.</h3>
                 <p>
-                  Mochi opens quietly when you sit at your computer, showing your top tasks for today so you can get right to work without feeling lost.
+                  Mochi opens quietly when you sit at your computer, showing your top tasks for
+                  today so you can get right to work without feeling lost.
                 </p>
               </div>
             </article>
@@ -152,7 +155,8 @@ export const LandingPage: React.FC = () => {
                 <small>02 · KEEP BALANCE</small>
                 <h3>Reminds you to drink water and take breaks.</h3>
                 <p>
-                  Mochi gently nudges you throughout the workday to drink water, stretch your legs, and step away from your desk before you get exhausted.
+                  Mochi gently nudges you throughout the workday to drink water, stretch your legs,
+                  and step away from your desk before you get exhausted.
                 </p>
               </div>
             </article>
@@ -185,7 +189,8 @@ export const LandingPage: React.FC = () => {
                 <small>03 · STAY FOCUSED</small>
                 <h3>Surfaces urgent emails and hides the noise.</h3>
                 <p>
-                  Mochi alerts you only when an important message needs your reply today, keeping newsletters and promotional spam out of your way.
+                  Mochi alerts you only when an important message needs your reply today, keeping
+                  newsletters and promotional spam out of your way.
                 </p>
               </div>
             </article>
