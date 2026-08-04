@@ -1158,22 +1158,66 @@ export function RoutinesTab(): JSX.Element {
                           fontSize: 12,
                         }}
                       >
-                        <span>🕒</span>
-                        {displayTimes.map((t) => (
-                          <span
-                            key={t}
-                            style={{
-                              fontSize: 11.5,
-                              fontWeight: 600,
-                              color: C.accent,
-                              background: '#251e30',
-                              padding: '1px 6px',
-                              borderRadius: 4,
-                            }}
-                          >
-                            {formatTime12h(t)}
-                          </span>
-                        ))}
+                        {(() => {
+                          if (displayTimes.length > 5) {
+                            const firstMins = parseMins(displayTimes[0]!);
+                            const secondMins = parseMins(displayTimes[1]!);
+                            const step = secondMins - firstMins;
+                            const start12 = formatTime12h(displayTimes[0]!);
+                            const end12 = formatTime12h(displayTimes[displayTimes.length - 1]!);
+                            const intervalLabel =
+                              step > 0
+                                ? step % 60 === 0
+                                  ? `Every ${step / 60}h`
+                                  : `Every ${step}m`
+                                : `${displayTimes.length} times`;
+
+                            return (
+                              <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                                <span
+                                  style={{
+                                    fontSize: 11.5,
+                                    fontWeight: 750,
+                                    color: C.accent,
+                                    background: 'rgba(242, 166, 179, 0.12)',
+                                    border: '1px solid rgba(242, 166, 179, 0.3)',
+                                    padding: '2px 8px',
+                                    borderRadius: 6,
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    gap: 5,
+                                  }}
+                                >
+                                  🔄 {intervalLabel} ({start12} – {end12})
+                                </span>
+                                <span style={{ fontSize: 11, color: C.dim }}>
+                                  ({displayTimes.length} times daily)
+                                </span>
+                              </div>
+                            );
+                          }
+
+                          return (
+                            <>
+                              <span>🕒</span>
+                              {displayTimes.map((t) => (
+                                <span
+                                  key={t}
+                                  style={{
+                                    fontSize: 11.5,
+                                    fontWeight: 600,
+                                    color: C.accent,
+                                    background: '#251e30',
+                                    padding: '1px 6px',
+                                    borderRadius: 4,
+                                  }}
+                                >
+                                  {formatTime12h(t)}
+                                </span>
+                              ))}
+                            </>
+                          );
+                        })()}
                         <span style={{ color: C.faint }}>·</span>
                         <span style={{ fontSize: 11.5, color: C.dim, fontWeight: 500 }}>
                           {describeDays(r.days)}
