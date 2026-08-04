@@ -625,7 +625,7 @@ export function Dashboard(): JSX.Element {
                 meetings would show a number that never reaches zero, which is
                 the one thing this view is for.
               */}
-              {t.id === 'today' && needsYou > 0 && (
+              {t.id === 'today' && needsYou.total > 0 && (
                 <span
                   style={{
                     fontSize: 11,
@@ -638,7 +638,7 @@ export function Dashboard(): JSX.Element {
                     color: active ? '#1a1420' : C.accent,
                   }}
                 >
-                  {needsYou}
+                  {needsYou.total}
                 </span>
               )}
             </button>
@@ -775,7 +775,9 @@ export function Dashboard(): JSX.Element {
             animation: 'fadeInMainTab 240ms cubic-bezier(0.16, 1, 0.3, 1)',
           }}
         >
-          {tab === 'today' && <TodayTab onSelectTab={(t) => setTab(t as TabId)} />}
+          {tab === 'today' && (
+            <TodayTab needsYou={needsYou} onSelectTab={(t) => setTab(t as TabId)} />
+          )}
           {tab === 'time' && <TimeTab />}
           {tab === 'tasks' && <TasksTab />}
           {tab === 'routines' && <RoutinesTab />}

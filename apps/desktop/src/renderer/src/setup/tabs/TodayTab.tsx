@@ -5,20 +5,20 @@ import {
   dueToday,
   elapsedMs,
   inProgress,
-  needsReplyReminder,
   upcoming,
   progressForToday,
   sortForDisplay,
   taskDay,
-  type CachedInboxItem,
   type CalendarEvent,
   type CalendarStatus,
   type Project,
+  type ReplyQueue,
   type Task,
   type TimerSnapshot,
   type WorkSession,
 } from '@mochi/core';
 import { button, C, card, dayKey, humanDuration, input, WEEKDAYS } from '../ui.js';
+import type { NeedsYou } from '../useNeedsYou.js';
 import { Icon, type IconName } from '../icons.js';
 
 /**
@@ -192,29 +192,26 @@ function ComingUp(): JSX.Element {
 /**
  * Mail that is actually waiting on you.
  *
- * Filtered by needsReplyReminder, the same predicate the governor uses to
- * decide whether an email is worth interrupting for — so this card and Mochi
- * never disagree about what counts as urgent.
+ * Rendered from the same `ReplyQueue` the nav badge counts, rather than fetching
+ * again. It used to do its own `listCached({ limit: 25 })`, apply its own filter,
+ * truncate to three — and then print `items.length` as "N WAITING", which is read
+ * *after* the truncation. So the badge said 5 and this card said 3 WAITING, and
+ * the card could not have said 4 no matter what was in the inbox.
+ *
+ * Showing fewer rows than exist is fine. Reporting fewer than exist is not, so the
+ * heading carries the real total and the footer says what is not on screen.
  */
-function NeedsReply(): JSX.Element {
-  const [connected, setConnected] = useState<boolean | null>(null);
-  const [items, setItems] = useState<readonly CachedInboxItem[]>([]);
+const PREVIEW_ROWS = 3;
 
-  const reload = useCallback(() => {
-    void window.mochi.gmail
-      .listCached({ sort: 'priority', limit: 25 })
-      .then((all) => setItems(all.filter(needsReplyReminder).slice(0, 3)))
-      .catch(() => setItems([]));
-  }, []);
-
-  useEffect(() => {
-    void window.mochi.gmail.status().then((s) => {
-      setConnected(s.connected);
-      if (s.connected) reload();
-    });
-    return window.mochi.gmail.onInboxChanged(() => reload());
-  }, [reload]);
-
+function NeedsReply({
+  queue,
+  connected,
+  onOpenGmail,
+}: {
+  queue: ReplyQueue;
+  connected: boolean | null;
+  onOpenGmail?: () => void;
+}): JSX.Element {
   if (connected !== true) {
     return (
       <LockedCard
@@ -224,6 +221,10 @@ function NeedsReply(): JSX.Element {
       />
     );
   }
+
+  const all = queue.groups.flatMap((group) => group.items);
+  const shown = all.slice(0, PREVIEW_ROWS);
+  const hidden = all.length - shown.length;
 
   return (
     <div style={{ ...card, flex: 1 }}>
@@ -236,21 +237,21 @@ function NeedsReply(): JSX.Element {
         }}
       >
         <strong style={{ fontSize: 13 }}>Needs a reply</strong>
-        {items.length > 0 && (
+        {all.length > 0 && (
           <span style={{ fontSize: 10.5, color: C.faint, letterSpacing: 0.4 }}>
-            {items.length} WAITING
+            {all.length} WAITING
           </span>
         )}
       </div>
 
-      {items.length === 0 ? (
+      {all.length === 0 ? (
         <div style={{ fontSize: 12, color: C.dim, lineHeight: 1.5 }}>
           Nothing urgent. The rest of the inbox can wait.
         </div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-          {items.map((email) => (
-            <div key={email.emailId} style={{ display: 'flex', gap: 8, alignItems: 'baseline' }}>
+          {shown.map((item) => (
+            <div key={item.emailId} style={{ display: 'flex', gap: 8, alignItems: 'baseline' }}>
               <span
                 style={{
                   width: 5,
@@ -258,7 +259,7 @@ function NeedsReply(): JSX.Element {
                   borderRadius: 5,
                   flexShrink: 0,
                   transform: 'translateY(-1px)',
-                  background: email.priority?.tier === 'urgent' ? C.warn : C.accent,
+                  background: item.tier === 'urgent' ? C.warn : C.accent,
                 }}
               />
               <div style={{ minWidth: 0, flex: 1 }}>
@@ -272,7 +273,7 @@ function NeedsReply(): JSX.Element {
                     whiteSpace: 'nowrap',
                   }}
                 >
-                  {email.subject}
+                  {item.subject}
                 </div>
                 <div
                   style={{
@@ -283,18 +284,39 @@ function NeedsReply(): JSX.Element {
                     whiteSpace: 'nowrap',
                   }}
                 >
-                  {email.fromName || email.fromAddress}
+                  {item.who} · {item.age}
                 </div>
               </div>
             </div>
           ))}
+
+          {/* Says what is off screen, so the heading and the list cannot disagree. */}
+          <button
+            type="button"
+            onClick={onOpenGmail}
+            style={{
+              ...button('ghost'),
+              marginTop: 2,
+              padding: '4px 10px',
+              fontSize: 11,
+              alignSelf: 'flex-start',
+            }}
+          >
+            {hidden > 0 ? `${hidden} more · open Needs Reply` : 'Open Needs Reply'}
+          </button>
         </div>
       )}
     </div>
   );
 }
 
-export function TodayTab({ onSelectTab }: { onSelectTab?: (tab: string) => void }): JSX.Element {
+export function TodayTab({
+  onSelectTab,
+  needsYou,
+}: {
+  onSelectTab?: (tab: string) => void;
+  needsYou: NeedsYou;
+}): JSX.Element {
   const [sessions, setSessions] = useState<readonly WorkSession[]>([]);
   const [projects, setProjects] = useState<readonly Project[]>([]);
   const [tasks, setTasks] = useState<readonly Task[]>([]);
@@ -640,7 +662,11 @@ export function TodayTab({ onSelectTab }: { onSelectTab?: (tab: string) => void 
       {/* ---- what is waiting ---- */}
       <div style={{ display: 'flex', gap: 10, marginBottom: 14, alignItems: 'stretch' }}>
         <ComingUp />
-        <NeedsReply />
+        <NeedsReply
+          queue={needsYou.replies}
+          connected={needsYou.gmailConnected}
+          onOpenGmail={() => onSelectTab?.('gmail')}
+        />
       </div>
 
       {/* ---- week ---- */}

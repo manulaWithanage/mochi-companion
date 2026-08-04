@@ -1,21 +1,44 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { buildReplyQueue, dueToday, type CachedInboxItem, type Task } from '@mochi/core';
+import {
+  buildReplyQueue,
+  dueToday,
+  type CachedInboxItem,
+  type ReplyQueue,
+  type Task,
+} from '@mochi/core';
 
 /**
- * How much is waiting on you, for the Overview badge.
+ * How much is waiting on you — counted once, for everyone who shows it.
  *
- * Owned by the Dashboard rather than by a tab, because the badge has to be right
- * while you are looking at somewhere else. A count that only becomes correct once
- * you visit the page it describes is worse than no count.
+ * The nav badge said 5 while the Overview page showed 4, because the badge and
+ * the "Needs a reply" card each did their own fetch and their own filtering:
+ * different `limit` (100 against 25), and the card omitted the replied/dismissed
+ * check that `buildReplyQueue` applies. Worse, the card's own "N WAITING" label
+ * was read from an array it had already truncated to three, so it could never
+ * report more than three no matter how many were waiting.
  *
- * Tasks due plus replies owed — both things you can finish. Meetings are
- * deliberately excluded: you cannot complete one, so counting them would give a
- * number that never reaches zero, and a badge that never clears is trained
- * wallpaper within a week.
+ * So this returns the whole breakdown rather than a number, and the page renders
+ * from the same object the badge counts. Two independent counts of the same thing
+ * will drift; there is no version of that which stays right.
+ *
+ * Owned by the Dashboard, because the badge has to be correct while you are
+ * looking at a different tab — a count that only becomes true once you visit the
+ * page it describes is worse than no count.
  */
-export function useNeedsYou(): number {
+
+export interface NeedsYou {
+  /** Badge number: finishable work, tasks plus replies. */
+  readonly total: number;
+  readonly dueTasks: number;
+  readonly replies: ReplyQueue;
+  /** `null` until asked — not the same as "not connected". */
+  readonly gmailConnected: boolean | null;
+}
+
+export function useNeedsYou(): NeedsYou {
   const [tasks, setTasks] = useState<readonly Task[]>([]);
   const [emails, setEmails] = useState<readonly CachedInboxItem[]>([]);
+  const [gmailConnected, setGmailConnected] = useState<boolean | null>(null);
   // Ages and the day boundary both move on their own.
   const [tick, setTick] = useState(() => Date.now());
 
@@ -31,6 +54,7 @@ export function useNeedsYou(): number {
     const offTasks = window.mochi.tasks.onChange(setTasks);
 
     void window.mochi.gmail.status().then((s) => {
+      setGmailConnected(s.connected);
       if (s.connected) reloadEmails();
     });
     const offInbox = window.mochi.gmail.onInboxChanged(() => reloadEmails());
@@ -45,6 +69,15 @@ export function useNeedsYou(): number {
 
   return useMemo(() => {
     const now = new Date(tick);
-    return dueToday(tasks, now).length + buildReplyQueue(emails, tick).total;
-  }, [tasks, emails, tick]);
+    const replies = buildReplyQueue(emails, tick);
+    const dueTasks = dueToday(tasks, now).length;
+    return {
+      // Meetings are excluded on purpose: you cannot finish one, so counting them
+      // would give a badge that never reaches zero.
+      total: dueTasks + replies.total,
+      dueTasks,
+      replies,
+      gmailConnected,
+    };
+  }, [tasks, emails, tick, gmailConnected]);
 }
