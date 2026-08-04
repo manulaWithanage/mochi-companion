@@ -293,7 +293,7 @@ function NeedsReply(): JSX.Element {
   );
 }
 
-export function TodayTab(): JSX.Element {
+export function TodayTab({ onSelectTab }: { onSelectTab?: (tab: string) => void }): JSX.Element {
   const [sessions, setSessions] = useState<readonly WorkSession[]>([]);
   const [projects, setProjects] = useState<readonly Project[]>([]);
   const [tasks, setTasks] = useState<readonly Task[]>([]);
@@ -379,29 +379,91 @@ export function TodayTab(): JSX.Element {
                 : 'Mochi is quietly observing your workday, keeping your priorities clear and reminding you to stay balanced.'}
             </p>
           </div>
-          <div style={{ padding: '6px 12px', background: 'rgba(124,108,169,0.18)', border: '1px solid rgba(124,108,169,0.3)', borderRadius: 9, fontSize: 12, fontWeight: 650, color: C.accent, whiteSpace: 'nowrap' }}>
-            ⌨️ Open Overlay: <code style={{ background: 'rgba(0,0,0,0.3)', padding: '2px 6px', borderRadius: 4, fontFamily: 'monospace' }}>Alt + M</code>
-          </div>
+          <button
+            onClick={() => void window.mochi.overlay.show()}
+            title="Click to open overlay now"
+            style={{
+              padding: '6px 12px',
+              background: 'rgba(124,108,169,0.22)',
+              border: '1px solid rgba(242,166,179,0.35)',
+              borderRadius: 9,
+              fontSize: 12,
+              fontWeight: 650,
+              color: C.text,
+              whiteSpace: 'nowrap',
+              cursor: 'pointer',
+              transition: 'all 150ms ease',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = 'rgba(242,166,179,0.25)';
+              e.currentTarget.style.transform = 'translateY(-1px)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = 'rgba(124,108,169,0.22)';
+              e.currentTarget.style.transform = 'translateY(0)';
+            }}
+          >
+            ⌨️ Open Overlay: <code style={{ background: 'rgba(0,0,0,0.35)', padding: '2px 6px', borderRadius: 4, fontFamily: 'monospace', color: C.accent }}>Alt + M</code>
+          </button>
         </div>
 
-        {/* 4 Quick Action Guide Cards */}
+        {/* 4 Clickable Quick Action Guide Cards */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10, marginTop: 16 }}>
-          <div style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 10, padding: '12px 13px' }}>
-            <div style={{ fontSize: 12.5, fontWeight: 650, color: C.text, marginBottom: 4 }}>📌 1. Top Priorities</div>
-            <div style={{ fontSize: 11, color: C.dim, lineHeight: 1.35 }}>Add your top 3 tasks so you know where to start without feeling overwhelmed.</div>
-          </div>
-          <div style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 10, padding: '12px 13px' }}>
-            <div style={{ fontSize: 12.5, fontWeight: 650, color: C.text, marginBottom: 4 }}>⏱️ 2. Time Tracking</div>
-            <div style={{ fontSize: 11, color: C.dim, lineHeight: 1.35 }}>Track focus sessions & see where your screen time goes in real-time.</div>
-          </div>
-          <div style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 10, padding: '12px 13px' }}>
-            <div style={{ fontSize: 12.5, fontWeight: 650, color: C.text, marginBottom: 4 }}>💧 3. Wellness Routines</div>
-            <div style={{ fontSize: 11, color: C.dim, lineHeight: 1.35 }}>Water & stretch reminders protect your health while working at your PC.</div>
-          </div>
-          <div style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 10, padding: '12px 13px' }}>
-            <div style={{ fontSize: 12.5, fontWeight: 650, color: C.text, marginBottom: 4 }}>🤖 4. AI & Smart Inbox</div>
-            <div style={{ fontSize: 11, color: C.dim, lineHeight: 1.35 }}>Connect LM Studio or OpenAI in Settings to flag urgent emails & drafts.</div>
-          </div>
+          {[
+            {
+              id: 'tasks',
+              title: '📌 1. Top Priorities',
+              desc: 'Add your top 3 tasks so you know where to start without feeling overwhelmed.',
+              action: () => onSelectTab?.('tasks'),
+            },
+            {
+              id: 'time',
+              title: '⏱️ 2. Time Tracking',
+              desc: 'Track focus sessions & see where your screen time goes in real-time.',
+              action: () => onSelectTab?.('time'),
+            },
+            {
+              id: 'routines',
+              title: '💧 3. Wellness Routines',
+              desc: 'Water & stretch reminders protect your health while working at your PC.',
+              action: () => onSelectTab?.('routines'),
+            },
+            {
+              id: 'settings',
+              title: '🤖 4. AI & Smart Inbox',
+              desc: 'Connect LM Studio or OpenAI in Settings to flag urgent emails & drafts.',
+              action: () => onSelectTab?.('settings'),
+            },
+          ].map((card) => (
+            <button
+              key={card.id}
+              onClick={card.action}
+              style={{
+                textAlign: 'left',
+                background: 'rgba(255,255,255,0.04)',
+                border: '1px solid rgba(255,255,255,0.09)',
+                borderRadius: 10,
+                padding: '12px 13px',
+                cursor: 'pointer',
+                transition: 'all 160ms ease',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = 'rgba(242,166,179,0.1)';
+                e.currentTarget.style.borderColor = 'rgba(242,166,179,0.35)';
+                e.currentTarget.style.transform = 'translateY(-2px)';
+                e.currentTarget.style.boxShadow = '0 6px 16px rgba(10,8,16,0.3)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = 'rgba(255,255,255,0.04)';
+                e.currentTarget.style.borderColor = 'rgba(255,255,255,0.09)';
+                e.currentTarget.style.transform = 'translateY(0)';
+                e.currentTarget.style.boxShadow = 'none';
+              }}
+            >
+              <div style={{ fontSize: 12.5, fontWeight: 650, color: C.text, marginBottom: 4 }}>{card.title}</div>
+              <div style={{ fontSize: 11, color: C.dim, lineHeight: 1.35 }}>{card.desc}</div>
+            </button>
+          ))}
         </div>
       </div>
 

@@ -731,7 +731,7 @@ export function Dashboard(): JSX.Element {
       {/* ---- content ---- */}
       <main style={{ flex: 1, overflowY: 'auto', padding: '28px 36px', boxSizing: 'border-box' }}>
         <div style={{ maxWidth: 1140, margin: '0 auto' }}>
-          {tab === 'today' && <TodayTab />}
+          {tab === 'today' && <TodayTab onSelectTab={(t) => setTab(t as TabId)} />}
           {tab === 'time' && <TimeTab />}
           {tab === 'tasks' && <TasksTab />}
           {tab === 'routines' && <RoutinesTab />}
