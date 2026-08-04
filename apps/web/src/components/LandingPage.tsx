@@ -118,6 +118,7 @@ export const LandingPage: React.FC = () => {
                   <i />
                   <i />
                 </div>
+                <div className="promise-preview__footer">2 focus blocks, ready when you are</div>
               </div>
               <div className="promise-card__copy">
                 <small>01 · START CLEAR</small>
@@ -142,6 +143,9 @@ export const LandingPage: React.FC = () => {
                   <span>
                     <b>🌿</b> Take a 5-min stretch break
                   </span>
+                </div>
+                <div className="promise-preview__footer promise-preview__footer--routine">
+                  <span>☼</span> A small reset is ready at 2:30 PM
                 </div>
               </div>
               <div className="promise-card__copy">
@@ -172,6 +176,9 @@ export const LandingPage: React.FC = () => {
                     <strong>Design review feedback</strong>
                     <em>A few final notes</em>
                   </span>
+                </div>
+                <div className="promise-preview__footer promise-preview__footer--mail">
+                  Quietly sorted. No need to chase the inbox.
                 </div>
               </div>
               <div className="promise-card__copy">
