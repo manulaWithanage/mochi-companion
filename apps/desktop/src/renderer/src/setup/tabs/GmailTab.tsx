@@ -7,7 +7,7 @@
  * No Google Cloud required. Zero monthly fees.
  */
 
-import { useState, useEffect, useCallback, type JSX } from 'react';
+import { useState, useEffect, useCallback, useRef, type JSX } from 'react';
 import type {
   CachedInboxItem,
   EmailCategory,
@@ -16,11 +16,12 @@ import type {
   GmailSyncStatus,
   GmailTone,
 } from '@mochi/core';
-import { CATEGORIES } from '@mochi/core';
+import { buildReplyQueue, CATEGORIES } from '@mochi/core';
 import { C, card, label, input, button, h2, sub } from '../ui.js';
 import { GmailSettingsPanel } from './GmailSettingsPanel.js';
+import { GmailRepliesPanel } from './GmailRepliesPanel.js';
 
-type View = 'inbox' | 'draft' | 'settings';
+type View = 'replies' | 'inbox' | 'draft' | 'settings';
 
 interface DraftState {
   emailId: string;
@@ -31,7 +32,7 @@ interface DraftState {
   suggestedSubject: string;
 }
 
-export function GmailTab({ onSelectTab }: { onSelectTab?: (tab: string) => void }): JSX.Element {
+export function GmailTab(): JSX.Element {
   const [status, setStatus] = useState<GmailStatus | null>(null);
   const [emailInput, setEmailInput] = useState('');
   const [passInput, setPassInput] = useState('');
@@ -50,8 +51,20 @@ export function GmailTab({ onSelectTab }: { onSelectTab?: (tab: string) => void 
   // several times faster.
   const [active, setActive] = useState<EmailCategory>('primary');
   const [counts, setCounts] = useState<ReadonlyMap<EmailCategory, number>>(new Map());
+  /**
+   * Every cached email, across categories.
+   *
+   * The reply queue is not per-category — a mail needing an answer is owed
+   * whether Gmail filed it under Primary or Updates — and loadCached already
+   * fetches the lot to compute the counts, so this costs no extra round trip.
+   */
+  const [allEmails, setAllEmails] = useState<readonly CachedInboxItem[]>([]);
+  const [modelReady, setModelReady] = useState(false);
+  // Ages are relative, so they go stale unless something re-renders.
+  const [tick, setTick] = useState(() => Date.now());
 
   const [view, setView] = useState<View>('inbox');
+  const landed = useRef(false);
   const [draft, setDraft] = useState<DraftState | null>(null);
   const [generating, setGenerating] = useState(false);
   const [generateError, setGenerateError] = useState<string | null>(null);
@@ -87,6 +100,7 @@ export function GmailTab({ onSelectTab }: { onSelectTab?: (tab: string) => void 
   const loadCached = useCallback(
     async (category: EmailCategory, sort: 'priority' | 'recent'): Promise<void> => {
       const all = await window.mochi.gmail.listCached({ sort, limit: 100 });
+      setAllEmails(all);
       setCounts(
         new Map(
           CATEGORIES.map((candidate) => [
@@ -116,6 +130,15 @@ export function GmailTab({ onSelectTab }: { onSelectTab?: (tab: string) => void 
       disposed = true;
     };
   }, [loadCached]);
+
+  useEffect(() => {
+    void window.mochi.llm
+      .status()
+      .then((st) => setModelReady(st.ready))
+      .catch(() => setModelReady(false));
+    const clock = setInterval(() => setTick(Date.now()), 60_000);
+    return () => clearInterval(clock);
+  }, []);
 
   useEffect(() => {
     const apply = (settings: GmailAiSettings): void => {
@@ -183,6 +206,25 @@ export function GmailTab({ onSelectTab }: { onSelectTab?: (tab: string) => void 
     setActive(category);
     void loadCached(category, sortMode);
   };
+
+  // Built from every cached email rather than the visible category: a reply is
+  // owed regardless of which folder Gmail filed it in.
+  const replyQueue = buildReplyQueue(allEmails, tick);
+
+  /*
+   * Open on what needs answering, once.
+   *
+   * Guarded by a ref rather than run on every load: re-selecting the tab each
+   * time the inbox syncs would drag the user out of whatever they were reading.
+   * And only when the list is non-empty — landing on a blank checklist is a worse
+   * first impression than landing on the inbox.
+   */
+  useEffect(() => {
+    if (landed.current) return;
+    if (allEmails.length === 0) return;
+    landed.current = true;
+    if (replyQueue.total > 0) setView('replies');
+  }, [allEmails.length, replyQueue.total]);
 
   const handleGenerate = async (email: CachedInboxItem): Promise<void> => {
     setGenerating(true);
@@ -595,7 +637,7 @@ export function GmailTab({ onSelectTab }: { onSelectTab?: (tab: string) => void 
           marginBottom: 16,
         }}
       >
-        {(['inbox', 'settings'] as const).map((tab) => {
+        {(['replies', 'inbox', 'settings'] as const).map((tab) => {
           const selected = view === tab;
           return (
             <button
@@ -613,13 +655,45 @@ export function GmailTab({ onSelectTab }: { onSelectTab?: (tab: string) => void 
                 cursor: 'pointer',
               }}
             >
-              {tab === 'inbox' ? 'Inbox' : 'Settings'}
+              {tab === 'replies' ? 'Needs Reply' : tab === 'inbox' ? 'Inbox' : 'Settings'}
+              {tab === 'replies' && replyQueue.total > 0 && (
+                <span
+                  style={{
+                    marginLeft: 7,
+                    fontSize: 11,
+                    fontWeight: 650,
+                    padding: '1px 6px',
+                    borderRadius: 999,
+                    background: selected ? C.accent : 'rgba(242, 166, 179, 0.18)',
+                    color: selected ? '#1a1420' : C.accent,
+                  }}
+                >
+                  {replyQueue.total}
+                </span>
+              )}
             </button>
           );
         })}
       </div>
     </>
   );
+
+  if (view === 'replies') {
+    return (
+      <div>
+        {connectedHeader}
+        <GmailRepliesPanel
+          queue={replyQueue}
+          cachedCount={allEmails.length}
+          modelReady={modelReady}
+          findEmail={(id) => allEmails.find((e) => e.emailId === id)}
+          onDraft={openDraft}
+          onHandled={(id) => void handleDismissReminder(id)}
+          onSnooze={(id) => void handleSnoozeReminder(id)}
+        />
+      </div>
+    );
+  }
 
   if (view === 'settings') {
     return (
@@ -635,26 +709,21 @@ export function GmailTab({ onSelectTab }: { onSelectTab?: (tab: string) => void 
   }
 
   // ---- Connected + Inbox view ----
-  const actionNeeded = emails.filter(
-    (e) =>
-      e.priority?.replyLikely === true ||
-      e.priority?.tier === 'urgent' ||
-      e.priority?.tier === 'review',
-  );
 
   return (
     <div>
       {connectedHeader}
 
       {/*
-        The priority view lives on the Today tab now, not here.
-        This used to be a hero "EXECUTIVE AI ACTION DECK" claiming an
-        "Estimated response time" of count x 3 minutes — a number nothing
-        measured — above a button labelled "Auto-Draft All Urgent (6)" that
-        called slice(0, 3) and drafted three. An inbox is for reading mail; what
-        needs answering today is one merged list somewhere else.
+        A pointer to the Needs Reply tab, not a command centre.
+
+        This was a hero "EXECUTIVE AI ACTION DECK" claiming an "Estimated
+        response time" of count x 3 minutes — a number nothing measured — above a
+        button labelled "Auto-Draft All Urgent (6)" that called slice(0, 3) and
+        drafted three. An inbox is for reading mail; what you owe a reply to is
+        its own list one tab over.
       */}
-      {actionNeeded.length > 0 && (
+      {replyQueue.total > 0 && (
         <div
           style={{
             ...card,
@@ -667,23 +736,20 @@ export function GmailTab({ onSelectTab }: { onSelectTab?: (tab: string) => void 
           }}
         >
           <span style={{ fontSize: 12.5, color: C.dim }}>
-            {actionNeeded.length} {actionNeeded.length === 1 ? 'thread looks' : 'threads look'} like
-            {actionNeeded.length === 1 ? ' it needs' : ' they need'} a reply.
+            {replyQueue.total} {replyQueue.total === 1 ? 'reply is' : 'replies are'} waiting on you.
           </span>
-          {onSelectTab !== undefined && (
-            <button
-              type="button"
-              onClick={() => onSelectTab('today')}
-              style={{
-                ...button('ghost'),
-                padding: '5px 12px',
-                fontSize: 11.5,
-                whiteSpace: 'nowrap',
-              }}
-            >
-              See them in Today
-            </button>
-          )}
+          <button
+            type="button"
+            onClick={() => setView('replies')}
+            style={{
+              ...button('ghost'),
+              padding: '5px 12px',
+              fontSize: 11.5,
+              whiteSpace: 'nowrap',
+            }}
+          >
+            Open Needs Reply
+          </button>
         </div>
       )}
 

@@ -32,24 +32,37 @@ export function priorityTier(score: number): EmailPriorityTier {
   return 'low';
 }
 
+/**
+ * What each signal means, in words a person would read.
+ *
+ * Exported because the UI shows these as chips. A signal list is structurally
+ * incapable of being vacuous, which the free-prose `reason` is not — the model
+ * sometimes returns "Urgent request for immediate attention" for a mail titled
+ * "Urgent: action required now". Duplicating these strings in the renderer would
+ * let the two drift.
+ */
+export const SIGNAL_LABELS: Readonly<Record<PrioritySignal, string>> = {
+  vip_sender: 'VIP sender',
+  direct_recipient: 'sent directly to you',
+  important_label: 'marked important by Gmail',
+  deadline: 'time-sensitive language',
+  action_requested: 'asks you to take action',
+  question: 'contains a question',
+  active_conversation: 'active conversation',
+  automated_sender: 'automated sender',
+  bulk_sender: 'bulk email',
+  low_attention_category: 'low-attention Gmail category',
+};
+
+/** `llm_refined` is appended by the triage service, so it is not a scorer signal. */
+export function describeSignal(signal: string): string {
+  if (signal === 'llm_refined') return 'checked by the model';
+  return SIGNAL_LABELS[signal as PrioritySignal] ?? signal;
+}
+
 function reasonFor(signals: readonly PrioritySignal[]): string {
-  const labels: Partial<Record<PrioritySignal, string>> = {
-    vip_sender: 'VIP sender',
-    direct_recipient: 'sent directly to you',
-    important_label: 'marked important by Gmail',
-    deadline: 'time-sensitive language',
-    action_requested: 'asks you to take action',
-    question: 'contains a question',
-    active_conversation: 'active conversation',
-    automated_sender: 'automated sender',
-    bulk_sender: 'bulk email',
-    low_attention_category: 'low-attention Gmail category',
-  };
   if (signals.length === 0) return 'No strong priority signals';
-  return signals
-    .slice(0, 3)
-    .map((signal) => labels[signal] ?? signal)
-    .join(', ');
+  return signals.slice(0, 3).map(describeSignal).join(', ');
 }
 
 export function scoreEmailPriority(

@@ -1,32 +1,34 @@
 import { useCallback, useEffect, useMemo, useState, type JSX } from 'react';
 import {
+  clockLabel,
+  describeLead,
+  dueToday,
   elapsedMs,
+  inProgress,
+  needsReplyReminder,
+  upcoming,
   progressForToday,
-  type AgendaItem,
+  sortForDisplay,
+  taskDay,
+  type CachedInboxItem,
+  type CalendarEvent,
+  type CalendarStatus,
   type Project,
+  type Task,
   type TimerSnapshot,
   type WorkSession,
 } from '@mochi/core';
 import { button, C, card, dayKey, humanDuration, input, WEEKDAYS } from '../ui.js';
-import type { AgendaSources } from '../useAgenda.js';
+import { Icon, type IconName } from '../icons.js';
 
 /**
- * The day as one list you can finish.
+ * The daily overview: time tracked, today's checklist, and what is coming.
  *
- * This used to be a dashboard: a welcome banner, four tutorial cards that never
- * went away, three stat tiles, a task list, and two more cards for mail and
- * calendar. Every part was reasonable and the sum was not, because answering
- * "what do I need to do today" still meant reading four separate lists and
- * holding the result in your head.
- *
- * Now there is one merged list of work, and a quiet timeline of things that
- * merely happen. The split is load-bearing and lives in `buildAgenda`: only
- * finishable things are counted, so the number on screen can actually reach
- * zero. That is the one thing this view offers that an inbox never can.
- *
- * **Still no invented data.** An unconnected calendar says so rather than
- * rendering an empty timeline, because "nothing on today" and "no calendar" look
- * identical when both are blank and only one is worth acting on.
+ * The upcoming and inbox cards are shown in a locked state rather than
+ * hidden. Progressive unlock only works if the locked thing states its own
+ * requirement — and, importantly, they show **no invented data**. A fake
+ * meeting that looks real is worse than an empty card, because nobody can
+ * tell which is which once one of them is genuine.
  */
 
 const Stat = ({
@@ -39,175 +41,289 @@ const Stat = ({
   accent?: boolean;
 }): JSX.Element => (
   <div style={{ ...card, flex: 1, padding: '13px 15px' }}>
-    <div style={{ fontSize: 22, fontWeight: 650, color: accent === true ? C.accent : C.text }}>
+    <div style={{ fontSize: 24, fontWeight: 650, color: accent === true ? C.accent : C.text }}>
       {value}
     </div>
     <div style={{ fontSize: 11.5, color: C.dim, marginTop: 2 }}>{caption}</div>
   </div>
 );
 
-/** A source that is not connected, said plainly rather than left looking empty. */
-const NotConnected = ({ what, why }: { what: string; why: string }): JSX.Element => (
-  <div
-    style={{
-      fontSize: 12,
-      color: C.faint,
-      padding: '9px 12px',
-      border: `1px dashed ${C.border}`,
-      borderRadius: 9,
-      lineHeight: 1.5,
-    }}
-  >
-    <strong style={{ color: C.dim, fontWeight: 600 }}>{what} not connected.</strong> {why}
+/** A capability that needs a connection, shown honestly rather than faked. */
+const LockedCard = ({
+  title,
+  needs,
+  examples,
+}: {
+  title: string;
+  needs: string;
+  examples: string;
+}): JSX.Element => (
+  <div style={{ ...card, flex: 1, borderStyle: 'dashed', background: 'transparent' }}>
+    <div
+      style={{
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 6,
+      }}
+    >
+      <strong style={{ fontSize: 13 }}>{title}</strong>
+      <span style={{ fontSize: 10.5, color: C.faint, letterSpacing: 0.4 }}>NEEDS {needs}</span>
+    </div>
+    <div style={{ fontSize: 12, color: C.dim, lineHeight: 1.5 }}>{examples}</div>
   </div>
 );
 
-const KIND_LABEL: Record<AgendaItem['kind'], string> = {
-  email: 'email',
-  task: 'task',
-  event: 'calendar',
-};
-
 /**
- * One row of work.
+ * What is coming, once a calendar is connected.
  *
- * A single primary action, and nothing else competing with it. The previous Gmail
- * design put seven controls on every row — read, draft, three reply styles,
- * snooze, dismiss — and with six rows that is forty-two things at identical
- * weight, so nothing tells you where to start. One tick box and at most one
- * button is the whole vocabulary here.
+ * Falls back to the locked card rather than an empty one: "nothing today" and
+ * "no calendar connected" look identical if both render as a blank list, and
+ * only one of them is worth acting on.
  */
-function WorkRow({
-  item,
-  onDone,
-  action,
-}: {
-  item: AgendaItem;
-  onDone: () => void;
-  action?: { label: string; run: () => void; title: string };
-}): JSX.Element {
-  const [hover, setHover] = useState(false);
+function ComingUp(): JSX.Element {
+  const [status, setStatus] = useState<CalendarStatus | null>(null);
+  const [events, setEvents] = useState<readonly CalendarEvent[]>([]);
+  const [now, setNow] = useState(() => Date.now());
+
+  const reload = useCallback(() => {
+    void window.mochi.calendar.events().then(setEvents);
+  }, []);
+
+  useEffect(() => {
+    void window.mochi.calendar.status().then(setStatus);
+    reload();
+    return window.mochi.calendar.onChange((next) => {
+      setStatus(next);
+      reload();
+    });
+  }, [reload]);
+
+  // The countdown has to move on its own, or "in 5 min" is still on screen
+  // twenty minutes later.
+  useEffect(() => {
+    const id = setInterval(() => setNow(Date.now()), 30_000);
+    return () => clearInterval(id);
+  }, []);
+
+  if (status?.connected !== true) {
+    return (
+      <LockedCard
+        title="Coming up"
+        needs="CALENDAR"
+        examples="Your next meeting, with a reminder five minutes before and a one-click join."
+      />
+    );
+  }
+
+  const running = inProgress(events, now);
+  const next = upcoming(events, now, 12 * 60 * 60_000).slice(0, 3);
+  const current = running[0];
 
   return (
-    <div
-      onMouseEnter={() => setHover(true)}
-      onMouseLeave={() => setHover(false)}
-      style={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: 11,
-        padding: '10px 12px',
-        borderRadius: 9,
-        background: hover ? 'rgba(255,255,255,0.035)' : 'transparent',
-        transition: 'background 140ms ease',
-      }}
-    >
-      <input
-        type="checkbox"
-        checked={false}
-        onChange={onDone}
-        title={item.kind === 'email' ? 'Mark handled — stops the reminder' : 'Mark done'}
-        style={{ accentColor: C.accent, width: 15, height: 15, cursor: 'pointer', flexShrink: 0 }}
-      />
-
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <div
-          style={{
-            fontSize: 13,
-            color: C.text,
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
-            whiteSpace: 'nowrap',
-          }}
-        >
-          {item.title}
-        </div>
-        <div style={{ fontSize: 11, color: item.late ? C.warn : C.faint, marginTop: 2 }}>
-          {KIND_LABEL[item.kind]} · {item.detail}
-        </div>
+    <div style={{ ...card, flex: 1 }}>
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          marginBottom: 8,
+        }}
+      >
+        <strong style={{ fontSize: 13 }}>Coming up</strong>
+        {status.error !== undefined && (
+          <span style={{ fontSize: 10.5, color: C.warn, letterSpacing: 0.4 }}>OUT OF DATE</span>
+        )}
       </div>
 
-      {action !== undefined && (
-        <button
-          type="button"
-          onClick={action.run}
-          title={action.title}
-          style={{ ...button('ghost'), padding: '4px 11px', fontSize: 11.5, flexShrink: 0 }}
+      {current !== undefined && (
+        <div
+          style={{
+            border: `1px solid rgba(242,166,179,0.3)`,
+            background: 'rgba(242,166,179,0.07)',
+            borderRadius: 9,
+            padding: '8px 10px',
+            marginBottom: 8,
+          }}
         >
-          {action.label}
-        </button>
+          <div style={{ fontSize: 10.5, color: C.accent, letterSpacing: 0.4, marginBottom: 2 }}>
+            NOW
+          </div>
+          <div style={{ fontSize: 13, color: C.text }}>{current.title}</div>
+          <div style={{ fontSize: 11.5, color: C.dim, marginTop: 2 }}>
+            until {clockLabel(current.endsAt)}
+            {current.conferenceUrl !== undefined && ' · joinable'}
+          </div>
+        </div>
+      )}
+
+      {next.length === 0 && current === undefined ? (
+        <div style={{ fontSize: 12, color: C.dim, lineHeight: 1.5 }}>
+          Nothing else scheduled today. The rest of the day is yours.
+        </div>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
+          {next.map((event) => (
+            <div key={event.id} style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
+              <span
+                style={{
+                  fontSize: 11.5,
+                  color: C.faint,
+                  minWidth: 52,
+                  fontVariantNumeric: 'tabular-nums',
+                }}
+              >
+                {clockLabel(event.startsAt)}
+              </span>
+              <span style={{ fontSize: 12.5, color: C.text, flex: 1, lineHeight: 1.4 }}>
+                {event.title}
+              </span>
+              <span style={{ fontSize: 11, color: C.dim, whiteSpace: 'nowrap' }}>
+                {describeLead(event.startsAt - now)}
+              </span>
+            </div>
+          ))}
+        </div>
       )}
     </div>
   );
 }
 
-/** Something that happens whether or not you do anything. No tick box. */
-function ScheduleRow({ item }: { item: AgendaItem }): JSX.Element {
-  const now = item.detail === 'on now';
+/**
+ * Mail that is actually waiting on you.
+ *
+ * Filtered by needsReplyReminder, the same predicate the governor uses to
+ * decide whether an email is worth interrupting for — so this card and Mochi
+ * never disagree about what counts as urgent.
+ */
+function NeedsReply(): JSX.Element {
+  const [connected, setConnected] = useState<boolean | null>(null);
+  const [items, setItems] = useState<readonly CachedInboxItem[]>([]);
+
+  const reload = useCallback(() => {
+    void window.mochi.gmail
+      .listCached({ sort: 'priority', limit: 25 })
+      .then((all) => setItems(all.filter(needsReplyReminder).slice(0, 3)))
+      .catch(() => setItems([]));
+  }, []);
+
+  useEffect(() => {
+    void window.mochi.gmail.status().then((s) => {
+      setConnected(s.connected);
+      if (s.connected) reload();
+    });
+    return window.mochi.gmail.onInboxChanged(() => reload());
+  }, [reload]);
+
+  if (connected !== true) {
+    return (
+      <LockedCard
+        title="Needs a reply"
+        needs="EMAIL"
+        examples="Threads Mochi thinks are urgent, so the rest of the inbox can wait."
+      />
+    );
+  }
+
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '8px 12px' }}>
-      <span
+    <div style={{ ...card, flex: 1 }}>
+      <div
         style={{
-          fontSize: 11.5,
-          color: now ? C.accent : C.faint,
-          fontVariantNumeric: 'tabular-nums',
-          minWidth: 52,
-          fontWeight: now ? 650 : 400,
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          marginBottom: 8,
         }}
       >
-        {item.detail}
-      </span>
-      <span
-        style={{
-          fontSize: 13,
-          color: now ? C.text : C.dim,
-          overflow: 'hidden',
-          textOverflow: 'ellipsis',
-          whiteSpace: 'nowrap',
-        }}
-      >
-        {item.title}
-      </span>
+        <strong style={{ fontSize: 13 }}>Needs a reply</strong>
+        {items.length > 0 && (
+          <span style={{ fontSize: 10.5, color: C.faint, letterSpacing: 0.4 }}>
+            {items.length} WAITING
+          </span>
+        )}
+      </div>
+
+      {items.length === 0 ? (
+        <div style={{ fontSize: 12, color: C.dim, lineHeight: 1.5 }}>
+          Nothing urgent. The rest of the inbox can wait.
+        </div>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          {items.map((email) => (
+            <div key={email.emailId} style={{ display: 'flex', gap: 8, alignItems: 'baseline' }}>
+              <span
+                style={{
+                  width: 5,
+                  height: 5,
+                  borderRadius: 5,
+                  flexShrink: 0,
+                  transform: 'translateY(-1px)',
+                  background: email.priority?.tier === 'urgent' ? C.warn : C.accent,
+                }}
+              />
+              <div style={{ minWidth: 0, flex: 1 }}>
+                <div
+                  style={{
+                    fontSize: 12.5,
+                    color: C.text,
+                    lineHeight: 1.35,
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  {email.subject}
+                </div>
+                <div
+                  style={{
+                    fontSize: 11,
+                    color: C.faint,
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  {email.fromName || email.fromAddress}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
 
-export function TodayTab({
-  agenda,
-  tasks,
-  gmailConnected,
-  calendarConnected,
-  reloadEmails,
-  onSelectTab,
-}: AgendaSources & { onSelectTab?: (tab: string) => void }): JSX.Element {
+export function TodayTab({ onSelectTab }: { onSelectTab?: (tab: string) => void }): JSX.Element {
   const [sessions, setSessions] = useState<readonly WorkSession[]>([]);
   const [projects, setProjects] = useState<readonly Project[]>([]);
+  const [tasks, setTasks] = useState<readonly Task[]>([]);
   const [timer, setTimer] = useState<TimerSnapshot | null>(null);
   const [draft, setDraft] = useState('');
 
   useEffect(() => {
     void window.mochi.timer.listSessions().then(setSessions);
     void window.mochi.projects.list().then(setProjects);
+    void window.mochi.tasks.list().then(setTasks);
     void window.mochi.timer.current().then(setTimer);
 
+    const offTasks = window.mochi.tasks.onChange(setTasks);
     const offTimer = window.mochi.timer.onChange((snapshot) => {
       setTimer(snapshot);
       if (!snapshot.running) void window.mochi.timer.listSessions().then(setSessions);
     });
-    return offTimer;
+    return () => {
+      offTasks();
+      offTimer();
+    };
   }, []);
 
   const addTask = useCallback(async () => {
     if (draft.trim().length === 0) return;
     await window.mochi.tasks.create(draft);
     setDraft('');
-    // No refetch: the tasks.onChange subscription in useSources pushes the new
-    // list, and asking again here would race it.
+    setTasks(await window.mochi.tasks.list());
   }, [draft]);
-
-  // Only for the date heading and the progress figures; the agenda itself is
-  // already assembled against a ticking clock in useAgenda.
-  const now = new Date();
 
   const projectName = useMemo(() => {
     const map = new Map(projects.map((p) => [p.id, p.name]));
@@ -215,152 +331,177 @@ export function TodayTab({
   }, [projects]);
 
   const { todayMs, last7 } = useMemo(() => {
-    const at = Date.now();
+    const now = Date.now();
     const byDay = new Map<string, number>();
     for (const s of sessions) {
       const key = dayKey(s.startedAt);
-      byDay.set(key, (byDay.get(key) ?? 0) + elapsedMs(s, at));
+      byDay.set(key, (byDay.get(key) ?? 0) + elapsedMs(s, now));
     }
     const days: { key: string; label: string; ms: number }[] = [];
     for (let i = 6; i >= 0; i -= 1) {
-      const d = new Date(at - i * 86_400_000);
+      const d = new Date(now - i * 86_400_000);
       days.push({ key: dayKey(d.getTime()), label: WEEKDAYS[d.getDay()]!, ms: 0 });
     }
     for (const d of days) d.ms = byDay.get(d.key) ?? 0;
-    return { todayMs: byDay.get(dayKey(at)) ?? 0, last7: days };
+    return { todayMs: byDay.get(dayKey(now)) ?? 0, last7: days };
   }, [sessions]);
 
+  const now = new Date();
+  const today = taskDay(now);
+  const open = sortForDisplay(dueToday(tasks, now), now);
   const progress = progressForToday(tasks, now);
   const peak = Math.max(1, ...last7.map((d) => d.ms));
   const weekTotal = last7.reduce((sum, d) => sum + d.ms, 0);
 
-  const count = agenda.needsYou.length;
-
-  /** Tick a row off. What that means depends on what the row is. */
-  const complete = useCallback(
-    (item: AgendaItem) => {
-      const id = item.id.slice(item.id.indexOf(':') + 1);
-      if (item.kind === 'task') {
-        void window.mochi.tasks.toggle(id);
-        return;
-      }
-      // An email is *handled*, not replied to. Dismissing stops the reminder and
-      // claims nothing about having answered — saying "replied" here would be
-      // inventing an outcome.
-      void window.mochi.gmail.dismissReminder(id).then(() => reloadEmails());
-    },
-    [reloadEmails],
-  );
-
-  const rowAction = (
-    item: AgendaItem,
-  ): { label: string; run: () => void; title: string } | undefined => {
-    if (item.kind === 'email') {
-      return {
-        label: 'Reply',
-        run: () => onSelectTab?.('gmail'),
-        title: 'Open the inbox to write a reply',
-      };
-    }
-    if (item.kind === 'task' && item.late) {
-      return {
-        label: 'Move to today',
-        run: () => void window.mochi.tasks.rollForward(item.id.slice('task:'.length)),
-        title: 'Carry this over to today',
-      };
-    }
-    return undefined;
-  };
-
   return (
     <div>
-      {/* ---- what needs you ---- */}
-      <div style={{ marginBottom: 18 }}>
-        <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, marginBottom: 2 }}>
-          <h2 style={{ margin: 0, fontSize: 19, fontWeight: 700, color: C.text }}>Today</h2>
-          <span style={{ fontSize: 12, color: C.faint }}>
-            {now.toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long' })}
-          </span>
-        </div>
-        <p style={{ margin: '0 0 14px', fontSize: 13, color: count > 0 ? C.dim : C.faint }}>
-          {count === 0
-            ? 'Nothing needs you right now.'
-            : `${count} thing${count === 1 ? '' : 's'} need${count === 1 ? 's' : ''} you.`}
-          {timer?.running === true && ` Tracking ${projectName(timer.session?.projectId ?? '')}.`}
-        </p>
-
-        <div style={{ ...card, padding: '6px 4px' }}>
-          {count === 0 ? (
-            <div style={{ fontSize: 13, color: C.faint, padding: '14px 12px', lineHeight: 1.5 }}>
-              No replies waiting and nothing due. Add something below, or enjoy the quiet.
-            </div>
-          ) : (
-            agenda.needsYou.map((item) => {
-              // Resolved once and spread, because `exactOptionalPropertyTypes`
-              // rejects passing an explicit undefined for an optional prop.
-              const action = rowAction(item);
-              return (
-                <WorkRow
-                  key={item.id}
-                  item={item}
-                  onDone={() => complete(item)}
-                  {...(action === undefined ? {} : { action })}
-                />
-              );
-            })
-          )}
-
-          <div style={{ display: 'flex', gap: 8, padding: '8px 8px 6px' }}>
-            <input
-              style={input}
-              placeholder="Add a task for today…"
-              value={draft}
-              maxLength={140}
-              onChange={(e) => setDraft(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') void addTask();
+      {/* Welcome & Live Status Header Banner */}
+      <div
+        style={{
+          background: 'linear-gradient(135deg, rgba(46,38,60,0.85), rgba(30,24,42,0.95))',
+          border: '1px solid rgba(242,166,179,0.22)',
+          borderRadius: 14,
+          padding: '18px 22px',
+          marginBottom: 20,
+          boxShadow: '0 10px 26px rgba(10,8,16,0.25)',
+        }}
+      >
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div>
+            <h2
+              style={{
+                margin: 0,
+                fontSize: 20,
+                fontWeight: 700,
+                color: C.text,
+                display: 'flex',
+                alignItems: 'center',
+                gap: 10,
               }}
-            />
-            <button
-              style={{ ...button('primary'), whiteSpace: 'nowrap' }}
-              disabled={draft.trim().length === 0}
-              onClick={() => void addTask()}
             >
-              Add
-            </button>
+              <span>☀️ Welcome to Mochi</span>
+              <span
+                style={{
+                  fontSize: 11,
+                  padding: '3px 9px',
+                  borderRadius: 999,
+                  background: 'rgba(16,185,129,0.15)',
+                  color: '#10b981',
+                  border: '1px solid rgba(16,185,129,0.3)',
+                  fontWeight: 600,
+                }}
+              >
+                🟢 Active in Background
+              </span>
+            </h2>
+            <p style={{ margin: '6px 0 0', fontSize: 13, color: C.dim, lineHeight: 1.45 }}>
+              {timer?.running === true
+                ? `Tracking ${projectName(timer.session?.projectId ?? '')} right now.`
+                : 'Mochi is quietly observing your workday, keeping your priorities clear and reminding you to stay balanced.'}
+            </p>
           </div>
         </div>
 
-        {gmailConnected === false && (
-          <div style={{ marginTop: 8 }}>
-            <NotConnected
-              what="Email"
-              why="Connect it in Settings and replies Mochi thinks are urgent will appear here."
-            />
-          </div>
-        )}
+        {/* 4 Clickable Quick Action Guide Cards */}
+        <div
+          style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10, marginTop: 16 }}
+        >
+          {(
+            [
+              {
+                id: 'tasks',
+                icon: 'target',
+                step: 1,
+                title: 'Top Priorities',
+                desc: 'Add your top 3 tasks so you know where to start without feeling overwhelmed.',
+                action: () => onSelectTab?.('tasks'),
+              },
+              {
+                id: 'time',
+                icon: 'stopwatch',
+                step: 2,
+                title: 'Time Tracking',
+                desc: 'Track focus sessions & see where your screen time goes in real-time.',
+                action: () => onSelectTab?.('time'),
+              },
+              {
+                id: 'routines',
+                icon: 'droplet',
+                step: 3,
+                title: 'Wellness Routines',
+                desc: 'Water & stretch reminders protect your health while working at your PC.',
+                action: () => onSelectTab?.('routines'),
+              },
+              {
+                id: 'settings',
+                icon: 'sparkle',
+                step: 4,
+                title: 'AI & Smart Inbox',
+                desc: 'Connect LM Studio or OpenAI in Settings to flag urgent emails & drafts.',
+                action: () => onSelectTab?.('settings'),
+              },
+            ] as readonly {
+              id: string;
+              icon: IconName;
+              step: number;
+              title: string;
+              desc: string;
+              action: () => void;
+            }[]
+          ).map((card) => (
+            <button
+              key={card.id}
+              onClick={card.action}
+              style={{
+                textAlign: 'left',
+                background: 'rgba(255,255,255,0.04)',
+                border: '1px solid rgba(255,255,255,0.09)',
+                borderRadius: 10,
+                padding: '12px 13px',
+                cursor: 'pointer',
+                transition: 'all 160ms ease',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = 'rgba(242,166,179,0.1)';
+                e.currentTarget.style.borderColor = 'rgba(242,166,179,0.35)';
+                e.currentTarget.style.transform = 'translateY(-2px)';
+                e.currentTarget.style.boxShadow = '0 6px 16px rgba(10,8,16,0.3)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = 'rgba(255,255,255,0.04)';
+                e.currentTarget.style.borderColor = 'rgba(255,255,255,0.09)';
+                e.currentTarget.style.transform = 'translateY(0)';
+                e.currentTarget.style.boxShadow = 'none';
+              }}
+            >
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 7,
+                  fontSize: 12.5,
+                  fontWeight: 650,
+                  color: C.text,
+                  marginBottom: 5,
+                }}
+              >
+                {/* Stroked vector rather than emoji: these inherit the text
+                    colour and share its metrics, so four cards actually align. */}
+                <Icon
+                  name={card.icon}
+                  size={15}
+                  color={C.accent}
+                  filled={card.icon === 'sparkle'}
+                />
+                <span style={{ color: C.faint, fontWeight: 600 }}>{card.step}.</span>
+                <span>{card.title}</span>
+              </div>
+              <div style={{ fontSize: 11, color: C.dim, lineHeight: 1.35 }}>{card.desc}</div>
+            </button>
+          ))}
+        </div>
       </div>
 
-      {/* ---- on your calendar ---- */}
-      <div style={{ marginBottom: 18 }}>
-        <div style={{ fontSize: 12, color: C.dim, marginBottom: 8 }}>On your calendar</div>
-        {calendarConnected === false ? (
-          <NotConnected
-            what="Calendar"
-            why="Connect an ICS feed in Settings to see today's meetings alongside your work."
-          />
-        ) : (
-          <div style={{ ...card, padding: '6px 4px' }}>
-            {agenda.schedule.length === 0 ? (
-              <div style={{ fontSize: 13, color: C.faint, padding: '12px' }}>Nothing on today.</div>
-            ) : (
-              agenda.schedule.map((item) => <ScheduleRow key={item.id} item={item} />)
-            )}
-          </div>
-        )}
-      </div>
-
-      {/* ---- how the day and week went ---- */}
       <div style={{ display: 'flex', gap: 10, marginBottom: 14 }}>
         <Stat value={humanDuration(todayMs)} caption="tracked today" accent />
         {/*
@@ -371,9 +512,138 @@ export function TodayTab({
           value={progress.total === 0 ? '0' : `${progress.done}/${progress.total}`}
           caption="tasks done"
         />
-        <Stat value={`${progress.overdue}`} caption="overdue" accent={progress.overdue > 0} />
+        <Stat
+          value={progress.overdue === 0 ? '0' : `${progress.overdue}`}
+          caption="overdue"
+          accent={progress.overdue > 0}
+        />
       </div>
 
+      {/* ---- today's tasks ---- */}
+      <div style={{ ...card, marginBottom: 14 }}>
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            marginBottom: 10,
+          }}
+        >
+          <span style={{ fontSize: 12, color: C.dim }}>Today&apos;s list</span>
+          {progress.total > 0 && (
+            <span style={{ fontSize: 11.5, color: C.faint }}>{progress.pct}%</span>
+          )}
+        </div>
+
+        {progress.total > 0 && (
+          <div
+            style={{
+              height: 4,
+              borderRadius: 2,
+              background: '#332c3d',
+              overflow: 'hidden',
+              marginBottom: 12,
+            }}
+          >
+            <div
+              style={{
+                width: `${progress.pct}%`,
+                height: '100%',
+                background: C.accent,
+                transition: 'width 220ms ease',
+              }}
+            />
+          </div>
+        )}
+
+        {open.length === 0 && (
+          <div style={{ fontSize: 13, color: C.faint, padding: '2px 0 10px' }}>
+            Nothing on the list. Add something below, or enjoy the quiet.
+          </div>
+        )}
+
+        {open.map((t) => {
+          const late = t.dueOn !== null && t.dueOn < today;
+          return (
+            <div
+              key={t.id}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 10,
+                padding: '7px 0',
+                borderTop: `1px solid ${C.border}`,
+                fontSize: 13,
+              }}
+            >
+              <input
+                type="checkbox"
+                checked={false}
+                onChange={() => void window.mochi.tasks.toggle(t.id)}
+                style={{ accentColor: C.accent, width: 15, height: 15, cursor: 'pointer' }}
+              />
+              <span style={{ flex: 1 }}>{t.title}</span>
+              {late && (
+                <button
+                  onClick={() => void window.mochi.tasks.rollForward(t.id)}
+                  title="Move to today"
+                  style={{
+                    ...button('ghost'),
+                    padding: '2px 8px',
+                    fontSize: 11,
+                    color: C.warn,
+                    borderColor: 'rgba(255,179,193,0.35)',
+                  }}
+                >
+                  overdue
+                </button>
+              )}
+              <button
+                onClick={() => void window.mochi.tasks.remove(t.id)}
+                title="Delete"
+                style={{
+                  background: 'transparent',
+                  border: 'none',
+                  color: C.faint,
+                  cursor: 'pointer',
+                  fontSize: 15,
+                  lineHeight: 1,
+                }}
+              >
+                ×
+              </button>
+            </div>
+          );
+        })}
+
+        <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
+          <input
+            style={input}
+            placeholder="Add a task for today…"
+            value={draft}
+            maxLength={140}
+            onChange={(e) => setDraft(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') void addTask();
+            }}
+          />
+          <button
+            style={{ ...button('primary'), whiteSpace: 'nowrap' }}
+            disabled={draft.trim().length === 0}
+            onClick={() => void addTask()}
+          >
+            Add
+          </button>
+        </div>
+      </div>
+
+      {/* ---- what is waiting ---- */}
+      <div style={{ display: 'flex', gap: 10, marginBottom: 14, alignItems: 'stretch' }}>
+        <ComingUp />
+        <NeedsReply />
+      </div>
+
+      {/* ---- week ---- */}
       <div style={card}>
         <div
           style={{
@@ -449,42 +719,6 @@ export function TodayTab({
           })}
         </div>
       </div>
-
-      {/* Nothing set up yet: the only time tutorial cards earn their space. */}
-      {tasks.length === 0 && sessions.length === 0 && (
-        <div style={{ ...card, marginTop: 14 }}>
-          <div style={{ fontSize: 12, color: C.dim, marginBottom: 10 }}>Getting started</div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10 }}>
-            {[
-              { id: 'tasks', title: 'Add a few tasks', desc: 'So you know where to start.' },
-              { id: 'time', title: 'Track a session', desc: 'See where the day actually goes.' },
-              {
-                id: 'routines',
-                title: 'Set a routine',
-                desc: 'Water and stretch reminders while you work.',
-              },
-            ].map((c) => (
-              <button
-                key={c.id}
-                onClick={() => onSelectTab?.(c.id)}
-                style={{
-                  textAlign: 'left',
-                  background: 'rgba(255,255,255,0.035)',
-                  border: `1px solid ${C.border}`,
-                  borderRadius: 9,
-                  padding: '11px 12px',
-                  cursor: 'pointer',
-                }}
-              >
-                <div style={{ fontSize: 12.5, fontWeight: 650, color: C.text, marginBottom: 3 }}>
-                  {c.title}
-                </div>
-                <div style={{ fontSize: 11, color: C.dim, lineHeight: 1.4 }}>{c.desc}</div>
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
     </div>
   );
 }
