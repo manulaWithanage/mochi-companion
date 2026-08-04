@@ -113,7 +113,7 @@ function formatTime12h(time24: string): string {
 function generateIntervalTimes(
   intervalMinutes: number,
   start24: string = '09:00',
-  end24: string = '18:00'
+  end24: string = '18:00',
 ): string[] {
   const parseMins = (tStr: string) => {
     const parts = tStr.split(':');
@@ -516,37 +516,60 @@ export function RoutinesTab(): JSX.Element {
             />
           </div>
 
-          {/* Custom Emoji Selector */}
+          {/* Custom Emoji Selector Dropdown */}
           <div style={{ marginBottom: 14 }}>
             <span style={label}>Choose Icon</span>
-            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+            <select
+              value={selectedIcon}
+              onChange={(e) => setSelectedIcon(e.target.value)}
+              style={{
+                ...input,
+                marginBottom: 0,
+                width: 180,
+                fontSize: 14,
+                fontWeight: 600,
+                color: C.text,
+                cursor: 'pointer',
+                background: '#1a1622',
+                border: '1px solid rgba(255, 255, 255, 0.15)',
+                borderRadius: 8,
+              }}
+            >
               {EMOJI_OPTIONS.map((emoji) => (
-                <button
-                  key={emoji}
-                  type="button"
-                  onClick={() => setSelectedIcon(emoji)}
-                  style={{
-                    width: 34,
-                    height: 34,
-                    borderRadius: 8,
-                    border: `1px solid ${selectedIcon === emoji ? C.accent : C.border}`,
-                    background: selectedIcon === emoji ? `${C.accent}33` : '#1c1724',
-                    fontSize: 16,
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                  }}
-                >
-                  {emoji}
-                </button>
+                <option key={emoji} value={emoji} style={{ background: '#1a1622', fontSize: 14 }}>
+                  {emoji} Icon
+                </option>
               ))}
-            </div>
+            </select>
           </div>
 
           {/* Multiple Times Selector */}
           <div style={{ marginBottom: 14 }}>
-            <span style={label}>Reminder Times (Add multiple times during the day)</span>
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                marginBottom: 6,
+              }}
+            >
+              <span style={label}>Reminder Times</span>
+              <button
+                type="button"
+                onClick={() => setShowIntervalBuilder(!showIntervalBuilder)}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: C.accent,
+                  fontSize: 11.5,
+                  fontWeight: 650,
+                  cursor: 'pointer',
+                  padding: 0,
+                }}
+              >
+                {showIntervalBuilder ? '▲ Hide Interval Builder' : '⚙️ Custom Interval Builder...'}
+              </button>
+            </div>
 
             {/* Active Time Chips */}
             <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 10 }}>
@@ -591,7 +614,7 @@ export function RoutinesTab(): JSX.Element {
               ))}
             </div>
 
-            {/* Add New Time Input */}
+            {/* Combined Add Time Input + Presets Dropdown */}
             <div
               style={{
                 display: 'flex',
@@ -601,7 +624,7 @@ export function RoutinesTab(): JSX.Element {
                 marginBottom: 8,
               }}
             >
-              <div style={{ position: 'relative', flex: 1, minWidth: 220 }}>
+              <div style={{ position: 'relative', flex: 1, minWidth: 180 }}>
                 <input
                   style={{ ...input, marginBottom: 0, paddingRight: 90 }}
                   type="text"
@@ -647,206 +670,136 @@ export function RoutinesTab(): JSX.Element {
               >
                 + Add Time
               </button>
-            </div>
 
-            {/* Quick Time Suggestion Chips */}
-            <div style={{ marginBottom: 12 }}>
-              <div style={{ fontSize: 11, color: C.dim, marginBottom: 6, fontWeight: 500 }}>
-                Quick suggestions:
-              </div>
-              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                {TIME_SUGGESTIONS.map((sug) => {
-                  const alreadyAdded = times.includes(sug.value);
-                  return (
-                    <button
-                      key={sug.value}
-                      type="button"
-                      onClick={() => addTimeSlot(sug.value)}
-                      disabled={alreadyAdded}
-                      style={{
-                        background: alreadyAdded ? '#1e1828' : '#251e30',
-                        border: `1px solid ${alreadyAdded ? C.border : 'rgba(255,255,255,0.12)'}`,
-                        borderRadius: 6,
-                        padding: '4px 8px',
-                        fontSize: 11.5,
-                        color: alreadyAdded ? C.faint : C.text,
-                        cursor: alreadyAdded ? 'default' : 'pointer',
-                        opacity: alreadyAdded ? 0.5 : 1,
-                      }}
-                    >
-                      + {sug.label}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* Recurring Interval Presets & Custom Generator */}
-            <div
-              style={{
-                marginTop: 10,
-                padding: '12px 14px',
-                borderRadius: 12,
-                background: 'rgba(34, 29, 41, 0.75)',
-                border: '1px solid rgba(242, 166, 179, 0.25)',
-                boxShadow: '0 4px 14px rgba(0, 0, 0, 0.25)',
-              }}
-            >
-              <div
+              {/* Presets & Recurring Intervals Dropdown */}
+              <select
+                value=""
+                onChange={(e) => {
+                  const val = e.target.value;
+                  if (!val) return;
+                  if (val.startsWith('interval-')) {
+                    const mins = parseInt(val.replace('interval-', ''), 10);
+                    setTimes(generateIntervalTimes(mins, '09:00', '18:00'));
+                  } else {
+                    addTimeSlot(val);
+                  }
+                  e.target.value = '';
+                }}
                 style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  marginBottom: 10,
+                  ...input,
+                  marginBottom: 0,
+                  width: 'auto',
+                  fontSize: 12,
+                  fontWeight: 650,
+                  color: C.accent,
+                  background: 'rgba(242, 166, 179, 0.08)',
+                  border: '1px solid rgba(242, 166, 179, 0.3)',
+                  borderRadius: 8,
+                  cursor: 'pointer',
+                  padding: '8px 12px',
                 }}
               >
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <span style={{ fontSize: 14 }}>⚡</span>
-                  <span style={{ fontSize: 12.5, fontWeight: 750, color: C.text }}>
-                    Recurring Interval Presets
-                  </span>
-                  <span style={{ fontSize: 11, color: C.dim }}>
-                    (Auto-generates repeated times across active hours)
-                  </span>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setShowIntervalBuilder(!showIntervalBuilder)}
-                  style={{
-                    background: showIntervalBuilder ? `${C.accent}22` : 'rgba(255, 255, 255, 0.05)',
-                    border: `1px solid ${showIntervalBuilder ? C.accent : 'rgba(255, 255, 255, 0.15)'}`,
-                    borderRadius: 8,
-                    padding: '4px 10px',
-                    fontSize: 11.5,
-                    fontWeight: 650,
-                    color: showIntervalBuilder ? C.accent : C.text,
-                    cursor: 'pointer',
-                    transition: 'all 160ms ease',
-                  }}
-                >
-                  {showIntervalBuilder ? '▲ Hide Builder' : '⚙️ Custom Interval Builder...'}
-                </button>
-              </div>
-
-              {/* Quick Interval Shortcuts */}
-              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                {[
-                  { label: 'Every 5m', mins: 5 },
-                  { label: 'Every 10m', mins: 10 },
-                  { label: 'Every 15m', mins: 15 },
-                  { label: 'Every 30m', mins: 30 },
-                  { label: 'Every 45m', mins: 45 },
-                  { label: 'Every 1h', mins: 60 },
-                  { label: 'Every 2h', mins: 120 },
-                ].map((item) => (
-                  <button
-                    key={item.label}
-                    type="button"
-                    onClick={() => {
-                      const generated = generateIntervalTimes(item.mins, '09:00', '18:00');
-                      setTimes(generated);
-                    }}
-                    title={`Auto-generate recurring reminders every ${item.mins} mins (9:00 AM - 6:00 PM)`}
-                    style={{
-                      padding: '6px 12px',
-                      borderRadius: 8,
-                      border: '1px solid rgba(242, 166, 179, 0.4)',
-                      borderTop: '1px solid rgba(255, 255, 255, 0.3)',
-                      background: 'linear-gradient(180deg, #3f334c 0%, #282032 100%)',
-                      color: '#ffffff',
-                      fontSize: 11.5,
-                      fontWeight: 750,
-                      cursor: 'pointer',
-                      boxShadow: '0 2px 6px rgba(0, 0, 0, 0.3)',
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: 5,
-                    }}
-                  >
-                    🔄 {item.label}
-                  </button>
-                ))}
-              </div>
-
-              {/* Custom Interval Builder Accordion Panel */}
-              {showIntervalBuilder && (
-                <div
-                  style={{
-                    marginTop: 12,
-                    paddingTop: 12,
-                    borderTop: '1px dashed rgba(255, 255, 255, 0.12)',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: 12,
-                  }}
-                >
-                  <div style={{ fontSize: 12, fontWeight: 700, color: C.accent }}>
-                    🛠️ Configure Custom Recurring Interval Schedule
-                  </div>
-
-                  <div style={{ display: 'flex', gap: 12, alignItems: 'flex-end', flexWrap: 'wrap' }}>
-                    <div style={{ flex: 1, minWidth: 140 }}>
-                      <span style={{ ...label, marginBottom: 4 }}>Interval (Minutes)</span>
-                      <input
-                        type="number"
-                        min="1"
-                        max="720"
-                        style={{ ...input, marginBottom: 0 }}
-                        placeholder="e.g. 5, 10, 15, 30"
-                        value={customIntervalMinsInput}
-                        onChange={(e) => setCustomIntervalMinsInput(e.target.value)}
-                      />
-                    </div>
-
-                    <div style={{ flex: 1, minWidth: 140 }}>
-                      <span style={{ ...label, marginBottom: 4 }}>Active Start Time</span>
-                      <input
-                        type="text"
-                        style={{ ...input, marginBottom: 0 }}
-                        placeholder="e.g. 09:00 AM"
-                        value={intervalStartInput}
-                        onChange={(e) => setIntervalStartInput(e.target.value)}
-                      />
-                    </div>
-
-                    <div style={{ flex: 1, minWidth: 140 }}>
-                      <span style={{ ...label, marginBottom: 4 }}>Active End Time</span>
-                      <input
-                        type="text"
-                        style={{ ...input, marginBottom: 0 }}
-                        placeholder="e.g. 06:00 PM"
-                        value={intervalEndInput}
-                        onChange={(e) => setIntervalEndInput(e.target.value)}
-                      />
-                    </div>
-
-                    <div>
-                      <button
-                        type="button"
-                        style={{ ...button('primary'), whiteSpace: 'nowrap' }}
-                        onClick={() => {
-                          const mins = parseInt(customIntervalMinsInput, 10) || 30;
-                          const parsedStart = parseFlexibleTime(intervalStartInput) || '09:00';
-                          const parsedEnd = parseFlexibleTime(intervalEndInput) || '18:00';
-                          const generated = generateIntervalTimes(mins, parsedStart, parsedEnd);
-                          setTimes(generated);
-                        }}
-                      >
-                        ⚡ Generate Times (
-                        {
-                          generateIntervalTimes(
-                            parseInt(customIntervalMinsInput, 10) || 30,
-                            parseFlexibleTime(intervalStartInput) || '09:00',
-                            parseFlexibleTime(intervalEndInput) || '18:00'
-                          ).length
-                        }{' '}
-                        Slots)
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              )}
+                <option value="">⚡ Add Presets & Recurring Intervals...</option>
+                <optgroup label="🔄 Recurring Intervals (9am - 6pm)">
+                  <option value="interval-5">🔄 Every 5 minutes</option>
+                  <option value="interval-10">🔄 Every 10 minutes</option>
+                  <option value="interval-15">🔄 Every 15 minutes</option>
+                  <option value="interval-30">🔄 Every 30 minutes</option>
+                  <option value="interval-45">🔄 Every 45 minutes</option>
+                  <option value="interval-60">🔄 Every 1 hour</option>
+                  <option value="interval-120">🔄 Every 2 hours</option>
+                </optgroup>
+                <optgroup label="🕒 Daily Clock Suggestions">
+                  {TIME_SUGGESTIONS.map((sug) => (
+                    <option key={sug.value} value={sug.value}>
+                      + {sug.label}
+                    </option>
+                  ))}
+                </optgroup>
+              </select>
             </div>
+
+            {/* Custom Interval Builder Accordion Panel */}
+            {showIntervalBuilder && (
+              <div
+                style={{
+                  marginTop: 12,
+                  padding: '14px 16px',
+                  borderRadius: 12,
+                  background: 'rgba(34, 29, 41, 0.75)',
+                  border: '1px solid rgba(242, 166, 179, 0.25)',
+                  boxShadow: '0 4px 14px rgba(0, 0, 0, 0.25)',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: 12,
+                }}
+              >
+                <div style={{ fontSize: 12, fontWeight: 750, color: C.accent }}>
+                  🛠️ Configure Custom Recurring Interval Window
+                </div>
+
+                <div style={{ display: 'flex', gap: 12, alignItems: 'flex-end', flexWrap: 'wrap' }}>
+                  <div style={{ flex: 1, minWidth: 130 }}>
+                    <span style={{ ...label, marginBottom: 4 }}>Interval (Minutes)</span>
+                    <input
+                      type="number"
+                      min="1"
+                      max="720"
+                      style={{ ...input, marginBottom: 0 }}
+                      placeholder="e.g. 5, 10, 15, 30"
+                      value={customIntervalMinsInput}
+                      onChange={(e) => setCustomIntervalMinsInput(e.target.value)}
+                    />
+                  </div>
+
+                  <div style={{ flex: 1, minWidth: 130 }}>
+                    <span style={{ ...label, marginBottom: 4 }}>Start Time</span>
+                    <input
+                      type="text"
+                      style={{ ...input, marginBottom: 0 }}
+                      placeholder="e.g. 09:00 AM"
+                      value={intervalStartInput}
+                      onChange={(e) => setIntervalStartInput(e.target.value)}
+                    />
+                  </div>
+
+                  <div style={{ flex: 1, minWidth: 130 }}>
+                    <span style={{ ...label, marginBottom: 4 }}>End Time</span>
+                    <input
+                      type="text"
+                      style={{ ...input, marginBottom: 0 }}
+                      placeholder="e.g. 06:00 PM"
+                      value={intervalEndInput}
+                      onChange={(e) => setIntervalEndInput(e.target.value)}
+                    />
+                  </div>
+
+                  <div>
+                    <button
+                      type="button"
+                      style={{ ...button('primary'), whiteSpace: 'nowrap' }}
+                      onClick={() => {
+                        const mins = parseInt(customIntervalMinsInput, 10) || 30;
+                        const parsedStart = parseFlexibleTime(intervalStartInput) || '09:00';
+                        const parsedEnd = parseFlexibleTime(intervalEndInput) || '18:00';
+                        const generated = generateIntervalTimes(mins, parsedStart, parsedEnd);
+                        setTimes(generated);
+                      }}
+                    >
+                      ⚡ Apply (
+                      {
+                        generateIntervalTimes(
+                          parseInt(customIntervalMinsInput, 10) || 30,
+                          parseFlexibleTime(intervalStartInput) || '09:00',
+                          parseFlexibleTime(intervalEndInput) || '18:00',
+                        ).length
+                      }{' '}
+                      Slots)
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
 
           <div style={{ marginBottom: 14 }}>
