@@ -781,12 +781,12 @@ h1, h2, h3, h4, h5, h6 {
   width: 100vw;
   height: auto;
   max-width: none;
-  object-fit: contain;
   opacity: 1;
   transform: translateX(-50%);
   -webkit-mask-image: linear-gradient(to bottom, transparent 0%, #000 20%, #000 88%, transparent 100%);
   mask-image: linear-gradient(to bottom, transparent 0%, #000 20%, #000 88%, transparent 100%);
 }
+.hero-sanctuary__garden img { display: block; width: 100%; height: auto; }
 .hero-sanctuary__mist { position: absolute; z-index: -1; width: 35%; height: 30%; border-radius: 50%; background: rgba(255,255,255,.38); filter: blur(30px); animation: sanctuary-mist 12s ease-in-out infinite alternate; }
 .hero-sanctuary__mist--left { bottom: 9%; left: 4%; }
 .hero-sanctuary__mist--right { right: 4%; bottom: 21%; animation-delay: -5s; }
@@ -957,6 +957,7 @@ h1, h2, h3, h4, h5, h6 {
   .morning-card--schedule strong { margin-top: 9px; }
 
   .story-section--email { width: 100%; min-height: 0; padding: 84px 20px; gap: 35px; }
+  .story-section--email { grid-template-columns: 1fr; align-items: stretch; }
   .story-section--email .story-intro { order: 1; max-width: 560px; }
   .story-section--email .email-scene { order: 2; width: 100%; }
   .story-section--email .story-intro::before { top: -20px; left: 0; width: 48px; }
@@ -966,6 +967,12 @@ h1, h2, h3, h4, h5, h6 {
   .email-row time { align-self: start; }
 
   .story-section--focus, .story-section--routines, .story-section--privacy, .story-section--connections { padding-top: 88px; padding-bottom: 88px; }
+  .story-section--focus::before {
+    background-image: url('/focus-clearing-mobile-v1.png');
+    background-position: center bottom;
+    background-size: cover;
+    opacity: .9;
+  }
   .focus-steps { margin-top: 40px; gap: 13px; }
   .focus-steps article { min-height: 0; padding: 22px; }
   .focus-steps__active { transform: none; }
@@ -991,11 +998,20 @@ h1, h2, h3, h4, h5, h6 {
   .connection-grid article:nth-child(2) { transform: none; }
   .connection-card__step { margin-bottom: 9px; }
 
-  .landing-cta { min-height: 570px; padding: 92px 20px 112px; background-position: center; background-size: auto 100%; }
+  .landing-cta {
+    min-height: 570px;
+    padding: 92px 20px 112px;
+    background-image:
+      linear-gradient(to bottom, rgba(255, 251, 246, .2), rgba(255, 251, 246, .4) 58%, rgba(255, 251, 246, .68)),
+      url('/cta-falling-sakura-mobile-v1.png');
+    background-position: center;
+    background-size: cover;
+  }
   .landing-cta > p:not(.story-eyebrow) { margin: 15px auto 25px; }
   .landing-cta a { min-height: 48px; justify-content: center; padding: 0 20px; }
 
   .mochi-story-guide { right: 1px; bottom: 0; transform: scale(.74); transform-origin: right bottom; }
+  .mochi-story-guide__bubble { display: none; }
 
   .site-footer { min-height: 660px !important; padding: 92px 16px 48px !important; align-items: flex-end !important; background-position: center bottom !important; background-size: auto 100% !important; }
   .site-footer__card { padding: 28px 22px !important; border-radius: 22px !important; }

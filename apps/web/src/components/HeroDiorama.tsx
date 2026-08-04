@@ -58,12 +58,10 @@ export const HeroDiorama: React.FC = () => {
       </div>
 
       <div className="hero-sanctuary__stage" aria-label="Interactive Mochi desktop preview">
-        <img
-          className="hero-sanctuary__garden"
-          src="/hero_sanctuary_panorama_v2.png"
-          alt=""
-          aria-hidden="true"
-        />
+        <picture className="hero-sanctuary__garden" aria-hidden="true">
+          <source media="(max-width: 760px)" srcSet="/hero-sanctuary-mobile-v1.png" />
+          <img src="/hero_sanctuary_panorama_v2.png" alt="" />
+        </picture>
         <span className="hero-sanctuary__mist hero-sanctuary__mist--left" aria-hidden="true" />
         <span className="hero-sanctuary__mist hero-sanctuary__mist--right" aria-hidden="true" />
 

@@ -7,6 +7,10 @@ import { MochiStoryGuide } from './MochiStoryGuide';
 const Check = () => <span className="story-check">✓</span>;
 
 const storyMessages = {
+  purpose: {
+    message: 'Your day has a calm place to begin, without another system to manage.',
+    state: 'idle',
+  },
   'your-day': {
     message: 'Two priorities and one meeting. Your morning has room to breathe.',
     state: 'idle',
@@ -66,6 +70,121 @@ export const LandingPage: React.FC = () => {
 
       <main id="top">
         <HeroDiorama />
+
+        <section
+          className="story-section story-section--promise"
+          id="why-mochi"
+          data-mochi-story="purpose"
+        >
+          <div className="story-intro story-intro--center">
+            <p className="story-eyebrow">WHY WE BUILT MOCHI</p>
+            <h2>
+              Your day should not depend on <em>more tabs, more noise,</em> and more to remember.
+            </h2>
+            <p>
+              Mochi brings your plan, important messages, focus time, and small moments of care into
+              one calm place on your computer.
+            </p>
+          </div>
+
+          <blockquote className="promise-quote">
+            <p>
+              “We didn’t build Mochi to add another system to your workday. We built it so you can focus on what matters, close your computer on time, and feel good about your day.”
+            </p>
+            <cite>Why Mochi Exists</cite>
+          </blockquote>
+
+          <div className="promise-grid">
+            <article className="promise-card promise-card--plan">
+              <div className="promise-preview promise-preview--plan" aria-hidden="true">
+                <div className="promise-preview__top">
+                  <span>Today</span>
+                  <i>Ready</i>
+                </div>
+                <strong>A lighter plan for today.</strong>
+                <div className="promise-preview__tasks">
+                  <span>
+                    <b>✓</b> Finish the landing page polish
+                  </span>
+                  <span>
+                    <b>✓</b> Reply to design feedback
+                  </span>
+                </div>
+                <div className="promise-preview__bars">
+                  <i />
+                  <i />
+                  <i />
+                  <i />
+                </div>
+              </div>
+              <div className="promise-card__copy">
+                <small>01 · START CLEAR</small>
+                <h3>Know what matters first.</h3>
+                <p>
+                  See priorities, a focus block, and your next meeting before the day gets noisy.
+                </p>
+              </div>
+            </article>
+
+            <article className="promise-card promise-card--attention">
+              <div className="promise-preview promise-preview--attention" aria-hidden="true">
+                <div className="promise-preview__top">
+                  <span>Needs a reply</span>
+                  <i>3</i>
+                </div>
+                <div className="promise-preview__mail is-urgent">
+                  <b>J</b>
+                  <span>
+                    <strong>Approval needed for launch</strong>
+                    <em>Please confirm today</em>
+                  </span>
+                </div>
+                <div className="promise-preview__mail">
+                  <b>M</b>
+                  <span>
+                    <strong>Design review feedback</strong>
+                    <em>A few final notes</em>
+                  </span>
+                </div>
+                <div className="promise-preview__mail">
+                  <b>A</b>
+                  <span>
+                    <strong>Meeting notes</strong>
+                    <em>For your reference</em>
+                  </span>
+                </div>
+              </div>
+              <div className="promise-card__copy">
+                <small>02 · KEEP FOCUS</small>
+                <h3>Bring the right things forward.</h3>
+                <p>
+                  Important emails, waiting replies, and focus time are there when you need them.
+                </p>
+              </div>
+            </article>
+
+            <article className="promise-card promise-card--private">
+              <div className="promise-preview promise-preview--private" aria-hidden="true">
+                <div className="promise-preview__top">
+                  <span>On your computer</span>
+                  <i>Local</i>
+                </div>
+                <div className="promise-preview__lock">⌂</div>
+                <strong>Your day stays close.</strong>
+                <div className="promise-preview__chips">
+                  <span>Tasks</span>
+                  <span>Focus</span>
+                  <span>History</span>
+                </div>
+              </div>
+              <div className="promise-card__copy">
+                <small>03 · STAY YOURS</small>
+                <h3>Private by default.</h3>
+                <p>Core data lives locally. Connections and AI stay optional, on your terms.</p>
+              </div>
+            </article>
+          </div>
+        </section>
 
         <section
           className="story-section story-section--overview"
