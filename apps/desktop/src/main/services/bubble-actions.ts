@@ -12,7 +12,13 @@
  * that has already gone cannot fire.
  */
 
-import { toggleDone, type BubbleAction, type MochiEvent, type StorageAdapter } from '@mochi/core';
+import {
+  CALENDAR_SUBJECT_PREFIX,
+  toggleDone,
+  type BubbleAction,
+  type MochiEvent,
+  type StorageAdapter,
+} from '@mochi/core';
 
 /** How long "later" means. Long enough to finish a thought, short enough to matter. */
 export const SNOOZE_MS = 10 * 60_000;
@@ -70,6 +76,16 @@ export interface ActionDeps {
   undismiss(subject: string): void;
   /** Push the updated list to open windows. */
   notifyTasks(): Promise<unknown>;
+  /**
+   * The validated join link for a meeting subject, or null.
+   *
+   * Looked up rather than carried on the event, so the URL never has to travel
+   * through the bubble payload to the renderer. The button is an opaque id; the
+   * link stays in main.
+   */
+  conferenceUrlFor?(subject: string): string | null;
+  /** Open a meeting's join link. Re-checks the scheme at the call site. */
+  joinMeeting?(subject: string): void;
 }
 
 /**
@@ -84,6 +100,21 @@ export interface ActionDeps {
  * ("yes, but in ten minutes") was unexpressible.
  */
 export function actionsForEvent(event: MochiEvent, deps: ActionDeps): OfferedAction[] {
+  /*
+   * A meeting alert gets a Join button when the invite carried a link.
+   *
+   * The link is not offered when there is not one: a button that does nothing is
+   * worse than no button, and half the meetings in a calendar are in a room.
+   * There is no Snooze — a meeting cannot be moved by five minutes, and the alert
+   * expires when it starts anyway.
+   */
+  if (event.subject.startsWith(CALENDAR_SUBJECT_PREFIX)) {
+    const url = deps.conferenceUrlFor?.(event.subject) ?? null;
+    const join = deps.joinMeeting;
+    if (url === null || join === undefined) return [];
+    return [{ label: 'Join', run: () => join(event.subject) }];
+  }
+
   if (!event.subject.startsWith(TASK_SUBJECT)) return [];
   const taskId = event.subject.slice(TASK_SUBJECT.length);
   if (taskId.length === 0) return [];

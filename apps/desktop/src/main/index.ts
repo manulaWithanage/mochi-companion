@@ -40,6 +40,7 @@ import { UserRoutineScheduler } from './services/user-routine-scheduler.js';
 import { TaskReminderScheduler } from './services/task-reminder-scheduler.js';
 import { BubbleActions, actionsForEvent } from './services/bubble-actions.js';
 import { BubbleQueue } from './services/bubble-queue.js';
+import { MeetingAlertService } from './services/meeting-alert-service.js';
 import { LlmService } from './services/llm-service.js';
 import { KeyVault } from './storage/key-vault.js';
 import { ProviderService } from './services/provider-service.js';
@@ -189,8 +190,20 @@ async function bootstrap(): Promise<void> {
   });
   const llmClient = new LlmClient(llm);
   const calendar = new CalendarService(new CalendarVault());
-  calendar.onChange((status) => setup.send('calendar:changed', status));
+  // Mochi could see the calendar and never mentioned it: nothing emitted a
+  // meeting to the bus. Alerts are planned from the cache on every sync, which
+  // is why a 15-minute poll can still deliver a 5-minute warning.
+  const meetingAlerts = new MeetingAlertService(
+    bus,
+    () => calendar.cached,
+    (url) => shell.openExternal(url).catch(() => undefined),
+  );
+  calendar.onChange((status) => {
+    setup.send('calendar:changed', status);
+    meetingAlerts.reconcile();
+  });
   calendar.start();
+  meetingAlerts.reconcile();
 
   // The briefing speaks through the bus like everything else, so the governor
   // still decides whether it reaches the user.
@@ -346,6 +359,8 @@ async function bootstrap(): Promise<void> {
         storage,
         undismiss: (subject) => governor.undismiss(subject),
         notifyTasks,
+        conferenceUrlFor: (subject) => meetingAlerts.conferenceUrlFor(subject),
+        joinMeeting: (subject) => meetingAlerts.join(subject),
       });
 
       const outcome = bubbleQueue.present({
