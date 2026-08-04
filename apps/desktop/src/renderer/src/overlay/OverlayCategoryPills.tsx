@@ -122,6 +122,50 @@ export function OverlayCategoryPills({
           </button>
         );
       })}
+
+      {/* ⚙️ Open Setup / Settings Dashboard Button */}
+      <button
+        type="button"
+        title="Open Mochi Dashboard & Settings"
+        onClick={(e) => {
+          e.stopPropagation();
+          void window.mochi.window.showSetup();
+        }}
+        onMouseEnter={() => {
+          setActiveHoverId('settings-gear');
+          onHoverChange(true);
+        }}
+        onMouseLeave={() => {
+          setActiveHoverId(null);
+        }}
+        style={{
+          width: 30,
+          height: 30,
+          borderRadius: '50%',
+          background: 'rgba(23, 19, 30, 0.92)',
+          backdropFilter: 'blur(10px)',
+          border:
+            activeHoverId === 'settings-gear'
+              ? '1px solid #f2a6b3'
+              : '1px solid rgba(255, 255, 255, 0.22)',
+          boxShadow:
+            activeHoverId === 'settings-gear'
+              ? '0 0 10px rgba(242,166,179,0.5), 0 2px 6px rgba(0,0,0,0.4)'
+              : '0 2px 8px rgba(0,0,0,0.4)',
+          color: '#ffffff',
+          fontSize: 13,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          cursor: 'pointer',
+          transform: activeHoverId === 'settings-gear' ? 'scale(1.22)' : 'scale(1.0)',
+          transition: 'all 180ms cubic-bezier(0.34, 1.56, 0.64, 1)',
+          outline: 'none',
+          padding: 0,
+        }}
+      >
+        ⚙️
+      </button>
     </div>
   );
 }
