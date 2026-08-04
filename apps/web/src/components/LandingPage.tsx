@@ -94,9 +94,6 @@ export const LandingPage: React.FC = () => {
           <div className="story-intro story-intro--center">
             <p className="story-eyebrow">HOW MOCHI HELPS YOU</p>
             <h2>Three simple ways Mochi brings peace to your workday.</h2>
-            <p>
-              Designed from the ground up to protect your attention, keep your day organized, and stay 100% private on your computer.
-            </p>
           </div>
 
           <div className="promise-grid">
