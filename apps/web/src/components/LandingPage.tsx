@@ -80,7 +80,7 @@ export const LandingPage: React.FC = () => {
           <div className="story-intro story-intro--center">
             <p className="story-eyebrow">WHAT IS MOCHI</p>
             <h2 className="hero-purpose-quote">
-              “Mochi is a calm workspace companion for Windows — bringing your <em>daily plan, focus sessions,</em> and important messages into one quiet home on your computer, without noise, accounts, or&nbsp;cloud&nbsp;tracking.”
+              “Mochi is a calm workspace companion for Windows. It brings your <em>top priorities, time tracking,</em> and important messages into one quiet home on your computer, with no accounts or&nbsp;cloud&nbsp;tracking.”
             </h2>
           </div>
         </section>
