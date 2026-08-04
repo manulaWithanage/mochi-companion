@@ -421,6 +421,52 @@ export function GmailTab(): JSX.Element {
 
         {!generating && draft.draftReply.length > 0 && (
           <div>
+            {/* Tone Selector Pills Bar */}
+            <div style={{ marginBottom: 14 }}>
+              <span style={label}>AI Draft Tone</span>
+              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                {[
+                  { id: 'professional', label: '💼 Professional' },
+                  { id: 'concise', label: '⚡ Short & Sweet' },
+                  { id: 'friendly', label: '☕ Friendly' },
+                  { id: 'assertive', label: '💪 Firm' },
+                ].map((item) => {
+                  const activeTone = tone === item.id;
+                  return (
+                    <button
+                      key={item.id}
+                      type="button"
+                      onClick={() => {
+                        const newTone = item.id as GmailTone;
+                        setTone(newTone);
+                        const targetEmail = emails.find((e) => e.uid === draft.emailUid);
+                        if (targetEmail) {
+                          void window.mochi.gmail.generateDraft(targetEmail.emailId, newTone).then((res) => {
+                            if (res.ok && res.draftReply) {
+                              setDraft((prev) => (prev ? { ...prev, draftReply: res.draftReply! } : null));
+                            }
+                          });
+                        }
+                      }}
+                      style={{
+                        padding: '6px 12px',
+                        borderRadius: 8,
+                        border: activeTone ? `1.5px solid ${C.accent}` : '1px solid rgba(255, 255, 255, 0.1)',
+                        background: activeTone ? 'rgba(242, 166, 179, 0.2)' : 'rgba(255, 255, 255, 0.04)',
+                        color: activeTone ? '#ffffff' : C.text,
+                        fontSize: 12,
+                        fontWeight: 700,
+                        cursor: 'pointer',
+                        transition: 'all 140ms ease',
+                      }}
+                    >
+                      {item.label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
             <div style={{ marginBottom: 14 }}>
               <span style={label}>Subject</span>
               <input
@@ -581,18 +627,78 @@ export function GmailTab(): JSX.Element {
   }
 
   // ---- Connected + Inbox view ----
+  const actionNeeded = emails.filter(
+    (e) => e.priority?.replyLikely === true || e.priority?.tier === 'urgent' || e.priority?.tier === 'review'
+  );
+
   return (
     <div>
       {connectedHeader}
 
-      {/*
-       * Category chips. These are Gmail's own inbox tabs, read over IMAP via
-       * the X-GM-RAW search extension — the same classification the user sees
-       * in Gmail, not a guess of our own.
-       *
-       * Counts render even at zero so the row keeps a fixed width; a set of
-       * controls that reflows while being clicked is worse than a "0".
-       */}
+      {/* Hero AI Action Deck Panel */}
+      {actionNeeded.length > 0 && (
+        <div
+          style={{
+            ...card,
+            marginBottom: 16,
+            padding: '16px 20px',
+            background: 'linear-gradient(135deg, rgba(46, 36, 59, 0.95) 0%, rgba(28, 22, 36, 0.95) 100%)',
+            border: '1px solid rgba(242, 166, 179, 0.35)',
+            boxShadow: '0 8px 24px rgba(0, 0, 0, 0.4)',
+          }}
+        >
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                <span style={{ fontSize: 16 }}>⚡</span>
+                <span style={{ fontSize: 14, fontWeight: 750, color: C.text }}>
+                  EXECUTIVE AI ACTION DECK
+                </span>
+                <span
+                  style={{
+                    fontSize: 11,
+                    fontWeight: 700,
+                    padding: '2px 8px',
+                    borderRadius: 99,
+                    background: 'rgba(255, 80, 80, 0.2)',
+                    color: '#ff8e8e',
+                  }}
+                >
+                  🔴 {actionNeeded.length} Pending Replies
+                </span>
+              </div>
+              <div style={{ fontSize: 12, color: C.dim }}>
+                Mochi detected {actionNeeded.length} urgent email requests requiring your answer today. Estimated response time: ~{actionNeeded.length * 3} mins.
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={async () => {
+                for (const item of actionNeeded.slice(0, 3)) {
+                  if (item.draft?.status !== 'ready') {
+                    void handleGenerate(item);
+                  }
+                }
+              }}
+              style={{
+                ...button('primary'),
+                fontSize: 12,
+                padding: '8px 16px',
+                fontWeight: 750,
+                whiteSpace: 'nowrap',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 6,
+              }}
+            >
+              ✦ Auto-Draft All Urgent ({actionNeeded.length})
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Category & Filter Tabs */}
       <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 14 }}>
         {CATEGORIES.map((c) => {
           const selected = c.id === active;
@@ -654,7 +760,7 @@ export function GmailTab(): JSX.Element {
             Nothing unread in {CATEGORIES.find((c) => c.id === active)?.label ?? 'this tab'}.
           </div>
           <div style={{ fontSize: 12, marginTop: 5 }}>
-            Pick another tab above, or click "Fetch Unread" to reload.
+            Pick another tab above, or click "Refresh" to sync latest emails.
           </div>
         </div>
       )}
@@ -673,9 +779,12 @@ export function GmailTab(): JSX.Element {
                   ...card,
                   display: 'flex',
                   flexDirection: 'column',
-                  gap: 8,
-                  border: `1px solid ${isExpanded ? C.accent : C.border}`,
+                  gap: 10,
+                  border: `1px solid ${isExpanded ? C.accent : 'rgba(255, 255, 255, 0.1)'}`,
                   transition: 'all 160ms ease',
+                  background: email.priority?.tier === 'urgent'
+                    ? 'rgba(40, 26, 38, 0.85)'
+                    : undefined,
                 }}
               >
                 <div
@@ -691,8 +800,8 @@ export function GmailTab(): JSX.Element {
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div
                       style={{
-                        fontSize: 13.5,
-                        fontWeight: 650,
+                        fontSize: 14,
+                        fontWeight: 700,
                         color: C.text,
                         marginBottom: 3,
                         overflow: 'hidden',
@@ -704,12 +813,13 @@ export function GmailTab(): JSX.Element {
                     </div>
                     <div style={{ fontSize: 12, color: C.dim }}>
                       From:{' '}
-                      {email.fromName.length > 0
-                        ? `${email.fromName} <${email.fromAddress}>`
-                        : email.fromAddress}
+                      <strong style={{ color: C.text }}>
+                        {email.fromName.length > 0 ? email.fromName : email.fromAddress}
+                      </strong>{' '}
+                      <span style={{ opacity: 0.6 }}>&lt;{email.fromAddress}&gt;</span>
                     </div>
-                    <div style={{ fontSize: 11.5, color: C.faint, marginTop: 2 }}>
-                      {new Date(email.receivedAt).toLocaleString()}
+                    <div style={{ fontSize: 11, color: C.faint, marginTop: 2 }}>
+                      🕒 {new Date(email.receivedAt).toLocaleString()}
                     </div>
                   </div>
                   <div
@@ -723,9 +833,9 @@ export function GmailTab(): JSX.Element {
                     <span
                       style={{
                         borderRadius: 999,
-                        padding: '3px 8px',
+                        padding: '3px 9px',
                         fontSize: 10.5,
-                        fontWeight: 650,
+                        fontWeight: 750,
                         color:
                           email.priority?.tier === 'urgent'
                             ? '#ff8e8e'
@@ -734,19 +844,19 @@ export function GmailTab(): JSX.Element {
                               : C.faint,
                         background:
                           email.priority?.tier === 'urgent'
-                            ? 'rgba(255,80,80,0.12)'
+                            ? 'rgba(255,80,80,0.18)'
                             : email.priority?.tier === 'review'
-                              ? 'rgba(240,180,70,0.12)'
-                              : 'rgba(255,255,255,0.04)',
+                              ? 'rgba(240,180,70,0.18)'
+                              : 'rgba(255,255,255,0.06)',
                       }}
                     >
                       {email.priority?.tier === 'urgent'
-                        ? '🔴 Urgent'
+                        ? '🔴 Urgent Reply'
                         : email.priority?.tier === 'review'
-                          ? '🟡 Review'
+                          ? '🟡 Review Request'
                           : email.priority === null
                             ? 'Scoring…'
-                            : '⚪ Low'}
+                            : '⚪ Low Priority'}
                     </span>
                     <div style={{ display: 'flex', gap: 6 }}>
                       <button
@@ -757,7 +867,7 @@ export function GmailTab(): JSX.Element {
                         }}
                         style={{ ...button('ghost'), fontSize: 11.5, padding: '5px 9px' }}
                       >
-                        {isExpanded ? '▲ Hide body' : '👁 Read body'}
+                        {isExpanded ? '▲ Hide' : '👁 Read'}
                       </button>
                       <button
                         id={`gmail-draft-btn-${email.uid}`}
@@ -781,7 +891,7 @@ export function GmailTab(): JSX.Element {
                         }}
                       >
                         {email.draft?.status === 'ready'
-                          ? '✦ Draft ready'
+                          ? '✦ Draft Ready'
                           : email.draft?.status === 'queued' || email.draft?.status === 'generating'
                             ? 'Preparing…'
                             : '✦ Draft Reply'}
@@ -790,18 +900,71 @@ export function GmailTab(): JSX.Element {
                   </div>
                 </div>
 
-                {email.priority !== null && (
-                  <div style={{ fontSize: 11.5, color: C.faint, fontStyle: 'italic' }}>
-                    {email.priority.reason}
+                {/* AI Summary / Rationale Box */}
+                {email.priority?.reason && (
+                  <div
+                    style={{
+                      background: 'rgba(242, 166, 179, 0.06)',
+                      border: '1px solid rgba(242, 166, 179, 0.2)',
+                      borderRadius: 8,
+                      padding: '8px 12px',
+                      fontSize: 12,
+                      color: C.accent,
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 6,
+                    }}
+                  >
+                    <span>💡 AI Insights:</span>
+                    <span>{email.priority.reason}</span>
                   </div>
                 )}
+
+                {/* 1-Click Quick AI Action Chips */}
+                <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 2 }}>
+                  {[
+                    { label: '👍 Confirm & Approve', intent: 'Confirm and approve the request politely.' },
+                    { label: '📅 Schedule & Time Check', intent: 'Check schedule and propose a convenient time.' },
+                    { label: '❓ Ask for Details', intent: 'Ask for additional information or documents.' },
+                  ].map((chip) => (
+                    <button
+                      key={chip.label}
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        openDraft(email);
+                      }}
+                      style={{
+                        padding: '4px 10px',
+                        borderRadius: 6,
+                        border: '1px solid rgba(255, 255, 255, 0.12)',
+                        background: 'rgba(255, 255, 255, 0.04)',
+                        color: C.text,
+                        fontSize: 11.5,
+                        fontWeight: 600,
+                        cursor: 'pointer',
+                        transition: 'all 140ms ease',
+                      }}
+                      onMouseEnter={(evt) => {
+                        evt.currentTarget.style.background = 'rgba(242, 166, 179, 0.15)';
+                        evt.currentTarget.style.borderColor = C.accent;
+                      }}
+                      onMouseLeave={(evt) => {
+                        evt.currentTarget.style.background = 'rgba(255, 255, 255, 0.04)';
+                        evt.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.12)';
+                      }}
+                    >
+                      {chip.label}
+                    </button>
+                  ))}
+                </div>
 
                 {email.priority?.replyLikely === true &&
                   email.priority.confidence >= 0.75 &&
                   email.priority.tier !== 'low' &&
                   email.reminder?.state !== 'replied' &&
                   email.reminder?.state !== 'dismissed' && (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 2 }}>
                       <span style={{ fontSize: 11, color: C.faint }}>
                         {email.reminder?.snoozedUntil
                           ? `Snoozed until ${new Date(email.reminder.snoozedUntil).toLocaleTimeString()}`
@@ -809,13 +972,13 @@ export function GmailTab(): JSX.Element {
                       </span>
                       <button
                         onClick={() => void handleSnoozeReminder(email.emailId)}
-                        style={{ ...button('ghost'), padding: '4px 8px', fontSize: 10.5 }}
+                        style={{ ...button('ghost'), padding: '3px 7px', fontSize: 10.5 }}
                       >
                         Snooze 1h
                       </button>
                       <button
                         onClick={() => void handleDismissReminder(email.emailId)}
-                        style={{ ...button('ghost'), padding: '4px 8px', fontSize: 10.5 }}
+                        style={{ ...button('ghost'), padding: '3px 7px', fontSize: 10.5 }}
                       >
                         Dismiss
                       </button>
