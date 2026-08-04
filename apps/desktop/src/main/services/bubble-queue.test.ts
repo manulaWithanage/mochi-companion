@@ -23,18 +23,23 @@ function makeOffer(): (actions: readonly OfferedAction[]) => BubbleAction[] {
 
 const ACTION: OfferedAction = { label: 'Done', run: () => undefined };
 
-function question(subject: string, onPresent = vi.fn()): QueuedBubble {
+/** Default: presenting succeeds. Pass `reached: false` for no overlay. */
+function presenter(reached = true) {
+  return vi.fn(() => reached);
+}
+
+function question(subject: string, onPresent = presenter()): QueuedBubble {
   return { subject, actions: [ACTION], present: onPresent };
 }
 
-function notice(subject: string, onPresent = vi.fn()): QueuedBubble {
+function notice(subject: string, onPresent = presenter()): QueuedBubble {
   return { subject, actions: [], present: onPresent };
 }
 
 describe('a question holds the floor', () => {
   it('shows the first one immediately', () => {
     const queue = new BubbleQueue(makeOffer());
-    const shown = vi.fn();
+    const shown = presenter();
 
     expect(queue.present(question('task-reminder:a', shown))).toBe('shown');
     expect(shown).toHaveBeenCalledOnce();
@@ -43,7 +48,7 @@ describe('a question holds the floor', () => {
 
   it('queues a second question instead of replacing the first', () => {
     const queue = new BubbleQueue(makeOffer());
-    const second = vi.fn();
+    const second = presenter();
 
     queue.present(question('task-reminder:a'));
     expect(queue.present(question('task-reminder:b', second))).toBe('queued');
@@ -56,7 +61,7 @@ describe('a question holds the floor', () => {
 
   it('shows the queued one once the first is answered', () => {
     const queue = new BubbleQueue(makeOffer());
-    const second = vi.fn();
+    const second = presenter();
 
     queue.present(question('task-reminder:a'));
     queue.present(question('task-reminder:b', second));
@@ -70,7 +75,7 @@ describe('a question holds the floor', () => {
 
   it('releases on a dismissal too — waved away is still resolved', () => {
     const queue = new BubbleQueue(makeOffer());
-    const second = vi.fn();
+    const second = presenter();
 
     queue.present(question('task-reminder:a'));
     queue.present(question('task-reminder:b', second));
@@ -83,7 +88,10 @@ describe('a question holds the floor', () => {
   it('serves them in the order they arrived', () => {
     const queue = new BubbleQueue(makeOffer());
     const order: string[] = [];
-    const track = (s: string) => () => order.push(s);
+    const track = (s: string) => () => {
+      order.push(s);
+      return true;
+    };
 
     queue.present({ subject: 'a', actions: [ACTION], present: track('a') });
     queue.present({ subject: 'b', actions: [ACTION], present: track('b') });
@@ -101,7 +109,7 @@ describe('what does not get queued', () => {
     // A greeting is only worth saying while it is true. Ten minutes late behind
     // a reminder is worse than not at all.
     const queue = new BubbleQueue(makeOffer());
-    const greeting = vi.fn();
+    const greeting = presenter();
 
     queue.present(question('task-reminder:a'));
 
@@ -112,7 +120,7 @@ describe('what does not get queued', () => {
 
   it('shows an informational bubble when the floor is free', () => {
     const queue = new BubbleQueue(makeOffer());
-    const greeting = vi.fn();
+    const greeting = presenter();
 
     expect(queue.present(notice('greeting', greeting))).toBe('shown');
     expect(greeting).toHaveBeenCalledOnce();
@@ -170,11 +178,69 @@ describe('action ids', () => {
 
   it('hands the presenter the ids minted for it', () => {
     const queue = new BubbleQueue(makeOffer());
-    const present = vi.fn();
+    const present = presenter();
 
     queue.present({ subject: 'a', actions: [ACTION], present });
 
     expect(present).toHaveBeenCalledWith([{ id: 'act-1', label: 'Done' }]);
+  });
+});
+
+describe('when the bubble cannot reach the screen', () => {
+  // The overlay window is created late in bootstrap, after the schedulers start
+  // ticking, so a reminder caught up at launch can arrive before there is
+  // anything to show it on.
+
+  it('reports dropped rather than shown', () => {
+    const queue = new BubbleQueue(makeOffer());
+
+    expect(queue.present(question('task-reminder:a', presenter(false)))).toBe('dropped');
+  });
+
+  it('does not hold the floor — nobody can answer what they cannot see', () => {
+    // This is the deadlock: pending set on a bubble that never appeared would
+    // wait for an answer for ever and hold every later reminder behind it.
+    const queue = new BubbleQueue(makeOffer());
+
+    queue.present(question('task-reminder:a', presenter(false)));
+
+    expect(queue.pendingSubject).toBeNull();
+  });
+
+  it('lets the next reminder through', () => {
+    const queue = new BubbleQueue(makeOffer());
+    const later = presenter();
+
+    queue.present(question('task-reminder:a', presenter(false)));
+
+    expect(queue.present(question('task-reminder:b', later))).toBe('shown');
+    expect(later).toHaveBeenCalledOnce();
+  });
+
+  it('retires the ids minted for the bubble nobody saw', () => {
+    // Otherwise the registry would describe buttons that were never displayed.
+    const offer = vi.fn(makeOffer());
+    const queue = new BubbleQueue(offer);
+
+    queue.present(question('a', presenter(false)));
+
+    expect(offer).toHaveBeenLastCalledWith([]);
+  });
+
+  it('skips past a failure when draining the queue', () => {
+    // One unreachable bubble must not strand the ones behind it.
+    const queue = new BubbleQueue(makeOffer());
+    const third = presenter();
+
+    queue.present(question('on-screen'));
+    queue.present(question('unreachable', presenter(false)));
+    queue.present(question('reachable', third));
+
+    queue.resolvePending();
+
+    expect(third).toHaveBeenCalledOnce();
+    expect(queue.pendingSubject).toBe('reachable');
+    expect(queue.waitingCount).toBe(0);
   });
 });
 

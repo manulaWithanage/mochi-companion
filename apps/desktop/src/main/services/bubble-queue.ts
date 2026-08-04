@@ -24,6 +24,12 @@
  * Action ids are minted at presentation, not on arrival: a queued bubble holds
  * its actions unregistered, so the registry only ever describes what is
  * genuinely on screen.
+ *
+ * Presenting can fail — the overlay window is created late in bootstrap, so a
+ * reminder caught up at launch can arrive before there is anything to show it
+ * on. A bubble that did not get there does not hold the floor, because no answer
+ * to it can ever arrive; it is reported as dropped so the caller can hold onto
+ * it and try again.
  */
 
 import type { BubbleAction } from '@mochi/core';
@@ -43,8 +49,14 @@ export interface QueuedBubble {
   readonly subject: string;
   /** Unregistered. Ids are minted when this reaches the screen. */
   readonly actions: readonly OfferedAction[];
-  /** Put it on screen, with the ids minted for it. */
-  present(actions: readonly BubbleAction[]): void;
+  /**
+   * Put it on screen, with the ids minted for it.
+   *
+   * Returns false if it did not get there — there is no overlay window yet, or
+   * it has been destroyed. A question that never appeared must not hold the
+   * floor, because no answer to it can ever arrive.
+   */
+  present(actions: readonly BubbleAction[]): boolean;
 }
 
 export type PresentOutcome = 'shown' | 'queued' | 'dropped';
@@ -72,8 +84,7 @@ export class BubbleQueue {
    */
   present(bubble: QueuedBubble): PresentOutcome {
     if (this.pending === null) {
-      this.show(bubble);
-      return 'shown';
+      return this.show(bubble) ? 'shown' : 'dropped';
     }
 
     // The same subject arriving again is a re-poll, not a second question.
@@ -100,8 +111,12 @@ export class BubbleQueue {
     if (this.pending !== subject) return;
     this.pending = null;
 
-    const next = this.waiting.shift();
-    if (next !== undefined) this.show(next);
+    // Keep going past anything that cannot reach the screen, or one failure
+    // would strand everything behind it.
+    let next = this.waiting.shift();
+    while (next !== undefined && !this.show(next)) {
+      next = this.waiting.shift();
+    }
   }
 
   /**
@@ -122,11 +137,20 @@ export class BubbleQueue {
     this.waiting = [];
   }
 
-  private show(bubble: QueuedBubble): void {
+  /** Returns whether it reached the screen. */
+  private show(bubble: QueuedBubble): boolean {
+    const reached = bubble.present(this.offer(bubble.actions));
+    if (!reached) {
+      // Nothing is on screen, so nothing can be pressed. Retire the ids that
+      // were just minted rather than leaving them live for a bubble nobody saw.
+      this.offer([]);
+      return false;
+    }
+
     // Only a question holds the floor. Informational bubbles expire on their own
     // in the renderer and main is never told, so treating one as pending would
     // block the queue for ever.
     this.pending = bubble.actions.length > 0 ? bubble.subject : null;
-    bubble.present(this.offer(bubble.actions));
+    return true;
   }
 }

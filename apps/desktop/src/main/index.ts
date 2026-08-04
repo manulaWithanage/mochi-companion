@@ -351,7 +351,7 @@ async function bootstrap(): Promise<void> {
         subject: event.subject,
         actions,
         present: (offered) => {
-          overlay.send('bubble:show', {
+          const reached = overlay.send('bubble:show', {
             text: event.text,
             ttlMs: event.userInitiated === true ? BUBBLE_TTL_LONG_MS : BUBBLE_TTL_MS,
             subject: event.subject,
@@ -363,10 +363,15 @@ async function bootstrap(): Promise<void> {
                 }
               : {}),
           });
+          // Only now is it genuinely in front of the user. Confirming on admit
+          // or on queue would be confirming something that had not happened.
+          if (!reached) return false;
+          taskReminders.confirmDelivered(event.subject);
           if (useCenterEntrance) {
             console.log('[mail-alert] presenting with routine magician entrance');
             void overlay.performMagicianAlert(BUBBLE_TTL_MS);
           }
+          return true;
         },
       });
 
@@ -387,7 +392,13 @@ async function bootstrap(): Promise<void> {
       const wait = Math.max(0, decision.until - Date.now());
       const retry = setTimeout(() => bus.emit(event), wait);
       retry.unref?.();
+      return;
     }
+
+    // Dropped. Task reminders are held and retried by their scheduler, but
+    // everything else ends here, so say so — a discarded interruption should
+    // never be invisible in the log.
+    console.log(`[governor] dropped "${event.subject}" — ${decision.reason}`);
   });
 
   /** Compose a templated message and put it on the bus. */

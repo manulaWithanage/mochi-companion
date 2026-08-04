@@ -269,9 +269,19 @@ export class OverlayWindow {
     });
   }
 
-  send(channel: string, payload: unknown): void {
-    if (this.win === null || this.win.isDestroyed()) return;
+  /**
+   * Returns whether there was actually a renderer to send to.
+   *
+   * There often is not. The window is created late in bootstrap, well after the
+   * schedulers start ticking, so a reminder that falls due during startup — the
+   * catch-up case this app exists to handle — can arrive before there is
+   * anything to show it on. Silently returning void made that indistinguishable
+   * from a delivered message, so callers who need to know can now ask.
+   */
+  send(channel: string, payload: unknown): boolean {
+    if (this.win === null || this.win.isDestroyed()) return false;
     this.win.webContents.send(channel, payload);
+    return true;
   }
 
   /**

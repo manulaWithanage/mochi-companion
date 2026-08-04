@@ -318,3 +318,61 @@ describe('undismiss', () => {
     expect(governor.isDismissed('never-seen')).toBe(false);
   });
 });
+
+/**
+ * Pinned because it is load-bearing and easy to get wrong from the outside.
+ *
+ * A task reminder is something the user asked for, at a time they chose, so it
+ * carries `userInitiated` and is allowed before any of the rationing runs. It
+ * was tempting to believe DND or an exhausted budget could swallow one — they
+ * cannot, and a fix aimed at that would have been aimed at nothing.
+ *
+ * What *can* lose a reminder is everything after this point: an overlay window
+ * that does not exist yet, or a bubble queue with no room. That is why delivery
+ * is confirmed rather than assumed.
+ */
+describe('a reminder the user asked for is never rationed away', () => {
+  const reminder = (over: Partial<MochiEvent> = {}): MochiEvent =>
+    ev({ subject: 'task-reminder:t1', userInitiated: true, priority: 'high', ...over });
+
+  it('gets through do-not-disturb', () => {
+    expect(gov({ doNotDisturb: true }).admit(reminder(), ctx()).kind).toBe('allow');
+  });
+
+  it('gets through quiet hours', () => {
+    const g = gov({ quietHours: { start: '20:00', end: '08:00' } });
+    expect(g.admit(reminder(), ctx({ now: at(23) })).kind).toBe('allow');
+  });
+
+  it('gets through an exhausted hourly budget', () => {
+    const g = gov({ maxPerHour: 1 });
+    g.admit(ev({ id: 'filler' }), ctx()); // spends the budget
+    expect(g.admit(reminder(), ctx({ now: T + MIN })).kind).toBe('allow');
+  });
+
+  it('gets through the minimum gap', () => {
+    const g = gov({ minGapMs: 10 * MIN });
+    g.admit(ev({ id: 'filler' }), ctx());
+    expect(g.admit(reminder(), ctx({ now: T + 1000 })).kind).toBe('allow');
+  });
+
+  it('is not deferred behind a fullscreen app', () => {
+    expect(gov().admit(reminder(), ctx({ fullscreenActive: true })).kind).toBe('allow');
+  });
+
+  it('does not itself spend the budget', () => {
+    // Otherwise a busy morning of reminders would silence everything else.
+    const g = gov();
+    g.admit(reminder(), ctx());
+    g.admit(reminder({ subject: 'task-reminder:t2' }), ctx());
+    expect(g.countInLastHour(T)).toBe(0);
+  });
+
+  it('still gets through after the same subject was dismissed', () => {
+    // The scheduler retries an undelivered reminder. A dismissal recorded for a
+    // bubble the user never saw must not silence the retry.
+    const g = gov();
+    g.dismiss('task-reminder:t1');
+    expect(g.admit(reminder(), ctx()).kind).toBe('allow');
+  });
+});
