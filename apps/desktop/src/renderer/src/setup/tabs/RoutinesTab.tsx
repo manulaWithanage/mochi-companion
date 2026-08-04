@@ -225,7 +225,6 @@ export function RoutinesTab(): JSX.Element {
   const [scheduleMode, setScheduleMode] = useState<'specific' | 'interval'>('specific');
   const [selectedIntervalMins, setSelectedIntervalMins] = useState<number>(30);
   const [showIconPicker, setShowIconPicker] = useState(false);
-  const [customIntervalMinsInput, setCustomIntervalMinsInput] = useState('30');
   const [intervalStartInput, setIntervalStartInput] = useState('09:00 AM');
   const [intervalEndInput, setIntervalEndInput] = useState('06:00 PM');
 
@@ -620,7 +619,14 @@ export function RoutinesTab(): JSX.Element {
 
               {/* Title Input */}
               <input
-                style={{ ...input, flex: 1, marginBottom: 0, height: 40, fontSize: 14, fontWeight: 700 }}
+                style={{
+                  ...input,
+                  flex: 1,
+                  marginBottom: 0,
+                  height: 40,
+                  fontSize: 14,
+                  fontWeight: 700,
+                }}
                 placeholder="Routine Title (e.g. Hydration Break, Eye Stretch)"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
@@ -647,8 +653,12 @@ export function RoutinesTab(): JSX.Element {
                 style={{
                   padding: '7px 16px',
                   borderRadius: 8,
-                  border: scheduleMode === 'specific' ? '1px solid rgba(242, 166, 179, 0.4)' : 'none',
-                  background: scheduleMode === 'specific' ? 'linear-gradient(180deg, #3f334c 0%, #282032 100%)' : 'transparent',
+                  border:
+                    scheduleMode === 'specific' ? '1px solid rgba(242, 166, 179, 0.4)' : 'none',
+                  background:
+                    scheduleMode === 'specific'
+                      ? 'linear-gradient(180deg, #3f334c 0%, #282032 100%)'
+                      : 'transparent',
                   color: scheduleMode === 'specific' ? '#ffffff' : C.dim,
                   fontSize: 12.5,
                   fontWeight: scheduleMode === 'specific' ? 750 : 500,
@@ -668,8 +678,12 @@ export function RoutinesTab(): JSX.Element {
                 style={{
                   padding: '7px 16px',
                   borderRadius: 8,
-                  border: scheduleMode === 'interval' ? '1px solid rgba(242, 166, 179, 0.4)' : 'none',
-                  background: scheduleMode === 'interval' ? 'linear-gradient(180deg, #3f334c 0%, #282032 100%)' : 'transparent',
+                  border:
+                    scheduleMode === 'interval' ? '1px solid rgba(242, 166, 179, 0.4)' : 'none',
+                  background:
+                    scheduleMode === 'interval'
+                      ? 'linear-gradient(180deg, #3f334c 0%, #282032 100%)'
+                      : 'transparent',
                   color: scheduleMode === 'interval' ? '#ffffff' : C.dim,
                   fontSize: 12.5,
                   fontWeight: scheduleMode === 'interval' ? 750 : 500,
@@ -706,7 +720,8 @@ export function RoutinesTab(): JSX.Element {
                     }}
                   >
                     <span>
-                      🕒 {formatTime12h(t)} <span style={{ opacity: 0.6, fontSize: 11 }}>({t})</span>
+                      🕒 {formatTime12h(t)}{' '}
+                      <span style={{ opacity: 0.6, fontSize: 11 }}>({t})</span>
                     </span>
                     {times.length > 1 && (
                       <button
@@ -847,7 +862,11 @@ export function RoutinesTab(): JSX.Element {
                           setSelectedIntervalMins(item.mins);
                           const parsedStart = parseFlexibleTime(intervalStartInput) || '09:00';
                           const parsedEnd = parseFlexibleTime(intervalEndInput) || '18:00';
-                          const generated = generateIntervalTimes(item.mins, parsedStart, parsedEnd);
+                          const generated = generateIntervalTimes(
+                            item.mins,
+                            parsedStart,
+                            parsedEnd,
+                          );
                           setTimes(generated);
                         }}
                         style={{
@@ -889,7 +908,9 @@ export function RoutinesTab(): JSX.Element {
                         setIntervalStartInput(e.target.value);
                         const parsedStart = parseFlexibleTime(e.target.value) || '09:00';
                         const parsedEnd = parseFlexibleTime(intervalEndInput) || '18:00';
-                        setTimes(generateIntervalTimes(selectedIntervalMins, parsedStart, parsedEnd));
+                        setTimes(
+                          generateIntervalTimes(selectedIntervalMins, parsedStart, parsedEnd),
+                        );
                       }}
                     />
                   </div>
@@ -903,7 +924,9 @@ export function RoutinesTab(): JSX.Element {
                         setIntervalEndInput(e.target.value);
                         const parsedStart = parseFlexibleTime(intervalStartInput) || '09:00';
                         const parsedEnd = parseFlexibleTime(e.target.value) || '18:00';
-                        setTimes(generateIntervalTimes(selectedIntervalMins, parsedStart, parsedEnd));
+                        setTimes(
+                          generateIntervalTimes(selectedIntervalMins, parsedStart, parsedEnd),
+                        );
                       }}
                     />
                   </div>
@@ -920,7 +943,8 @@ export function RoutinesTab(): JSX.Element {
                     color: C.accent,
                   }}
                 >
-                  ⚡ Mochi will remind you {times.length} times every {selectedIntervalMins} minutes between {intervalStartInput} and {intervalEndInput}.
+                  ⚡ Mochi will remind you {times.length} times every {selectedIntervalMins} minutes
+                  between {intervalStartInput} and {intervalEndInput}.
                 </div>
               </div>
             </div>
@@ -1176,7 +1200,14 @@ export function RoutinesTab(): JSX.Element {
                                 : `${displayTimes.length} times`;
 
                             return (
-                              <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                              <div
+                                style={{
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: 6,
+                                  flexWrap: 'wrap',
+                                }}
+                              >
                                 <span
                                   style={{
                                     fontSize: 11.5,
