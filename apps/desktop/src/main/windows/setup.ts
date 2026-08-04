@@ -44,6 +44,13 @@ export class SetupWindow {
       this.win = null;
     });
 
+    // Auto-close when user clicks outside (loses window focus)
+    this.win.on('blur', () => {
+      if (this.win !== null && !this.win.isDestroyed()) {
+        this.win.close();
+      }
+    });
+
     this.win.webContents.on('console-message', (_e, level, message, line, sourceId) => {
       console.log(`[setup-web] [${level}] ${message} (${sourceId}:${line})`);
     });
