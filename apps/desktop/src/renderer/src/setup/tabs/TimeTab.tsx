@@ -11,7 +11,6 @@ import {
 } from '@mochi/core';
 import { button, C, card, h2, humanDuration, input, label, sub } from '../ui.js';
 import { SegmentedControl } from '../SegmentedControl.js';
-import { CategoryIcon } from '../CategoryIcon.js';
 
 const QUICK_PRESETS = [
   { name: 'Work Time', colour: '#6366f1', icon: '💼' },
@@ -50,10 +49,10 @@ const SWATCH_OPTIONS = [
 ];
 
 function formatCategoryName(name: string): string {
-  if (name === 'General') {
-    return '🎯 General';
-  }
-  return name;
+  const cleaned = name
+    .replace(/^[\p{Emoji}\p{Extended_Pictographic}\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\s]+/gu, '')
+    .trim();
+  return cleaned.length > 0 ? cleaned : name;
 }
 
 /**
@@ -616,7 +615,7 @@ export function TimeTab(): JSX.Element {
                           flexShrink: 0,
                         }}
                       >
-                        <CategoryIcon icon={categoryIcon(p.name)} color={p.colour} size={18} />
+                        {categoryIcon(p.name)}
                       </div>
                       <div style={{ minWidth: 0, flex: 1 }}>
                         <div
@@ -883,7 +882,7 @@ export function TimeTab(): JSX.Element {
                             flexShrink: 0,
                           }}
                         >
-                          <CategoryIcon icon={categoryIcon(project.name)} color={project.colour} size={20} />
+                          {categoryIcon(project.name)}
                         </div>
                         <div style={{ minWidth: 0, flex: 1 }}>
                           <div
