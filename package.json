@@ -16,11 +16,10 @@
   "packageManager": "pnpm@11.17.0",
   "scripts": {
     "dev": "pnpm --filter @mochi/desktop dev",
-    "dev:web": "pnpm --filter @mochi/web dev",
     "build": "pnpm -r build",
     "test": "vitest run",
     "test:watch": "vitest",
-    "typecheck": "pnpm -r --filter=!@mochi/web typecheck",
+    "typecheck": "pnpm -r typecheck",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "format": "prettier --write \"**/*.{ts,tsx,js,json,md,yaml,yml}\"",

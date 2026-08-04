@@ -8,10 +8,14 @@ Mochi is split-licensed. **Which license applies depends on which part of the re
 | `packages/**`         | **MIT**                              | [LICENSE](LICENSE)                           |
 | `skins/**`            | **MIT** (code) — see _Artwork_ below | [LICENSE](LICENSE)                           |
 | Specs & docs (`*.md`) | **MIT**                              | [LICENSE](LICENSE)                           |
-| `apps/web/`           | **AGPL-3.0-or-later**                | [LICENSE-AGPL-3.0.txt](LICENSE-AGPL-3.0.txt) |
 | `services/**`         | **AGPL-3.0-or-later**                | [LICENSE-AGPL-3.0.txt](LICENSE-AGPL-3.0.txt) |
 
 Anything not listed above is MIT.
+
+The public website used to live here as `apps/web/` and is **AGPL-3.0-or-later**. It moved to
+its own repository on 2026-08-04 — github.com/manulaWithanage/mochi-website — and carries the
+AGPL text with it. Nothing in this repository is AGPL today; the `services/**` row is reserved
+for cloud code that does not exist yet.
 
 ---
 
@@ -19,7 +23,7 @@ Anything not listed above is MIT.
 
 **The desktop client is MIT** because we want the widest possible use. Embed it, fork it, ship it inside something commercial, build skins for it, vendor `packages/core` into your own project — no obligations beyond keeping the copyright notice.
 
-**The cloud service is AGPL-3.0** because AGPL §13 covers the one case MIT cannot: running modified software as a network service. Under AGPL, anyone who hosts a modified version of `apps/web` or `services/**` must publish their source. Fork it and self-host for yourself — that is fine and encouraged. Fork it, close it, and sell hosting — that is not.
+**The cloud service is AGPL-3.0** because AGPL §13 covers the one case MIT cannot: running modified software as a network service. Under AGPL, anyone who hosts a modified version of `services/**` must publish their source. Fork it and self-host for yourself — that is fine and encouraged. Fork it, close it, and sell hosting — that is not.
 
 The desktop app is deliberately _not_ AGPL, because §13 does nothing for locally-run software anyway. It would impose copyleft costs with none of the anti-SaaS benefit.
 
@@ -60,7 +64,7 @@ The bundled `skins/default/` artwork is MIT alongside the code. Third-party skin
 
 ## Known constraint
 
-AGPL-licensed code conflicts with the Apple App Store's terms. This does not affect `apps/desktop` (MIT), so Mac App Store distribution of the desktop client remains possible. It does mean `apps/web` and `services/**` can never ship through Apple's stores — which is not a distribution channel a web app and a webhook relay would use anyway.
+AGPL-licensed code conflicts with the Apple App Store's terms. This does not affect `apps/desktop` (MIT), so Mac App Store distribution of the desktop client remains possible. It does mean the website (now its own repository) and `services/**` can never ship through Apple's stores — which is not a distribution channel a web app and a webhook relay would use anyway.
 
 ---
 
