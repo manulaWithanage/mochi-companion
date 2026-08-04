@@ -288,3 +288,33 @@ describe('configure', () => {
     expect(g.settings.maxPerHour).toBe(DEFAULT_GOVERNOR_CONFIG.maxPerHour);
   });
 });
+
+describe('undismiss', () => {
+  it('lets a subject speak again when the user re-arms it', () => {
+    // "Never again" is right for something waved away, and wrong the moment the
+    // user snoozes it or gives it a new time.
+    const governor = new InterruptionGovernor();
+    governor.dismiss('task-reminder:1');
+    expect(governor.isDismissed('task-reminder:1')).toBe(true);
+
+    governor.undismiss('task-reminder:1');
+    expect(governor.isDismissed('task-reminder:1')).toBe(false);
+  });
+
+  it('leaves other dismissals alone', () => {
+    const governor = new InterruptionGovernor();
+    governor.dismiss('a');
+    governor.dismiss('b');
+
+    governor.undismiss('a');
+
+    expect(governor.isDismissed('a')).toBe(false);
+    expect(governor.isDismissed('b')).toBe(true);
+  });
+
+  it('is harmless for a subject that was never dismissed', () => {
+    const governor = new InterruptionGovernor();
+    expect(() => governor.undismiss('never-seen')).not.toThrow();
+    expect(governor.isDismissed('never-seen')).toBe(false);
+  });
+});

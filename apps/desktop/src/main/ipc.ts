@@ -72,6 +72,7 @@ export interface IpcContext {
   briefing: import('./services/briefing-service.js').BriefingService;
   activity: import('./services/activity-service.js').ActivityService;
   userRoutineScheduler: import('./services/user-routine-scheduler.js').UserRoutineScheduler;
+  bubbleActions: import('./services/bubble-actions.js').BubbleActions;
 }
 
 const asString = (value: unknown, fallback: string): string =>
@@ -336,6 +337,19 @@ export function registerIpc(ctx: IpcContext): void {
 
   // Dismissing a bubble dismisses the subject, not just the message, so a
   // re-poll producing a fresh event id cannot resurrect it.
+  /**
+   * A button on the current bubble was pressed.
+   *
+   * Deliberately not a dismiss: acting on a reminder is not waving it away, and
+   * a snooze has to be able to come back. The id is opaque and was issued by
+   * main, so an unknown one is ignored rather than trusted.
+   */
+  ipcMain.on('bubble:act', (_e, actionId: unknown) => {
+    if (typeof actionId === 'string' && actionId.length > 0) {
+      void ctx.bubbleActions.run(actionId);
+    }
+  });
+
   ipcMain.on('bubble:dismiss', (_e, subject: unknown) => {
     if (typeof subject === 'string' && subject.length > 0) {
       ctx.governor.dismiss(subject);

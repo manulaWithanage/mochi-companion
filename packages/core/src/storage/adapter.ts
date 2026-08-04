@@ -71,6 +71,16 @@ export interface StorageAdapter extends EmailStore {
   getRunningSession(): Promise<WorkSession | null>;
   setRunningSession(session: WorkSession | null): Promise<void>;
 
+  /**
+   * Small named values that must outlive the process but are not user settings.
+   *
+   * Bookkeeping, not preferences: how far a scheduler has got, for instance.
+   * It lives here rather than in the settings file because the user never
+   * chose it and should never have to see it.
+   */
+  getAppState(key: string): Promise<string | null>;
+  setAppState(key: string, value: string): Promise<void>;
+
   close(): Promise<void>;
 }
 
@@ -90,6 +100,7 @@ export class InMemoryStorageAdapter implements StorageAdapter {
   private emailReminders = new Map<string, EmailReminderState>();
   private gmailSyncStates = new Map<string, GmailSyncState>();
   private running: WorkSession | null = null;
+  private appState = new Map<string, string>();
 
   private emailKey(account: string, emailId: string): string {
     return `${account}\u0000${emailId}`;
@@ -169,6 +180,14 @@ export class InMemoryStorageAdapter implements StorageAdapter {
 
   async setRunningSession(session: WorkSession | null): Promise<void> {
     this.running = session;
+  }
+
+  async getAppState(key: string): Promise<string | null> {
+    return this.appState.get(key) ?? null;
+  }
+
+  async setAppState(key: string, value: string): Promise<void> {
+    this.appState.set(key, value);
   }
 
   async replaceInboxSnapshot(

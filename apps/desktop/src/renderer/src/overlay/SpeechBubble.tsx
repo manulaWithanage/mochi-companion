@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type JSX } from 'react';
+import type { BubbleAction } from '@mochi/core';
 
 /**
  * Mochi's speech bubble.
@@ -18,9 +19,23 @@ interface Props {
   readonly onDismiss: () => void;
   /** The window is click-through; hovering the bubble must re-enable input. */
   readonly onHoverChange: (hovering: boolean) => void;
+  /** Buttons main offered for this bubble. Ids are opaque and echoed back. */
+  readonly actions?: readonly BubbleAction[];
+  readonly onAction?: (actionId: string) => void;
 }
 
 const FADE_MS = 200;
+
+/**
+ * The outline, in one place.
+ *
+ * The tail used to hardcode its own fill while the bubble used a gradient, so
+ * the two could drift apart — and the tail carried no outline at all, which is
+ * what left a gap in the bubble's border where it joined.
+ */
+const OUTLINE = 'rgba(242, 166, 179, 0.45)';
+/** The gradient's far end: what the bubble looks like exactly where the tail joins. */
+const BUBBLE_END = 'rgba(28, 21, 35, 0.98)';
 
 /** Clear of the mascot's head, measured against the 300px window. */
 const BOTTOM_OFFSET = 164;
@@ -37,7 +52,13 @@ function formatConversationalText(raw: string | null): string | null {
   return text;
 }
 
-export function SpeechBubble({ text, onDismiss, onHoverChange }: Props): JSX.Element | null {
+export function SpeechBubble({
+  text,
+  onDismiss,
+  onHoverChange,
+  actions,
+  onAction,
+}: Props): JSX.Element | null {
   const [visible, setVisible] = useState(false);
   const [rendered, setRendered] = useState<string | null>(null);
   const exitTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
@@ -74,11 +95,10 @@ export function SpeechBubble({ text, onDismiss, onHoverChange }: Props): JSX.Ele
         padding: '11px 15px',
         borderRadius: 16,
         borderBottomRightRadius: 5,
-        background:
-          'linear-gradient(145deg, rgba(48, 37, 58, 0.98) 0%, rgba(28, 21, 35, 0.98) 100%)',
+        background: `linear-gradient(145deg, rgba(48, 37, 58, 0.98) 0%, ${BUBBLE_END} 100%)`,
         color: '#ffffff',
         font: '600 13px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif',
-        border: '1px solid rgba(242, 166, 179, 0.45)',
+        border: `1px solid ${OUTLINE}`,
         boxShadow:
           '0 14px 36px rgba(0, 0, 0, 0.8), 0 0 24px rgba(242, 166, 179, 0.32), inset 0 1px 0 rgba(255, 255, 255, 0.18)',
         backdropFilter: 'blur(16px)',
@@ -93,18 +113,68 @@ export function SpeechBubble({ text, onDismiss, onHoverChange }: Props): JSX.Ele
     >
       {rendered}
 
-      {/* Tail, pointing down at the mascot. */}
+      {/*
+        What the user can do about this, without opening the dashboard.
+
+        Before this the only possible reply to a reminder was to wave it away,
+        which is why a reminder could nag but never be satisfied. Clicks are
+        stopped from propagating: the bubble body dismisses, and pressing a
+        button is the opposite of dismissing.
+      */}
+      {actions !== undefined && actions.length > 0 && onAction !== undefined && (
+        <div style={{ display: 'flex', gap: 6, marginTop: 9 }}>
+          {actions.map((action) => (
+            <button
+              key={action.id}
+              type="button"
+              onClick={(event) => {
+                event.stopPropagation();
+                onAction(action.id);
+              }}
+              style={{
+                flex: 1,
+                padding: '5px 10px',
+                borderRadius: 9,
+                border: '1px solid rgba(242, 166, 179, 0.55)',
+                background: 'rgba(242, 166, 179, 0.16)',
+                color: '#ffffff',
+                font: '650 11.5px/1 system-ui, -apple-system, "Segoe UI", sans-serif',
+                cursor: 'pointer',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              {action.label}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/*
+        Tail, pointing down at the mascot.
+
+        A square rotated 45 degrees and half-buried in the bubble, rather than
+        the usual CSS-triangle trick. A triangle can only be a solid fill, so it
+        sat on top of the bubble's 1px border and punched a visible gap in it
+        while having no outline of its own.
+
+        Two adjacent borders on the rotated square give the tail an outline that
+        continues the bubble's, and the buried half is hidden behind the bubble's
+        own background — which is also what leaves the mouth open, since a child
+        paints over its parent's border.
+      */}
       <span
         style={{
           position: 'absolute',
-          right: 14,
-          bottom: -TAIL,
-          width: 0,
-          height: 0,
-          borderLeft: `${TAIL}px solid transparent`,
-          borderRight: `${TAIL - 4}px solid transparent`,
-          borderTop: `${TAIL + 1}px solid #1c1523`,
-          filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.6))',
+          right: 15,
+          bottom: -TAIL / 2 - 1,
+          width: TAIL + 3,
+          height: TAIL + 3,
+          background: BUBBLE_END,
+          borderRight: `1px solid ${OUTLINE}`,
+          borderBottom: `1px solid ${OUTLINE}`,
+          borderBottomRightRadius: 3,
+          transform: 'rotate(45deg)',
+          filter: 'drop-shadow(1px 1px 2px rgba(0, 0, 0, 0.45))',
         }}
       />
     </div>

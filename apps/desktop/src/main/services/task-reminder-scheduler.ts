@@ -38,10 +38,22 @@ const TICK_MS = 20_000;
  */
 const CATCH_UP_MS = 4 * 60 * 60_000;
 
+/** Where the watermark is kept, so it survives a restart. */
+const WATERMARK_KEY = 'task_reminders_delivered_through';
+
 export class TaskReminderScheduler {
   private timer: NodeJS.Timeout | null = null;
-  /** Everything at or before this has been said. */
-  private deliveredThrough: number;
+  /**
+   * Everything at or before this has been said. Null until loaded from storage.
+   *
+   * It has to be persisted. Starting it at `now - CATCH_UP_MS` on every launch
+   * re-armed a four-hour window each time, so an open task whose reminder had
+   * already been delivered fired again on the next start — and again on the one
+   * after that. Anyone restarting the app a few times in an afternoon got the
+   * same reminder repeatedly, which is exactly the behaviour that teaches
+   * people to switch reminders off.
+   */
+  private deliveredThrough: number | null = null;
   private checking = false;
 
   constructor(
@@ -49,8 +61,24 @@ export class TaskReminderScheduler {
     private readonly storage: StorageAdapter,
     private readonly settings: SettingsStore,
     private readonly overlay: OverlayWindow,
-  ) {
-    this.deliveredThrough = Date.now() - CATCH_UP_MS;
+  ) {}
+
+  /**
+   * The stored watermark, floored at the catch-up window.
+   *
+   * The floor matters for the opposite failure: a watermark from last week
+   * would make the first check deliver every reminder since, all at once.
+   */
+  private async loadWatermark(): Promise<number> {
+    const floor = Date.now() - CATCH_UP_MS;
+    try {
+      const raw = await this.storage.getAppState(WATERMARK_KEY);
+      const saved = raw === null ? Number.NaN : Number(raw);
+      return Number.isFinite(saved) ? Math.max(saved, floor) : floor;
+    } catch (error) {
+      console.error('[task-reminder] could not read the watermark:', error);
+      return floor;
+    }
   }
 
   start(): void {
@@ -73,16 +101,25 @@ export class TaskReminderScheduler {
     if (this.checking) return;
     this.checking = true;
     try {
+      if (this.deliveredThrough === null) {
+        this.deliveredThrough = await this.loadWatermark();
+      }
+
       const now = new Date();
       const tasks = await this.storage.listTasks();
       const due = remindersDue(tasks, now, this.deliveredThrough);
 
-      // Advance the watermark even when nothing fired, so the catch-up window
-      // does not keep sliding backwards from the constructor's value.
+      // Advance in memory even when nothing fired, so the window does not keep
+      // rescanning the same stretch.
       this.deliveredThrough = now.getTime();
       if (due.length === 0) return;
 
       for (const task of due) this.announce(task);
+
+      // Persisted only after something was actually delivered. Writing on every
+      // tick would be a database round-trip every 20 seconds for no gain: if
+      // nothing fired, there is nothing a restart could repeat.
+      await this.storage.setAppState(WATERMARK_KEY, String(this.deliveredThrough));
     } catch (error) {
       console.error('[task-reminder] could not read tasks:', error);
     } finally {

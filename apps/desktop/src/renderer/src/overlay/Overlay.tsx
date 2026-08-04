@@ -5,6 +5,7 @@ import {
   magicianPose,
   MASCOT_BOX,
   smokeMode,
+  type BubbleAction,
   type BubbleMessage,
   type LoadedSkin,
   type MagicianPhase,
@@ -39,6 +40,7 @@ export function Overlay(): JSX.Element {
   const [timer, setTimer] = useState<TimerSnapshot | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [bubble, setBubble] = useState<string | null>(null);
+  const [bubbleActions, setBubbleActions] = useState<readonly BubbleAction[]>([]);
   /**
    * Driven entirely by main. The renderer has no business deciding when a
    * performance happens — it used to infer it by looking for "routine" in the
@@ -80,11 +82,29 @@ export function Overlay(): JSX.Element {
     if (bubbleTimer.current !== undefined) clearTimeout(bubbleTimer.current);
     bubbleTimer.current = undefined;
     setBubble(null);
+    setBubbleActions([]);
 
     if (bubbleSubject.current !== null) {
       window.mochi.bubble.dismiss(bubbleSubject.current);
       bubbleSubject.current = null;
     }
+  }, []);
+
+  /**
+   * Press a button on the bubble.
+   *
+   * Hides the bubble the same way a TTL expiry does — deliberately *not* via
+   * dismissBubble. Dismissing tells the governor "never raise this subject
+   * again", which would make a snooze set a new time and then be silently
+   * dropped when it arrived.
+   */
+  const runBubbleAction = useCallback((actionId: string) => {
+    window.mochi.bubble.act(actionId);
+    if (bubbleTimer.current !== undefined) clearTimeout(bubbleTimer.current);
+    bubbleTimer.current = undefined;
+    bubbleSubject.current = null;
+    setBubble(null);
+    setBubbleActions([]);
   }, []);
 
   useEffect(() => {
@@ -93,6 +113,8 @@ export function Overlay(): JSX.Element {
       if (alertToneTimer.current !== undefined) clearTimeout(alertToneTimer.current);
       bubbleSubject.current = message.subject;
       setBubble(message.text);
+      const actions = message.actions ?? [];
+      setBubbleActions(actions);
 
       if (message.alertTone === 'gentle') {
         alertToneTimer.current = setTimeout(
@@ -104,10 +126,27 @@ export function Overlay(): JSX.Element {
         );
       }
 
-      bubbleTimer.current = setTimeout(() => {
-        bubbleSubject.current = null;
-        setBubble(null);
-      }, message.ttlMs);
+      /*
+       * A bubble that asks a question waits for the answer.
+       *
+       * Anything with buttons is a decision — Done, or later — and timing it out
+       * silently is the one outcome the user never chose. Worse, an ignored
+       * reminder is gone for good: the scheduler's watermark has already moved
+       * past it, so it will not come round again. Fading it out after a few
+       * seconds meant a reminder could be missed by looking away.
+       *
+       * Plain informational bubbles still expire on their own; those have
+       * nothing to answer.
+       */
+      if (actions.length === 0) {
+        bubbleTimer.current = setTimeout(() => {
+          bubbleSubject.current = null;
+          setBubble(null);
+          setBubbleActions([]);
+        }, message.ttlMs);
+      } else {
+        bubbleTimer.current = undefined;
+      }
     });
     return () => {
       off();
@@ -289,6 +328,8 @@ export function Overlay(): JSX.Element {
 
       <SpeechBubble
         text={performing && !isAlertPhase(phase) ? null : bubble}
+        actions={bubbleActions}
+        onAction={runBubbleAction}
         onDismiss={dismissBubble}
         onHoverChange={setInteractive}
       />

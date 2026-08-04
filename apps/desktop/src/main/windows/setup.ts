@@ -39,14 +39,7 @@ export class SetupWindow {
     });
 
     this.win.setMenuBarVisibility(false);
-    const showWin = () => {
-      if (this.win !== null && !this.win.isDestroyed() && !this.win.isVisible()) {
-        this.win.show();
-        console.log('[setup] window shown successfully');
-      }
-    };
-    this.win.once('ready-to-show', showWin);
-    setTimeout(showWin, 800);
+    this.win.once('ready-to-show', () => this.win?.show());
     this.win.on('closed', () => {
       this.win = null;
     });
@@ -55,7 +48,9 @@ export class SetupWindow {
       console.log(`[setup-web] [${level}] ${message} (${sourceId}:${line})`);
     });
     this.win.webContents.on('did-fail-load', (_e, errorCode, errorDescription, validatedURL) => {
-      console.error(`[setup-web] FAILED TO LOAD: ${errorCode} ${errorDescription} (${validatedURL})`);
+      console.error(
+        `[setup-web] FAILED TO LOAD: ${errorCode} ${errorDescription} (${validatedURL})`,
+      );
     });
     this.win.webContents.on('render-process-gone', (_e, details) => {
       console.error(`[setup-web] RENDER PROCESS GONE:`, details);

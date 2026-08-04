@@ -37,6 +37,7 @@ import { MochiTray } from './tray.js';
 import { RoutineService } from './services/routine-service.js';
 import { UserRoutineScheduler } from './services/user-routine-scheduler.js';
 import { TaskReminderScheduler } from './services/task-reminder-scheduler.js';
+import { BubbleActions, actionsForEvent } from './services/bubble-actions.js';
 import { LlmService } from './services/llm-service.js';
 import { KeyVault } from './storage/key-vault.js';
 import { ProviderService } from './services/provider-service.js';
@@ -155,6 +156,8 @@ async function bootstrap(): Promise<void> {
   const taskReminders = new TaskReminderScheduler(bus, storage, settings, overlay);
   taskReminders.start();
 
+  const bubbleActions = new BubbleActions();
+
   const google = new GoogleService(join(app.getPath('userData'), 'google.enc.json'));
   // Local base URLs are a host and port, not a secret, so they live in
   // settings — visible and fixable — rather than in the encrypted vault.
@@ -235,6 +238,7 @@ async function bootstrap(): Promise<void> {
   google.onChange((status) => setup.send('google:changed', status));
 
   registerIpc({
+    bubbleActions,
     google: {
       status: () => google.status(),
       openStep: (url) => google.openStep(url),
@@ -314,10 +318,21 @@ async function bootstrap(): Promise<void> {
       // For mail reminders, the Gmail-specific toggle is the sole decider.
       // The global centerScreenAlerts flag controls routine/timer alerts only.
       const useCenterEntrance = isMailReminder && mailPreferences.centerScreenAlertsEnabled;
+      // What the user can do about this, resolved in main so the renderer only
+      // ever receives opaque ids.
+      const offered = bubbleActions.offer(
+        actionsForEvent(event, {
+          storage,
+          undismiss: (subject) => governor.undismiss(subject),
+          notifyTasks,
+        }),
+      );
+
       overlay.send('bubble:show', {
         text: event.text,
         ttlMs: event.userInitiated === true ? BUBBLE_TTL_LONG_MS : BUBBLE_TTL_MS,
         subject: event.subject,
+        ...(offered.length > 0 ? { actions: offered } : {}),
         ...(isMailReminder && mailPreferences.alertToneEnabled
           ? {
               alertTone: 'gentle' as const,

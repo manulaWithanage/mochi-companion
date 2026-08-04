@@ -81,6 +81,19 @@ export interface KeyResult {
   readonly error?: string;
 }
 
+/**
+ * A button on a bubble.
+ *
+ * `id` is opaque and issued by the main process. The renderer echoes it back
+ * and nothing more: it cannot name a task, a thread or an operation, so a
+ * compromised renderer cannot invent "delete task X" — only press a button that
+ * was actually offered on the bubble currently on screen (RULE 1).
+ */
+export interface BubbleAction {
+  readonly id: string;
+  readonly label: string;
+}
+
 export interface BubbleMessage {
   readonly text: string;
   /** Auto-dismiss after this long. */
@@ -94,6 +107,13 @@ export interface BubbleMessage {
    * in the governor, so a re-poll cannot resurrect what the user waved away.
    */
   readonly subject: string;
+  /**
+   * What the user can do about this, here, without opening the dashboard.
+   *
+   * Kept short on purpose — two is plenty. A bubble that becomes a form defeats
+   * the point of rationing interruptions in the first place.
+   */
+  readonly actions?: readonly BubbleAction[];
 }
 
 export interface TimerSnapshot {
@@ -143,7 +163,8 @@ export interface LoadedSkin {
 
 export interface MochiBridge {
   readonly timer: {
-    toggle(projectId: string): Promise<TimerSnapshot>;
+    /** Omit to track under the default project. */
+    toggle(projectId?: string): Promise<TimerSnapshot>;
     stop(): Promise<TimerSnapshot>;
     current(): Promise<TimerSnapshot>;
     listSessions(projectId?: string): Promise<readonly WorkSession[]>;
@@ -300,6 +321,13 @@ export interface MochiBridge {
   readonly bubble: {
     /** The user waved this away — the governor must not raise it again. */
     dismiss(subject: string): void;
+    /**
+     * Press a button the main process offered on the current bubble.
+     *
+     * Deliberately *not* a dismiss: acting on a reminder is not the same as
+     * waving it away, and snoozing has to be able to come back.
+     */
+    act(actionId: string): void;
     /**
      * Main pushes what Mochi should say. V1 only ever sends this in response
      * to something the user did — unprompted messages must pass the

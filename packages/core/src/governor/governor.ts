@@ -130,6 +130,23 @@ export class InterruptionGovernor {
     this.dismissed.add(subject);
   }
 
+  /**
+   * Let a subject speak again, because the user asked it to.
+   *
+   * "Never again" is the right default for something waved away, but it is
+   * wrong the moment the user deliberately re-arms it — snoozing a reminder, or
+   * giving a task a new time. Without this, a subject dismissed once in a
+   * session is silently dropped for the rest of it, so a snooze would set a new
+   * time and then never arrive: the worst kind of failure, because the user
+   * asked for it explicitly and nothing reports that it was discarded.
+   *
+   * Only ever called for an action the user took, never to override a dismissal
+   * they still mean.
+   */
+  undismiss(subject: string): void {
+    this.dismissed.delete(subject);
+  }
+
   isDismissed(subject: string): boolean {
     return this.dismissed.has(subject);
   }

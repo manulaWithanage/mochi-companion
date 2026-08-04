@@ -196,6 +196,7 @@ const bridge: MochiBridge = {
 
   bubble: {
     dismiss: (subject) => ipcRenderer.send('bubble:dismiss', subject),
+    act: (actionId) => ipcRenderer.send('bubble:act', actionId),
     onShow: (listener) => subscribe<BubbleMessage>('bubble:show', listener),
   },
 

@@ -185,7 +185,11 @@ export function TasksTab(): JSX.Element {
     if (isTimerRunning) {
       await window.mochi.timer.stop();
     } else {
-      await window.mochi.timer.toggle('general');
+      // No id: the main process fills in the default project. This used to pass
+      // the literal 'general', which is not a project id -- the real one is
+      // 'default' -- so the session could never be written and the tracked time
+      // was lost on stop.
+      await window.mochi.timer.toggle();
     }
   }, [isTimerRunning]);
 
@@ -766,7 +770,16 @@ export function TasksTab(): JSX.Element {
             }}
           >
             <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
-              <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.06em', color: C.dim, textTransform: 'uppercase', marginRight: 4 }}>
+              <span
+                style={{
+                  fontSize: 11,
+                  fontWeight: 700,
+                  letterSpacing: '0.06em',
+                  color: C.dim,
+                  textTransform: 'uppercase',
+                  marginRight: 4,
+                }}
+              >
                 More Times:
               </span>
               {MORE_TIMES.map((preset) => {

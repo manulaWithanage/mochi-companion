@@ -673,6 +673,15 @@ export class SqliteStorageAdapter implements StorageAdapter, EmailStore {
     this.statements.setState.run(RUNNING_SESSION_KEY, JSON.stringify(session));
   }
 
+  async getAppState(key: string): Promise<string | null> {
+    const row = this.statements.getState.get(key) as { value: string } | undefined;
+    return row === undefined ? null : row.value;
+  }
+
+  async setAppState(key: string, value: string): Promise<void> {
+    this.statements.setState.run(key, value);
+  }
+
   async replaceInboxSnapshot(
     account: string,
     emails: readonly CachedEmail[],
