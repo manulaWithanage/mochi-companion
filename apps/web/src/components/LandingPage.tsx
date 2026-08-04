@@ -123,7 +123,7 @@ export const LandingPage: React.FC = () => {
                 <small>01 · START CLEAR</small>
                 <h3>Organizes your day at a glance.</h3>
                 <p>
-                  Press your hotkey to view a calm floating window with your top priorities, today’s schedule, and focus progress—without opening extra tabs.
+                  Press your hotkey to view a calm floating window with your top priorities, today’s schedule, and focus progress without opening extra tabs.
                 </p>
               </div>
             </article>
