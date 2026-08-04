@@ -11,9 +11,16 @@
  * It is deliberately behind a tiny interface. Swapping in `active-win` later
  * changes this file and nothing above it.
  *
- * **Window titles are never read.** Only the process name and the idle timer.
- * A title carries client names, document names and URLs; a process name is an
- * application. GetWindowText is not called, so there is nothing to leak.
+ * **Window titles are not read unless the user turns on site tracking.** By
+ * default only the process name and the idle timer are collected, and the
+ * generated script contains no `GetWindowText` at all — there is no code path to
+ * audit rather than a flag that could be got wrong. A test asserts both halves.
+ *
+ * This comment used to say titles were never read, full stop, and kept saying it
+ * after opt-in site tracking was added forty lines below. An overclaim in the
+ * header of the file that does the reading is the worst place for one: it is
+ * where someone checks. `MOCHI_BRAIN.md` had it right — claiming less and
+ * meaning it beats a guarantee the code does not keep.
  */
 
 import { spawn, type ChildProcess } from 'node:child_process';

@@ -97,6 +97,19 @@ export class ActivityService {
   restartSource(): void {
     this.source.stop();
     this.source = createForegroundSource(SAMPLE_SECONDS, this.tracksSites());
+    console.log(`[activity] helper rebuilt — ${this.describeCollection()}`);
+  }
+
+  /**
+   * What is being collected, in the words it is actually true in.
+   *
+   * Exported through a method rather than inlined so the startup line and the
+   * line printed when the setting changes cannot drift apart and disagree.
+   */
+  describeCollection(): string {
+    return this.tracksSites()
+      ? 'process names, plus window titles matched against the site list and discarded in the same tick'
+      : 'process names only, no window titles';
   }
 
   start(): void {
@@ -137,7 +150,10 @@ export class ActivityService {
     this.pruneTimer = setInterval(() => void this.prune(), 24 * 60 * 60_000);
     this.pruneTimer.unref?.();
 
-    console.log(`[activity] sampling every ${SAMPLE_SECONDS}s (process names only, no titles)`);
+    // Says what is actually being collected. It used to claim "no titles"
+    // unconditionally, which was a privacy guarantee printed at the one moment
+    // the user might check it — and untrue whenever site tracking was on.
+    console.log(`[activity] sampling every ${SAMPLE_SECONDS}s — ${this.describeCollection()}`);
   }
 
   /**
