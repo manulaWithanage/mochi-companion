@@ -353,39 +353,63 @@ export function ActivityTab(): JSX.Element {
           </h2>
         </div>
 
-        {/* Minimalist Segmented Time Range Selector */}
+        {/* Vibrant 3D Segmented Time Range Selector */}
         <div
           style={{
             display: 'flex',
-            background: 'rgba(255, 255, 255, 0.04)',
-            padding: 3,
+            gap: 4,
+            background: 'rgba(24, 20, 34, 0.95)',
+            padding: 4,
             borderRadius: 10,
-            border: `1px solid ${C.border}`,
+            border: '1px solid rgba(255, 255, 255, 0.08)',
+            boxShadow: 'inset 0 2px 6px rgba(0,0,0,0.4)',
           }}
         >
-          {(['today', 'week'] as const).map((r) => (
-            <button
-              key={r}
-              style={{
-                border: 'none',
-                background: range === r ? C.panelAlt : 'transparent',
-                color: range === r ? C.text : C.dim,
-                boxShadow: range === r ? '0 2px 8px rgba(0,0,0,0.3)' : 'none',
-                fontSize: 12,
-                fontWeight: range === r ? 600 : 500,
-                padding: '6px 14px',
-                borderRadius: 8,
-                cursor: 'pointer',
-                transition: 'all 0.15s ease',
-              }}
-              onClick={() => {
-                setRange(r);
-                reload(r, new Date());
-              }}
-            >
-              {r === 'today' ? 'Today' : 'Last 7 Days'}
-            </button>
-          ))}
+          {(['today', 'week'] as const).map((r) => {
+            const active = range === r;
+            return (
+              <button
+                key={r}
+                onClick={() => {
+                  setRange(r);
+                  reload(r, new Date());
+                }}
+                style={{
+                  background: active
+                    ? 'linear-gradient(135deg, #f2a6b3, #e58597)'
+                    : 'transparent',
+                  color: active ? '#1c1625' : 'rgba(244, 238, 246, 0.65)',
+                  border: active
+                    ? '1px solid rgba(242, 166, 179, 0.5)'
+                    : '1px solid transparent',
+                  borderRadius: 7,
+                  padding: '6px 16px',
+                  fontSize: 12.5,
+                  fontWeight: active ? 750 : 550,
+                  cursor: 'pointer',
+                  boxShadow: active
+                    ? '0 3px 12px rgba(242, 166, 179, 0.38), inset 0 1px 0 rgba(255,255,255,0.4)'
+                    : 'none',
+                  transform: active ? 'translateY(-1px)' : 'translateY(0)',
+                  transition: 'all 180ms cubic-bezier(0.4, 0, 0.2, 1)',
+                }}
+                onMouseEnter={(e) => {
+                  if (!active) {
+                    e.currentTarget.style.background = 'rgba(255, 255, 255, 0.07)';
+                    e.currentTarget.style.color = '#f4eef6';
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (!active) {
+                    e.currentTarget.style.background = 'transparent';
+                    e.currentTarget.style.color = 'rgba(244, 238, 246, 0.65)';
+                  }
+                }}
+              >
+                {r === 'today' ? 'Today' : 'Last 7 Days'}
+              </button>
+            );
+          })}
         </div>
       </div>
 
