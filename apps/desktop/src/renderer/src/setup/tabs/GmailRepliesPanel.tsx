@@ -2,6 +2,7 @@ import type { JSX } from 'react';
 import { describeTriage, type CachedInboxItem, type ReplyItem, type ReplyQueue } from '@mochi/core';
 import { button, C, card } from '../ui.js';
 import { Icon, type IconName } from '../icons.js';
+import { Tick } from '../Tick.js';
 
 /**
  * The replies you owe, as a list that empties.
@@ -72,22 +73,14 @@ function Row({
 }): JSX.Element {
   return (
     <div style={{ display: 'flex', alignItems: 'flex-start', gap: 11, padding: '10px 8px' }}>
-      <input
-        type="checkbox"
-        checked={false}
-        /* Handled, not replied. The tick stops the reminder and sends nothing —
-           saying otherwise would claim an outcome that never happened. */
-        title="Mark handled — stops the reminder. Sends nothing."
-        onChange={onHandled}
-        style={{
-          accentColor: C.accent,
-          width: 15,
-          height: 15,
-          marginTop: 2,
-          cursor: 'pointer',
-          flexShrink: 0,
-        }}
-      />
+      {/*
+        Handled, not replied. The tick stops the reminder and sends nothing —
+        the label says so, because claiming an outcome that never happened is
+        exactly the sort of thing this app is careful about elsewhere.
+      */}
+      <div style={{ marginTop: 2 }}>
+        <Tick label="Mark handled — stops the reminder, sends nothing" onDone={onHandled} />
+      </div>
 
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ fontSize: 13, color: C.text, lineHeight: 1.4 }}>{item.subject}</div>

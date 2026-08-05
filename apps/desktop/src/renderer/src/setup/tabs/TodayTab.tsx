@@ -20,6 +20,7 @@ import {
 import { button, C, card, dayKey, humanDuration, input, WEEKDAYS } from '../ui.js';
 import type { NeedsYou } from '../useNeedsYou.js';
 import { Icon, type IconName } from '../icons.js';
+import { Tick } from '../Tick.js';
 
 /**
  * The daily overview: time tracked, today's checklist, and what is coming.
@@ -592,11 +593,9 @@ export function TodayTab({
                 fontSize: 13,
               }}
             >
-              <input
-                type="checkbox"
-                checked={false}
-                onChange={() => void window.mochi.tasks.toggle(t.id)}
-                style={{ accentColor: C.accent, width: 15, height: 15, cursor: 'pointer' }}
+              <Tick
+                label={`Mark "${t.title}" done`}
+                onDone={() => void window.mochi.tasks.toggle(t.id)}
               />
               <span style={{ flex: 1 }}>{t.title}</span>
               {late && (
