@@ -289,6 +289,33 @@ export class InMemoryStorageAdapter implements StorageAdapter {
     this.gmailSyncStates.set(state.account, state);
   }
 
+  async deleteEmailData(account: string): Promise<number> {
+    let deleted = 0;
+    for (const [key, email] of this.emails) {
+      if (email.account !== account) continue;
+      this.emails.delete(key);
+      this.emailPriorities.delete(key);
+      this.emailDrafts.delete(key);
+      this.emailReminders.delete(key);
+      deleted += 1;
+    }
+    this.gmailSyncStates.delete(account);
+    return deleted;
+  }
+
+  async deleteExpiredEmailData(account: string, receivedBefore: number): Promise<number> {
+    let deleted = 0;
+    for (const [key, email] of this.emails) {
+      if (email.account !== account || email.receivedAt >= receivedBefore) continue;
+      this.emails.delete(key);
+      this.emailPriorities.delete(key);
+      this.emailDrafts.delete(key);
+      this.emailReminders.delete(key);
+      deleted += 1;
+    }
+    return deleted;
+  }
+
   async close(): Promise<void> {
     // Nothing to release.
   }

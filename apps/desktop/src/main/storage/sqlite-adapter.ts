@@ -10,7 +10,8 @@
  * later touches only this file (RULE 2).
  */
 
-import { DatabaseSync, type StatementSync } from 'node:sqlite';
+import { createRequire } from 'node:module';
+import type { DatabaseSync as DatabaseSyncType, StatementSync } from 'node:sqlite';
 import { dirname } from 'node:path';
 import { mkdirSync } from 'node:fs';
 import { ACTIVITY_CATEGORIES, activitySpanId } from '@mochi/core';
@@ -40,6 +41,14 @@ import {
   pendingMigrations,
   RUNNING_SESSION_KEY,
 } from '@mochi/db';
+import type { SensitiveValueCodec } from './sensitive-value-codec.js';
+
+// Vite 5 predates node:sqlite and tries to resolve it as an npm package.
+// Loading the runtime built-in through createRequire keeps both the Electron
+// bundle and plain-Node integration tests on the same native implementation.
+const { DatabaseSync } = createRequire(import.meta.url)(
+  'node:sqlite',
+) as typeof import('node:sqlite');
 
 interface ProjectRow {
   id: string;
@@ -186,10 +195,14 @@ function stringArray(raw: string | null): readonly string[] {
   }
 }
 
-const toReminder = (row: ReminderRow): EmailReminderState => ({
-  account: row.account,
+const toReminder = (
+  row: ReminderRow,
+  codec: SensitiveValueCodec,
+  account = row.account,
+): EmailReminderState => ({
+  account,
   emailId: row.email_id,
-  threadId: row.thread_id,
+  threadId: codec.reveal(row.thread_id),
   state:
     row.state === 'not-required' ||
     row.state === 'draft-ready' ||
@@ -205,23 +218,27 @@ const toReminder = (row: ReminderRow): EmailReminderState => ({
   repliedAt: row.replied_at,
 });
 
-const toInboxItem = (row: EmailRow): CachedInboxItem => {
+const toInboxItem = (
+  row: EmailRow,
+  codec: SensitiveValueCodec,
+  account = row.account,
+): CachedInboxItem => {
   const email: CachedEmail = {
-    account: row.account,
+    account,
     emailId: row.email_id,
-    threadId: row.thread_id,
+    threadId: codec.reveal(row.thread_id),
     uid: row.uid,
-    messageId: row.message_id,
-    fromName: row.from_name,
-    fromAddress: row.from_address,
-    replyToAddress: row.reply_to_address,
-    toAddresses: stringArray(row.to_addresses_json),
-    ccAddresses: stringArray(row.cc_addresses_json),
-    subject: row.subject,
+    messageId: codec.reveal(row.message_id),
+    fromName: codec.reveal(row.from_name),
+    fromAddress: codec.reveal(row.from_address),
+    replyToAddress: codec.reveal(row.reply_to_address),
+    toAddresses: stringArray(codec.reveal(row.to_addresses_json)),
+    ccAddresses: stringArray(codec.reveal(row.cc_addresses_json)),
+    subject: codec.reveal(row.subject),
     receivedAt: row.received_at,
     category: row.category as EmailCategory,
-    labels: stringArray(row.labels_json),
-    snippet: row.snippet,
+    labels: stringArray(codec.reveal(row.labels_json)),
+    snippet: codec.reveal(row.snippet),
     unread: row.unread === 1,
     inInbox: row.in_inbox === 1,
     syncedAt: row.synced_at,
@@ -238,7 +255,7 @@ const toInboxItem = (row: EmailRow): CachedInboxItem => {
     row.classified_at === null
       ? null
       : {
-          account: row.account,
+          account,
           emailId: row.email_id,
           score: row.priority_score,
           tier:
@@ -250,8 +267,8 @@ const toInboxItem = (row: EmailRow): CachedInboxItem => {
             row.priority_source === 'llm' || row.priority_source === 'blended'
               ? row.priority_source
               : 'rules',
-          signals: stringArray(row.signals_json),
-          reason: row.reason,
+          signals: stringArray(row.signals_json === null ? null : codec.reveal(row.signals_json)),
+          reason: codec.reveal(row.reason),
           replyLikely: row.reply_likely === 1,
           scorerVersion: row.scorer_version,
           classifiedAt: row.classified_at,
@@ -261,7 +278,7 @@ const toInboxItem = (row: EmailRow): CachedInboxItem => {
     row.draft_status === null
       ? null
       : {
-          account: row.account,
+          account,
           emailId: row.email_id,
           status:
             row.draft_status === 'queued' ||
@@ -270,26 +287,30 @@ const toInboxItem = (row: EmailRow): CachedInboxItem => {
             row.draft_status === 'failed'
               ? row.draft_status
               : 'none',
-          subject: row.draft_subject,
-          body: row.draft_body,
-          error: row.draft_error,
+          subject: row.draft_subject === null ? null : codec.reveal(row.draft_subject),
+          body: row.draft_body === null ? null : codec.reveal(row.draft_body),
+          error: row.draft_error === null ? null : codec.reveal(row.draft_error),
         };
 
   const reminder: EmailReminderState | null =
     row.reminder_state === null
       ? null
-      : toReminder({
-          account: row.account,
-          email_id: row.email_id,
-          thread_id: row.thread_id,
-          state: row.reminder_state,
-          next_reminder_at: row.next_reminder_at,
-          last_reminded_at: row.last_reminded_at,
-          reminder_count: row.reminder_count ?? 0,
-          snoozed_until: row.snoozed_until,
-          dismissed_at: row.dismissed_at,
-          replied_at: row.replied_at,
-        });
+      : toReminder(
+          {
+            account,
+            email_id: row.email_id,
+            thread_id: row.thread_id,
+            state: row.reminder_state,
+            next_reminder_at: row.next_reminder_at,
+            last_reminded_at: row.last_reminded_at,
+            reminder_count: row.reminder_count ?? 0,
+            snoozed_until: row.snoozed_until,
+            dismissed_at: row.dismissed_at,
+            replied_at: row.replied_at,
+          },
+          codec,
+          account,
+        );
 
   return { ...email, priority, draft, reminder };
 };
@@ -325,7 +346,7 @@ const EMAIL_SELECT = `
 `;
 
 export class SqliteStorageAdapter implements StorageAdapter, EmailStore {
-  private readonly db: DatabaseSync;
+  private readonly db: DatabaseSyncType;
   private readonly statements: {
     insertSession: StatementSync;
     deleteSession: StatementSync;
@@ -350,9 +371,15 @@ export class SqliteStorageAdapter implements StorageAdapter, EmailStore {
     listPendingEmailReminders: StatementSync;
     getGmailSyncState: StatementSync;
     upsertGmailSyncState: StatementSync;
+    deleteEmailData: StatementSync;
+    deleteGmailSyncState: StatementSync;
+    deleteExpiredEmailData: StatementSync;
   };
 
-  constructor(filePath: string) {
+  constructor(
+    filePath: string,
+    private readonly codec: SensitiveValueCodec,
+  ) {
     mkdirSync(dirname(filePath), { recursive: true });
     this.db = new DatabaseSync(filePath);
 
@@ -360,6 +387,7 @@ export class SqliteStorageAdapter implements StorageAdapter, EmailStore {
       this.db.exec(pragma);
     }
     this.migrate();
+    this.protectLegacyEmailData();
     this.seedDefaultProject();
 
     this.statements = {
@@ -503,6 +531,11 @@ export class SqliteStorageAdapter implements StorageAdapter, EmailStore {
            last_synced_at = excluded.last_synced_at,
            last_error     = excluded.last_error`,
       ),
+      deleteEmailData: this.db.prepare(`DELETE FROM email_cache WHERE account = ?`),
+      deleteGmailSyncState: this.db.prepare(`DELETE FROM gmail_sync_state WHERE account = ?`),
+      deleteExpiredEmailData: this.db.prepare(
+        `DELETE FROM email_cache WHERE account = ? AND received_at < ?`,
+      ),
     };
   }
 
@@ -531,6 +564,143 @@ export class SqliteStorageAdapter implements StorageAdapter, EmailStore {
         this.db.exec('ROLLBACK');
         throw error;
       }
+    }
+  }
+
+  /**
+   * One-time, idempotent migration for databases written before protected
+   * fields were introduced. Structural identifiers and timestamps remain
+   * queryable; message content, addresses, labels, model explanations and
+   * generated drafts are sealed individually.
+   */
+  private protectLegacyEmailData(): void {
+    const protect = (value: string | null): string | null =>
+      value === null || this.codec.isProtected(value) ? value : this.codec.protect(value);
+    const emailRows = asRows<EmailRow>(
+      this.db
+        .prepare(
+          `SELECT e.*, NULL AS priority_score, NULL AS priority_tier,
+             NULL AS priority_confidence, NULL AS priority_source,
+             NULL AS signals_json, NULL AS reason, NULL AS reply_likely,
+             NULL AS scorer_version, NULL AS classified_at,
+             NULL AS draft_status, NULL AS draft_subject, NULL AS draft_body,
+             NULL AS draft_error, NULL AS reminder_state,
+             NULL AS next_reminder_at, NULL AS last_reminded_at,
+             NULL AS reminder_count, NULL AS snoozed_until,
+             NULL AS dismissed_at, NULL AS replied_at
+           FROM email_cache e`,
+        )
+        .all(),
+    );
+    const aiRows = asRows<{
+      account: string;
+      email_id: string;
+      signals_json: string | null;
+      reason: string | null;
+      draft_subject: string | null;
+      draft_body: string | null;
+      draft_error: string | null;
+    }>(
+      this.db
+        .prepare(
+          `SELECT account, email_id, signals_json, reason,
+             draft_subject, draft_body, draft_error
+           FROM email_ai_state`,
+        )
+        .all(),
+    );
+    const reminderRows = asRows<Pick<ReminderRow, 'account' | 'email_id' | 'thread_id'>>(
+      this.db.prepare(`SELECT account, email_id, thread_id FROM email_reminders`).all(),
+    );
+    const syncRows = asRows<SyncStateRow>(this.db.prepare(`SELECT * FROM gmail_sync_state`).all());
+
+    const needsMigration =
+      emailRows.some((row) =>
+        [
+          row.thread_id,
+          row.message_id,
+          row.from_name,
+          row.from_address,
+          row.reply_to_address,
+          row.to_addresses_json,
+          row.cc_addresses_json,
+          row.subject,
+          row.labels_json,
+          row.snippet,
+        ].some((value) => !this.codec.isProtected(value)),
+      ) ||
+      aiRows.some((row) =>
+        [row.signals_json, row.reason, row.draft_subject, row.draft_body, row.draft_error].some(
+          (value) => value !== null && !this.codec.isProtected(value),
+        ),
+      ) ||
+      reminderRows.some((row) => !this.codec.isProtected(row.thread_id)) ||
+      syncRows.some(
+        (row) =>
+          (row.uid_validity !== null && !this.codec.isProtected(row.uid_validity)) ||
+          (row.last_error !== null && !this.codec.isProtected(row.last_error)),
+      );
+    if (!needsMigration) return;
+
+    const updateEmail = this.db.prepare(
+      `UPDATE email_cache SET
+         thread_id = ?, message_id = ?, from_name = ?, from_address = ?,
+         reply_to_address = ?, to_addresses_json = ?, cc_addresses_json = ?,
+         subject = ?, labels_json = ?, snippet = ?
+       WHERE account = ? AND email_id = ?`,
+    );
+    const updateAi = this.db.prepare(
+      `UPDATE email_ai_state SET signals_json = ?, reason = ?,
+         draft_subject = ?, draft_body = ?, draft_error = ?
+       WHERE account = ? AND email_id = ?`,
+    );
+    const updateReminder = this.db.prepare(
+      `UPDATE email_reminders SET thread_id = ? WHERE account = ? AND email_id = ?`,
+    );
+    const updateSync = this.db.prepare(
+      `UPDATE gmail_sync_state SET uid_validity = ?, last_error = ? WHERE account = ?`,
+    );
+
+    this.db.exec('BEGIN');
+    try {
+      for (const row of emailRows) {
+        updateEmail.run(
+          protect(row.thread_id),
+          protect(row.message_id),
+          protect(row.from_name),
+          protect(row.from_address),
+          protect(row.reply_to_address),
+          protect(row.to_addresses_json),
+          protect(row.cc_addresses_json),
+          protect(row.subject),
+          protect(row.labels_json),
+          protect(row.snippet),
+          row.account,
+          row.email_id,
+        );
+      }
+      for (const row of aiRows) {
+        updateAi.run(
+          protect(row.signals_json),
+          protect(row.reason),
+          protect(row.draft_subject),
+          protect(row.draft_body),
+          protect(row.draft_error),
+          row.account,
+          row.email_id,
+        );
+      }
+      for (const row of reminderRows) {
+        updateReminder.run(protect(row.thread_id), row.account, row.email_id);
+      }
+      for (const row of syncRows) {
+        updateSync.run(protect(row.uid_validity), protect(row.last_error), row.account);
+      }
+      this.db.exec('COMMIT');
+      console.log(`[storage] protected ${emailRows.length} legacy email records`);
+    } catch (error) {
+      this.db.exec('ROLLBACK');
+      throw error;
     }
   }
 
@@ -694,19 +864,19 @@ export class SqliteStorageAdapter implements StorageAdapter, EmailStore {
         this.statements.upsertEmail.run(
           account,
           email.emailId,
-          email.threadId,
+          this.codec.protect(email.threadId),
           email.uid,
-          email.messageId,
-          email.fromName,
-          email.fromAddress,
-          email.replyToAddress,
-          JSON.stringify(email.toAddresses),
-          JSON.stringify(email.ccAddresses),
-          email.subject,
+          this.codec.protect(email.messageId),
+          this.codec.protect(email.fromName),
+          this.codec.protect(email.fromAddress),
+          this.codec.protect(email.replyToAddress),
+          this.codec.protect(JSON.stringify(email.toAddresses)),
+          this.codec.protect(JSON.stringify(email.ccAddresses)),
+          this.codec.protect(email.subject),
           email.receivedAt,
           email.category,
-          JSON.stringify(email.labels),
-          email.snippet,
+          this.codec.protect(JSON.stringify(email.labels)),
+          this.codec.protect(email.snippet),
           email.unread ? 1 : 0,
           email.inInbox ? 1 : 0,
           syncedAt,
@@ -742,12 +912,14 @@ export class SqliteStorageAdapter implements StorageAdapter, EmailStore {
       WHERE ${where.join(' AND ')}
       ORDER BY ${order}
       LIMIT ? OFFSET ?`;
-    return asRows<EmailRow>(this.db.prepare(sql).all(...params)).map(toInboxItem);
+    return asRows<EmailRow>(this.db.prepare(sql).all(...params)).map((row) =>
+      toInboxItem(row, this.codec, account),
+    );
   }
 
   async getCachedEmail(account: string, emailId: string): Promise<CachedInboxItem | null> {
     const row = this.statements.getEmail.get(account, emailId) as EmailRow | undefined;
-    return row === undefined ? null : toInboxItem(row);
+    return row === undefined ? null : toInboxItem(row, this.codec, account);
   }
 
   async saveEmailPriority(priority: StoredEmailPriority): Promise<void> {
@@ -758,8 +930,8 @@ export class SqliteStorageAdapter implements StorageAdapter, EmailStore {
       priority.tier,
       priority.confidence,
       priority.source,
-      JSON.stringify(priority.signals),
-      priority.reason,
+      this.codec.protect(JSON.stringify(priority.signals)),
+      this.codec.protect(priority.reason),
       priority.replyLikely ? 1 : 0,
       priority.scorerVersion,
       priority.classifiedAt,
@@ -771,9 +943,9 @@ export class SqliteStorageAdapter implements StorageAdapter, EmailStore {
       draft.account,
       draft.emailId,
       draft.status,
-      draft.subject,
-      draft.body,
-      draft.error,
+      draft.subject === null ? null : this.codec.protect(draft.subject),
+      draft.body === null ? null : this.codec.protect(draft.body),
+      draft.error === null ? null : this.codec.protect(draft.error),
     );
   }
 
@@ -781,7 +953,7 @@ export class SqliteStorageAdapter implements StorageAdapter, EmailStore {
     this.statements.upsertEmailReminder.run(
       reminder.account,
       reminder.emailId,
-      reminder.threadId,
+      this.codec.protect(reminder.threadId),
       reminder.state,
       reminder.nextReminderAt,
       reminder.lastRemindedAt,
@@ -793,8 +965,8 @@ export class SqliteStorageAdapter implements StorageAdapter, EmailStore {
   }
 
   async listPendingEmailReminders(account: string): Promise<readonly EmailReminderState[]> {
-    return asRows<ReminderRow>(this.statements.listPendingEmailReminders.all(account)).map(
-      toReminder,
+    return asRows<ReminderRow>(this.statements.listPendingEmailReminders.all(account)).map((row) =>
+      toReminder(row, this.codec, account),
     );
   }
 
@@ -803,19 +975,37 @@ export class SqliteStorageAdapter implements StorageAdapter, EmailStore {
     if (row === undefined) return null;
     return {
       account: row.account,
-      uidValidity: row.uid_validity,
+      uidValidity: row.uid_validity === null ? null : this.codec.reveal(row.uid_validity),
       lastSyncedAt: row.last_synced_at,
-      lastError: row.last_error,
+      lastError: row.last_error === null ? null : this.codec.reveal(row.last_error),
     };
   }
 
   async saveGmailSyncState(state: GmailSyncState): Promise<void> {
     this.statements.upsertGmailSyncState.run(
       state.account,
-      state.uidValidity,
+      state.uidValidity === null ? null : this.codec.protect(state.uidValidity),
       state.lastSyncedAt,
-      state.lastError,
+      state.lastError === null ? null : this.codec.protect(state.lastError),
     );
+  }
+
+  async deleteEmailData(account: string): Promise<number> {
+    this.db.exec('BEGIN');
+    try {
+      const result = this.statements.deleteEmailData.run(account);
+      this.statements.deleteGmailSyncState.run(account);
+      this.db.exec('COMMIT');
+      return Number(result.changes);
+    } catch (error) {
+      this.db.exec('ROLLBACK');
+      throw error;
+    }
+  }
+
+  async deleteExpiredEmailData(account: string, receivedBefore: number): Promise<number> {
+    const result = this.statements.deleteExpiredEmailData.run(account, receivedBefore);
+    return Number(result.changes);
   }
 
   async close(): Promise<void> {

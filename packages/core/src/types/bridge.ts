@@ -217,6 +217,10 @@ export interface MochiBridge {
      */
     setAppCategory(app: string, category: ActivityCategory): Promise<MochiSettings>;
     setGmailAi(patch: Partial<GmailAiSettings>): Promise<MochiSettings>;
+    /** Permanently remove Mochi-owned local data and restart the app. */
+    deleteAllLocalData(
+      confirmation: string,
+    ): Promise<{ readonly ok: boolean; readonly error?: string }>;
     onChange(listener: (settings: MochiSettings) => void): () => void;
   };
 
@@ -383,6 +387,8 @@ export interface MochiBridge {
     connect(email: string, appPassword: string): Promise<GmailConnectResult>;
     /** Remove stored Gmail credentials. */
     disconnect(): Promise<void>;
+    /** Delete the connected account's cached metadata, AI results, drafts and reminders. */
+    clearLocalData(): Promise<number>;
     /** Current connection status. */
     status(): Promise<GmailStatus>;
     /** Read the durable local inbox immediately, without waiting for Gmail. */

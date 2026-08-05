@@ -6,7 +6,7 @@
  * zero-key path. See ROADMAP.md.
  */
 
-import { app, BrowserWindow, shell } from 'electron';
+import { app, BrowserWindow, session, shell } from 'electron';
 import { join } from 'node:path';
 import {
   BRIEF_SESSION_MS,
@@ -28,6 +28,7 @@ import {
 } from '@mochi/core';
 
 import { SqliteStorageAdapter } from './storage/sqlite-adapter.js';
+import { SafeStorageValueCodec } from './storage/safe-storage-value-codec.js';
 import { SettingsStore } from './storage/settings-store.js';
 import { UserRoutinesVault } from './storage/user-routines-vault.js';
 import { TimerService } from './services/timer-service.js';
@@ -53,6 +54,7 @@ import { BriefingService } from './services/briefing-service.js';
 import { ActivityService } from './services/activity-service.js';
 import { CalendarVault } from './storage/calendar-vault.js';
 import { registerIpc } from './ipc.js';
+import { deleteOwnedLocalData } from './storage/local-data-reset.js';
 
 interface SayOptions {
   readonly durationMs?: number;
@@ -100,7 +102,10 @@ function logDataLocation(): void {
 
 function openStorage(): StorageAdapter {
   try {
-    return new SqliteStorageAdapter(join(app.getPath('userData'), 'mochi.db'));
+    return new SqliteStorageAdapter(
+      join(app.getPath('userData'), 'mochi.db'),
+      new SafeStorageValueCodec(),
+    );
   } catch (error) {
     // Degrade to this-session-only tracking rather than refusing to start.
     console.error('[storage] SQLite unavailable, falling back to memory:', error);
@@ -109,6 +114,7 @@ function openStorage(): StorageAdapter {
 }
 
 async function bootstrap(): Promise<void> {
+  let resettingLocalData = false;
   const settings = new SettingsStore();
   const userRoutines = new UserRoutinesVault();
   const storage = openStorage();
@@ -319,6 +325,31 @@ async function bootstrap(): Promise<void> {
     calendar,
     briefing,
     activity,
+    deleteAllLocalData: async () => {
+      if (resettingLocalData) return;
+      resettingLocalData = true;
+
+      await gmailManager.stop();
+      calendar.stop();
+      briefing.stop();
+      await activity.stop();
+      userRoutineScheduler.stop();
+      routines.stop();
+      mascot.stop();
+      tray.destroy();
+      await storage.close();
+
+      await session.defaultSession.clearStorageData();
+      await session.defaultSession.clearCache();
+      const deleted = deleteOwnedLocalData(app.getPath('userData'));
+      console.log(`[privacy] deleted local data: ${deleted.join(', ') || 'nothing to delete'}`);
+
+      // Let the IPC response reach the confirmation UI before restarting.
+      setTimeout(() => {
+        app.relaunch();
+        app.exit(0);
+      }, 300);
+    },
   });
 
   llm.onChange((status) => setup.send('llm:changed', status));
@@ -508,7 +539,11 @@ async function bootstrap(): Promise<void> {
   app.on('second-instance', () => setup.open());
 
   app.on('before-quit', () => {
+    if (resettingLocalData) return;
     void gmailManager.stop();
+    calendar.stop();
+    briefing.stop();
+    void activity.stop();
     userRoutineScheduler.stop();
     taskReminders.stop();
     routines.stop();

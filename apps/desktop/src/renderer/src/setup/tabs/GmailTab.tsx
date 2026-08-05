@@ -177,6 +177,14 @@ export function GmailTab(): JSX.Element {
   };
 
   const handleDisconnect = async (): Promise<void> => {
+    if (
+      gmailSettings?.deleteCachedDataOnDisconnect === true &&
+      !window.confirm(
+        'Disconnect Gmail and delete this account’s cached metadata, generated drafts, and reminders from this device?',
+      )
+    ) {
+      return;
+    }
     await window.mochi.gmail.disconnect();
     const newStatus = await window.mochi.gmail.status();
     setStatus(newStatus);
@@ -293,6 +301,13 @@ export function GmailTab(): JSX.Element {
     setSortMode(settings.gmailAi.defaultSort);
     setTone(settings.gmailAi.defaultDraftTone);
     await loadCached(active, settings.gmailAi.defaultSort);
+  };
+
+  const handleClearLocalData = async (): Promise<number> => {
+    const deleted = await window.mochi.gmail.clearLocalData();
+    setEmails([]);
+    setDraft(null);
+    return deleted;
   };
 
   const openDraft = (email: CachedInboxItem): void => {
@@ -706,7 +721,11 @@ export function GmailTab(): JSX.Element {
         {gmailSettings === null ? (
           <div style={card}>Loading Gmail settings…</div>
         ) : (
-          <GmailSettingsPanel value={gmailSettings} onSave={handleSaveSettings} />
+          <GmailSettingsPanel
+            value={gmailSettings}
+            onSave={handleSaveSettings}
+            onClearLocalData={handleClearLocalData}
+          />
         )}
       </div>
     );

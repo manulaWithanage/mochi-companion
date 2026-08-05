@@ -111,6 +111,11 @@ const bridge: MochiBridge = {
       ipcRenderer.invoke('settings:setAppCategory', app, category) as Promise<MochiSettings>,
     setGmailAi: (patch) =>
       ipcRenderer.invoke('settings:setGmailAi', patch) as Promise<MochiSettings>,
+    deleteAllLocalData: (confirmation) =>
+      ipcRenderer.invoke('settings:deleteAllLocalData', confirmation) as Promise<{
+        readonly ok: boolean;
+        readonly error?: string;
+      }>,
     onChange: (listener) => subscribe<MochiSettings>('settings:changed', listener),
   },
 
@@ -218,6 +223,7 @@ const bridge: MochiBridge = {
     connect: (email, appPassword) =>
       ipcRenderer.invoke('gmail:connect', email, appPassword) as Promise<GmailConnectResult>,
     disconnect: () => ipcRenderer.invoke('gmail:disconnect') as Promise<void>,
+    clearLocalData: () => ipcRenderer.invoke('gmail:clearLocalData') as Promise<number>,
     status: () => ipcRenderer.invoke('gmail:status') as Promise<GmailStatus>,
     listCached: (query?: CachedEmailQuery) =>
       ipcRenderer.invoke('gmail:listCached', query) as Promise<readonly CachedInboxItem[]>,
