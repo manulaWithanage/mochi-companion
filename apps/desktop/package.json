@@ -11,7 +11,7 @@
     "name": "Manula Withanage",
     "email": "manula.withanage@gmail.com"
   },
-  "homepage": "https://github.com/manulaWithanage/mochi-companion",
+  "homepage": "https://mochicompanion.com",
   "main": "./out/main/index.mjs",
   "scripts": {
     "dev": "electron-vite dev",
