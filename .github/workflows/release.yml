@@ -127,7 +127,7 @@ jobs:
       # Kept alongside the draft release. The run artifact outlives a deleted
       # draft, which is the difference between "rebuild it" and "re-tag it".
       - name: Upload the installer
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: mochi-windows-${{ github.ref_name }}
           # latest.yml and the blockmap are what the auto-updater reads. They are
