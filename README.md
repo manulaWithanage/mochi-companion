@@ -77,7 +77,7 @@ pnpm verify
 
 That runs all five gates — lint, format, typecheck, test, build — in the order CI runs them. A `pre-push` hook runs it for you and refuses the push if anything fails.
 
-Releases are tag-driven: bump the version in a commit, tag it, and the pipeline builds a draft release you publish when ready. See [`AGENT_INSTRUCTIONS.md`](AGENT_INSTRUCTIONS.md) for the architectural rules, and [`docs/`](docs/) for background.
+Releases are tag-driven: bump the version in a commit, tag it, and the pipeline builds a draft release you publish when ready — see [`docs/RELEASING.md`](docs/RELEASING.md). See [`AGENT_INSTRUCTIONS.md`](AGENT_INSTRUCTIONS.md) for the architectural rules, and [`docs/`](docs/) for background.
 
 ---
 
