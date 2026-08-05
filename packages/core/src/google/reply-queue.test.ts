@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildReplyQueue, describeAge, describeTriage } from './reply-queue.js';
+import { buildReplyQueue, describeAge, describeTriage, matchesSearch } from './reply-queue.js';
 import type { CachedInboxItem } from './email-state.js';
 
 /**
@@ -281,5 +281,40 @@ describe('describeAge', () => {
   it('treats a future timestamp as now rather than negative', () => {
     // Clock skew between the mail server and this machine is normal.
     expect(describeAge(NOW + 60_000, NOW)).toBe('just now');
+  });
+});
+
+describe('searching what is cached', () => {
+  const mail = email('e1', { subject: 'Q3 invoice question', fromName: 'Priya Nair' });
+
+  it('matches the subject', () => {
+    expect(matchesSearch(mail, 'invoice')).toBe(true);
+  });
+
+  it('matches the sender name and address', () => {
+    expect(matchesSearch(mail, 'priya')).toBe(true);
+    expect(matchesSearch(mail, 'sarah@example.com')).toBe(true);
+  });
+
+  it('ignores case and surrounding space', () => {
+    expect(matchesSearch(mail, '  INVOICE  ')).toBe(true);
+  });
+
+  it('narrows on every word rather than widening', () => {
+    // "priya invoice" should mean both, or two words would return more than one.
+    expect(matchesSearch(mail, 'priya invoice')).toBe(true);
+    expect(matchesSearch(mail, 'priya mortgage')).toBe(false);
+  });
+
+  it('matches everything on an empty query', () => {
+    expect(matchesSearch(mail, '')).toBe(true);
+    expect(matchesSearch(mail, '   ')).toBe(true);
+  });
+
+  it('does not match the snippet', () => {
+    // Matching a body fragment the row does not show produces results that look
+    // like mistakes.
+    const withBody = email('e2', { subject: 'Hello' });
+    expect(matchesSearch({ ...withBody, snippet: 'quarterly numbers' }, 'quarterly')).toBe(false);
   });
 });

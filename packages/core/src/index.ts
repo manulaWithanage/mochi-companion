@@ -35,5 +35,6 @@ export * from './google/email-state.js';
 export * from './google/email-priority.js';
 export * from './google/email-priority-prompt.js';
 export * from './google/email-reminders.js';
+export * from './google/gmail-links.js';
 export * from './google/reply-queue.js';
 export type * from './types/bridge.js';

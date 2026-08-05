@@ -16,7 +16,7 @@ import type {
   GmailSyncStatus,
   GmailTone,
 } from '@mochi/core';
-import { buildReplyQueue, CATEGORIES } from '@mochi/core';
+import { buildReplyQueue, matchesSearch, CATEGORIES } from '@mochi/core';
 import { C, card, label, input, button, h2, sub } from '../ui.js';
 import { GmailSettingsPanel } from './GmailSettingsPanel.js';
 import { GmailRepliesPanel } from './GmailRepliesPanel.js';
@@ -60,6 +60,7 @@ export function GmailTab(): JSX.Element {
    */
   const [allEmails, setAllEmails] = useState<readonly CachedInboxItem[]>([]);
   const [modelReady, setModelReady] = useState(false);
+  const [search, setSearch] = useState('');
   // Ages are relative, so they go stale unless something re-renders.
   const [tick, setTick] = useState(() => Date.now());
 
@@ -210,6 +211,9 @@ export function GmailTab(): JSX.Element {
   // Built from every cached email rather than the visible category: a reply is
   // owed regardless of which folder Gmail filed it in.
   const replyQueue = buildReplyQueue(allEmails, tick);
+
+  /** The visible category, narrowed by the search box. */
+  const shown = emails.filter((e) => matchesSearch(e, search));
 
   /*
    * Open on what needs answering, once.
@@ -753,6 +757,21 @@ export function GmailTab(): JSX.Element {
         </div>
       )}
 
+      {/*
+        Search over what is cached, filtering as you type.
+        There was no way to look for a specific message — you could pick a Gmail
+        category and scroll, which is not the same as finding the one from Priya
+        about the invoice.
+      */}
+      <input
+        style={{ ...input, marginBottom: 10 }}
+        type="search"
+        placeholder="Search cached mail by subject or sender…"
+        value={search}
+        onChange={(e) => setSearch(e.target.value)}
+        aria-label="Search cached mail"
+      />
+
       {/* Category & Filter Tabs */}
       <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 14 }}>
         {/*
@@ -826,9 +845,19 @@ export function GmailTab(): JSX.Element {
         </div>
       )}
 
-      {emails.length > 0 && (
+      {search.trim().length > 0 && (
+        <div style={{ fontSize: 11.5, color: C.faint, marginBottom: 10 }}>
+          {/*
+            Bounded honestly. This searches what Mochi has cached, not the whole
+            mailbox, so an empty result must not imply the mail does not exist.
+          */}
+          {shown.length} of {emails.length} cached {emails.length === 1 ? 'message' : 'messages'} in
+          this category match “{search.trim()}”.
+        </div>
+      )}
+      {shown.length > 0 && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-          {emails.map((email) => {
+          {shown.map((email) => {
             const isExpanded = expandedEmailId === email.emailId;
             const fullBody = emailBodies[email.emailId];
             const isLoadingBody = loadingBodyId === email.emailId;
@@ -928,6 +957,26 @@ export function GmailTab(): JSX.Element {
                         style={{ ...button('ghost'), fontSize: 11.5, padding: '5px 9px' }}
                       >
                         {isExpanded ? '▲ Hide' : '👁 Read'}
+                      </button>
+                      {/*
+                        Closes the loop: Mochi could say a mail mattered and had
+                        no way to take you to it.
+                      */}
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          void window.mochi.gmail.openThread(email.threadId);
+                        }}
+                        title="Open this conversation in Gmail"
+                        style={{
+                          ...button('ghost'),
+                          flexShrink: 0,
+                          fontSize: 12,
+                          padding: '6px 10px',
+                          whiteSpace: 'nowrap',
+                        }}
+                      >
+                        Open
                       </button>
                       <button
                         id={`gmail-draft-btn-${email.uid}`}

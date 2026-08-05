@@ -6,10 +6,9 @@
  * untrusted: validated or coerced before use.
  */
 
-import { app, ipcMain } from 'electron';
+import { app, ipcMain, shell } from 'electron';
 import { randomUUID } from 'node:crypto';
 import type {
-  EmailCategory,
   InterruptionGovernor,
   LlmStatus,
   ProviderId,
@@ -25,6 +24,7 @@ import {
   parseHhMm,
   rollForward,
   toggleDone,
+  gmailThreadUrl,
 } from '@mochi/core';
 import { DEFAULT_PROJECT } from '@mochi/db';
 import type { TimerService } from './services/timer-service.js';
@@ -485,20 +485,6 @@ export function registerIpc(ctx: IpcContext): void {
 
   ipcMain.handle('gmail:disconnect', () => ctx.gmail.disconnect());
 
-  ipcMain.handle('gmail:fetchUnread', (_e, limit: unknown, only: unknown) => {
-    const n =
-      typeof limit === 'number' && Number.isFinite(limit) ? Math.min(Math.max(1, limit), 50) : 10;
-
-    // Category ids become part of an X-GM-RAW query, so they are whitelisted
-    // against the union rather than passed through. An empty result after
-    // filtering falls back to Primary instead of searching every tab.
-    const requested = Array.isArray(only)
-      ? only.map(parseCategory).filter((c): c is EmailCategory => c !== null)
-      : [];
-
-    return ctx.gmail.fetchUnread(n, requested.length > 0 ? requested : ['primary']);
-  });
-
   ipcMain.handle('gmail:listCached', (_e, query: unknown) => {
     const input =
       typeof query === 'object' && query !== null ? (query as Record<string, unknown>) : {};
@@ -530,6 +516,24 @@ export function registerIpc(ctx: IpcContext): void {
         : 60;
     if (id.length === 0) return false;
     return ctx.gmail.snoozeReminder(id, Date.now() + duration * 60_000);
+  });
+
+  /*
+   * An id, never a URL.
+   *
+   * A thread id comes from an IMAP server, so it is remote input reaching an
+   * action on the user's machine. Main builds the link and validates the id; a
+   * renderer that could pass a URL here could pass any URL (RULE 1).
+   */
+  ipcMain.handle('gmail:openThread', async (_e, threadId: unknown) => {
+    if (typeof threadId !== 'string') return false;
+    const url = gmailThreadUrl(threadId);
+    if (url === null) {
+      console.warn('[gmail] refused to open a malformed thread id');
+      return false;
+    }
+    await shell.openExternal(url);
+    return true;
   });
 
   ipcMain.handle('gmail:dismissReminder', (_e, emailId: unknown) => {
@@ -566,17 +570,6 @@ export function registerIpc(ctx: IpcContext): void {
       return ctx.gmail.saveGeneratedDraft(id, subjectText, bodyText);
     },
   );
-
-  ipcMain.handle('gmail:generateAndSaveDraft', (_e, uid: unknown, tone: unknown) => {
-    const emailUid = typeof uid === 'number' ? uid : Number(uid);
-    const validTone = tone === 'friendly' || tone === 'brief' ? tone : 'professional';
-    return ctx.gmail.generateAndSaveDraft(emailUid, validTone);
-  });
-
-  ipcMain.handle('gmail:saveDraft', (_e, request: unknown) => {
-    const req = (request ?? {}) as import('@mochi/core').GmailSaveDraftRequest;
-    return ctx.gmail.saveDraft(req);
-  });
 
   // ---- user routines ----------------------------------------------------
   ipcMain.handle('userRoutines:list', () => ctx.userRoutines.list());

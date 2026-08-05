@@ -31,6 +31,8 @@ const LATE_AFTER_MS = 24 * 60 * 60_000;
 
 export interface ReplyItem {
   readonly emailId: string;
+  /** Gmail's X-GM-THRID, so a row can open the conversation it belongs to. */
+  readonly threadId: string;
   readonly subject: string;
   /** Display name where there is one, address otherwise. */
   readonly who: string;
@@ -112,6 +114,7 @@ function toItem(email: CachedInboxItem, now: number): ReplyItem {
   const raw = email.priority?.signals ?? [];
   return {
     emailId: email.emailId,
+    threadId: email.threadId,
     subject: email.subject.trim().length > 0 ? email.subject : '(no subject)',
     who: name.length > 0 ? name : email.fromAddress,
     receivedAt: email.receivedAt,
@@ -197,4 +200,29 @@ export function describeTriage(queue: ReplyQueue, modelConfigured: boolean): str
     return `${queue.total} sorted by rules — none were borderline enough to ask the model about.`;
   }
   return `${queue.total} sorted by rules, ${queue.modelChecked} double-checked by the model.`;
+}
+
+/**
+ * Find a message in what is already cached.
+ *
+ * There was no way to look for a specific email. You could filter by Gmail
+ * category and scroll, and that is not the same as finding the one from Priya
+ * about the invoice.
+ *
+ * Local and synchronous, over the hundred messages already in memory — no IMAP
+ * round trip, so it filters as fast as you type. That bounds it honestly too:
+ * this searches what Mochi has cached, not your whole mailbox, and the UI says so
+ * rather than letting an empty result imply the mail does not exist.
+ *
+ * Subject, sender name and address. Not the snippet: matching a body fragment the
+ * user cannot see in the row produces results that look like mistakes.
+ */
+export function matchesSearch(email: CachedInboxItem, query: string): boolean {
+  const needle = query.trim().toLowerCase();
+  if (needle.length === 0) return true;
+
+  // Every word must appear somewhere, so "priya invoice" narrows rather than
+  // widening the way an any-word match would.
+  const haystack = `${email.subject} ${email.fromName} ${email.fromAddress}`.toLowerCase();
+  return needle.split(/\s+/).every((word) => haystack.includes(word));
 }

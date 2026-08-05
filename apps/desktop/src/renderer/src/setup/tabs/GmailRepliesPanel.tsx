@@ -111,6 +111,18 @@ function Row({
         >
           Snooze
         </button>
+        {/*
+          Closes the loop. Mochi could say a mail needed a reply and had no way to
+          take you to it — you went and found it in a browser yourself.
+        */}
+        <button
+          type="button"
+          onClick={() => void window.mochi.gmail.openThread(item.threadId)}
+          title="Open this conversation in Gmail"
+          style={{ ...button('ghost'), padding: '5px 9px', fontSize: 11.5, color: C.faint }}
+        >
+          Open
+        </button>
       </div>
     </div>
   );

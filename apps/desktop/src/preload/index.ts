@@ -26,9 +26,7 @@ import type {
   GoogleStatus,
   GmailConnectResult,
   GmailDraftResult,
-  GmailFetchResult,
   GmailInboxChanged,
-  GmailSaveDraftRequest,
   GmailStatus,
   GmailSyncStatus,
   KeyResult,
@@ -221,8 +219,6 @@ const bridge: MochiBridge = {
       ipcRenderer.invoke('gmail:connect', email, appPassword) as Promise<GmailConnectResult>,
     disconnect: () => ipcRenderer.invoke('gmail:disconnect') as Promise<void>,
     status: () => ipcRenderer.invoke('gmail:status') as Promise<GmailStatus>,
-    fetchUnread: (limit, only) =>
-      ipcRenderer.invoke('gmail:fetchUnread', limit, only) as Promise<GmailFetchResult>,
     listCached: (query?: CachedEmailQuery) =>
       ipcRenderer.invoke('gmail:listCached', query) as Promise<readonly CachedInboxItem[]>,
     refresh: () => ipcRenderer.invoke('gmail:refresh') as Promise<GmailSyncStatus>,
@@ -235,6 +231,7 @@ const bridge: MochiBridge = {
       ipcRenderer.invoke('gmail:snoozeReminder', emailId, minutes) as Promise<boolean>,
     dismissReminder: (emailId) =>
       ipcRenderer.invoke('gmail:dismissReminder', emailId) as Promise<boolean>,
+    openThread: (threadId) => ipcRenderer.invoke('gmail:openThread', threadId) as Promise<boolean>,
     generateDraft: (emailId, tone) =>
       ipcRenderer.invoke('gmail:generateDraft', emailId, tone) as Promise<GmailDraftResult>,
     saveGeneratedDraft: (emailId, subject, body) =>
@@ -242,10 +239,6 @@ const bridge: MochiBridge = {
         ok: boolean;
         error?: string;
       }>,
-    generateAndSaveDraft: (emailUid, tone) =>
-      ipcRenderer.invoke('gmail:generateAndSaveDraft', emailUid, tone) as Promise<GmailDraftResult>,
-    saveDraft: (request: GmailSaveDraftRequest) =>
-      ipcRenderer.invoke('gmail:saveDraft', request) as Promise<{ ok: boolean; error?: string }>,
   },
 };
 

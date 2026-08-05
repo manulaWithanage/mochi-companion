@@ -385,14 +385,6 @@ export interface MochiBridge {
     disconnect(): Promise<void>;
     /** Current connection status. */
     status(): Promise<GmailStatus>;
-    /**
-     * Fetch up to `limit` unread emails.
-     *
-     * `only` restricts which inbox tabs are downloaded and defaults to
-     * Primary. `counts` in the result covers every category regardless, so
-     * the filter chips can show totals without paying for the bodies.
-     */
-    fetchUnread(limit?: number, only?: readonly EmailCategory[]): Promise<GmailFetchResult>;
     /** Read the durable local inbox immediately, without waiting for Gmail. */
     listCached(query?: CachedEmailQuery): Promise<readonly CachedInboxItem[]>;
     /** Reconcile the local inbox with Gmail now. */
@@ -404,6 +396,15 @@ export interface MochiBridge {
     fetchMessageBody(emailId: string): Promise<string | null>;
     snoozeReminder(emailId: string, minutes?: number): Promise<boolean>;
     dismissReminder(emailId: string): Promise<boolean>;
+    /**
+     * Open a thread in the Gmail web client.
+     *
+     * Takes an id, never a URL. Main builds the link and validates the id — a
+     * thread id is remote input from an IMAP server, and a renderer that could
+     * name the destination could name any destination (RULE 1). Resolves false
+     * when the id is not a Gmail thread id.
+     */
+    openThread(threadId: string): Promise<boolean>;
     /** Generate and persist a local draft without writing to Gmail. */
     generateDraft(emailId: string, tone?: GmailTone): Promise<GmailDraftResult>;
     /** Explicitly save a reviewed local draft into Gmail Drafts. */
@@ -412,13 +413,6 @@ export interface MochiBridge {
       subject: string,
       body: string,
     ): Promise<{ ok: boolean; error?: string }>;
-    /**
-     * Generate an LLM draft reply for the given email and save it to
-     * [Gmail]/Drafts. Returns the generated draft text on success.
-     */
-    generateAndSaveDraft(emailUid: number, tone?: GmailTone): Promise<GmailDraftResult>;
-    /** Save a custom (user-edited) draft to [Gmail]/Drafts. */
-    saveDraft(request: GmailSaveDraftRequest): Promise<{ ok: boolean; error?: string }>;
   };
 }
 
