@@ -208,8 +208,15 @@ export function registerIpc(ctx: IpcContext): void {
       parseHhMm(hours.end) !== null &&
       hours.start !== hours.end;
 
+    // `userName` is optional on the payload, so writing it unconditionally put
+    // the fallback over whatever the user had. That fallback was the author's
+    // own name, and the wizard never sent the field at all — which is how every
+    // install ended up greeting its user as someone else. Written only when
+    // setup actually collected one.
+    const providedName = asString(input.userName, '').trim();
+
     const updated = ctx.settings.update({
-      userName: asString(input.userName, 'Manula'),
+      ...(providedName.length > 0 ? { userName: providedName } : {}),
       assistantName: asString(input.assistantName, 'Mochi'),
       skinName: asString(input.skinName, 'default'),
       ...(validHours ? { workHours: hours } : {}),
