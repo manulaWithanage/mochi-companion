@@ -49,7 +49,7 @@ jobs:
 
       - uses: pnpm/action-setup@v4
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           # Same pin as ci.yml. A release built on a different Node than the one
           # the gates ran under is a release nothing actually verified.
