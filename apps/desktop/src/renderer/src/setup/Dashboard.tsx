@@ -462,30 +462,9 @@ export function Dashboard(): JSX.Element {
                   color: C.dim,
                   marginTop: 3,
                   letterSpacing: '0.01em',
-                  display: 'flex',
-                  alignItems: 'baseline',
-                  gap: 6,
                 }}
               >
                 Desktop Companion
-                {/*
-                  Which build this is. Worth showing now that updates install
-                  themselves: "am I on the version with the fix" was previously
-                  unanswerable from inside the app. Selectable on purpose — the
-                  first thing a bug report needs is a version someone can copy.
-                */}
-                {version !== null && (
-                  <span
-                    style={{
-                      color: C.faint,
-                      fontVariantNumeric: 'tabular-nums',
-                      userSelect: 'text',
-                    }}
-                    title={`Mochi ${version}`}
-                  >
-                    v{version}
-                  </span>
-                )}
               </span>
             </div>
           </div>
@@ -756,10 +735,38 @@ export function Dashboard(): JSX.Element {
           );
         })}
 
+        {/*
+          Which build this is, kept out of the way.
+          
+          Worth showing at all now that updates install themselves: a user can be
+          moved from one version to the next while the window is open and
+          otherwise have no way to tell. Faint and low-contrast on purpose — it is
+          reference, not news. Selectable, because the first thing a bug report
+          needs is a version someone can copy rather than retype off a screenshot.
+
+          Carries `marginTop: auto` so the pair sits at the foot together; the
+          button had it before and would otherwise push away from this line.
+        */}
+        <div
+          style={{
+            marginTop: 'auto',
+            padding: '0 12px 8px',
+            fontSize: 11,
+            color: C.faint,
+            opacity: 0.55,
+            textAlign: 'center',
+            fontVariantNumeric: 'tabular-nums',
+            userSelect: 'text',
+            minHeight: 15,
+          }}
+          title={version === null ? undefined : `Mochi ${version}`}
+        >
+          {version === null ? '' : `v${version}`}
+        </div>
+
         <button
           onClick={() => window.mochi.window.closeSetup()}
           style={{
-            marginTop: 'auto',
             padding: '9.5px 12px',
             borderRadius: 10,
             border: `1px solid ${C.border}`,
