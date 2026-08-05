@@ -6,7 +6,7 @@
  * untrusted: validated or coerced before use.
  */
 
-import { ipcMain } from 'electron';
+import { app, ipcMain } from 'electron';
 import { randomUUID } from 'node:crypto';
 import type {
   EmailCategory,
@@ -191,6 +191,11 @@ export function registerIpc(ctx: IpcContext): void {
   });
 
   // ---- settings ----------------------------------------------------------
+  // Read from Electron rather than passed in: app.getVersion() is the same value
+  // the release check compares the git tag against and the same one the updater
+  // measures against latest.yml, so the window cannot drift from either.
+  ipcMain.handle('app:version', () => app.getVersion());
+
   ipcMain.handle('settings:get', () => ctx.settings.get());
 
   ipcMain.handle('settings:completeSetup', (_e, payload: unknown) => {

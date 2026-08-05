@@ -326,7 +326,17 @@ export function Dashboard(): JSX.Element {
   // Owned here rather than in the tab, so the nav badge is right while you are
   // looking at some other tab.
   const needsYou = useNeedsYou();
+
+  useEffect(() => {
+    void window.mochi.app
+      .version()
+      .then(setVersion)
+      .catch(() => setVersion(null));
+  }, []);
   const [settings, setSettings] = useState<MochiSettings | null>(null);
+  // Null until asked. Rendering "v" with nothing after it, or a guess, would be
+  // worse than the half-second of absence.
+  const [version, setVersion] = useState<string | null>(null);
   const [timer, setTimer] = useState<TimerSnapshot | null>(null);
   const [projects, setProjects] = useState<readonly Project[]>([]);
   const [todayMs, setTodayMs] = useState(0);
@@ -452,9 +462,30 @@ export function Dashboard(): JSX.Element {
                   color: C.dim,
                   marginTop: 3,
                   letterSpacing: '0.01em',
+                  display: 'flex',
+                  alignItems: 'baseline',
+                  gap: 6,
                 }}
               >
                 Desktop Companion
+                {/*
+                  Which build this is. Worth showing now that updates install
+                  themselves: "am I on the version with the fix" was previously
+                  unanswerable from inside the app. Selectable on purpose — the
+                  first thing a bug report needs is a version someone can copy.
+                */}
+                {version !== null && (
+                  <span
+                    style={{
+                      color: C.faint,
+                      fontVariantNumeric: 'tabular-nums',
+                      userSelect: 'text',
+                    }}
+                    title={`Mochi ${version}`}
+                  >
+                    v{version}
+                  </span>
+                )}
               </span>
             </div>
           </div>

@@ -363,6 +363,18 @@ export interface MochiBridge {
     closeSetup(): void;
   };
 
+  readonly app: {
+    /**
+     * The running version.
+     *
+     * From `app.getVersion()`, which reads `apps/desktop/package.json` — the same
+     * value the release pipeline checks the git tag against, and the same one
+     * electron-updater compares to `latest.yml`. So what the window shows, what
+     * was tagged, and what an update is measured from cannot disagree.
+     */
+    version(): Promise<string>;
+  };
+
   readonly gmail: {
     /**
      * Save Gmail credentials (email + App Password) encrypted via safeStorage.

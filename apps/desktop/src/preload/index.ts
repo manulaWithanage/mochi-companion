@@ -212,6 +212,10 @@ const bridge: MochiBridge = {
     closeSetup: () => ipcRenderer.send('window:closeSetup'),
   },
 
+  app: {
+    version: () => ipcRenderer.invoke('app:version') as Promise<string>,
+  },
+
   gmail: {
     connect: (email, appPassword) =>
       ipcRenderer.invoke('gmail:connect', email, appPassword) as Promise<GmailConnectResult>,
