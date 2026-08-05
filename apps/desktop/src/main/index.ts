@@ -41,6 +41,7 @@ import { TaskReminderScheduler } from './services/task-reminder-scheduler.js';
 import { BubbleActions, actionsForEvent } from './services/bubble-actions.js';
 import { BubbleQueue } from './services/bubble-queue.js';
 import { MeetingAlertService } from './services/meeting-alert-service.js';
+import { UpdaterService } from './services/updater.js';
 import { LlmService } from './services/llm-service.js';
 import { KeyVault } from './storage/key-vault.js';
 import { ProviderService } from './services/provider-service.js';
@@ -470,6 +471,10 @@ async function bootstrap(): Promise<void> {
     setup.send('settings:changed', next);
     overlay.send('settings:changed', next);
   });
+
+  // Last, so the bus already has its subscriber: an update notice emitted before
+  // the dispatch exists would go nowhere.
+  new UpdaterService(bus).start();
 
   await timer.restore();
   mascot.start();

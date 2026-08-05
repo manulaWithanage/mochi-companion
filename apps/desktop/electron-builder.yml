@@ -55,6 +55,22 @@ artifactName: ${productName}-${version}-${os}-${arch}.${ext}
 # ---------------------------------------------------------------------------
 forceCodeSigning: false
 
+# ---------------------------------------------------------------------------
+# Publishing
+# ---------------------------------------------------------------------------
+# This block is not only about uploading. **It is what makes electron-builder
+# emit latest.yml at all** — the one file electron-updater reads to learn a newer
+# version exists. Verified the hard way on 2026-08-05: a tagged CI build with no
+# publish provider produced the installer and its blockmap and no latest.yml, so
+# auto-update would have been impossible no matter what the app-side code did.
+publish:
+  - provider: github
+    owner: manulaWithanage
+    repo: mochi-companion
+    # Releases are created as drafts so a build can be looked at before anyone is
+    # offered it. Publishing the draft is what actually starts the rollout.
+    releaseType: draft
+
 win:
   target:
     - target: nsis
@@ -80,7 +96,12 @@ nsis:
   # and the short name is friendlier.
   shortcutName: Mochi
   uninstallDisplayName: Mochi ${version}
-  artifactName: ${productName}-Setup-${version}-${arch}.${ext}
+  # Versionless on purpose. The website links to
+  # releases/latest/download/Mochi-Setup.exe, and that endpoint needs an exact,
+  # unchanging filename — a versioned one makes the download button 404 on every
+  # release. The version is still in latest.yml, the installer's file properties
+  # and the app itself, so nothing is lost but the guesswork.
+  artifactName: Mochi-Setup.${ext}
 
 # ---------------------------------------------------------------------------
 # macOS

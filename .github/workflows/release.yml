@@ -11,8 +11,8 @@ concurrency:
   group: release-${{ github.ref }}
   cancel-in-progress: false
 
-# Read-only for now. Phase 3 adds `contents: write` to the publishing job only,
-# rather than to the whole workflow, so the gates cannot write to the repository.
+# Read-only by default. `contents: write` is granted to the installer job alone,
+# not to the whole workflow, so the gates can never write to the repository.
 permissions:
   contents: read
 
@@ -41,6 +41,9 @@ jobs:
     name: Windows installer
     needs: gates
     runs-on: windows-latest
+    # Scoped here rather than at workflow level: only this job creates a release.
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v4
 
@@ -59,16 +62,34 @@ jobs:
       - name: Build the renderer and main bundles
         run: pnpm --filter @mochi/desktop build
 
-      # `--publish never` is load-bearing, not decoration. electron-builder's
-      # default publish policy is `onTagOrDraft`, so on a tag push in CI it would
-      # try to create a GitHub Release on its own. Publishing arrives in Phase 3,
-      # deliberately, once the pipeline has been proven end to end — a bad
-      # latest.yml reaching users is far harder to undo than a failed build.
-      - name: Package the installer
-        run: pnpm --filter @mochi/desktop exec electron-builder --win --publish never
+      # Publishes to a **draft** release — releaseType: draft in
+      # electron-builder.yml. Nothing is offered to anyone until the draft is
+      # published by hand, which is the review step that makes an automatic
+      # pipeline safe: a bad latest.yml is far harder to undo than a bad build.
+      - name: Package and publish the installer
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: pnpm --filter @mochi/desktop exec electron-builder --win --publish always
 
-      # Uploaded to the run rather than to Releases, so a tag can be pushed and
-      # the actual installer downloaded and tried before anything is public.
+      # Asserted explicitly, because the upload glob will not catch it.
+      # `if-no-files-found: error` only fires when *no* pattern matches, so when
+      # this file was missing from the first tagged build two of three patterns
+      # matched and the step passed green. latest.yml is the one file
+      # electron-updater reads; without it there is no auto-update at all, and
+      # nothing would have said so.
+      - name: Verify latest.yml was generated
+        shell: bash
+        run: |
+          if [ ! -f apps/desktop/release/latest.yml ]; then
+            echo "::error::latest.yml was not generated. electron-updater has nothing to read, so no user would ever be offered this update. Check the publish block in apps/desktop/electron-builder.yml."
+            ls -la apps/desktop/release
+            exit 1
+          fi
+          echo "latest.yml:"
+          cat apps/desktop/release/latest.yml
+
+      # Kept alongside the draft release. The run artifact outlives a deleted
+      # draft, which is the difference between "rebuild it" and "re-tag it".
       - name: Upload the installer
         uses: actions/upload-artifact@v4
         with:
