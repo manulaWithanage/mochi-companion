@@ -433,7 +433,6 @@ export function TodayTab({
               {
                 id: 'tasks',
                 icon: 'target',
-                step: 1,
                 title: 'Top Priorities',
                 desc: 'Add your top 3 tasks so you know where to start without feeling overwhelmed.',
                 action: () => onSelectTab?.('tasks'),
@@ -441,7 +440,6 @@ export function TodayTab({
               {
                 id: 'time',
                 icon: 'stopwatch',
-                step: 2,
                 title: 'Time Tracking',
                 desc: 'Track focus sessions & see where your screen time goes in real-time.',
                 action: () => onSelectTab?.('time'),
@@ -449,7 +447,6 @@ export function TodayTab({
               {
                 id: 'routines',
                 icon: 'droplet',
-                step: 3,
                 title: 'Wellness Routines',
                 desc: 'Water & stretch reminders protect your health while working at your PC.',
                 action: () => onSelectTab?.('routines'),
@@ -457,7 +454,6 @@ export function TodayTab({
               {
                 id: 'settings',
                 icon: 'sparkle',
-                step: 4,
                 title: 'AI & Smart Inbox',
                 desc: 'Connect LM Studio or OpenAI in Settings to flag urgent emails & drafts.',
                 action: () => onSelectTab?.('settings'),
@@ -465,7 +461,6 @@ export function TodayTab({
             ] as readonly {
               id: string;
               icon: IconName;
-              step: number;
               title: string;
               desc: string;
               action: () => void;
@@ -515,7 +510,6 @@ export function TodayTab({
                   color={C.accent}
                   filled={card.icon === 'sparkle'}
                 />
-                <span style={{ color: C.faint, fontWeight: 600 }}>{card.step}.</span>
                 <span>{card.title}</span>
               </div>
               <div style={{ fontSize: 11, color: C.dim, lineHeight: 1.35 }}>{card.desc}</div>
