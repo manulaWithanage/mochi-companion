@@ -70,9 +70,26 @@ export class UpdaterService {
    */
   installNow(): void {
     if (this.state.state !== 'ready') return;
-    // Leaves `before-quit` intact, so the schedulers and the database still
-    // close in order.
-    autoUpdater.quitAndInstall();
+
+    // BOTH ARGUMENTS MATTER. `quitAndInstall()` defaults to
+    // `(isSilent = false, isForceRunAfter = false)`, and calling it bare put an
+    // updating user back through the full NSIS wizard — welcome page, install
+    // location, the lot — to apply a version they had already agreed to. The
+    // wizard is right for a first install, where somebody is deciding whether
+    // and where to install an unsigned app. It is nonsense for an update, which
+    // is the same app landing in the same directory it is already in.
+    //
+    // - isSilent: NsisUpdater turns this into `/S`, so the installer runs with
+    //   no UI and reuses the recorded install directory.
+    // - isForceRunAfter: `--force-run`, so Mochi comes back by itself. Without
+    //   it a silent install is *worse* than the wizard — the app vanishes and
+    //   the user has to find it in the Start menu to learn the update worked.
+    //
+    // The automatic on-quit path was already silent: electron-updater's own
+    // quit handler calls `install(true, false)`. Only this explicit button was
+    // taking the loud route, which is why "quit from the tray" behaved one way
+    // and the button another.
+    autoUpdater.quitAndInstall(true, true);
   }
 
   private moveTo(next: UpdateStatus): void {

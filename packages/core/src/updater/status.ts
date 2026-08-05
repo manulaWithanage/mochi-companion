@@ -64,7 +64,10 @@ export function describeUpdateStatus(status: UpdateStatus, now: number): string 
     case 'downloading':
       return `Downloading ${status.version} — ${Math.round(status.percent)}%.`;
     case 'ready':
-      return `${status.version} is ready. It installs when you quit Mochi.`;
+      // Both routes named, because they are not the same offer: the button
+      // reinstalls silently and brings Mochi back, while quitting applies it
+      // and leaves the app closed, which is what someone quitting wants.
+      return `${status.version} is ready — restart to finish, or it installs next time you quit.`;
     case 'failed':
       return status.reason;
   }
