@@ -6,7 +6,7 @@
  * zero-key path. See ROADMAP.md.
  */
 
-import { app, BrowserWindow, session, shell } from 'electron';
+import { app, BrowserWindow, dialog, session, shell } from 'electron';
 import { join } from 'node:path';
 import {
   BRIEF_SESSION_MS,
@@ -570,12 +570,36 @@ app.whenReady().then(() => {
     });
   });
 
-  void bootstrap();
+  void startup();
 
   app.on('activate', () => {
-    if (BrowserWindow.getAllWindows().length === 0) void bootstrap();
+    if (BrowserWindow.getAllWindows().length === 0) void startup();
   });
 });
+
+/**
+ * Bootstrap, but never silently.
+ *
+ * `bootstrap()` creates the tray, the overlay and — on first run — the setup
+ * window, and it does all of that after a dozen `await`s. A rejection anywhere
+ * in that chain used to be an unhandled promise: the process stayed alive with
+ * no tray, no mascot and no window, which from the user's side is an app that
+ * "installed fine and then did nothing".
+ *
+ * Failing loudly is the point. A dialog naming the error is something a user
+ * can report; an invisible process is not.
+ */
+async function startup(): Promise<void> {
+  try {
+    await bootstrap();
+  } catch (error) {
+    const detail =
+      error instanceof Error ? `${error.message}\n\n${error.stack ?? ''}` : String(error);
+    console.error('[startup] bootstrap failed:', error);
+    dialog.showErrorBox('Mochi could not start', detail);
+    app.quit();
+  }
+}
 
 // The overlay lives in the tray; closing the settings window must not quit.
 app.on('window-all-closed', () => {
