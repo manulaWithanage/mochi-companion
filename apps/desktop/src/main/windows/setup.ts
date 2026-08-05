@@ -9,9 +9,6 @@
 import { BrowserWindow } from 'electron';
 import { join } from 'node:path';
 
-/** How long to wait for `ready-to-show` before showing the window regardless. */
-const REVEAL_TIMEOUT_MS = 5_000;
-
 export class SetupWindow {
   private win: BrowserWindow | null = null;
 
@@ -44,29 +41,14 @@ export class SetupWindow {
     this.win.setMenuBarVisibility(false);
 
     /*
-     * `show: false` means this window is only ever revealed by `ready-to-show`,
-     * and that event never fires if the renderer fails to load. The result is a
-     * live process with no visible window and nothing in the UI to say why —
-     * indistinguishable, to the user, from the app not starting at all. It is
-     * the first-run report: "running behind the screen, nothing comes up".
-     *
-     * So the reveal is also on a timer. A blank window the user can see, close
-     * and report on is strictly better than an invisible one.
+     * `show: false` means this window is only ever revealed by `ready-to-show`.
+     * Do not add a `setTimeout` that shows it anyway — see
+     * `no-show-fallback.test.ts`, which fails the build if you do. A load that
+     * never reaches `ready-to-show` is a load failure, and it is reported by the
+     * `did-fail-load` and `.catch()` handlers below rather than papered over.
      */
-    const revealFallback = setTimeout(() => {
-      if (this.win !== null && !this.win.isDestroyed() && !this.win.isVisible()) {
-        console.error('[setup-web] renderer never became ready; showing the window anyway');
-        this.win.show();
-      }
-    }, REVEAL_TIMEOUT_MS);
-    revealFallback.unref?.();
-
-    this.win.once('ready-to-show', () => {
-      clearTimeout(revealFallback);
-      this.win?.show();
-    });
+    this.win.once('ready-to-show', () => this.win?.show());
     this.win.on('closed', () => {
-      clearTimeout(revealFallback);
       this.win = null;
     });
 
