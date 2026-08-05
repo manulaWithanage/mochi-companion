@@ -8,9 +8,7 @@ import type {
 import { EMAIL_SCORER_VERSION } from '@mochi/core';
 import { EmailTriageService } from './email-triage-service.js';
 import type { SettingsStore } from '../storage/settings-store.js';
-import type { GmailImapService } from './gmail-imap.js';
 import type { LlmClient } from './llm-client.js';
-import type { GmailCredentials } from '../storage/gmail-vault.js';
 
 /**
  * The bug: escalation candidates were drawn from `pending` — emails with no
@@ -88,12 +86,6 @@ const settingsStub = {
   get: () => ({ gmailAi: { priorityEnabled: true, vipSenders: [] } }),
 } as unknown as SettingsStore;
 
-const imapStub = {
-  fetchMessage: async () => ({ bodyText: 'body text' }),
-} as unknown as GmailImapService;
-
-const CREDENTIALS = { user: ACCOUNT, pass: 'x' } as unknown as GmailCredentials;
-
 interface LlmCall {
   readonly prompt: string;
 }
@@ -118,14 +110,8 @@ function fakeLlm(
   return { client, calls };
 }
 
-function service(store: FakeStore, llm: LlmClient, credentials = CREDENTIALS): EmailTriageService {
-  return new EmailTriageService(
-    llm,
-    imapStub,
-    store as unknown as EmailStore,
-    settingsStub,
-    () => credentials,
-  );
+function service(store: FakeStore, llm: LlmClient): EmailTriageService {
+  return new EmailTriageService(llm, store as unknown as EmailStore, settingsStub);
 }
 
 const decision = (id: string, over: Partial<LlmPriorityDecision> = {}): LlmPriorityDecision =>
@@ -287,25 +273,6 @@ describe('a failed call is not an answer', () => {
   });
 });
 
-describe('without a model', () => {
-  it('still scores everything by rules', async () => {
-    const store = new FakeStore([email('e1'), email('e2')]);
-    const llm = { hasAnyModel: true, generate: vi.fn() } as unknown as LlmClient;
-
-    await new EmailTriageService(
-      llm,
-      imapStub,
-      store as unknown as EmailStore,
-      settingsStub,
-      () => null,
-    ).classifyInbox(ACCOUNT);
-
-    expect(store.saved).toHaveLength(2);
-    expect(store.saved.every((p) => p.source === 'rules')).toBe(true);
-    expect(llm.generate).not.toHaveBeenCalled();
-  });
-});
-
 describe('force', () => {
   it('re-asks even about emails already marked', async () => {
     const store = new FakeStore([email('e1')]);
@@ -322,25 +289,25 @@ describe('force', () => {
 });
 
 describe('no model configured', () => {
-  it('does not download message bodies it cannot use', async () => {
-    // Observed on a real inbox: ten IMAP fetches per sync, discarded the moment
-    // generate() answered "No model is set up yet."
+  it('still triages by rules, and asks nothing', async () => {
+    /*
+     * This once guarded against ten IMAP fetches per sync being discarded the
+     * moment generate() answered "No model is set up yet." Triage no longer
+     * reaches IMAP at all — classification is metadata-only and the service has
+     * no credentials to fetch with — so the waste it described cannot recur.
+     * What is still worth holding is the half that was never about IMAP: no
+     * model must not mean no triage.
+     */
     const store = new FakeStore([email('e1'), email('e2')]);
-    const fetchMessage = vi.fn(async () => ({ bodyText: 'body' }));
     const llm = { hasAnyModel: false, generate: vi.fn() } as unknown as LlmClient;
 
-    await new EmailTriageService(
-      llm,
-      { fetchMessage } as unknown as GmailImapService,
-      store as unknown as EmailStore,
-      settingsStub,
-      () => CREDENTIALS,
-    ).classifyInbox(ACCOUNT);
+    await new EmailTriageService(llm, store as unknown as EmailStore, settingsStub).classifyInbox(
+      ACCOUNT,
+    );
 
-    expect(fetchMessage).not.toHaveBeenCalled();
     expect(llm.generate).not.toHaveBeenCalled();
-    // Rules still ran, so the inbox is still triaged.
     expect(store.saved).toHaveLength(2);
+    expect(store.saved.every((p) => p.source === 'rules')).toBe(true);
   });
 
   it('leaves them unmarked so they escalate once a model appears', async () => {
@@ -348,10 +315,8 @@ describe('no model configured', () => {
     const noModel = { hasAnyModel: false, generate: vi.fn() } as unknown as LlmClient;
     await new EmailTriageService(
       noModel,
-      imapStub,
       store as unknown as EmailStore,
       settingsStub,
-      () => CREDENTIALS,
     ).classifyInbox(ACCOUNT);
 
     expect(store.latestFor('e1')?.signals).not.toContain('llm_declined');
