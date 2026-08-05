@@ -39,6 +39,14 @@ export class SetupWindow {
     });
 
     this.win.setMenuBarVisibility(false);
+
+    /*
+     * `show: false` means this window is only ever revealed by `ready-to-show`.
+     * Do not add a `setTimeout` that shows it anyway — see
+     * `no-show-fallback.test.ts`, which fails the build if you do. A load that
+     * never reaches `ready-to-show` is a load failure, and it is reported by the
+     * `did-fail-load` and `.catch()` handlers below rather than papered over.
+     */
     this.win.once('ready-to-show', () => this.win?.show());
     this.win.on('closed', () => {
       this.win = null;
@@ -56,7 +64,11 @@ export class SetupWindow {
       console.error(`[setup-web] RENDER PROCESS GONE:`, details);
     });
 
-    void this.load();
+    // Rejections here were unhandled: `loadFile` failing left the window
+    // permanently hidden and said nothing.
+    void this.load().catch((error: unknown) => {
+      console.error('[setup-web] load failed:', error);
+    });
     return this.win;
   }
 

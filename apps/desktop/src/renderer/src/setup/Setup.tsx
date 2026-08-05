@@ -63,6 +63,10 @@ export function Setup(): JSX.Element {
   const [step, setStep] = useState(0);
 
   const [name, setName] = useState('Mochi');
+  // What to call the person, as opposed to `name`, which is what to call Mochi.
+  // The wizard never asked for this, so completeSetup fell back to a hardcoded
+  // name for every install.
+  const [userName, setUserName] = useState('');
   const [skinName, setSkinName] = useState('default');
   const [start, setStart] = useState(DEFAULT_WORK_HOURS.start);
   const [end, setEnd] = useState(DEFAULT_WORK_HOURS.end);
@@ -82,6 +86,7 @@ export function Setup(): JSX.Element {
       const current = await window.mochi.settings.get();
       setSettings(current);
       setName(current.assistantName);
+      setUserName(current.userName);
       setSkinName(current.skinName);
       setStart(current.workHours.start);
       setEnd(current.workHours.end);
@@ -105,6 +110,9 @@ export function Setup(): JSX.Element {
     await window.mochi.settings.setActivityTracking(activityTrackingEnabled);
 
     const updated = await window.mochi.settings.completeSetup({
+      // Optional on the contract and omitted when blank: main leaves the
+      // existing value alone rather than writing an empty one over it.
+      ...(userName.trim().length > 0 ? { userName: userName.trim() } : {}),
       assistantName: name.trim() || 'Mochi',
       skinName,
       workHours: { start, end },
@@ -151,10 +159,29 @@ export function Setup(): JSX.Element {
         <div style={{ display: 'flex', flexDirection: 'column', gap: 18, marginTop: 10 }}>
           <div>
             <h1 style={{ margin: 0, fontSize: 26, fontWeight: 750, color: '#f4eef6' }}>
-              👋 Welcome! What should we call your companion?
+              👋 Welcome! Let&rsquo;s introduce you two.
             </h1>
             <p style={{ margin: '6px 0 0', fontSize: 13.5, color: '#a79ab2', lineHeight: 1.45 }}>
-              Mochi is your calm desktop assistant. Give your companion a name and pick a look.
+              Mochi is your calm desktop assistant. Tell it your name, give your companion one, and
+              pick a look.
+            </p>
+          </div>
+
+          <div>
+            <span style={label}>Your Name</span>
+            <input
+              style={input}
+              value={userName}
+              maxLength={24}
+              autoFocus
+              placeholder="What should Mochi call you?"
+              onChange={(e) => setUserName(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') setStep(1);
+              }}
+            />
+            <p style={{ margin: '5px 0 0', fontSize: 11.5, color: '#73667d' }}>
+              Optional. Used in your morning briefing and to sign drafted replies.
             </p>
           </div>
 
@@ -164,7 +191,6 @@ export function Setup(): JSX.Element {
               style={input}
               value={name}
               maxLength={24}
-              autoFocus
               placeholder="e.g. Mochi, Luna, Kiko"
               onChange={(e) => setName(e.target.value)}
               onKeyDown={(e) => {

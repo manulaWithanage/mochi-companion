@@ -147,7 +147,7 @@ export function MochiTab(): JSX.Element {
   useEffect(() => {
     void window.mochi.settings.get().then((s) => {
       setSettings(s);
-      setUserName(s.userName ?? 'Manula');
+      setUserName(s.userName ?? '');
       setName(s.assistantName);
       setSkinName(s.skinName);
       setMascotSize(s.mascotSize ?? 'medium');
@@ -157,7 +157,7 @@ export function MochiTab(): JSX.Element {
     void window.mochi.skin.listAvailable().then(setSkins);
     return window.mochi.settings.onChange((s) => {
       setSettings(s);
-      setUserName(s.userName ?? 'Manula');
+      setUserName(s.userName ?? '');
       setName(s.assistantName);
       setMascotSize(s.mascotSize ?? 'medium');
       setStart(s.workHours.start);
@@ -174,7 +174,7 @@ export function MochiTab(): JSX.Element {
 
   const saveIdentity = async (): Promise<void> => {
     await window.mochi.settings.completeSetup({
-      userName: userName.trim() || 'Manula',
+      userName: userName.trim(),
       assistantName: name.trim() || 'Mochi',
       skinName,
       workHours: settings.workHours,
@@ -271,7 +271,7 @@ export function MochiTab(): JSX.Element {
             <span style={label}>Your Name</span>
             <input
               style={input}
-              placeholder="e.g. Manula"
+              placeholder="What should Mochi call you?"
               value={userName}
               maxLength={24}
               onChange={(e) => setUserName(e.target.value)}
