@@ -13,7 +13,15 @@ import type { JSX } from 'react';
  */
 
 export type IconName =
-  'target' | 'stopwatch' | 'droplet' | 'sparkle' | 'clock' | 'hand' | 'question' | 'thread';
+  | 'target'
+  | 'stopwatch'
+  | 'droplet'
+  | 'sparkle'
+  | 'clock'
+  | 'hand'
+  | 'question'
+  | 'thread'
+  | 'activity';
 
 const PATHS: Readonly<Record<IconName, JSX.Element>> = {
   /** Priorities: what to aim at. */
@@ -62,6 +70,15 @@ const PATHS: Readonly<Record<IconName, JSX.Element>> = {
       <circle cx="12" cy="12" r="9" />
       <path d="M9.6 9.3a2.5 2.5 0 0 1 4.9.7c0 1.7-2.5 2.5-2.5 2.5" />
       <line x1="12" x2="12" y1="16.5" y2="16.6" />
+    </>
+  ),
+  /** Screen time, broken down. */
+  activity: (
+    <>
+      <line x1="4" x2="20" y1="20" y2="20" />
+      <line x1="8" x2="8" y1="20" y2="12.5" />
+      <line x1="12.5" x2="12.5" y1="20" y2="5" />
+      <line x1="17" x2="17" y1="20" y2="15" />
     </>
   ),
   /** An ongoing conversation. */
