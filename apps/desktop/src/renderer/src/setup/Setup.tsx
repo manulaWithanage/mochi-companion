@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState, type JSX } from 'react';
 import { DEFAULT_WORK_HOURS, parseHhMm, type MochiSettings, type SkinSummary } from '@mochi/core';
 import { Dashboard } from './Dashboard.js';
+import { FeatureToggle } from './FeatureToggle.js';
 
 /**
  * First run: a 3-step wizard — name, skin, work hours. Under 15 seconds,
@@ -44,6 +45,30 @@ const input: React.CSSProperties = {
   outline: 'none',
 };
 
+/**
+ * Every step opens the same way, and used to do it with a different emoji each
+ * time. Emoji are drawn by the operating system, so the wizard's four headings
+ * were four different typefaces at four different weights, none of them the
+ * one the heading itself is set in. Nothing decorates the headings now; the
+ * only icons left are on the option rows, where they are vector and inherit
+ * their colour from the row's state.
+ */
+const heading: React.CSSProperties = {
+  margin: 0,
+  fontSize: 25,
+  fontWeight: 700,
+  // Large text set at default tracking looks loose. Real headings are tightened.
+  letterSpacing: -0.4,
+  color: '#f4eef6',
+};
+
+const subheading: React.CSSProperties = {
+  margin: '7px 0 0',
+  fontSize: 13.5,
+  color: '#a79ab2',
+  lineHeight: 1.5,
+};
+
 const button = (primary: boolean): React.CSSProperties => ({
   padding: '11px 22px',
   borderRadius: 10,
@@ -71,9 +96,15 @@ export function Setup(): JSX.Element {
   const [start, setStart] = useState(DEFAULT_WORK_HOURS.start);
   const [end, setEnd] = useState(DEFAULT_WORK_HOURS.end);
 
-  // Step 3: Interactive Workday Preferences
-  const [hydrationEnabled, setHydrationEnabled] = useState(true);
-  const [chimeEnabled, setChimeEnabled] = useState(true);
+  // Step 3: Interactive Workday Preferences.
+  //
+  // Both of these are applied by `finish`. A third, "Soft Audio Chimes", was
+  // removed rather than restyled: nothing read its state, no global sound
+  // setting exists to hold it, and the only chime in the app is
+  // `mailPreferences.alertToneEnabled`, which main gates on `isMailReminder`.
+  // So the row promised a switch over routine breaks that has never existed,
+  // and turning it off silenced nothing.
+  const [wellnessEnabled, setWellnessEnabled] = useState(true);
   const [activityTrackingEnabled, setActivityTrackingEnabled] = useState(true);
 
   // Step 4: Account / Guest Choice
@@ -108,6 +139,23 @@ export function Setup(): JSX.Element {
     // Applied first, so the settings completeSetup returns already include it
     // and the snapshot below is not stale.
     await window.mochi.settings.setActivityTracking(activityTrackingEnabled);
+
+    // The wellness toggle used to be write-only: its state was read by nothing
+    // but the styling of its own checkbox. `UserRoutinesVault` seeds every
+    // preset with `enabled: true`, so declining here still left Hydration Break
+    // and Stand & Stretch scheduled and firing — the wizard asked, and threw
+    // the answer away.
+    //
+    // Only routines that are currently on are touched, because `toggle` flips.
+    // Calling it unconditionally would switch a routine back on.
+    if (!wellnessEnabled) {
+      const routines = await window.mochi.userRoutines.list();
+      for (const routine of routines) {
+        if (routine.category === 'health' && routine.enabled) {
+          await window.mochi.userRoutines.toggle(routine.id);
+        }
+      }
+    }
 
     const updated = await window.mochi.settings.completeSetup({
       // Optional on the contract and omitted when blank: main leaves the
@@ -158,10 +206,8 @@ export function Setup(): JSX.Element {
       {step === 0 && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 18, marginTop: 10 }}>
           <div>
-            <h1 style={{ margin: 0, fontSize: 26, fontWeight: 750, color: '#f4eef6' }}>
-              👋 Welcome! Let&rsquo;s introduce you two.
-            </h1>
-            <p style={{ margin: '6px 0 0', fontSize: 13.5, color: '#a79ab2', lineHeight: 1.45 }}>
+            <h1 style={heading}>Let&rsquo;s introduce you two</h1>
+            <p style={subheading}>
               Mochi is your calm desktop assistant. Tell it your name, give your companion one, and
               pick a look.
             </p>
@@ -216,10 +262,8 @@ export function Setup(): JSX.Element {
       {step === 1 && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 18, marginTop: 10 }}>
           <div>
-            <h1 style={{ margin: 0, fontSize: 26, fontWeight: 750, color: '#f4eef6' }}>
-              ⏰ When is your active workday?
-            </h1>
-            <p style={{ margin: '6px 0 0', fontSize: 13.5, color: '#a79ab2', lineHeight: 1.45 }}>
+            <h1 style={heading}>When is your active workday?</h1>
+            <p style={subheading}>
               Outside these hours, {name.trim() || 'Mochi'} enters Do Not Disturb mode so you can
               rest.
             </p>
@@ -258,109 +302,36 @@ export function Setup(): JSX.Element {
       {step === 2 && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 18, marginTop: 10 }}>
           <div>
-            <h1 style={{ margin: 0, fontSize: 26, fontWeight: 750, color: '#f4eef6' }}>
-              ✨ Personalize Your Experience
-            </h1>
-            <p style={{ margin: '6px 0 0', fontSize: 13.5, color: '#a79ab2', lineHeight: 1.45 }}>
-              Select recommended features to keep your workday healthy, focused, and balanced.
+            <h1 style={heading}>Personalize your experience</h1>
+            <p style={subheading}>
+              Two things to decide now. Both can be changed later — routines from the Routines tab,
+              tracking from Settings.
             </p>
           </div>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-            {/* Toggle 1: Hydration & Breaks */}
-            <div
-              onClick={() => setHydrationEnabled(!hydrationEnabled)}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 14,
-                padding: '14px 16px',
-                borderRadius: 12,
-                background: hydrationEnabled ? 'rgba(242,166,179,0.08)' : '#241f2b',
-                border: hydrationEnabled ? '1px solid rgba(242,166,179,0.3)' : '1px solid #3b3244',
-                cursor: 'pointer',
-                transition: 'all 160ms ease',
-              }}
-            >
-              <input
-                type="checkbox"
-                checked={hydrationEnabled}
-                onChange={() => {}}
-                style={{ width: 18, height: 18, accentColor: '#f2a6b3' }}
-              />
-              <div>
-                <strong style={{ fontSize: 14, color: '#f4eef6', display: 'block' }}>
-                  💧 Hydration & Stretch Reminders (Recommended)
-                </strong>
-                <span style={{ fontSize: 12, color: '#a79ab2', marginTop: 2, display: 'block' }}>
-                  Gentle nudges every 45 mins to drink water, stretch, and protect your energy.
-                </span>
-              </div>
-            </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 9 }}>
+            <FeatureToggle
+              icon="droplet"
+              title="Hydration and stretch reminders"
+              // The old copy said "every 45 mins", which no preset does. These
+              // are the times ROUTINE_PRESETS actually seeds for the health
+              // category, so the sentence stays true unless the presets change.
+              description="Water at 10:00, 12:30, 15:00 and 17:00; stand and stretch at 11:30, 14:30 and 16:30."
+              recommended
+              checked={wellnessEnabled}
+              onToggle={() => setWellnessEnabled(!wellnessEnabled)}
+            />
 
-            {/* Toggle 2: Audio Chimes */}
-            <div
-              onClick={() => setChimeEnabled(!chimeEnabled)}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 14,
-                padding: '14px 16px',
-                borderRadius: 12,
-                background: chimeEnabled ? 'rgba(242,166,179,0.08)' : '#241f2b',
-                border: chimeEnabled ? '1px solid rgba(242,166,179,0.3)' : '1px solid #3b3244',
-                cursor: 'pointer',
-                transition: 'all 160ms ease',
-              }}
-            >
-              <input
-                type="checkbox"
-                checked={chimeEnabled}
-                onChange={() => {}}
-                style={{ width: 18, height: 18, accentColor: '#f2a6b3' }}
-              />
-              <div>
-                <strong style={{ fontSize: 14, color: '#f4eef6', display: 'block' }}>
-                  🔔 Soft Audio Chimes
-                </strong>
-                <span style={{ fontSize: 12, color: '#a79ab2', marginTop: 2, display: 'block' }}>
-                  Plays a subtle, calming chime when routine breaks or top priority alerts trigger.
-                </span>
-              </div>
-            </div>
-
-            {/* Toggle 3: Activity Tracking */}
-            <div
-              onClick={() => setActivityTrackingEnabled(!activityTrackingEnabled)}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 14,
-                padding: '14px 16px',
-                borderRadius: 12,
-                background: activityTrackingEnabled ? 'rgba(242,166,179,0.08)' : '#241f2b',
-                border: activityTrackingEnabled
-                  ? '1px solid rgba(242,166,179,0.3)'
-                  : '1px solid #3b3244',
-                cursor: 'pointer',
-                transition: 'all 160ms ease',
-              }}
-            >
-              <input
-                type="checkbox"
-                checked={activityTrackingEnabled}
-                onChange={() => {}}
-                style={{ width: 18, height: 18, accentColor: '#f2a6b3' }}
-              />
-              <div>
-                <strong style={{ fontSize: 14, color: '#f4eef6', display: 'block' }}>
-                  📊 On-Device Activity & Screen Time Tracking
-                </strong>
-                <span style={{ fontSize: 12, color: '#a79ab2', marginTop: 2, display: 'block' }}>
-                  Observes screen time 100% locally on your computer to show work breakdown graphs.
-                </span>
-              </div>
-            </div>
+            <FeatureToggle
+              icon="activity"
+              title="Activity and screen time"
+              // Not "window titles are never read" — that is the exact overclaim
+              // `activity-sampler.ts` was corrected for. Titles are read when
+              // site tracking is opted into, so the qualifier stays.
+              description="Records which applications you use, on this device only. Window titles are not read unless you turn on site tracking later."
+              checked={activityTrackingEnabled}
+              onToggle={() => setActivityTrackingEnabled(!activityTrackingEnabled)}
+            />
           </div>
         </div>
       )}
@@ -466,7 +437,7 @@ export function Setup(): JSX.Element {
           </button>
         ) : (
           <button style={button(true)} disabled={!hoursValid} onClick={() => void finish()}>
-            🚀 Complete Setup & Start
+            Complete setup
           </button>
         )}
       </div>
