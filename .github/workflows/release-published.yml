@@ -15,7 +15,7 @@ jobs:
     name: Point "latest" at it
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       # The trap this closes: publishing a draft does not move GitHub's "latest"
       # pointer once a previous release has been pinned. On 2026-08-05 v0.1.3 was
