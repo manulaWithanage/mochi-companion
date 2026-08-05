@@ -42,7 +42,7 @@
     "electron-log": "^5.4.4",
     "electron-updater": "^6.8.9",
     "ical.js": "^2.2.1",
-    "imapflow": "^1.6.3",
+    "imapflow": "^1.6.5",
     "mailparser": "^3.9.14",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
