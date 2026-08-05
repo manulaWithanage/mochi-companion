@@ -43,6 +43,47 @@ const BOTTOM_OFFSET = 164;
 const RIGHT_OFFSET = 58;
 const TAIL = 9;
 
+/**
+ * One light source, stated once.
+ *
+ * The bubble and its tail each carried their own shadow and disagreed about
+ * where the light was: the bubble dropped 14px with a 36px blur at 0.8, the tail
+ * about 1px with a 2px blur at 0.45. The tail sits at the bottom edge, exactly
+ * where the bubble's shadow is deepest, so it read as a separate object pasted on
+ * rather than part of the same silhouette.
+ *
+ * This is the same failure the OUTLINE constant above exists to prevent, in a
+ * different property — two halves of one shape describing themselves separately
+ * and drifting apart. So the tail's shadow is derived from these rather than
+ * written down again.
+ *
+ * Two layers, not one. A single heavy blur reads as a smudge under a small
+ * bubble; a tight contact shadow plus a broad ambient one is what a real object
+ * casts, and it survives the bubble floating over a white page as readily as a
+ * dark desktop.
+ */
+const LIFT_Y = 10;
+const LIFT_BLUR = 26;
+const LIFT = `0 ${LIFT_Y}px ${LIFT_BLUR}px rgba(0, 0, 0, 0.52)`;
+const CONTACT = '0 2px 6px rgba(0, 0, 0, 0.4)';
+/** Tighter and dimmer than before, so it reads as a rim rather than a halo. */
+const GLOW = '0 0 18px rgba(242, 166, 179, 0.26)';
+const INNER_TOP = 'inset 0 1px 0 rgba(255, 255, 255, 0.18)';
+
+/**
+ * The tail's shadow, in the tail's own rotated frame.
+ *
+ * `filter` applies in an element's local coordinate space and `transform` maps
+ * the result, so a shadow written as `1px 1px` on a 45-degree rotation does not
+ * point where it reads. To cast the same screen-space downward shadow the bubble
+ * does, the offset has to be rotated back: (0, y) becomes (y·sin45, y·cos45).
+ *
+ * Scaled down because only about half the tail protrudes — the buried half is
+ * behind the bubble and casts nothing.
+ */
+const TAIL_LIFT = Number((LIFT_Y * 0.55 * Math.SQRT1_2).toFixed(2));
+const TAIL_SHADOW = `drop-shadow(${TAIL_LIFT}px ${TAIL_LIFT}px ${Math.round(LIFT_BLUR * 0.3)}px rgba(0, 0, 0, 0.5))`;
+
 function formatConversationalText(raw: string | null): string | null {
   if (raw === null) return null;
   let text = raw.replace(/[—–]/g, ',');
@@ -99,8 +140,7 @@ export function SpeechBubble({
         color: '#ffffff',
         font: '600 13px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif',
         border: `1px solid ${OUTLINE}`,
-        boxShadow:
-          '0 14px 36px rgba(0, 0, 0, 0.8), 0 0 24px rgba(242, 166, 179, 0.32), inset 0 1px 0 rgba(255, 255, 255, 0.18)',
+        boxShadow: `${CONTACT}, ${LIFT}, ${GLOW}, ${INNER_TOP}`,
         backdropFilter: 'blur(16px)',
         overflowWrap: 'anywhere',
         cursor: 'pointer',
@@ -174,7 +214,7 @@ export function SpeechBubble({
           borderBottom: `1px solid ${OUTLINE}`,
           borderBottomRightRadius: 3,
           transform: 'rotate(45deg)',
-          filter: 'drop-shadow(1px 1px 2px rgba(0, 0, 0, 0.45))',
+          filter: TAIL_SHADOW,
         }}
       />
     </div>
