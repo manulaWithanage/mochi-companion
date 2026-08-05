@@ -45,6 +45,11 @@ export interface IpcContext {
   overlay: OverlayWindow;
   setup: SetupWindow;
   governor: InterruptionGovernor;
+  updater: {
+    status(): import('@mochi/core').UpdateStatus;
+    checkNow(): import('@mochi/core').UpdateStatus;
+    installNow(): void;
+  };
   google: {
     status(): import('@mochi/core').GoogleStatus;
     openStep(url: string): void;
@@ -196,6 +201,10 @@ export function registerIpc(ctx: IpcContext): void {
   // the release check compares the git tag against and the same one the updater
   // measures against latest.yml, so the window cannot drift from either.
   ipcMain.handle('app:version', () => app.getVersion());
+
+  ipcMain.handle('updater:status', () => ctx.updater.status());
+  ipcMain.handle('updater:check', () => ctx.updater.checkNow());
+  ipcMain.handle('updater:installNow', () => ctx.updater.installNow());
 
   ipcMain.handle('settings:get', () => ctx.settings.get());
 

@@ -8,6 +8,7 @@ import {
   type SkinSummary,
 } from '@mochi/core';
 import { button, C, card, h2, input, label, sub } from '../ui.js';
+import { UpdatesCard } from '../UpdatesCard.js';
 
 const STATES: readonly MascotState[] = ['idle', 'working', 'resting', 'alert'];
 
@@ -397,6 +398,8 @@ export function MochiTab(): JSX.Element {
           desc="Removes the mascot from the screen entirely. The tray icon stays."
         />
       </div>
+
+      <UpdatesCard />
 
       <div style={{ ...card, marginBottom: 16 }}>
         <div style={{ fontSize: 13, fontWeight: 600, color: C.text, marginBottom: 10 }}>

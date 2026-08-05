@@ -41,6 +41,7 @@ import type {
   SkinSummary,
   Task,
   TimerSnapshot,
+  UpdateStatus,
   UserRoutine,
   WorkSession,
 } from '@mochi/core';
@@ -217,6 +218,13 @@ const bridge: MochiBridge = {
 
   app: {
     version: () => ipcRenderer.invoke('app:version') as Promise<string>,
+  },
+
+  updater: {
+    status: () => ipcRenderer.invoke('updater:status') as Promise<UpdateStatus>,
+    check: () => ipcRenderer.invoke('updater:check') as Promise<UpdateStatus>,
+    installNow: () => ipcRenderer.invoke('updater:installNow') as Promise<void>,
+    onChange: (listener) => subscribe<UpdateStatus>('updater:changed', listener),
   },
 
   gmail: {

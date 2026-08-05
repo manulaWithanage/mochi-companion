@@ -28,6 +28,7 @@ import type { UserRoutine, UserRoutineInput } from '../routines/user-routines.js
 import type { Project } from '../storage/adapter.js';
 import type { Task } from '../tasks/tasks.js';
 import type { WorkSession } from '../timer/session.js';
+import type { UpdateStatus } from '../updater/status.js';
 
 export interface GoogleStatus {
   readonly connected: boolean;
@@ -377,6 +378,23 @@ export interface MochiBridge {
      * was tagged, and what an update is measured from cannot disagree.
      */
     version(): Promise<string>;
+  };
+
+  /**
+   * The update process, made visible.
+   *
+   * Nothing here downloads or installs on its own — that is already automatic.
+   * These exist so a user can *see* what the automatic behaviour is doing, ask
+   * it to happen now rather than within six hours, and finish an update without
+   * having to know that quitting means the tray icon and not the Close button.
+   */
+  readonly updater: {
+    status(): Promise<UpdateStatus>;
+    /** Check immediately, ignoring the interval. Returns the state it moved to. */
+    check(): Promise<UpdateStatus>;
+    /** Quit and apply a downloaded update. A no-op unless one is ready. */
+    installNow(): Promise<void>;
+    onChange(listener: (status: UpdateStatus) => void): () => void;
   };
 
   readonly gmail: {
