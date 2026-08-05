@@ -277,9 +277,16 @@ async function bootstrap(): Promise<void> {
 
   google.onChange((status) => setup.send('google:changed', status));
 
+  // Constructed here but not started until the end of bootstrap: the settings
+  // panel needs something to ask for its status from the moment IPC exists,
+  // while the first check still has to wait for the event bus to have a
+  // subscriber. `start()` is what begins the checking, not the constructor.
+  const updater = new UpdaterService(bus);
+
   registerIpc({
     bubbleActions,
     bubbleQueue,
+    updater,
     google: {
       status: () => google.status(),
       openStep: (url) => google.openStep(url),
@@ -505,7 +512,10 @@ async function bootstrap(): Promise<void> {
 
   // Last, so the bus already has its subscriber: an update notice emitted before
   // the dispatch exists would go nowhere.
-  new UpdaterService(bus).start();
+  updater.start();
+  // Kept live rather than only bubbled once, so a settings panel opened at any
+  // point shows the real state instead of whatever it was told at mount.
+  updater.onChange((status) => setup.send('updater:changed', status));
 
   await timer.restore();
   mascot.start();
