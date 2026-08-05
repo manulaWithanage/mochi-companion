@@ -23,8 +23,22 @@ updates:
     groups:
       # 18 direct dev dependencies across four projects. Ungrouped, a quiet week
       # still costs a handful of PRs that nothing user-facing depends on.
+      #
+      # Minor and patch only, deliberately. The first grouped run bundled
+      # TypeScript 5.9 -> 7.0, ESLint 9 -> 10 and Vitest 2 -> 4 together with
+      # seven harmless patches, and failed at `lint` on the first line of output:
+      #
+      #     Error: typescript-eslint does not support TS 7.0.
+      #
+      # typescript-eslint lags TypeScript majors by design, so one unavoidable
+      # incompatibility took down all ten bumps and hid whether the other nine
+      # were fine. Grouping is the right answer to noise and the wrong answer to
+      # breaking changes. Majors now arrive as their own PR and fail alone.
       dev-dependencies:
         dependency-type: 'development'
+        update-types:
+          - 'minor'
+          - 'patch'
       # These move together and share a release cadence; splitting them produces
       # PRs that individually fail to resolve.
       ai-sdk:
