@@ -1,6 +1,6 @@
 {
   "name": "@mochi/desktop",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "private": true,
   "license": "MIT",
   "description": "Mochi desktop companion — transparent overlay mascot and 1-click project stopwatch",
