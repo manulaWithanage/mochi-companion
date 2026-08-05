@@ -108,7 +108,7 @@ Mochi sidesteps all of it: **the user is their own developer.** They create thei
 
 ## 🚀 Step-by-Step Implementation Roadmap for AI Agents
 
-> **Phase 1 is specified in full by [`CLAUDE_KICKOFF_PROMPT.md`](CLAUDE_KICKOFF_PROMPT.md), which is authoritative for V1.** Where that prompt and this roadmap disagree, follow the prompt.
+> **Phase 1 is built and shipping.** It was specified by a separate kickoff prompt, now removed: it described an `apps/web` directory that no longer exists and a Phase 1 that finished months of work ago, so an agent reading it as authoritative would have built against a layout that is gone. This document is authoritative.
 
 ### Phase 1: Desktop Shell, Sprite Engine & Stopwatch — **NO AI**
 
@@ -158,9 +158,9 @@ Mochi sidesteps all of it: **the user is their own developer.** They create thei
 
 ## 🤖 Prompt to Paste into an AI Agent
 
-**See [`CLAUDE_KICKOFF_PROMPT.md`](CLAUDE_KICKOFF_PROMPT.md).** It is the single authoritative kickoff prompt and includes the hard architectural rules, Phase 1 execution steps, and the acceptance checklist that defines "done".
+**This document is the prompt.** Point an agent at `AGENT_INSTRUCTIONS.md` and it has the architectural rules, the five gates, and the roadmap.
 
-Do not maintain a second copy of the prompt here — two prompts drift apart, and an agent that reads the stale one builds the wrong thing.
+There used to be a separate kickoff prompt, kept deliberately as the single authoritative copy so the two could not drift. It drifted anyway — describing an `apps/web` directory that moved to its own repository, and a Phase 1 that is long finished. Two documents claiming authority is the failure mode; the fix was to keep one, not to keep syncing two.
 
 ---
 

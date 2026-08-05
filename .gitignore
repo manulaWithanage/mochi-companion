@@ -42,3 +42,22 @@ release/
 *.dmg
 *.AppImage
 *.blockmap
+
+# Private research
+#
+# The MNMA design and evaluation documents. Kept on disk, out of the repository —
+# they are personal research notes rather than anything a contributor needs, and
+# the code that implements them stands on its own.
+#
+# Two things worth knowing about this entry:
+#
+# 1. .gitignore does not untrack anything. These were removed with
+#    `git rm --cached` first; the pattern only stops them coming back.
+# 2. They remain in history, added 2026-07-30. `git log --all -- MNMA.md` still
+#    finds them. Removing them from history would rewrite every commit from that
+#    date, which is nearly the whole repository, and break the v0.1.x tags. Not
+#    done, because they contain no credentials and no personal data — this is a
+#    publishing preference, not a leak.
+docs/research/MNMA.md
+docs/research/MNMA_RESEARCH.md
+docs/research/MOCHI_BRAIN.md
