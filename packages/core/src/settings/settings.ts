@@ -97,7 +97,16 @@ export interface MochiSettings {
 }
 
 export const DEFAULT_SETTINGS: MochiSettings = {
-  userName: 'Manula',
+  /*
+   * Empty, not a name. This shipped as 'Manula' — the author's own name — so
+   * every install greeted its user as him until they found the settings field.
+   *
+   * Empty is safe because every consumer already guards for it: the briefing
+   * prompt omits "The user is …", the draft prompt falls back to 'User', and
+   * the Tasks header drops the comma. Setup asks for it; until then Mochi
+   * simply uses no name.
+   */
+  userName: '',
   assistantName: 'Mochi',
   skinName: 'default',
   mascotSize: 'medium',

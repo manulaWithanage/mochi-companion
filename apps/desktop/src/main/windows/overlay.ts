@@ -117,7 +117,12 @@ export class OverlayWindow {
     }
 
     this.wireEvents();
-    void this.loadRenderer();
+    // An unhandled rejection here left the mascot permanently invisible: the
+    // overlay is `show: false` until `ready-to-show`, which a failed load never
+    // reaches. Nothing else in the app would have said so.
+    void this.loadRenderer().catch((error: unknown) => {
+      console.error('[overlay] renderer failed to load:', error);
+    });
     return this.win;
   }
 
