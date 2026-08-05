@@ -17,6 +17,12 @@ import {
   sortByNext,
 } from '@mochi/core';
 import { button, C, card, h2, input, label, sub } from '../ui.js';
+import {
+  deriveIntervalMinutes,
+  describeIntervalSchedule,
+  generateIntervalTimes,
+  parseMins,
+} from './interval-schedule.js';
 
 /**
  * Two letters, not one.
@@ -107,37 +113,6 @@ function formatTime12h(time24: string): string {
   const ampm = h >= 12 ? 'PM' : 'AM';
   h = h % 12 || 12;
   return `${h}:${m} ${ampm}`;
-}
-
-/** Helper to parse HH:mm time string into total minutes from midnight */
-function parseMins(tStr: string): number {
-  if (!tStr) return 0;
-  const parts = tStr.split(':');
-  return parseInt(parts[0] || '0', 10) * 60 + parseInt(parts[1] || '0', 10);
-}
-
-/** Generates recurring times at a set interval in minutes between start24 and end24 */
-function generateIntervalTimes(
-  intervalMinutes: number,
-  start24: string = '09:00',
-  end24: string = '18:00',
-): string[] {
-  const formatMins = (totalMins: number) => {
-    const h = Math.floor(totalMins / 60) % 24;
-    const m = totalMins % 60;
-    return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
-  };
-
-  const startMins = parseMins(start24);
-  let endMins = parseMins(end24);
-  if (endMins <= startMins) endMins += 24 * 60;
-
-  const result: string[] = [];
-  const step = Math.max(1, intervalMinutes);
-  for (let current = startMins; current <= endMins; current += step) {
-    result.push(formatMins(current));
-  }
-  return Array.from(new Set(result)).sort();
 }
 
 const TIME_SUGGESTIONS = [
@@ -282,6 +257,18 @@ export function RoutinesTab(): JSX.Element {
       const end = existingTimes[existingTimes.length - 1]!;
       setIntervalStartInput(formatTime12h(start));
       setIntervalEndInput(formatTime12h(end));
+      /*
+       * Recover the interval from the times themselves.
+       *
+       * Without this the selector kept its default of 30 minutes, so a routine
+       * running every 15 opened claiming "Every 30m" — and because editing the
+       * start or end regenerates the list from the selector, changing the window
+       * by one character silently rewrote the routine to a cadence nobody chose.
+       * Unevenly spaced times return null and the selection is left alone rather
+       * than made up.
+       */
+      const derived = deriveIntervalMinutes(existingTimes);
+      if (derived !== null) setSelectedIntervalMins(derived);
     } else {
       setScheduleMode('specific');
     }
@@ -943,8 +930,13 @@ export function RoutinesTab(): JSX.Element {
                     color: C.accent,
                   }}
                 >
-                  ⚡ Mochi will remind you {times.length} times every {selectedIntervalMins} minutes
-                  between {intervalStartInput} and {intervalEndInput}.
+                  {/*
+                    Derived from `times` alone. This used to take its count from
+                    the times and its interval from the selector, so the halves
+                    could disagree — it read "37 times every 30 minutes between
+                    9:00 AM and 6:00 PM", which is eighteen and a half hours.
+                  */}
+                  ⚡ {describeIntervalSchedule(times)}
                 </div>
               </div>
             </div>
