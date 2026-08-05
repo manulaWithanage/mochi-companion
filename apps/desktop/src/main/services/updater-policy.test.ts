@@ -1,4 +1,6 @@
 import { describe, expect, it } from 'vitest';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import {
   CHECK_INTERVAL_MS,
   describeReadyUpdate,
@@ -81,5 +83,49 @@ describe('the governor subject', () => {
     // Otherwise dismissing v1.0.2 would not silence 1.0.2 — the governor keys on
     // the subject string, so these have to agree.
     expect(updateSubject('v1.0.2')).toBe(updateSubject('1.0.2'));
+  });
+});
+
+/**
+ * A guard, not a unit test.
+ *
+ * `CHECK_INTERVAL_MS` was defined here and respected by `shouldCheck`, and
+ * nothing ever drove it: `UpdaterService.start()` was called once at boot and
+ * never again. So the interval was real, tested, and dead — anyone who left Mochi
+ * running for days never learned an update existed. A companion is meant to stay
+ * open; "restart to find out" is the wrong shape for one.
+ *
+ * The wiring lives beside `electron` imports with no seam to test through, so
+ * this reads the source instead.
+ */
+describe('the check actually repeats', () => {
+  const source = (): string =>
+    readFileSync(join(import.meta.dirname, 'updater.ts'), 'utf8')
+      .replace(/\/\*[\s\S]*?\*\//g, '')
+      .replace(/^\s*\/\/.*$/gm, '');
+
+  it('drives the interval with a timer', () => {
+    const code = source();
+
+    expect(code, 'a constant nothing schedules is a constant nobody obeys').toMatch(
+      /setInterval\([^)]*CHECK_INTERVAL_MS|setInterval\(\s*\(\)\s*=>\s*this\.check\(\),\s*CHECK_INTERVAL_MS/,
+    );
+  });
+
+  it('unrefs it, so bookkeeping cannot hold the process open', () => {
+    expect(source()).toMatch(/unref\?\.\(\)/);
+  });
+
+  it('wires the electron-updater listeners behind a once-only flag', () => {
+    // Its emitter is global. Wiring twice would stack a second copy of every
+    // listener, and one downloaded update would announce itself twice.
+    const code = source();
+
+    expect(code).toMatch(/if \(this\.wired\) return;/);
+    expect(code).toMatch(/this\.wired = true;/);
+  });
+
+  it('can be stopped', () => {
+    expect(source()).toMatch(/clearInterval\(this\.timer\)/);
   });
 });
