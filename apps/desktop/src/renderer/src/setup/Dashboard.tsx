@@ -2,9 +2,11 @@ import { useEffect, useState, type JSX } from 'react';
 import {
   elapsedMs,
   formatDuration,
+  updateAwaitsRestart,
   type MochiSettings,
   type Project,
   type TimerSnapshot,
+  type UpdateStatus,
   type WorkSession,
 } from '@mochi/core';
 import { C, humanDuration } from './ui.js';
@@ -333,10 +335,22 @@ export function Dashboard(): JSX.Element {
       .then(setVersion)
       .catch(() => setVersion(null));
   }, []);
+
+  useEffect(() => {
+    void window.mochi.updater
+      .status()
+      .then(setUpdateStatus)
+      .catch(() => setUpdateStatus(null));
+    const stop = window.mochi.updater.onChange(setUpdateStatus);
+    return () => {
+      stop();
+    };
+  }, []);
   const [settings, setSettings] = useState<MochiSettings | null>(null);
   // Null until asked. Rendering "v" with nothing after it, or a guess, would be
   // worse than the half-second of absence.
   const [version, setVersion] = useState<string | null>(null);
+  const [updateStatus, setUpdateStatus] = useState<UpdateStatus | null>(null);
   const [timer, setTimer] = useState<TimerSnapshot | null>(null);
   const [projects, setProjects] = useState<readonly Project[]>([]);
   const [todayMs, setTodayMs] = useState(0);
@@ -763,6 +777,36 @@ export function Dashboard(): JSX.Element {
         >
           {version === null ? '' : `v${version}`}
         </div>
+
+        {/*
+          A downloaded update, where it cannot be missed.
+
+          The Updates card in Settings says the same thing, but only to someone
+          who went looking — and the whole reason an install sat on an old
+          version for a day is that nobody knew there was anything to look for.
+          This is the one update state worth interrupting the sidebar for,
+          because it is the only one that is waiting on a person.
+        */}
+        {updateStatus !== null && updateAwaitsRestart(updateStatus) && (
+          <button
+            onClick={() => void window.mochi.updater.installNow()}
+            title={`Restart Mochi to finish updating to ${updateStatus.version}`}
+            style={{
+              margin: '0 12px 8px',
+              padding: '7px 10px',
+              borderRadius: 8,
+              border: '1px solid rgba(242, 166, 179, 0.35)',
+              background: 'rgba(242, 166, 179, 0.1)',
+              color: C.accent,
+              fontSize: 11.5,
+              fontWeight: 600,
+              cursor: 'pointer',
+              lineHeight: 1.35,
+            }}
+          >
+            v{updateStatus.version} ready — restart
+          </button>
+        )}
 
         <button
           onClick={() => window.mochi.window.closeSetup()}
