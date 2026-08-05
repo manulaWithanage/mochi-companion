@@ -1,11 +1,46 @@
-# To get started with Dependabot version updates, you'll need to specify which
-# package ecosystems to update and where the package manifests are located.
-# Please see the documentation for all configuration options:
-# https://docs.github.com/code-security/dependabot/dependabot-version-updates/configuration-options-for-the-dependabot.yml-file
+# Dependabot version updates.
+#
+# Alerts and security updates are repository settings, not this file — they are
+# already on, and they run whether or not this config exists. What this adds is
+# routine version bumps.
+#
+# Every PR Dependabot opens goes through the same five gates as any other
+# (lint, format, typecheck, test, build) on macOS, Ubuntu and Windows, so a bad
+# bump is caught before anyone reads it. That is what makes this safe to leave
+# unattended.
+#
+# Quoting is single throughout: .prettierrc.json sets singleQuote, and
+# format:check globs '**/*.{...,yaml,yml}', so this file is linted like any
+# other. GitHub's starter template ships double quotes and fails that gate.
 
 version: 2
 updates:
-  - package-ecosystem: "" # See documentation for possible values
-    directory: "/" # Location of package manifests
+  - package-ecosystem: 'npm' # also covers pnpm workspaces
+    directory: '/' # the workspace root; pnpm-lock.yaml lives here
     schedule:
-      interval: "weekly"
+      interval: 'weekly'
+    open-pull-requests-limit: 5
+    groups:
+      # 18 direct dev dependencies across four projects. Ungrouped, a quiet week
+      # still costs a handful of PRs that nothing user-facing depends on.
+      dev-dependencies:
+        dependency-type: 'development'
+      # These move together and share a release cadence; splitting them produces
+      # PRs that individually fail to resolve.
+      ai-sdk:
+        patterns:
+          - '@ai-sdk/*'
+          - 'ai'
+    ignore:
+      # Electron majors carry breaking main-process API changes and a Chromium
+      # jump. Worth doing deliberately, not inside a batch of five other bumps.
+      # Minors and patches still come through, which is where the security
+      # content usually is.
+      - dependency-name: 'electron'
+        update-types:
+          - 'version-update:semver-major'
+
+  - package-ecosystem: 'github-actions'
+    directory: '/'
+    schedule:
+      interval: 'monthly'
