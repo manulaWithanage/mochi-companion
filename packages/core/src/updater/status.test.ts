@@ -68,9 +68,10 @@ describe('describeUpdateStatus', () => {
 
   it('says what has to happen for a ready update to apply', () => {
     // The whole reason two devices sat on an old version: downloaded is not
-    // installed, and nothing said so.
+    // installed, and nothing said so. Both routes are named because they end
+    // differently — the button brings Mochi back, quitting does not.
     expect(describeUpdateStatus({ state: 'ready', version: '0.1.5' }, NOW)).toBe(
-      '0.1.5 is ready. It installs when you quit Mochi.',
+      '0.1.5 is ready — restart to finish, or it installs next time you quit.',
     );
   });
 
