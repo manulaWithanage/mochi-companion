@@ -262,10 +262,23 @@ export function Overlay(): JSX.Element {
    * every sample.
    */
   const setInteractive = useCallback((next: boolean) => {
-    if (interactiveRef.current === next) return;
-    interactiveRef.current = next;
-    setHovered(next);
-    window.mochi.overlay.setInteractive(next);
+    /*
+     * While the ring is open the window must keep accepting clicks.
+     *
+     * The alpha test only knows about the mascot's own pixels, and the ring's
+     * items sit over transparent canvas it reports as empty — so setting off
+     * from the mascot toward an item made the window click-through before the
+     * pointer arrived, and the click landed on the desktop behind it. Every
+     * item was unreachable by mouse; only the keyboard worked.
+     *
+     * Found by driving the real app. Nothing about it is visible to a type
+     * checker, a test, or a screenshot: the ring renders perfectly either way.
+     */
+    const target = menuOpenRef.current ? true : next;
+    if (interactiveRef.current === target) return;
+    interactiveRef.current = target;
+    setHovered(target);
+    window.mochi.overlay.setInteractive(target);
   }, []);
 
   const handlePointerMove = useCallback(
@@ -372,6 +385,14 @@ export function Overlay(): JSX.Element {
   const menuOpenRef = useRef(false);
   useEffect(() => {
     menuOpenRef.current = menuOpen;
+    // Closing hands the window straight back to click-through. The ref is what
+    // the guard above reads, so without this the overlay would keep swallowing
+    // clicks over empty space until the next pointer move happened to arrive.
+    if (!menuOpen) {
+      interactiveRef.current = false;
+      setHovered(false);
+      window.mochi.overlay.setInteractive(false);
+    }
   }, [menuOpen]);
 
   /**

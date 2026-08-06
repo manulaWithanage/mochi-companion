@@ -137,9 +137,13 @@ export function RadialMenu({
         it belongs to another application. This is the difference between a
         menu you can learn and one you have to already know.
 
-        Pinned to the window's top-left rather than following the pointer:
-        the arc reaches no further than about (101, 61) at the largest mascot,
-        so this corner is always clear of the icons, and a label that holds
+        Along the bottom, not the top corner. The top corner was inside the
+        arc's own reach — the label landed among the icons and covered the very
+        one being described. The bottom-left is the only region of the window
+        no item can occupy: the arc stops at 190°, barely past horizontal, so
+        nothing is ever drawn low and left of the mascot.
+
+        Pinned rather than following the pointer, because a label that holds
         still is easier to read than one that chases the cursor.
       */}
       <div
@@ -147,8 +151,8 @@ export function RadialMenu({
         style={{
           position: 'absolute',
           left: 10,
-          top: 10,
-          maxWidth: 150,
+          bottom: 10,
+          maxWidth: 190,
           padding: '5px 10px',
           borderRadius: 8,
           background: 'rgba(32, 24, 40, 0.94)',
@@ -158,7 +162,7 @@ export function RadialMenu({
           textAlign: 'left',
           boxShadow: '0 4px 14px rgba(0, 0, 0, 0.55)',
           opacity: open && focusedLabel !== '' ? 1 : 0,
-          transform: open ? 'translateY(0)' : 'translateY(-4px)',
+          transform: open ? 'translateY(0)' : 'translateY(4px)',
           transition: 'opacity 140ms ease, transform 140ms ease',
           pointerEvents: 'none',
         }}
@@ -193,7 +197,11 @@ export function RadialMenu({
               role="menuitem"
               tabIndex={-1}
               aria-label={item.label}
-              title={item.label}
+              // No `title`. With the readout below there were two labels on
+              // screen saying the same thing — ours immediately, and the
+              // operating system's a second later in its own typeface, over
+              // the top. `aria-label` still names the button for a screen
+              // reader, which is what `title` was really for.
               onMouseEnter={() => setFocused(i)}
               onClick={(e) => {
                 e.stopPropagation();
@@ -233,9 +241,18 @@ export function RadialMenu({
                 opacity: open ? 1 : 0,
                 // Staggered outward. Closing runs together, because a menu that
                 // takes as long to leave as to arrive feels slow.
-                transitionDelay: `${open ? i * 24 : 0}ms`,
-                transition:
-                  'transform 200ms cubic-bezier(0.16, 1, 0.3, 1), opacity 140ms ease, box-shadow 140ms ease',
+                //
+                // The delay is written *inside* the shorthand rather than as a
+                // separate `transitionDelay`. React warns about mixing the two
+                // — the shorthand carries a delay of its own and resets
+                // whatever the longhand set — so the stagger was racing its own
+                // reset. It only showed up on running the app; nothing about it
+                // is visible to a type checker or a test.
+                transition: [
+                  `transform 200ms cubic-bezier(0.16, 1, 0.3, 1) ${open ? i * 24 : 0}ms`,
+                  `opacity 140ms ease ${open ? i * 24 : 0}ms`,
+                  'box-shadow 140ms ease',
+                ].join(', '),
                 willChange: 'transform, opacity',
               }}
             >
