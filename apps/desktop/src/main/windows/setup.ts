@@ -14,6 +14,11 @@ export class SetupWindow {
 
   open(): BrowserWindow {
     if (this.win !== null && !this.win.isDestroyed()) {
+      // `focus()` alone does nothing to a minimised window on Windows, so
+      // "Open Mochi" appeared to do nothing at all once the window had been
+      // minimised — the one moment someone is most likely to reach for it.
+      if (this.win.isMinimized()) this.win.restore();
+      this.win.show();
       this.win.focus();
       return this.win;
     }
