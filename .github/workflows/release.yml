@@ -37,11 +37,36 @@ jobs:
     needs: version
     uses: ./.github/workflows/ci.yml
 
+  # Extracted from the installer job the moment a second platform appeared.
+  #
+  # It used to live inside the Windows job, which was fine while that was the
+  # only builder. Two builders both creating the draft on demand is exactly the
+  # race that produced two releases for v0.1.1 — artifacts split across them,
+  # neither complete. One job, before either builder starts, removes it again.
+  draft:
+    name: Draft release
+    needs: gates
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Create the draft release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Already there on a re-run, and that is success rather than failure.
+          if ! gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
+            gh release create "$GITHUB_REF_NAME" --draft --title "$GITHUB_REF_NAME" --generate-notes
+          fi
+          gh release view "$GITHUB_REF_NAME" --json isDraft,tagName
+
   installer:
     name: Windows installer
-    needs: gates
+    needs: draft
     runs-on: windows-latest
-    # Scoped here rather than at workflow level: only this job creates a release.
+    # Scoped here rather than at workflow level: only release jobs need it.
     permissions:
       contents: write
     steps:
@@ -62,29 +87,7 @@ jobs:
       - name: Build the renderer and main bundles
         run: pnpm --filter @mochi/desktop build
 
-      # Created up front, deliberately.
-      #
-      # electron-builder's GitHub publisher uploads each artifact separately and
-      # creates the draft release on demand. With nothing there to find, two
-      # concurrent uploads both created one: observed on v0.1.1, which produced
-      # two drafts in the same second — latest.yml and the installer in one, the
-      # blockmap alone in the other. Neither was complete, and the blockmap is
-      # what lets electron-updater download only the changed blocks.
-      #
-      # The publisher reuses an existing draft for the tag, so creating it here
-      # removes the race.
-      - name: Create the draft release
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        shell: bash
-        run: |
-          # Already there on a re-run, and that is success rather than failure.
-          if ! gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
-            gh release create "$GITHUB_REF_NAME" --draft --title "$GITHUB_REF_NAME" --generate-notes
-          fi
-          gh release view "$GITHUB_REF_NAME" --json isDraft,tagName
-
-      # Uploads into the draft above. Nothing is offered to anyone until that
+      # Uploads into the draft created by the `draft` job. Nothing is offered to anyone until that
       # draft is published by hand — the review step that makes an automatic
       # pipeline safe to leave running, since a bad latest.yml is far harder to
       # undo than a bad build.
@@ -137,5 +140,79 @@ jobs:
             apps/desktop/release/*.exe
             apps/desktop/release/*.blockmap
             apps/desktop/release/latest.yml
+          if-no-files-found: error
+          retention-days: 14
+
+  # ---------------------------------------------------------------------------
+  # macOS
+  # ---------------------------------------------------------------------------
+  #
+  # Runs in parallel with the Windows job — both upload into the draft the
+  # `draft` job already created, so neither races to make one.
+  #
+  # **The disk image is not signed and not notarised.** Gatekeeper refuses an
+  # unsigned app downloaded from the internet, so this is a build somebody can
+  # run only by clearing the quarantine attribute by hand. Worse for updates:
+  # electron-updater delegates to Squirrel.Mac, which validates the bundle's
+  # code signature before swapping it in, so an unsigned macOS build cannot
+  # update itself at all — where the unsigned Windows build merely warns.
+  #
+  # The job exists so the build is real and reproducible while a certificate is
+  # pending. Do not link it from the website as an equal to the Windows
+  # download until it is signed.
+  mac:
+    name: macOS disk image
+    needs: draft
+    runs-on: macos-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: pnpm/action-setup@v5
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      - name: Build the renderer and main bundles
+        run: pnpm --filter @mochi/desktop build
+
+      - name: Package and publish the disk image
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Without this electron-builder hunts the keychain for a signing
+          # identity, and on a runner that has none it either fails outright or
+          # signs ad-hoc and pretends it worked. Saying "there is no identity"
+          # is the honest version, and it keeps the failure at build time rather
+          # than on a stranger's Mac.
+          CSC_IDENTITY_AUTO_DISCOVERY: false
+        run: pnpm --filter @mochi/desktop exec electron-builder --mac --publish always
+
+      # The macOS feed is a different file from the Windows one, and asserting
+      # the wrong name would pass green while auto-update had nothing to read —
+      # the failure this check exists to catch, one platform over.
+      - name: Verify latest-mac.yml was generated
+        run: |
+          if [ ! -f apps/desktop/release/latest-mac.yml ]; then
+            echo "::error::latest-mac.yml was not generated. electron-updater has nothing to read on macOS."
+            ls -la apps/desktop/release
+            exit 1
+          fi
+          echo "latest-mac.yml:"
+          cat apps/desktop/release/latest-mac.yml
+
+      - name: Upload the disk image
+        uses: actions/upload-artifact@v7
+        with:
+          name: mochi-macos-${{ github.ref_name }}
+          path: |
+            apps/desktop/release/*.dmg
+            apps/desktop/release/*.blockmap
+            apps/desktop/release/latest-mac.yml
           if-no-files-found: error
           retention-days: 14
