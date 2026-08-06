@@ -11,7 +11,20 @@ import { FeatureToggle } from './FeatureToggle.js';
  * After setup this same window is the settings panel.
  */
 
-const STEPS = ['Companion', 'Hours', 'Personalize', 'Account'] as const;
+/**
+ * Three steps, not four.
+ *
+ * There was an "Account" step offering a 14-day Pro trial, cloud AI and
+ * multi-device sync, with an email and a password field. **None of it exists.**
+ * Mochi is desktop-only by decision — no Mochi account, no Mochi server, keys
+ * stay on the machine — so the screen described a product that has never been
+ * built, and `completeSetup` never carried the email or password anywhere. It
+ * collected a password and dropped it.
+ *
+ * That is worse than a stale promise. People reuse passwords, and a field that
+ * looks like a signup is treated like one. Removed rather than reworded.
+ */
+const STEPS = ['Companion', 'Hours', 'Personalize'] as const;
 
 const shell: React.CSSProperties = {
   padding: '36px 42px',
@@ -47,8 +60,8 @@ const input: React.CSSProperties = {
 
 /**
  * Every step opens the same way, and used to do it with a different emoji each
- * time. Emoji are drawn by the operating system, so the wizard's four headings
- * were four different typefaces at four different weights, none of them the
+ * time. Emoji are drawn by the operating system, so the wizard's headings were
+ * each set in a different typeface at a different weight, none of them the
  * one the heading itself is set in. Nothing decorates the headings now; the
  * only icons left are on the option rows, where they are vector and inherit
  * their colour from the row's state.
@@ -106,11 +119,6 @@ export function Setup(): JSX.Element {
   // and turning it off silenced nothing.
   const [wellnessEnabled, setWellnessEnabled] = useState(true);
   const [activityTrackingEnabled, setActivityTrackingEnabled] = useState(true);
-
-  // Step 4: Account / Guest Choice
-  const [accountMode, setAccountMode] = useState<'guest' | 'create'>('guest');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
 
   useEffect(() => {
     void (async () => {
@@ -333,85 +341,6 @@ export function Setup(): JSX.Element {
               onToggle={() => setActivityTrackingEnabled(!activityTrackingEnabled)}
             />
           </div>
-        </div>
-      )}
-
-      {/* STEP 4: Account or Guest Choice */}
-      {step === 3 && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 18, marginTop: 10 }}>
-          <div>
-            <h1 style={{ margin: 0, fontSize: 26, fontWeight: 750, color: '#f4eef6' }}>
-              👤 Account & Pro Access
-            </h1>
-            <p style={{ margin: '6px 0 0', fontSize: 13.5, color: '#a79ab2', lineHeight: 1.45 }}>
-              Choose how you want to start. You can create a free account for 14-day Pro cloud
-              access or continue offline as a guest.
-            </p>
-          </div>
-
-          <div style={{ display: 'flex', gap: 12 }}>
-            <div
-              onClick={() => setAccountMode('guest')}
-              style={{
-                flex: 1,
-                padding: 16,
-                borderRadius: 12,
-                background: accountMode === 'guest' ? 'rgba(242,166,179,0.08)' : '#241f2b',
-                border: accountMode === 'guest' ? '2px solid #f2a6b3' : '1px solid #3b3244',
-                cursor: 'pointer',
-              }}
-            >
-              <h3 style={{ margin: 0, fontSize: 15, color: '#f4eef6' }}>👤 Continue as Guest</h3>
-              <p style={{ margin: '6px 0 0', fontSize: 12, color: '#a79ab2', lineHeight: 1.4 }}>
-                100% Offline Local Mode. No email or password needed. Use your own API keys for
-                free.
-              </p>
-            </div>
-
-            <div
-              onClick={() => setAccountMode('create')}
-              style={{
-                flex: 1,
-                padding: 16,
-                borderRadius: 12,
-                background: accountMode === 'create' ? 'rgba(242,166,179,0.08)' : '#241f2b',
-                border: accountMode === 'create' ? '2px solid #f2a6b3' : '1px solid #3b3244',
-                cursor: 'pointer',
-              }}
-            >
-              <h3 style={{ margin: 0, fontSize: 15, color: '#f4eef6' }}>
-                ✨ 14-Day Free Pro Trial
-              </h3>
-              <p style={{ margin: '6px 0 0', fontSize: 12, color: '#a79ab2', lineHeight: 1.4 }}>
-                Create account to unlock zero-setup Cloud AI & multi-device sync (No credit card).
-              </p>
-            </div>
-          </div>
-
-          {accountMode === 'create' && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 4 }}>
-              <div>
-                <span style={label}>Email</span>
-                <input
-                  style={input}
-                  type="email"
-                  placeholder="you@example.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                />
-              </div>
-              <div>
-                <span style={label}>Password</span>
-                <input
-                  style={input}
-                  type="password"
-                  placeholder="••••••••••••"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                />
-              </div>
-            </div>
-          )}
         </div>
       )}
 
