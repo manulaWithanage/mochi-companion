@@ -372,13 +372,22 @@ export function Overlay(): JSX.Element {
   const menuOpenRef = useRef(false);
   useEffect(() => {
     menuOpenRef.current = menuOpen;
-    // The ring and the speech bubble want the same pocket of window — it is the
-    // only free space there is — so they cannot both be shown. Opening the ring
-    // clears the bubble, which is honest: turning to Mochi deliberately is an
-    // acknowledgement of whatever it was saying, the same as pressing one of
-    // the bubble's own actions.
-    if (menuOpen) dismissBubble();
-  }, [menuOpen, dismissBubble]);
+  }, [menuOpen]);
+
+  /**
+   * A new bubble closes the ring.
+   *
+   * The other half of not letting the two share a pocket. Suppressing the
+   * bubble's render covers the ring opening over one that is already up, but
+   * nothing stopped a bubble *arriving* mid-ring — and then Mochi was speaking
+   * behind a menu, which is how the text ended up underneath the icons.
+   *
+   * The ring loses because it costs one right-click to bring back, while a
+   * bubble that is not seen may be a reminder that never comes round again.
+   */
+  useEffect(() => {
+    if (bubble !== null) setMenuOpen(false);
+  }, [bubble]);
 
   const running = timer?.running === true;
   const performing = phase !== 'none';
@@ -458,7 +467,14 @@ export function Overlay(): JSX.Element {
       <SmokeEffect mode={smokeMode(phase)} />
 
       <SpeechBubble
-        text={performing && !isAlertPhase(phase) ? null : bubble}
+        // Hidden while the ring is open, never dismissed. They occupy the same
+        // pocket of the window — it is the only free space there is — and the
+        // first version of this called `dismissBubble`, which tells the
+        // governor the subject was handled and never to raise it again. For a
+        // bubble carrying actions that silently threw away a decision the user
+        // had not made. Suppressing the render keeps the text, the actions and
+        // the subject intact, and it comes back when the ring closes.
+        text={(performing && !isAlertPhase(phase)) || menuOpen ? null : bubble}
         actions={bubbleActions}
         onAction={runBubbleAction}
         onDismiss={dismissBubble}
