@@ -2,6 +2,8 @@ import { useCallback, useEffect, useRef, useState, type JSX } from 'react';
 import {
   formatDuration,
   isAlertPhase,
+  livelyPose,
+  livelyTransform,
   magicianPose,
   MASCOT_BOX,
   smokeMode,
@@ -35,6 +37,11 @@ export function Overlay(): JSX.Element {
   const [canvas, setCanvas] = useState<HTMLCanvasElement | null>(null);
   const [skin, setSkin] = useState<LoadedSkin | null>(null);
   const [mascotState, setMascotState] = useState<MascotState>('idle');
+  // The three inputs to the mascot's reaction to being touched. Kept as state
+  // rather than refs because the transform they produce is rendered.
+  const [hovered, setHovered] = useState(false);
+  const [pressed, setPressed] = useState(false);
+  const [carryVelocityX, setCarryVelocityX] = useState(0);
   const [mascotSize, setMascotSize] = useState<MascotSize>('medium');
   const [visible, setVisible] = useState(true);
   const [timer, setTimer] = useState<TimerSnapshot | null>(null);
@@ -228,9 +235,21 @@ export function Overlay(): JSX.Element {
     return () => clearInterval(id);
   }, [timer, visible]);
 
+  /**
+   * Also the hover signal for the mascot's own reaction.
+   *
+   * This is already a pixel-accurate test — it samples the canvas alpha, so it
+   * is true only over the drawn body and not the transparent corners of the
+   * frame. Adding an `onPointerEnter` beside it would have given a second,
+   * worse answer to the same question, true across the whole square.
+   *
+   * Set inside the change guard, so it fires on transitions rather than on
+   * every sample.
+   */
   const setInteractive = useCallback((next: boolean) => {
     if (interactiveRef.current === next) return;
     interactiveRef.current = next;
+    setHovered(next);
     window.mochi.overlay.setInteractive(next);
   }, []);
 
@@ -246,6 +265,10 @@ export function Overlay(): JSX.Element {
           window.mochi.overlay.dragBy(dx, dy);
           drag.current.x = event.screenX;
           drag.current.y = event.screenY;
+          // Feeds the carry lean. Holding still mid-drag sends 0 on the next
+          // move, which returns the mascot upright while it is still held —
+          // which is what something hanging from your hand actually does.
+          setCarryVelocityX(dx);
         }
         return;
       }
@@ -291,6 +314,7 @@ export function Overlay(): JSX.Element {
     drag.current = { active: true, moved: false, x: event.screenX, y: event.screenY };
     event.currentTarget.setPointerCapture(event.pointerId);
     setClickScale(0.9);
+    setPressed(true);
   }, []);
 
   const handlePointerUp = useCallback(
@@ -302,6 +326,10 @@ export function Overlay(): JSX.Element {
 
       setClickScale(1.14);
       setTimeout(() => setClickScale(1), 160);
+      setPressed(false);
+      // Springs back to upright through the same 160ms ease as everything
+      // else, which reads as the mascot settling after being put down.
+      setCarryVelocityX(0);
 
       if (!wasDrag) {
         if (timer?.running) {
@@ -320,6 +348,10 @@ export function Overlay(): JSX.Element {
   const running = timer?.running === true;
   const performing = phase !== 'none';
   const pose = magicianPose(phase);
+  // Hover is suppressed during a performance: the canvas takes no pointer
+  // events while one runs, so a hover entered just beforehand would otherwise
+  // stay stuck on through the whole vanish.
+  const lively = livelyPose({ hovered: hovered && !performing, pressed, carryVelocityX });
 
   return (
     <div style={{ width: '100%', height: '100%', position: 'relative', pointerEvents: 'none' }}>
@@ -383,10 +415,16 @@ export function Overlay(): JSX.Element {
             // Nothing to click while a performance is running: a click would
             // stop the timer or open the pills mid-vanish.
             pointerEvents: performing ? 'none' : 'auto',
-            // One transform, one transition. Scale and opacity are the only two
-            // properties the compositor can animate without touching layout,
-            // which is why this is smooth where moving the window was not.
-            transform: `scale(${pose.scale * clickScale})`,
+            // One transform, one transition. Transform and opacity are the only
+            // two properties the compositor can animate without touching
+            // layout, which is why this is smooth where moving the window was
+            // not — and why the hover and carry reactions ride on this single
+            // string rather than adding properties of their own.
+            //
+            // The magician's scale and the press feedback multiply together
+            // into the scale term, so a performance still overrides everything
+            // and the press bounce survives.
+            transform: livelyTransform(lively, pose.scale * clickScale),
             opacity: pose.opacity,
             transition: `transform ${pose.durationMs}ms ${pose.easing}, opacity ${pose.durationMs}ms ${pose.easing}`,
             willChange: performing ? 'transform, opacity' : 'auto',
@@ -400,8 +438,15 @@ export function Overlay(): JSX.Element {
               e.currentTarget.releasePointerCapture(e.pointerId);
             }
             setClickScale(1);
+            setPressed(false);
+            setCarryVelocityX(0);
           }}
-          onPointerLeave={() => setInteractive(false)}
+          onPointerLeave={() => {
+            setInteractive(false);
+            // A pointer that leaves mid-drag never sends another move, so the
+            // lean would stay frozen at whatever angle it left on.
+            setCarryVelocityX(0);
+          }}
           onContextMenu={(e) => {
             e.preventDefault();
             window.mochi.window.openSettings();
