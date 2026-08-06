@@ -1,11 +1,14 @@
 import { useCallback, useEffect, useRef, useState, type JSX } from 'react';
 import {
+  categoryIcon,
+  categoryLabel,
   formatDuration,
   isAlertPhase,
   livelyPose,
   livelyTransform,
   magicianPose,
   MASCOT_BOX,
+  MAX_ITEMS,
   smokeMode,
   type BubbleAction,
   type BubbleMessage,
@@ -13,8 +16,10 @@ import {
   type MagicianPhase,
   type MascotState,
   type MascotSize,
+  type Project,
   type TimerSnapshot,
 } from '@mochi/core';
+import { MenuGlyph, RadialMenu, type RadialItem } from './RadialMenu.js';
 
 const MASCOT_SIZE_MAP: Record<MascotSize, string> = {
   small: '130px',
@@ -42,6 +47,11 @@ export function Overlay(): JSX.Element {
   const [hovered, setHovered] = useState(false);
   const [pressed, setPressed] = useState(false);
   const [carryVelocityX, setCarryVelocityX] = useState(0);
+
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [doNotDisturb, setDoNotDisturb] = useState(false);
+  const [projects, setProjects] = useState<readonly Project[]>([]);
+  const [primaryProjectIds, setPrimaryProjectIds] = useState<readonly string[]>([]);
   const [mascotSize, setMascotSize] = useState<MascotSize>('medium');
   const [visible, setVisible] = useState(true);
   const [timer, setTimer] = useState<TimerSnapshot | null>(null);
@@ -77,7 +87,10 @@ export function Overlay(): JSX.Element {
         setSkin(await window.mochi.skin.load(settings.skinName));
         setMascotState(await window.mochi.mascot.current());
         setMascotSize(settings.mascotSize ?? 'medium');
+        setDoNotDisturb(settings.doNotDisturb);
         setTimer(await window.mochi.timer.current());
+        setProjects(await window.mochi.projects.list());
+        setPrimaryProjectIds(settings.primaryProjectIds);
       } catch (cause) {
         setError(cause instanceof Error ? cause.message : 'failed to load skin');
       }
@@ -205,6 +218,8 @@ export function Overlay(): JSX.Element {
     const offVisible = window.mochi.overlay.onVisibilityChange(setVisible);
     const offSettings = window.mochi.settings.onChange((next) => {
       setMascotSize(next.mascotSize ?? 'medium');
+      setDoNotDisturb(next.doNotDisturb);
+      setPrimaryProjectIds(next.primaryProjectIds);
       void window.mochi.skin
         .load(next.skinName)
         .then(setSkin)
@@ -332,6 +347,13 @@ export function Overlay(): JSX.Element {
       setCarryVelocityX(0);
 
       if (!wasDrag) {
+        // A click anywhere with the ring open closes it and does nothing else.
+        // Otherwise dismissing the menu would also start or stop a session,
+        // which is a lot to happen by accident when someone just wanted out.
+        if (menuOpenRef.current) {
+          setMenuOpen(false);
+          return;
+        }
         if (timer?.running) {
           // Single left-click while running -> STOP tracking session cleanly
           void window.mochi.timer.stop().then(setTimer);
@@ -345,6 +367,19 @@ export function Overlay(): JSX.Element {
     [timer, revealPills],
   );
 
+  // Read inside the pointer-up callback, which is memoised on `timer` and would
+  // otherwise close over a stale `menuOpen`.
+  const menuOpenRef = useRef(false);
+  useEffect(() => {
+    menuOpenRef.current = menuOpen;
+    // The ring and the speech bubble want the same pocket of window — it is the
+    // only free space there is — so they cannot both be shown. Opening the ring
+    // clears the bubble, which is honest: turning to Mochi deliberately is an
+    // acknowledgement of whatever it was saying, the same as pressing one of
+    // the bubble's own actions.
+    if (menuOpen) dismissBubble();
+  }, [menuOpen, dismissBubble]);
+
   const running = timer?.running === true;
   const performing = phase !== 'none';
   const pose = magicianPose(phase);
@@ -352,6 +387,67 @@ export function Overlay(): JSX.Element {
   // events while one runs, so a hover entered just beforehand would otherwise
   // stay stuck on through the whole vanish.
   const lively = livelyPose({ hovered: hovered && !performing, pressed, carryVelocityX });
+
+  /**
+   * What the ring offers.
+   *
+   * "Open Mochi" and "Settings" were going to be two of five slots and they
+   * open the same window — Settings is a tab inside it. Collapsing them to one
+   * bought a slot back, and tracking is what deserves it: starting a session is
+   * the most frequent thing anyone does here, and until now the only route to a
+   * specific project was a strip of pills that appears on left-click and
+   * removes itself after four and a half seconds.
+   *
+   * Projects fill whatever room is left, so the ring is two fixed actions plus
+   * as many of the primary projects as fit. `primaryProjectIds` is the user's
+   * own choice of what matters; the first few projects stand in until they have
+   * made one.
+   */
+  const ringProjects = (() => {
+    const chosen = primaryProjectIds
+      .map((id) => projects.find((p) => p.id === id))
+      .filter((p): p is Project => p !== undefined);
+    const source = chosen.length > 0 ? chosen : projects;
+    return source.slice(0, MAX_ITEMS - 2);
+  })();
+
+  const menuItems: readonly RadialItem[] = [
+    {
+      id: 'open',
+      glyph: <MenuGlyph d="M4 5.5h16v13H4z M4 10h16" />,
+      label: 'Open Mochi',
+      onPick: () => window.mochi.window.openSettings(),
+    },
+    ...ringProjects.map<RadialItem>((project) => {
+      const running = timer?.running === true && timer.projectId === project.id;
+      return {
+        id: project.id,
+        glyph: categoryIcon(project.name),
+        // Says what the click will do, rather than only naming the project.
+        label: running
+          ? `Stop ${categoryLabel(project.name)}`
+          : `Track ${categoryLabel(project.name)}`,
+        active: running,
+        // `toggle` already means "start this, or stop it if it is the one
+        // running", so switching straight from one project to another works
+        // without stopping first — which the pills could never do.
+        onPick: () => {
+          void window.mochi.timer.toggle(project.id).then(setTimer);
+        },
+      };
+    }),
+    {
+      id: 'dnd',
+      glyph: <MenuGlyph d="M20 14.5A8.5 8.5 0 0 1 9.5 4a8.5 8.5 0 1 0 10.5 10.5Z" />,
+      label: doNotDisturb ? 'Turn off Do Not Disturb' : 'Do Not Disturb',
+      active: doNotDisturb,
+      onPick: () => {
+        const next = !doNotDisturb;
+        setDoNotDisturb(next);
+        void window.mochi.settings.setDoNotDisturb(next);
+      },
+    },
+  ];
 
   return (
     <div style={{ width: '100%', height: '100%', position: 'relative', pointerEvents: 'none' }}>
@@ -379,6 +475,14 @@ export function Overlay(): JSX.Element {
         }}
       >
         {/* 3 Primary Floating Category Quick-Tracker Pills at the Bottom */}
+        <RadialMenu
+          open={menuOpen}
+          items={menuItems}
+          mascotSizePx={Number.parseInt(MASCOT_SIZE_MAP[mascotSize] ?? '170px', 10)}
+          onDismiss={() => setMenuOpen(false)}
+          onHoverChange={setInteractive}
+        />
+
         <OverlayCategoryPills
           timer={timer}
           visible={showPills}
@@ -449,7 +553,9 @@ export function Overlay(): JSX.Element {
           }}
           onContextMenu={(e) => {
             e.preventDefault();
-            window.mochi.window.openSettings();
+            // Was: open Settings. A single destination is a poor use of the
+            // only secondary gesture in the app, and nothing advertised it.
+            setMenuOpen((wasOpen) => !wasOpen);
           }}
         />
 

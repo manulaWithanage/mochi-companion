@@ -6,6 +6,7 @@ export * from './timer/session.js';
 export * from './mascot/state.js';
 export * from './mascot/magician.js';
 export * from './mascot/liveliness.js';
+export * from './mascot/radial.js';
 export * from './mascot/manifest.js';
 export * from './storage/adapter.js';
 export * from './geometry/clamp.js';
