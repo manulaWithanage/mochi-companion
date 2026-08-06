@@ -435,8 +435,21 @@ export function Overlay(): JSX.Element {
       <SmokeEffect mode={smokeMode(phase)} />
 
       <SpeechBubble
-        // Hidden while the ring is open, never dismissed. They occupy the same
-        text={performing && !isAlertPhase(phase) ? null : bubble}
+        /*
+         * During a centre-screen entrance the bubble belongs to `hold` alone.
+         *
+         * It used to show across the whole alert — `appear`, `hold` and
+         * `depart` — so the speech arrived before the speaker. The mascot
+         * springs in over 760ms while the bubble is fully faded in after 200,
+         * which reads as a label appearing and Mochi catching up to it. On the
+         * way out it was worse: Mochi shrank into the smoke with the bubble
+         * still hanging there, talking after leaving.
+         *
+         * `hold` is also when the chime already plays — `alertToneDelayMs` is
+         * 1150ms, which is exactly vanish + settle + appear. The sound was
+         * timed to the landing and the words were not.
+         */
+        text={performing && phase !== 'hold' ? null : bubble}
         actions={bubbleActions}
         onAction={runBubbleAction}
         onDismiss={dismissBubble}

@@ -6,10 +6,9 @@
  * Emits speech bubble events and glides Mochi to center screen if enabled.
  */
 
-import { makeEvent, type EventBus, type RoutineDay } from '@mochi/core';
+import { makeEvent, type EventBus, type EventOrigin, type RoutineDay } from '@mochi/core';
 import type { UserRoutinesVault } from '../storage/user-routines-vault.js';
 import type { SettingsStore } from '../storage/settings-store.js';
-import type { OverlayWindow } from '../windows/overlay.js';
 
 const DAY_MAP: readonly RoutineDay[] = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
 
@@ -21,7 +20,6 @@ export class UserRoutineScheduler {
     private readonly bus: EventBus,
     private readonly userRoutines: UserRoutinesVault,
     private readonly settings: SettingsStore,
-    private readonly overlay: OverlayWindow,
   ) {}
 
   start(): void {
@@ -37,7 +35,19 @@ export class UserRoutineScheduler {
     }
   }
 
-  triggerAlert(title?: string, message?: string): void {
+  /**
+   * @param origin `scheduled` for a routine falling due, `interactive` for the
+   * Test button.
+   *
+   * The difference is not cosmetic. A real routine is rationed: quiet hours
+   * defer it, Do Not Disturb silences it, and missing tonight's costs nothing
+   * because it comes round again tomorrow. **A test is a direct request to see
+   * what an alert looks like**, and rationing it means the button does nothing
+   * at all after 8pm with no explanation — which is how somebody concludes the
+   * feature is broken. It was emitted as `scheduled` and was dropped exactly
+   * that way.
+   */
+  triggerAlert(title?: string, message?: string, origin: EventOrigin = 'scheduled'): void {
     const text = message || `${title || 'Routine Alert'}! Time for your scheduled routine.`;
     this.bus.emit(
       makeEvent({
@@ -47,17 +57,20 @@ export class UserRoutineScheduler {
         subject: `user-routine-alert:${Date.now()}`,
         priority: 'high',
         text,
-        // Scheduled, and it repeats — so quiet hours defers it and Do Not
-        // Disturb silences it. Missing tonight's costs nothing; it fires again
-        // tomorrow.
-        origin: 'scheduled',
+        origin,
         recurring: true,
       }),
     );
-
-    if (this.settings.get().centerScreenAlerts !== false) {
-      void this.overlay.performMagicianAlert(6000);
-    }
+    // The centre-screen entrance is *not* started here.
+    //
+    // It used to be, immediately after this emit, which meant the governor's
+    // verdict applied to the bubble and not to the performance. Outside work
+    // hours Mochi vanished, reappeared centre screen in a puff of smoke, held
+    // an alert face for six seconds and said nothing — quiet hours suppressed
+    // the message and let the interruption through.
+    //
+    // It now runs from the bubble's own `present` callback in index.ts, so one
+    // decision covers both and a deferred alert stays entirely silent.
   }
 
   private check(): void {

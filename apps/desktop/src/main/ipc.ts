@@ -644,6 +644,9 @@ export function registerIpc(ctx: IpcContext): void {
       typeof message === 'string'
         ? message
         : 'Time for a glass of water! Staying hydrated keeps your energy steady.';
-    ctx.userRoutineScheduler.triggerAlert(titleStr, msgStr);
+    // Interactive: somebody pressed Test to see what an alert looks like, so
+    // quiet hours and Do Not Disturb must not swallow it. As `scheduled` the
+    // button did nothing after 8pm and said nothing about why.
+    ctx.userRoutineScheduler.triggerAlert(titleStr, msgStr, 'interactive');
   });
 }
