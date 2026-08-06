@@ -1,9 +1,26 @@
 name: Release
 
-# Tag pushes only. `git tag v1.0.1 && git push origin v1.0.1`.
+# Normally a tag push: `git tag v1.0.1 && git push origin v1.0.1`.
+#
+# `workflow_dispatch` is the hand crank, and it exists because the tag push is
+# not guaranteed to arrive. On 2026-08-06 GitHub Actions spent six hours
+# throttling webhook delivery to about 15% "so many events such as pushes and
+# pull requests are not triggering workflow runs" — v0.2.6 was tagged three
+# times and never produced a single run. Deleting and re-pushing a tag was the
+# only lever, and it is a lottery ticket rather than a lever.
+#
+# Dispatch it against the tag, not a branch:
+#
+#     gh workflow run release.yml --ref v1.0.1
+#
+# `github.ref_name` is then the tag, so the version check, the draft and the
+# publish all behave exactly as they do on a push. A REST call also takes a
+# different path from a webhook, which is what makes this useful while
+# deliveries are being dropped.
 on:
   push:
     tags: ['v*']
+  workflow_dispatch:
 
 # Never cancel a half-finished release. The default would let a second tag kill a
 # run that had already built an installer, leaving an unclear result behind.
