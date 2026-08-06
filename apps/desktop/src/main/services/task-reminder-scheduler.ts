@@ -32,7 +32,6 @@ import {
   type Task,
 } from '@mochi/core';
 import type { SettingsStore } from '../storage/settings-store.js';
-import type { OverlayWindow } from '../windows/overlay.js';
 
 /** Slow on purpose: a reminder a few seconds late is not a worse reminder. */
 const TICK_MS = 20_000;
@@ -106,7 +105,6 @@ export class TaskReminderScheduler {
     private readonly bus: EventBus,
     private readonly storage: StorageAdapter,
     private readonly settings: SettingsStore,
-    private readonly overlay: OverlayWindow,
   ) {}
 
   /**
@@ -346,9 +344,9 @@ export class TaskReminderScheduler {
         origin: 'scheduled',
       }),
     );
-
-    if (this.settings.get().centerScreenAlerts !== false) {
-      void this.overlay.performMagicianAlert(6000);
-    }
+    // The centre-screen entrance runs from the bubble's `present` callback in
+    // index.ts, not from here. Started at emit time it was outside the
+    // governor's reach, so a reminder that Do Not Disturb had silenced still
+    // performed the whole vanish-and-reappear to deliver nothing.
   }
 }

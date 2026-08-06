@@ -160,10 +160,13 @@ async function bootstrap(): Promise<void> {
     listTasks: () => storage.listTasks(),
   });
 
-  const userRoutineScheduler = new UserRoutineScheduler(bus, userRoutines, settings, overlay);
+  // Neither scheduler takes the overlay any more: they emit, and the bubble's
+  // own presentation decides whether anything is performed. Handing them the
+  // window was what let them stage an entrance the governor had not approved.
+  const userRoutineScheduler = new UserRoutineScheduler(bus, userRoutines, settings);
   userRoutineScheduler.start();
 
-  const taskReminders = new TaskReminderScheduler(bus, storage, settings, overlay);
+  const taskReminders = new TaskReminderScheduler(bus, storage, settings);
   taskReminders.start();
 
   const bubbleActions = new BubbleActions();
@@ -388,9 +391,30 @@ async function bootstrap(): Promise<void> {
 
     if (decision.kind === 'allow') {
       const mailPreferences = settings.get().gmailAi;
-      // For mail reminders, the Gmail-specific toggle is the sole decider.
-      // The global centerScreenAlerts flag controls routine/timer alerts only.
-      const useCenterEntrance = isMailReminder && mailPreferences.centerScreenAlertsEnabled;
+      /*
+       * Which alerts arrive centre screen, decided here and nowhere else.
+       *
+       * **The performance used to be triggered independently of the message.**
+       * `UserRoutineScheduler.triggerAlert` and the task reminder scheduler both
+       * called `performMagicianAlert` themselves, right after emitting the
+       * event — so the governor's verdict applied to the bubble and not to the
+       * theatre. Outside work hours the result was Mochi vanishing, reappearing
+       * in the middle of the screen in a puff of smoke, holding an alert face
+       * for six seconds and saying *nothing*, then leaving. Quiet hours
+       * suppressed the message and let the interruption through, which is the
+       * wrong half of the two.
+       *
+       * Running it here means one decision covers both. An alert that is
+       * deferred, silenced or queued no longer performs, because the
+       * performance is now part of presenting rather than part of scheduling.
+       */
+      // Both schedulers emit under `routine`/`break` — the task reminder does
+      // too, which is why one test covers both.
+      const isRoutineAlert = event.source === 'routine' && event.kind === 'break';
+      const useCenterEntrance = isMailReminder
+        ? // For mail, the Gmail-specific toggle is the sole decider.
+          mailPreferences.centerScreenAlertsEnabled
+        : isRoutineAlert && settings.get().centerScreenAlerts !== false;
       // What the user can do about this, resolved in main so the renderer only
       // ever receives opaque ids. Registered at presentation rather than here,
       // because a queued bubble's buttons are not on screen yet.
@@ -423,7 +447,7 @@ async function bootstrap(): Promise<void> {
           if (!reached) return false;
           taskReminders.confirmDelivered(event.subject);
           if (useCenterEntrance) {
-            console.log('[mail-alert] presenting with routine magician entrance');
+            console.log(`[alert] centre-screen entrance for "${event.subject}"`);
             void overlay.performMagicianAlert(BUBBLE_TTL_MS);
           }
           return true;
