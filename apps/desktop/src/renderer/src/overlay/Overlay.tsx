@@ -25,6 +25,7 @@ import { useSpriteAnimation } from './useSpriteAnimation.js';
 import { SpeechBubble } from './SpeechBubble.js';
 import { SmokeEffect } from './SmokeEffect.js';
 import { OverlayCategoryPills } from './OverlayCategoryPills.js';
+import { OverlayMochiActions, type MochiAction } from './OverlayMochiActions.js';
 import { playGentleAlertTone } from './alert-tone.js';
 
 /** Pointer travel beyond this counts as a drag, not a click. */
@@ -42,6 +43,11 @@ export function Overlay(): JSX.Element {
   const [hovered, setHovered] = useState(false);
   const [pressed, setPressed] = useState(false);
   const [carryVelocityX, setCarryVelocityX] = useState(0);
+  // Mirrored here so the right-click row can light its toggles. Kept in step by
+  // the settings subscription below, so flipping either from the dashboard is
+  // reflected the next time the row opens.
+  const [doNotDisturb, setDoNotDisturb] = useState(false);
+  const [alwaysOnTop, setAlwaysOnTop] = useState(true);
   const [mascotSize, setMascotSize] = useState<MascotSize>('medium');
   const [visible, setVisible] = useState(true);
   const [timer, setTimer] = useState<TimerSnapshot | null>(null);
@@ -77,6 +83,8 @@ export function Overlay(): JSX.Element {
         setSkin(await window.mochi.skin.load(settings.skinName));
         setMascotState(await window.mochi.mascot.current());
         setMascotSize(settings.mascotSize ?? 'medium');
+        setDoNotDisturb(settings.doNotDisturb);
+        setAlwaysOnTop(settings.alwaysOnTop);
         setTimer(await window.mochi.timer.current());
       } catch (cause) {
         setError(cause instanceof Error ? cause.message : 'failed to load skin');
@@ -205,6 +213,8 @@ export function Overlay(): JSX.Element {
     const offVisible = window.mochi.overlay.onVisibilityChange(setVisible);
     const offSettings = window.mochi.settings.onChange((next) => {
       setMascotSize(next.mascotSize ?? 'medium');
+      setDoNotDisturb(next.doNotDisturb);
+      setAlwaysOnTop(next.alwaysOnTop);
       void window.mochi.skin
         .load(next.skinName)
         .then(setSkin)
@@ -296,16 +306,25 @@ export function Overlay(): JSX.Element {
     [setInteractive],
   );
 
-  const [showPills, setShowPills] = useState(false);
+  /**
+   * Which icon row is showing, if either.
+   *
+   * **One value, not two booleans.** The two rows share the same strip under
+   * the mascot, so this makes "both at once" unrepresentable rather than merely
+   * unlikely — and both-at-once is exactly what sank the radial menu, which
+   * tracked its own visibility separately from the pills and ended up drawn
+   * over them.
+   */
+  const [row, setRow] = useState<'none' | 'projects' | 'mochi'>('none');
   const pillsTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
-  const revealPills = useCallback(() => {
-    setShowPills(true);
+  const revealRow = useCallback((which: 'projects' | 'mochi') => {
+    setRow(which);
     if (pillsTimer.current !== undefined) clearTimeout(pillsTimer.current);
-    pillsTimer.current = setTimeout(() => {
-      setShowPills(false);
-    }, 4500);
+    pillsTimer.current = setTimeout(() => setRow('none'), 4500);
   }, []);
+
+  const revealPills = useCallback(() => revealRow('projects'), [revealRow]);
 
   const [clickScale, setClickScale] = useState(1);
 
@@ -335,7 +354,9 @@ export function Overlay(): JSX.Element {
         if (timer?.running) {
           // Single left-click while running -> STOP tracking session cleanly
           void window.mochi.timer.stop().then(setTimer);
-          setShowPills(false);
+          // Clears whichever row is up, not just the projects one — stopping is
+          // a finished action and neither row has anything left to offer.
+          setRow('none');
         } else {
           // Single left-click while stopped -> Reveal Category Quick-Trackers at bottom
           revealPills();
@@ -352,6 +373,61 @@ export function Overlay(): JSX.Element {
   // events while one runs, so a hover entered just beforehand would otherwise
   // stay stuck on through the whole vanish.
   const lively = livelyPose({ hovered: hovered && !performing, pressed, carryVelocityX });
+
+  /**
+   * Mochi's own controls, for the right-click row.
+   *
+   * Everything here already existed and was reachable only by opening the
+   * window and finding the right tab, which is the wrong place for switches you
+   * flip when a meeting starts.
+   *
+   * `paused` and `doNotDisturb` sound alike and are not: pausing hides the
+   * mascot and stops routines scheduling at all, while Do Not Disturb leaves
+   * Mochi on screen and stops the governor raising anything unprompted. The
+   * labels have to carry that difference, because the icons cannot.
+   */
+  const mochiActions: readonly MochiAction[] = [
+    {
+      id: 'open',
+      icon: 'window',
+      label: 'Open Mochi',
+      onPick: () => window.mochi.window.openSettings(),
+    },
+    {
+      id: 'dnd',
+      icon: 'moon',
+      label: doNotDisturb ? 'Do Not Disturb is on' : 'Do Not Disturb — stay visible, stay quiet',
+      active: doNotDisturb,
+      onPick: () => {
+        const next = !doNotDisturb;
+        setDoNotDisturb(next);
+        void window.mochi.settings.setDoNotDisturb(next);
+      },
+    },
+    {
+      id: 'ontop',
+      icon: 'pin',
+      label: alwaysOnTop ? 'Always on top is on' : 'Keep Mochi above other windows',
+      active: alwaysOnTop,
+      onPick: () => {
+        const next = !alwaysOnTop;
+        setAlwaysOnTop(next);
+        void window.mochi.settings.setAlwaysOnTop(next);
+      },
+    },
+    {
+      id: 'hide',
+      icon: 'hide',
+      // Says where Mochi went. Pressing this removes the only thing on screen
+      // that can bring it back, and the tray icon is precisely what nobody
+      // knows about — an unexplained disappearance reads as a crash.
+      label: 'Hide Mochi — bring it back from the tray',
+      onPick: () => {
+        setRow('none');
+        void window.mochi.settings.setPaused(true);
+      },
+    },
+  ];
 
   return (
     <div style={{ width: '100%', height: '100%', position: 'relative', pointerEvents: 'none' }}>
@@ -382,10 +458,21 @@ export function Overlay(): JSX.Element {
         {/* 3 Primary Floating Category Quick-Tracker Pills at the Bottom */}
         <OverlayCategoryPills
           timer={timer}
-          visible={showPills}
+          visible={row === 'projects'}
           onHoverChange={(interactive) => {
             setInteractive(interactive);
-            if (interactive) revealPills();
+            // Hovering the row keeps it up. Without this it slides away at 4.5
+            // seconds while the pointer is still on it, mid-decision.
+            if (interactive) revealRow('projects');
+          }}
+        />
+
+        <OverlayMochiActions
+          actions={mochiActions}
+          visible={row === 'mochi'}
+          onHoverChange={(interactive) => {
+            setInteractive(interactive);
+            if (interactive) revealRow('mochi');
           }}
         />
 
@@ -462,7 +549,7 @@ export function Overlay(): JSX.Element {
              * It duplicated a row that already existed and did the same job,
              * and having both on screen at once was worse than either alone.
              */
-            revealPills();
+            revealRow('mochi');
           }}
         />
 
