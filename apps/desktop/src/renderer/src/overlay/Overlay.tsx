@@ -439,8 +439,11 @@ export function Overlay(): JSX.Element {
     {
       id: 'dnd',
       glyph: <MenuGlyph d="M20 14.5A8.5 8.5 0 0 1 9.5 4a8.5 8.5 0 1 0 10.5 10.5Z" />,
-      label: doNotDisturb ? 'Turn off Do Not Disturb' : 'Do Not Disturb',
+      label: doNotDisturb ? 'Do Not Disturb is on' : 'Do Not Disturb',
       active: doNotDisturb,
+      // A switch, so the ring stays put and you see it light up. Closing on the
+      // press would hide the only feedback the press produces.
+      keepOpen: true,
       onPick: () => {
         const next = !doNotDisturb;
         setDoNotDisturb(next);
