@@ -112,6 +112,18 @@ mac:
       arch: [arm64, x64]
   icon: assets/icon.png
   category: public.app-category.productivity
+  # Versionless, for the same reason the NSIS installer is: a stable filename is
+  # what makes `releases/latest/download/<name>` resolve, and a versioned one
+  # 404s the download button on every release. The arch stays in the name
+  # because there genuinely are two files — an Apple Silicon Mac and an Intel
+  # Mac need different ones, and guessing on the user's behalf is how somebody
+  # ends up with a build that will not launch.
+  artifactName: Mochi-${arch}.${ext}
+  # Not signed and not notarised yet. Gatekeeper refuses an unsigned app from
+  # the internet, and Squirrel.Mac validates the signature before applying an
+  # update, so auto-update does not work on macOS until a certificate exists.
+  # `hardenedRuntime` and an entitlements file belong here at that point.
+  identity: null
 
 # ---------------------------------------------------------------------------
 # Linux

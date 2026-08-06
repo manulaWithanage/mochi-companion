@@ -77,7 +77,19 @@ export class OverlayWindow {
       y: placement.position.y,
       transparent: true,
       backgroundColor: '#00000000',
-      type: 'toolbar',
+      /*
+       * `type` takes different values on every platform, and 'toolbar' is not
+       * one macOS accepts — it takes 'desktop', 'textured' or 'panel'.
+       *
+       * 'panel' is the one that matters here: it floats above ordinary windows
+       * without taking key focus, and it is what lets a transparent overlay sit
+       * over a fullscreen app rather than disappearing behind it. Passing a
+       * Windows value on macOS gets it ignored, and the mascot ends up behaving
+       * like a normal window that the next Cmd-Tab hides.
+       */
+      ...(process.platform === 'darwin'
+        ? { type: 'panel' as const }
+        : { type: 'toolbar' as const }),
       frame: false,
       thickFrame: false,
       resizable: false,
