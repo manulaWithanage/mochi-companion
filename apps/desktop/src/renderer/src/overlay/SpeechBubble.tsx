@@ -22,6 +22,8 @@ interface Props {
   /** Buttons main offered for this bubble. Ids are opaque and echoed back. */
   readonly actions?: readonly BubbleAction[];
   readonly onAction?: (actionId: string) => void;
+  /** The mascot's rendered height in CSS px; the tail follows the head. */
+  readonly mascotPx: number;
 }
 
 const FADE_MS = 200;
@@ -37,8 +39,17 @@ const OUTLINE = 'rgba(242, 166, 179, 0.45)';
 /** The gradient's far end: what the bubble looks like exactly where the tail joins. */
 const BUBBLE_END = 'rgba(28, 21, 35, 0.98)';
 
-/** Clear of the mascot's head, measured against the 300px window. */
-const BOTTOM_OFFSET = 164;
+/**
+ * Where the bubble's bottom edge sits, derived from the mascot's size.
+ *
+ * The mascot canvas is vertically centred in its 200px box, so its top edge is
+ * `100 + size/2` from the window bottom — a fixed offset is only right for one
+ * size, and the tail floated above the head at `small` and buried itself at
+ * `large`. The 21px overlap is the relationship the original hand-tuned 164
+ * had with the medium (170px) mascot, kept exactly.
+ */
+const HEAD_OVERLAP = 21;
+const bubbleBottom = (mascotPx: number): number => 100 + mascotPx / 2 - HEAD_OVERLAP;
 /** Puts the tail over the mascot rather than off to one side. */
 const RIGHT_OFFSET = 58;
 const TAIL = 9;
@@ -99,6 +110,7 @@ export function SpeechBubble({
   onHoverChange,
   actions,
   onAction,
+  mascotPx,
 }: Props): JSX.Element | null {
   const [visible, setVisible] = useState(false);
   const [rendered, setRendered] = useState<string | null>(null);
@@ -130,7 +142,7 @@ export function SpeechBubble({
       style={{
         position: 'absolute',
         right: RIGHT_OFFSET,
-        bottom: BOTTOM_OFFSET,
+        bottom: bubbleBottom(mascotPx),
         maxWidth: 250,
         width: 'max-content',
         padding: '11px 15px',

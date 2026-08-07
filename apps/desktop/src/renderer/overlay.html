@@ -1,5 +1,8 @@
 <!doctype html>
-<html lang="en" style="background: transparent !important; background-color: rgba(0, 0, 0, 0) !important;">
+<html
+  lang="en"
+  style="background: transparent !important; background-color: rgba(0, 0, 0, 0) !important"
+>
   <head>
     <meta charset="UTF-8" />
     <!--
@@ -28,10 +31,32 @@
         user-select: none;
         cursor: default;
       }
+      /* The petting wiggle. On a wrapper around the mascot canvas, because the
+         canvas's inline transform belongs to the pose system. */
+      @keyframes mochi-delight {
+        0% {
+          transform: rotate(0deg) scale(1);
+        }
+        20% {
+          transform: rotate(-5deg) scale(1.04);
+        }
+        45% {
+          transform: rotate(4deg) scale(1.05);
+        }
+        70% {
+          transform: rotate(-3deg) scale(1.02);
+        }
+        100% {
+          transform: rotate(0deg) scale(1);
+        }
+      }
     </style>
   </head>
-  <body style="background: transparent !important; background-color: rgba(0, 0, 0, 0) !important;">
-    <div id="root" style="background: transparent !important; background-color: rgba(0, 0, 0, 0) !important;"></div>
+  <body style="background: transparent !important; background-color: rgba(0, 0, 0, 0) !important">
+    <div
+      id="root"
+      style="background: transparent !important; background-color: rgba(0, 0, 0, 0) !important"
+    ></div>
     <script type="module" src="./src/overlay/main.tsx"></script>
   </body>
 </html>

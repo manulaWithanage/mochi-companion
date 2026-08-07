@@ -52,6 +52,13 @@ interface Sparkle {
   colour: string;
 }
 
+/**
+ * The magician's two smoke directions, plus `delight` — the sparkle-only burst
+ * the mascot gives off when petted. Delight is deliberately not a SmokeMode:
+ * core's `smokeMode()` maps magician phases and being petted is not a phase.
+ */
+export type OverlayEffectMode = SmokeMode | 'delight';
+
 /** The canvas is the whole window so nothing clips at the edges. */
 const W = OVERLAY_SIZE.width;
 const H = OVERLAY_SIZE.height;
@@ -74,7 +81,9 @@ const rand = (min: number, max: number): number => min + Math.random() * (max - 
 /** Ease-out: fast to begin, settling at the end. Smoke decelerates as it spreads. */
 const easeOut = (t: number): number => 1 - Math.pow(1 - t, 3);
 
-function makeParticles(mode: SmokeMode): Particle[] {
+function makeParticles(mode: OverlayEffectMode): Particle[] {
+  // Petting earns sparkles, not smoke: a puff means Mochi is going somewhere.
+  if (mode === 'delight') return [];
   // More, smaller puffs read as a cloud; the original 18 large circles read as
   // overlapping blobs.
   const count = mode === 'gather' ? 22 : 30;
@@ -103,11 +112,12 @@ function makeParticles(mode: SmokeMode): Particle[] {
   });
 }
 
-function makeSparkles(mode: SmokeMode): Sparkle[] {
-  const count = mode === 'gather' ? 10 : 18;
+function makeSparkles(mode: OverlayEffectMode): Sparkle[] {
+  const count = mode === 'gather' ? 10 : mode === 'delight' ? 14 : 18;
   return Array.from({ length: count }, () => {
     const angle = rand(0, Math.PI * 2);
-    const speed = rand(60, 150);
+    // Petting sparkles drift rather than fly — the mascot is staying put.
+    const speed = mode === 'delight' ? rand(30, 85) : rand(60, 150);
     return {
       x: CX + Math.cos(angle) * rand(0, 12),
       y: CY + Math.sin(angle) * rand(0, 12),
@@ -156,7 +166,7 @@ function drawStar(
   ctx.restore();
 }
 
-export function SmokeEffect({ mode }: { readonly mode: SmokeMode }): JSX.Element | null {
+export function SmokeEffect({ mode }: { readonly mode: OverlayEffectMode }): JSX.Element | null {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
   useEffect(() => {
