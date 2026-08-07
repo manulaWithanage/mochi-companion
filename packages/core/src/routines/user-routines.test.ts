@@ -44,6 +44,16 @@ describe('routineTimes', () => {
   it('drops malformed entries a form can produce', () => {
     expect(routineTimes(routine({ times: ['09:00', 'later', ''] }))).toEqual(['09:00']);
   });
+
+  it('sorts by clock time, not lexically', () => {
+    // '9:00' is valid without a leading zero, and as a string it sorts after
+    // '10:00' — which used to make nextOccurrence skip the 9:00 firing.
+    expect(routineTimes(routine({ times: ['10:00', '9:00'] }))).toEqual(['9:00', '10:00']);
+  });
+
+  it('drops impossible clock values', () => {
+    expect(routineTimes(routine({ times: ['25:00', '09:99', '09:30'] }))).toEqual(['09:30']);
+  });
 });
 
 describe('nextOccurrence', () => {
@@ -78,6 +88,11 @@ describe('nextOccurrence', () => {
   it('picks the earliest upcoming of several times', () => {
     const next = routine({ times: ['08:00', '11:00', '16:00'] });
     expect(hhmm(nextOccurrence(next, MON_10AM))).toBe('11:00');
+  });
+
+  it('does not skip an earlier time written without a leading zero', () => {
+    const MON_8AM = new Date('2026-08-03T08:00:00');
+    expect(hhmm(nextOccurrence(routine({ times: ['10:00', '9:00'] }), MON_8AM))).toBe('09:00');
   });
 });
 

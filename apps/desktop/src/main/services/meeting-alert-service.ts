@@ -89,6 +89,11 @@ export class MeetingAlertService {
           source: 'calendar' as const,
           kind: 'meeting-soon',
           at: alert.at,
+          // makeEvent's default id is `${source}:${kind}:${at}` — identical for
+          // two meetings starting at the same time, and the governor dedupes on
+          // id, so the second alert would be silently dropped. The plan key is
+          // unique per meeting and lead time.
+          id: alert.key,
           subject: alert.subject,
           priority: 'high' as const,
           text: alert.text,

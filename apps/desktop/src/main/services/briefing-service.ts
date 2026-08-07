@@ -33,15 +33,6 @@ const BRIEFING_PREFIX = 'briefing:';
 const REPLAN_INTERVAL_MS = 30 * 60_000;
 
 /**
- * How long Mochi holds centre screen.
- *
- * Long enough to read two sentences without hurrying, short enough that it is
- * not in the way. The magician sequence adds its own entrance and exit either
- * side of this.
- */
-const HOLD_MS = 9000;
-
-/**
  * Budget for the model to reword the briefing.
  *
  * Past this it is not worth waiting — the deterministic sentence is already
@@ -57,8 +48,6 @@ export interface BriefingInputs {
   hasCalendar(): boolean;
   /** Returns null when no model is configured or the call fails. */
   phrase(prompt: string): Promise<string | null>;
-  /** The centre-screen entrance. Skipped when the user turned it off. */
-  perform(holdMs: number): void;
 }
 
 export class BriefingService {
@@ -66,6 +55,12 @@ export class BriefingService {
   private replanTimer: NodeJS.Timeout | null = null;
   /** Local day key, so the briefing fires once even across re-plans. */
   private deliveredOn: string | null = null;
+  /**
+   * Day key of a briefing announced on the bus but not yet confirmed on
+   * screen. `deliveredOn` is stamped only when the bubble's present callback
+   * confirms delivery — announcing is not the user seeing anything.
+   */
+  private announcedDay: string | null = null;
 
   constructor(
     private readonly bus: EventBus,
@@ -160,15 +155,26 @@ export class BriefingService {
       hasCalendar: this.inputs.hasCalendar(),
     });
 
-    // Phrase before the entrance, not during it, so the bubble is right the
-    // moment Mochi arrives rather than changing under the user.
+    // Phrase before announcing, so the bubble is right the moment Mochi
+    // arrives rather than changing under the user.
     const text = await this.phraseOrFallback(briefing, settings);
 
-    if (!force) this.deliveredOn = day;
-
-    if (settings.centerScreenAlerts !== false) {
-      this.inputs.perform(HOLD_MS);
-    }
+    /*
+     * Emit, and nothing else. The entrance used to run here — before the
+     * governor had even seen the event — so under Do Not Disturb Mochi
+     * performed the whole centre-screen appearance and then said nothing, and
+     * `deliveredOn` was already stamped, consuming the day with no retry.
+     *
+     * Both now hang off the verdict instead: the centre-screen entrance runs
+     * from the bubble's present callback in index.ts (where every routine
+     * alert's does), and that same callback calls `confirmDelivered`, which is
+     * the only place `deliveredOn` is stamped. The chosen semantics: a
+     * briefing that was dropped or expired does not consume the day, so it can
+     * still arrive later that day — via the governor's own deferral, or the
+     * preview button — while a briefing the user actually saw fires exactly
+     * once.
+     */
+    if (!force) this.announcedDay = day;
 
     this.bus.emit(
       makeEvent({
@@ -183,9 +189,21 @@ export class BriefingService {
     );
 
     console.log(
-      `[briefing] delivered: ${briefing.meetingCount} meeting(s), ${briefing.openTasks} task(s)`,
+      `[briefing] announced: ${briefing.meetingCount} meeting(s), ${briefing.openTasks} task(s)`,
     );
     return briefing;
+  }
+
+  /**
+   * The briefing bubble actually reached the screen. Only now is the day
+   * consumed — confirming on emit would consume it for a briefing the
+   * governor dropped.
+   */
+  confirmDelivered(subject: string): void {
+    if (subject !== BRIEFING_SUBJECT) return;
+    if (this.announcedDay === null) return;
+    this.deliveredOn = this.announcedDay;
+    this.announcedDay = null;
   }
 
   /**

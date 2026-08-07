@@ -230,7 +230,9 @@ async function bootstrap(): Promise<void> {
       });
       return result.ok ? result.text : null;
     },
-    perform: (holdMs) => void overlay.performMagicianAlert(holdMs),
+    // No `perform` input any more: the centre-screen entrance runs from the
+    // bubble's present callback below, after the governor has admitted the
+    // event — never before the verdict.
   });
   briefing.start();
 
@@ -446,6 +448,9 @@ async function bootstrap(): Promise<void> {
           // or on queue would be confirming something that had not happened.
           if (!reached) return false;
           taskReminders.confirmDelivered(event.subject);
+          // The briefing's once-a-day guard is stamped here too — a briefing
+          // the governor dropped must stay deliverable later that day.
+          briefing.confirmDelivered(event.subject);
           if (useCenterEntrance) {
             console.log(`[alert] centre-screen entrance for "${event.subject}"`);
             void overlay.performMagicianAlert(BUBBLE_TTL_MS);
@@ -572,6 +577,11 @@ async function bootstrap(): Promise<void> {
 
   app.on('second-instance', () => setup.open());
 
+  // What a macOS dock-icon 'activate' with no windows should do for an app
+  // that is already running: reopen the settings window, same as a second
+  // instance. Assigned here because `setup` only exists inside bootstrap.
+  onActivate = () => setup.open();
+
   app.on('before-quit', () => {
     if (resettingLocalData) return;
     void gmailManager.stop();
@@ -607,9 +617,20 @@ app.whenReady().then(() => {
   void startup();
 
   app.on('activate', () => {
-    if (BrowserWindow.getAllWindows().length === 0) void startup();
+    // This used to re-run the whole bootstrap. The second registerIpc throws
+    // on the first duplicate channel, startup()'s catch showed the error
+    // dialog and quit a perfectly healthy running app — and had it survived,
+    // it would have doubled every scheduler and reopened the database.
+    // Bootstrap runs at most once; re-activation just re-shows a window.
+    if (BrowserWindow.getAllWindows().length === 0) onActivate?.();
   });
 });
+
+/** Set by bootstrap once its windows exist; null until the app has started. */
+let onActivate: (() => void) | null = null;
+
+/** Bootstrap must run at most once per process, whoever asks. */
+let startupBegun = false;
 
 /**
  * Bootstrap, but never silently.
@@ -624,6 +645,8 @@ app.whenReady().then(() => {
  * can report; an invisible process is not.
  */
 async function startup(): Promise<void> {
+  if (startupBegun) return;
+  startupBegun = true;
   try {
     await bootstrap();
   } catch (error) {
