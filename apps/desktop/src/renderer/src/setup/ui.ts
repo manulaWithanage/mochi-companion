@@ -20,6 +20,45 @@ export const C = {
   warn: '#ffb3c1',
 } as const;
 
+/**
+ * The motion scale, mirroring the custom properties in `ui.css`.
+ *
+ * Inline styles cannot read a CSS variable through `React.CSSProperties`
+ * without stringly-typed escapes, so the same three durations are declared
+ * here for anything that has to animate from JavaScript.
+ *
+ * There were twelve different transition strings across the tabs doing the
+ * same job — `all 160ms ease`, `all 0.15s ease`, `all 150ms ease`, `color
+ * 0.15s` — close enough to look accidental and different enough that two
+ * neighbouring controls settled at different moments.
+ *
+ * **Never `all`.** It animates properties that trigger layout, and it silently
+ * resets any longhand set beside it: a `transitionDelay` next to a `transition`
+ * shorthand is overwritten, which is how the radial menu's stagger raced its
+ * own reset. Name the properties.
+ */
+export const MOTION = {
+  /** Pressed, ticked, switched. Instant, or it reads as lag. */
+  fast: 120,
+  /** Hover and focus. Visible travelling, still keeps up with a pointer. */
+  base: 160,
+  /** Entering or leaving the screen, which needs time to be read. */
+  slow: 240,
+  /** Decelerating. The default for interface motion. */
+  easeOut: 'cubic-bezier(0.16, 1, 0.3, 1)',
+  /** Overshoots and returns. Arrivals only; on hover it reads as a wobble. */
+  easeSpring: 'cubic-bezier(0.34, 1.56, 0.64, 1)',
+} as const;
+
+/** `transition` for a named set of properties, at one scale step. */
+export function transition(
+  properties: readonly string[],
+  ms: number = MOTION.base,
+  easing: string = MOTION.easeOut,
+): string {
+  return properties.map((p) => `${p} ${ms}ms ${easing}`).join(', ');
+}
+
 export const card: React.CSSProperties = {
   border: `1px solid ${C.border}`,
   borderRadius: 14,
