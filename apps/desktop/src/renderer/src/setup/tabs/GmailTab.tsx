@@ -692,7 +692,7 @@ export function GmailTab(): JSX.Element {
             {syncStatus?.syncing
               ? 'Syncing inbox…'
               : syncError !== null
-                ? `⚠ Sync problem — ${syncError}`
+                ? `⚠ Sync problem: ${syncError}`
                 : syncStatus?.watching
                   ? '● Live inbox'
                   : syncStatus?.lastSyncedAt
