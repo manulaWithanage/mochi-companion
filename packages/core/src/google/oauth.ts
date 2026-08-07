@@ -118,7 +118,7 @@ export function parseTokenResponse(payload: unknown, now: number): TokenParseRes
 export function describeTokenError(code: string, detail = ''): string {
   switch (code) {
     case 'invalid_grant':
-      return 'That authorisation is no longer valid. If your consent screen is still in "Testing", refresh tokens expire after 7 days — set it to "In production" and connect again.';
+      return 'That authorisation is no longer valid. If your consent screen is still in "Testing", refresh tokens expire after 7 days. Set it to "In production" and connect again.';
     case 'invalid_client':
       return 'Google did not recognise that Client ID. Check it was copied in full, and that it is an OAuth client of type "Desktop app".';
     case 'redirect_uri_mismatch':
