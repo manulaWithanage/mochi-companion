@@ -316,7 +316,7 @@ export function MochiTab(): JSX.Element {
             />
             {nameCleared && (
               <p style={{ fontSize: 11.5, color: C.faint, margin: '4px 0 0', lineHeight: 1.4 }}>
-                Your name can&apos;t be cleared — leaving this blank keeps “{savedUserName}”.
+                Your name can&apos;t be cleared. Leaving this blank keeps “{savedUserName}”.
               </p>
             )}
           </div>

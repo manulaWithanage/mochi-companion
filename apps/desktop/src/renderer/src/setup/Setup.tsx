@@ -368,7 +368,7 @@ export function Setup(): JSX.Element {
           is showing, so the pair stays pinned to the bottom together. */}
       {finishError !== null && (
         <p style={{ color: '#ffb3c1', fontSize: 12, margin: 'auto 0 0', paddingTop: 16 }}>
-          Something went wrong finishing setup: {finishError} — try again.
+          Something went wrong finishing setup: {finishError}. Try again.
         </p>
       )}
 
