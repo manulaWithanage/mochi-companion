@@ -588,7 +588,7 @@ export function TasksTab(): JSX.Element {
               background: 'rgba(0, 0, 0, 0.25)',
               borderColor: 'rgba(255, 255, 255, 0.12)',
             }}
-            placeholder="What needs doing?  —  try “call the dentist tomorrow 3pm”"
+            placeholder="What needs doing? Try “call the dentist tomorrow 3pm”"
             value={title}
             maxLength={MAX_TASK_TITLE + 40}
             onChange={(e) => setTitle(e.target.value)}
@@ -641,7 +641,7 @@ export function TasksTab(): JSX.Element {
               {parsed.remindAt === null ? 'Due' : 'Remind'} {describeWhen(parsed, now)}
             </span>
             <span>
-              from “{parsed.matched}” — saving as{' '}
+              from “{parsed.matched}”, saving as{' '}
               <strong style={{ color: C.text }}>{cleanTitle}</strong>
             </span>
             <button
@@ -717,7 +717,7 @@ export function TasksTab(): JSX.Element {
                 type="button"
                 disabled={detected || dueDay.length === 0}
                 title={
-                  dueDay.length === 0 ? 'Pick a day first — a reminder needs one' : preset.label
+                  dueDay.length === 0 ? 'Pick a day first. A reminder needs one' : preset.label
                 }
                 onClick={() => setRemindTime(remindTime === preset.value ? '' : preset.value)}
                 style={{

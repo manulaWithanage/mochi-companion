@@ -173,11 +173,11 @@ function LocalRuntimeRow({
             <div style={{ fontSize: 12, color: available ? C.ok : C.dim, marginTop: 2 }}>
               {available ? (
                 <span>
-                  🟢 Running — <strong>{status?.modelCount}</strong> model
+                  🟢 Running: <strong>{status?.modelCount}</strong> model
                   {status?.modelCount === 1 ? '' : 's'} ready
                 </span>
               ) : (
-                <span>⚪ Offline — Server not detected on port</span>
+                <span>⚪ Offline. Server not detected on port</span>
               )}
             </div>
           </div>
@@ -268,7 +268,7 @@ function LocalRuntimeRow({
           <p style={{ margin: '6px 0 0', fontSize: 11.5, opacity: 0.55, lineHeight: 1.5 }}>
             {url.trim().length > 0 && normaliseBaseUrl(url) !== url.trim() ? (
               <>
-                Will use <code>{normaliseBaseUrl(url)}</code> — Mochi adds the API path itself.
+                Will use <code>{normaliseBaseUrl(url)}</code>. Mochi adds the API path itself.
               </>
             ) : (
               <>
@@ -367,7 +367,7 @@ export function AiSection(): JSX.Element {
       const r = await window.mochi.llm.test();
       setMessage(
         r.ok
-          ? { ok: true, text: `✓ Test Passed — ${r.model}: "${r.text}" (${r.tokens} tokens)` }
+          ? { ok: true, text: `✓ Test passed. ${r.model}: "${r.text}" (${r.tokens} tokens)` }
           : { ok: false, text: `Test Failed: ${r.text}` },
       );
     } finally {

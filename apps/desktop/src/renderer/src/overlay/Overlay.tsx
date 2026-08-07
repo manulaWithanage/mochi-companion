@@ -396,7 +396,7 @@ export function Overlay(): JSX.Element {
     {
       id: 'dnd',
       icon: 'moon',
-      label: doNotDisturb ? 'Do Not Disturb is on' : 'Do Not Disturb — stay visible, stay quiet',
+      label: doNotDisturb ? 'Do Not Disturb is on' : 'Do Not Disturb: visible, but quiet',
       active: doNotDisturb,
       onPick: () => {
         const next = !doNotDisturb;
@@ -421,7 +421,7 @@ export function Overlay(): JSX.Element {
       // Says where Mochi went. Pressing this removes the only thing on screen
       // that can bring it back, and the tray icon is precisely what nobody
       // knows about — an unexplained disappearance reads as a crash.
-      label: 'Hide Mochi — bring it back from the tray',
+      label: 'Hide Mochi. Bring it back from the tray',
       onPick: () => {
         setRow('none');
         void window.mochi.settings.setPaused(true);

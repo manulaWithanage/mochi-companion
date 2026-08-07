@@ -45,22 +45,22 @@ export const ROUTINE_PREFIX = 'routine:';
 const TEXT: Record<RoutineKind, readonly string[]> = {
   'day-start': [
     'Morning! Ready when you are.',
-    "Here we go — let's make it a good one.",
+    "Here we go, let's make it a good one.",
     'Good morning. Shall we start something?',
   ],
   'day-end': [
     "That's the day done. Time to stop?",
-    'Work hours are over — go and be a person.',
+    'Work hours are over. Go and be a person.',
     "You're past your hours. I'll be here tomorrow.",
   ],
   break: [
     'Look at something far away for a bit?',
-    'Been a while — stretch?',
+    'Been a while. Stretch?',
     'Worth a break. I’ll keep your place.',
   ],
   'long-session': [
     "You've been at this a long while. Still with me?",
-    "That's a long stretch — remember to move.",
+    "That's a long stretch. Remember to move.",
   ],
   // Filled in by taskNudgeText — the count is the whole message.
   'tasks-open': [],
