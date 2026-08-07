@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import {
+  ARRIVAL_TOTAL_MS,
   MAGICIAN,
+  arrivalPose,
   isAlertPhase,
   magicianDuration,
   magicianPose,
@@ -126,5 +128,24 @@ describe('magicianSequence', () => {
 
   it('accounts for the hold in the total', () => {
     expect(magicianDuration(3000) - magicianDuration(0)).toBe(3000);
+  });
+});
+
+describe('arrivalPose', () => {
+  it('starts hidden with no transition, so there is nothing to see yet', () => {
+    const pre = arrivalPose('pre');
+    expect(pre.opacity).toBe(0);
+    expect(pre.scale).toBeLessThan(0.5);
+    expect(pre.durationMs).toBe(0);
+  });
+
+  it('arrives exactly the way the alert entrance does', () => {
+    // One vocabulary of movement: the dock arrival is the magician's `appear`,
+    // overshoot and all, so the two never drift apart in feel.
+    expect(arrivalPose('in')).toEqual(magicianPose('appear'));
+  });
+
+  it('holds `in` longer than the pose transition, so the smoke can finish', () => {
+    expect(ARRIVAL_TOTAL_MS).toBeGreaterThan(magicianPose('appear').durationMs);
   });
 });
