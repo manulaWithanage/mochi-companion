@@ -386,7 +386,7 @@ export function AiSection(): JSX.Element {
     } catch {
       // Without this a rejected refresh was an unhandled rejection and the
       // scan silently did nothing.
-      setMessage({ ok: false, text: 'Scan failed — could not check the local providers.' });
+      setMessage({ ok: false, text: 'Scan failed. Could not check the local providers.' });
     } finally {
       setScanning(false);
     }
