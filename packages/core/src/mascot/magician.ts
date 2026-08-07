@@ -163,3 +163,52 @@ export function magicianSequence(holdMs: number): readonly MagicianStep[] {
 export function magicianDuration(holdMs: number): number {
   return magicianSequence(holdMs).reduce((total, step) => total + step.durationMs, 0);
 }
+
+/**
+ * The arrival: how Mochi materialises at its docked position.
+ *
+ * The magician entrance above is reserved for alerts, which left the two
+ * appearances a user sees most often — app launch and un-hiding from the
+ * tray — as hard cuts: `win.show()` and the mascot simply exists. An arrival
+ * is the dock-side half of the same trick, smoke and overshoot included, with
+ * no window movement — so unlike the full performance it never needs main's
+ * involvement and lives entirely in the renderer.
+ */
+export type ArrivalStep =
+  /** Mounted but not yet revealed: hidden, no transition. */
+  | 'pre'
+  /** Billowing in at the dock. */
+  | 'in'
+  /** Finished; the ordinary pose system owns the mascot again. */
+  | 'done';
+
+/**
+ * How long the arrival holds `in` before declaring `done`.
+ *
+ * Longer than the pose transition on purpose: the smoke particles live up to a
+ * second, and flipping to `done` unmounts the effect canvas mid-puff — the
+ * hard cut the smoke system's own header lists as mistake number three.
+ */
+export const ARRIVAL_TOTAL_MS = 1150;
+
+/**
+ * Re-arrivals are reserved for a real return, not a flicker.
+ *
+ * The renderer replays the arrival when visibility comes back, but visibility
+ * also flips on occlusion — maximise a window over Mochi and drag it away and
+ * the mascot would puff smoke every time. Only an absence at least this long
+ * earns an entrance.
+ */
+export const ARRIVAL_MIN_HIDDEN_MS = 10_000;
+
+/** The pose for each arrival step, reusing the magician's own vocabulary. */
+export function arrivalPose(step: Exclude<ArrivalStep, 'done'>): MagicianPose {
+  switch (step) {
+    case 'pre':
+      // Instant: this is the starting state, not a movement.
+      return { scale: 0.28, opacity: 0, durationMs: 0, easing: EASE_OUT };
+    case 'in':
+      // The same arrival the alert entrance uses, overshoot and all.
+      return magicianPose('appear');
+  }
+}

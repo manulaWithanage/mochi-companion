@@ -125,8 +125,8 @@ export function useSpriteAnimation({ canvas, skin, state, visible }: Options): v
     const resizeBackingStore = (): void => {
       canvas.width = Math.round(cssWidth * dpr);
       canvas.height = Math.round(cssHeight * dpr);
-      // Resizing wipes the canvas and resets context state.
-      ctx.imageSmoothingEnabled = false;
+      // Resizing wipes the canvas and resets context state; smoothing is
+      // re-decided at draw time because it depends on the sheet's frame size.
       lastDrawnIndex = -1;
     };
     resizeBackingStore();
@@ -196,6 +196,20 @@ export function useSpriteAnimation({ canvas, skin, state, visible }: Options): v
         lastDrawnIndex = index;
         const frameW = sheet.image.width / sheet.frames;
         const frameH = sheet.image.height;
+
+        /*
+         * Nearest-neighbour only when a frame maps to a whole number of device
+         * pixels. The sheets are 192px and the mascot draws at 130/170/210 CSS
+         * px times whatever Windows display scaling multiplies in — almost
+         * never an integer ratio — and unsmoothed non-integer sampling
+         * duplicates some pixel rows and not others, which shimmers as frames
+         * advance. Crisp when it can be, filtered when crisp would be uneven.
+         */
+        const integerScale =
+          Number.isInteger((cssWidth * dpr) / frameW) &&
+          Number.isInteger((cssHeight * dpr) / frameH);
+        ctx.imageSmoothingEnabled = !integerScale;
+        if (!integerScale) ctx.imageSmoothingQuality = 'high';
 
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         ctx.drawImage(

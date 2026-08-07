@@ -3,8 +3,12 @@ import {
   carryTilt,
   livelyPose,
   livelyTransform,
+  HOVER_LEAN_DEG,
   HOVER_SCALE,
   MAX_CARRY_TILT_DEG,
+  PET_COOLDOWN_MS,
+  PET_MIN_STROKE_PX,
+  PettingDetector,
 } from './liveliness.js';
 
 const still = { hovered: false, pressed: false, carryVelocityX: 0 };
@@ -64,6 +68,92 @@ describe('livelyPose', () => {
     expect(livelyPose({ hovered: true, pressed: true, carryVelocityX: 9 }).tiltDeg).toBeGreaterThan(
       0,
     );
+  });
+
+  it('leans toward the cursor while hovered', () => {
+    expect(livelyPose({ ...still, hovered: true, hoverLeanX: 1 }).tiltDeg).toBe(HOVER_LEAN_DEG);
+    expect(livelyPose({ ...still, hovered: true, hoverLeanX: -0.5 }).tiltDeg).toBe(
+      -HOVER_LEAN_DEG / 2,
+    );
+  });
+
+  it('ignores the lean when not hovered and while pressed', () => {
+    expect(livelyPose({ ...still, hoverLeanX: 1 }).tiltDeg).toBe(0);
+    expect(livelyPose({ ...still, hovered: true, pressed: true, hoverLeanX: 1 }).tiltDeg).toBe(0);
+  });
+
+  it('never lets lean plus carry exceed the clip-safe maximum', () => {
+    const pose = livelyPose({ hovered: true, pressed: false, carryVelocityX: 500, hoverLeanX: 1 });
+    expect(Math.abs(pose.tiltDeg)).toBeLessThanOrEqual(MAX_CARRY_TILT_DEG);
+  });
+});
+
+describe('PettingDetector', () => {
+  /** Stroke horizontally from `from` to `to` in a few samples. */
+  const stroke = (d: PettingDetector, t: number, from: number, to: number): boolean => {
+    const steps = 4;
+    let hit = false;
+    for (let i = 1; i <= steps; i++) {
+      hit = d.sample(t + i, from + ((to - from) * i) / steps) || hit;
+    }
+    return hit;
+  };
+
+  it('detects back-and-forth strokes as petting', () => {
+    const d = new PettingDetector();
+    let detected = false;
+    // Four strokes: three reversals, all well inside the window.
+    detected = stroke(d, 0, 0, 40) || detected;
+    detected = stroke(d, 100, 40, 0) || detected;
+    detected = stroke(d, 200, 0, 40) || detected;
+    detected = stroke(d, 300, 40, 0) || detected;
+    expect(detected).toBe(true);
+  });
+
+  it('ignores pointer jitter that never travels a real stroke', () => {
+    const d = new PettingDetector();
+    let detected = false;
+    // Reversals every sample, but each travels far less than a stroke.
+    for (let i = 0; i < 40; i++) {
+      detected = d.sample(i * 20, i % 2 === 0 ? 0 : PET_MIN_STROKE_PX / 4) || detected;
+    }
+    expect(detected).toBe(false);
+  });
+
+  it('ignores a single pass, however long', () => {
+    const d = new PettingDetector();
+    let detected = false;
+    for (let i = 0; i < 30; i++) {
+      detected = d.sample(i * 20, i * 15) || detected;
+    }
+    expect(detected).toBe(false);
+  });
+
+  it('fires once per session, then respects the cooldown', () => {
+    const d = new PettingDetector();
+    const pet = (at: number): boolean => {
+      let hit = false;
+      hit = stroke(d, at, 0, 40) || hit;
+      hit = stroke(d, at + 100, 40, 0) || hit;
+      hit = stroke(d, at + 200, 0, 40) || hit;
+      hit = stroke(d, at + 300, 40, 0) || hit;
+      return hit;
+    };
+    expect(pet(0)).toBe(true);
+    // Still stroking inside the cooldown: stays quiet.
+    expect(pet(1000)).toBe(false);
+    // Well past the cooldown: a fresh session fires again.
+    expect(pet(PET_COOLDOWN_MS + 2000)).toBe(true);
+  });
+
+  it('forgets a stroke in progress on reset', () => {
+    const d = new PettingDetector();
+    stroke(d, 0, 0, 40);
+    stroke(d, 100, 40, 0);
+    stroke(d, 200, 0, 40);
+    d.reset();
+    // One more reversal would have fired without the reset.
+    expect(stroke(d, 300, 40, 0)).toBe(false);
   });
 });
 

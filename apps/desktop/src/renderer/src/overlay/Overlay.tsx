@@ -1,12 +1,17 @@
 import { useCallback, useEffect, useRef, useState, type JSX } from 'react';
 import {
+  ARRIVAL_MIN_HIDDEN_MS,
+  ARRIVAL_TOTAL_MS,
+  arrivalPose,
   formatDuration,
   isAlertPhase,
   livelyPose,
   livelyTransform,
   magicianPose,
   MASCOT_BOX,
+  PettingDetector,
   smokeMode,
+  type ArrivalStep,
   type BubbleAction,
   type BubbleMessage,
   type LoadedSkin,
@@ -16,11 +21,15 @@ import {
   type TimerSnapshot,
 } from '@mochi/core';
 
-const MASCOT_SIZE_MAP: Record<MascotSize, string> = {
-  small: '130px',
-  medium: '170px',
-  large: '210px',
+/** Rendered mascot size in CSS px. Numbers, because the bubble derives from it. */
+const MASCOT_SIZE_MAP: Record<MascotSize, number> = {
+  small: 130,
+  medium: 170,
+  large: 210,
 };
+
+/** How long the delight wiggle owns the wrapper; matches the CSS animation. */
+const DELIGHT_MS = 700;
 import { useSpriteAnimation } from './useSpriteAnimation.js';
 import { SpeechBubble } from './SpeechBubble.js';
 import { SmokeEffect } from './SmokeEffect.js';
@@ -64,6 +73,39 @@ export function Overlay(): JSX.Element {
   const bubbleTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const alertToneTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
+  /**
+   * The arrival: Mochi materialises rather than popping into existence.
+   *
+   * Runs once when the skin first decodes (which covers app launch — the
+   * window is shown before the sprite exists, so `pre` also hides the empty
+   * canvas), and again when visibility returns after a real absence. Never
+   * during a magician performance, which owns the pose outright.
+   */
+  const [arrival, setArrival] = useState<ArrivalStep>('pre');
+  const arrivalTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const arrivedOnce = useRef(false);
+  const hiddenSince = useRef<number | null>(null);
+  const prevVisible = useRef(true);
+
+  const beginArrival = useCallback(() => {
+    setArrival('pre');
+    // One painted frame at `pre`, so the transition to `in` has a start state.
+    requestAnimationFrame(() => setArrival('in'));
+    if (arrivalTimer.current !== undefined) clearTimeout(arrivalTimer.current);
+    arrivalTimer.current = setTimeout(() => setArrival('done'), ARRIVAL_TOTAL_MS);
+  }, []);
+
+  useEffect(() => () => clearTimeout(arrivalTimer.current), []);
+
+  /** Petting: stroke the mascot and it wiggles and gives off sparkles. */
+  const petting = useRef(new PettingDetector());
+  const [delighted, setDelighted] = useState(false);
+  const delightTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  useEffect(() => () => clearTimeout(delightTimer.current), []);
+
+  /** Where the pointer sits over the mascot, -1..1, for the attention lean. */
+  const [hoverLean, setHoverLean] = useState(0);
+
   const interactiveRef = useRef(false);
   const lastHoverCheck = useRef(0);
   const drag = useRef<{ active: boolean; moved: boolean; x: number; y: number }>({
@@ -91,6 +133,15 @@ export function Overlay(): JSX.Element {
       }
     })();
   }, []);
+
+  // The first arrival waits for the sprite: showing the entrance over an
+  // undecoded canvas would animate nothing.
+  useEffect(() => {
+    if (skin !== null && !arrivedOnce.current) {
+      arrivedOnce.current = true;
+      beginArrival();
+    }
+  }, [skin, beginArrival]);
 
   // ---- speech bubble & magician alert entrance ----------------------------
   const dismissBubble = useCallback(() => {
@@ -181,6 +232,24 @@ export function Overlay(): JSX.Element {
   }, [phase]);
 
   /**
+   * Re-arrive when visibility returns after a real absence — un-hidden from
+   * the tray, screen unlocked. The minimum-hidden threshold is what keeps a
+   * window dragged briefly across the mascot from setting off smoke: occlusion
+   * also flips visibility, and an entrance per occlusion would be noise.
+   */
+  useEffect(() => {
+    if (prevVisible.current === visible) return;
+    prevVisible.current = visible;
+    if (!visible) {
+      hiddenSince.current = performance.now();
+      return;
+    }
+    const away = hiddenSince.current === null ? 0 : performance.now() - hiddenSince.current;
+    hiddenSince.current = null;
+    if (away >= ARRIVAL_MIN_HIDDEN_MS && !performingRef.current) beginArrival();
+  }, [visible, beginArrival]);
+
+  /**
    * The alert face follows the phase, not the bubble.
    *
    * Asking main for the derived state on the way out is what previously left
@@ -260,6 +329,11 @@ export function Overlay(): JSX.Element {
     if (interactiveRef.current === next) return;
     interactiveRef.current = next;
     setHovered(next);
+    if (!next) {
+      // A stroke cannot continue across an absence, and neither can attention.
+      setHoverLean(0);
+      petting.current.reset();
+    }
     window.mochi.overlay.setInteractive(next);
   }, []);
 
@@ -301,7 +375,21 @@ export function Overlay(): JSX.Element {
         return;
       }
       const alpha = ctx.getImageData(x, y, 1, 1).data[3] ?? 0;
-      setInteractive(alpha > 16);
+      const over = alpha > 16;
+      setInteractive(over);
+
+      if (over) {
+        // Lean toward the pointer. Quantised to tenths so the 25Hz hover
+        // sampling does not become 25 re-renders a second while holding still.
+        const rel = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+        setHoverLean(Math.round(Math.max(-1, Math.min(1, rel)) * 10) / 10);
+
+        if (petting.current.sample(now, event.clientX)) {
+          setDelighted(true);
+          if (delightTimer.current !== undefined) clearTimeout(delightTimer.current);
+          delightTimer.current = setTimeout(() => setDelighted(false), DELIGHT_MS);
+        }
+      }
     },
     [setInteractive],
   );
@@ -368,11 +456,20 @@ export function Overlay(): JSX.Element {
 
   const running = timer?.running === true;
   const performing = phase !== 'none';
-  const pose = magicianPose(phase);
+  // A magician performance owns the pose outright; the arrival only fills the
+  // gap where neither is running and the mascot would otherwise hard-cut in.
+  const pose = arrival === 'done' || performing ? magicianPose(phase) : arrivalPose(arrival);
+  const arriving = !performing && arrival !== 'done';
+  const mascotPx = MASCOT_SIZE_MAP[mascotSize] ?? 170;
   // Hover is suppressed during a performance: the canvas takes no pointer
   // events while one runs, so a hover entered just beforehand would otherwise
   // stay stuck on through the whole vanish.
-  const lively = livelyPose({ hovered: hovered && !performing, pressed, carryVelocityX });
+  const lively = livelyPose({
+    hovered: hovered && !performing,
+    pressed,
+    carryVelocityX,
+    hoverLeanX: hoverLean,
+  });
 
   /**
    * Mochi's own controls, for the right-click row.
@@ -431,8 +528,14 @@ export function Overlay(): JSX.Element {
 
   return (
     <div style={{ width: '100%', height: '100%', position: 'relative', pointerEvents: 'none' }}>
-      {/* Magician smoke and sparkles. Covers the window, above the mascot. */}
-      <SmokeEffect mode={smokeMode(phase)} />
+      {/* Magician smoke and sparkles. Covers the window, above the mascot.
+          The arrival borrows the burst, and petting earns sparkles alone. */}
+      <SmokeEffect
+        mode={
+          smokeMode(phase) ??
+          (arrival === 'in' && !performing ? 'burst' : delighted ? 'delight' : null)
+        }
+      />
 
       <SpeechBubble
         /*
@@ -454,6 +557,7 @@ export function Overlay(): JSX.Element {
         onAction={runBubbleAction}
         onDismiss={dismissBubble}
         onHoverChange={setInteractive}
+        mascotPx={mascotPx}
       />
 
       <div
@@ -502,69 +606,79 @@ export function Overlay(): JSX.Element {
           </div>
         )}
 
-        <canvas
-          ref={(node) => {
-            canvasRef.current = node;
-            setCanvas(node);
-          }}
-          width={200}
-          height={200}
+        {/* The wiggle lives on a wrapper: the canvas's own transform string is
+            single-owner (pose x liveliness), and a CSS animation fighting it
+            for the property would win silently. Nested transforms compose. */}
+        <div
           style={{
-            width: MASCOT_SIZE_MAP[mascotSize] ?? '170px',
-            height: MASCOT_SIZE_MAP[mascotSize] ?? '170px',
-            display: 'block',
-            // Nothing to click while a performance is running: a click would
-            // stop the timer or open the pills mid-vanish.
-            pointerEvents: performing ? 'none' : 'auto',
-            // One transform, one transition. Transform and opacity are the only
-            // two properties the compositor can animate without touching
-            // layout, which is why this is smooth where moving the window was
-            // not — and why the hover and carry reactions ride on this single
-            // string rather than adding properties of their own.
-            //
-            // The magician's scale and the press feedback multiply together
-            // into the scale term, so a performance still overrides everything
-            // and the press bounce survives.
-            transform: livelyTransform(lively, pose.scale * clickScale),
-            opacity: pose.opacity,
-            transition: `transform ${pose.durationMs}ms ${pose.easing}, opacity ${pose.durationMs}ms ${pose.easing}`,
-            willChange: performing ? 'transform, opacity' : 'auto',
+            display: 'flex',
+            animation: delighted ? `mochi-delight ${DELIGHT_MS}ms ease-in-out` : 'none',
           }}
-          onPointerMove={handlePointerMove}
-          onPointerDown={handlePointerDown}
-          onPointerUp={handlePointerUp}
-          onPointerCancel={(e) => {
-            drag.current.active = false;
-            if (e.currentTarget.hasPointerCapture(e.pointerId)) {
-              e.currentTarget.releasePointerCapture(e.pointerId);
-            }
-            setClickScale(1);
-            setPressed(false);
-            setCarryVelocityX(0);
-          }}
-          onPointerLeave={() => {
-            setInteractive(false);
-            // A pointer that leaves mid-drag never sends another move, so the
-            // lean would stay frozen at whatever angle it left on.
-            setCarryVelocityX(0);
-          }}
-          onContextMenu={(e) => {
-            e.preventDefault();
-            /*
-             * Right-click shows the icon row, rather than opening Settings.
-             *
-             * Settings is still one press away — the row ends with a button
-             * for it — so nothing is lost, and the gesture now surfaces every
-             * action instead of jumping straight to one destination nobody
-             * knew was there.
-             *
-             * A ring arced around the mascot was tried here first and removed.
-             * It duplicated a row that already existed and did the same job,
-             * and having both on screen at once was worse than either alone.
-             */
-            revealRow('mochi');
-          }}
-        />
+        >
+          <canvas
+            ref={(node) => {
+              canvasRef.current = node;
+              setCanvas(node);
+            }}
+            width={200}
+            height={200}
+            style={{
+              width: `${mascotPx}px`,
+              height: `${mascotPx}px`,
+              display: 'block',
+              // Nothing to click while a performance is running: a click would
+              // stop the timer or open the pills mid-vanish.
+              pointerEvents: performing ? 'none' : 'auto',
+              // One transform, one transition. Transform and opacity are the only
+              // two properties the compositor can animate without touching
+              // layout, which is why this is smooth where moving the window was
+              // not — and why the hover and carry reactions ride on this single
+              // string rather than adding properties of their own.
+              //
+              // The magician's scale and the press feedback multiply together
+              // into the scale term, so a performance still overrides everything
+              // and the press bounce survives.
+              transform: livelyTransform(lively, pose.scale * clickScale),
+              opacity: pose.opacity,
+              transition: `transform ${pose.durationMs}ms ${pose.easing}, opacity ${pose.durationMs}ms ${pose.easing}`,
+              willChange: performing || arriving ? 'transform, opacity' : 'auto',
+            }}
+            onPointerMove={handlePointerMove}
+            onPointerDown={handlePointerDown}
+            onPointerUp={handlePointerUp}
+            onPointerCancel={(e) => {
+              drag.current.active = false;
+              if (e.currentTarget.hasPointerCapture(e.pointerId)) {
+                e.currentTarget.releasePointerCapture(e.pointerId);
+              }
+              setClickScale(1);
+              setPressed(false);
+              setCarryVelocityX(0);
+            }}
+            onPointerLeave={() => {
+              setInteractive(false);
+              // A pointer that leaves mid-drag never sends another move, so the
+              // lean would stay frozen at whatever angle it left on.
+              setCarryVelocityX(0);
+            }}
+            onContextMenu={(e) => {
+              e.preventDefault();
+              /*
+               * Right-click shows the icon row, rather than opening Settings.
+               *
+               * Settings is still one press away — the row ends with a button
+               * for it — so nothing is lost, and the gesture now surfaces every
+               * action instead of jumping straight to one destination nobody
+               * knew was there.
+               *
+               * A ring arced around the mascot was tried here first and removed.
+               * It duplicated a row that already existed and did the same job,
+               * and having both on screen at once was worse than either alone.
+               */
+              revealRow('mochi');
+            }}
+          />
+        </div>
 
         {/* The stopwatch badge would otherwise hang in the air through the
             vanish, since it is not inside the mascot's transform. */}

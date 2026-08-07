@@ -32,6 +32,15 @@ export const HOVER_SCALE = 1.05;
 /** How far it rises to meet the pointer, in CSS pixels. */
 export const HOVER_LIFT_PX = 3;
 
+/**
+ * Furthest the mascot leans toward the cursor while hovered.
+ *
+ * Smaller than the carry tilt: this is attention, not motion. At 4 degrees the
+ * lean reads as "looking at your hand" without the sprite visibly rotating out
+ * of its frame.
+ */
+export const HOVER_LEAN_DEG = 4;
+
 export interface Liveliness {
   /** Pointer is over the mascot and no performance is running. */
   readonly hovered: boolean;
@@ -43,6 +52,13 @@ export interface Liveliness {
    * Zero when not being dragged, which is what returns the tilt to upright.
    */
   readonly carryVelocityX: number;
+  /**
+   * Where the pointer sits over the mascot, -1 (left edge) to 1 (right edge).
+   *
+   * Only meaningful while hovered; the pose ignores it otherwise, so callers
+   * need not zero it on leave.
+   */
+  readonly hoverLeanX?: number;
 }
 
 export interface LivelyPose {
@@ -74,9 +90,89 @@ export function livelyPose(input: Liveliness): LivelyPose {
     return { tiltDeg, liftPx: 0, scale: 1 };
   }
   if (input.hovered) {
-    return { tiltDeg, liftPx: -HOVER_LIFT_PX, scale: HOVER_SCALE };
+    // Lean toward the cursor. Added to the carry tilt rather than replacing it
+    // (a drag mid-hover still owns the lean), clamped so the two together can
+    // never exceed what the fixed window can contain without clipping.
+    const lean = clamp(input.hoverLeanX ?? 0, -1, 1) * HOVER_LEAN_DEG;
+    return {
+      tiltDeg: clamp(tiltDeg + lean, -MAX_CARRY_TILT_DEG, MAX_CARRY_TILT_DEG),
+      liftPx: -HOVER_LIFT_PX,
+      scale: HOVER_SCALE,
+    };
   }
   return { tiltDeg, liftPx: 0, scale: 1 };
+}
+
+// ---- petting -------------------------------------------------------------
+
+/** A stroke must travel at least this far before a reversal counts. */
+export const PET_MIN_STROKE_PX = 12;
+/** Direction reversals needed within the window to count as petting. */
+export const PET_REVERSALS = 3;
+/** How recent the reversals must be, in milliseconds. */
+export const PET_WINDOW_MS = 1600;
+/** Refractory period after a detection, so one long stroke session fires once. */
+export const PET_COOLDOWN_MS = 4000;
+
+/**
+ * Detects the mascot being petted: the cursor stroking back and forth over it.
+ *
+ * A pet is not a hover and not a drag — it is horizontal direction reversals,
+ * each after real travel, close together in time. Requiring travel filters the
+ * jitter of a pointer at rest (which reverses direction constantly by a pixel),
+ * and the time window filters slow incidental passes.
+ *
+ * Pure in the same sense as the rest of this file: the caller owns the clock
+ * and the pointer events; this owns what they mean.
+ */
+export class PettingDetector {
+  private lastX: number | null = null;
+  private direction = 0;
+  private travel = 0;
+  private reversals: number[] = [];
+  private cooldownUntil = 0;
+
+  /** Feed a hover sample. Returns true exactly when a pet is detected. */
+  sample(timeMs: number, x: number): boolean {
+    if (this.lastX === null) {
+      this.lastX = x;
+      return false;
+    }
+    const dx = x - this.lastX;
+    this.lastX = x;
+    if (dx === 0) return false;
+
+    const dir = Math.sign(dx);
+    if (dir === this.direction) {
+      this.travel += Math.abs(dx);
+    } else {
+      // A reversal only counts if the stroke before it went somewhere.
+      if (this.direction !== 0 && this.travel >= PET_MIN_STROKE_PX) {
+        this.reversals.push(timeMs);
+      }
+      this.direction = dir;
+      this.travel = Math.abs(dx);
+    }
+
+    this.reversals = this.reversals.filter((at) => timeMs - at <= PET_WINDOW_MS);
+    if (timeMs < this.cooldownUntil) return false;
+
+    if (this.reversals.length >= PET_REVERSALS) {
+      this.cooldownUntil = timeMs + PET_COOLDOWN_MS;
+      this.reversals = [];
+      this.travel = 0;
+      return true;
+    }
+    return false;
+  }
+
+  /** The pointer left the mascot; a stroke cannot continue across an absence. */
+  reset(): void {
+    this.lastX = null;
+    this.direction = 0;
+    this.travel = 0;
+    this.reversals = [];
+  }
 }
 
 /** The CSS `transform` value for a pose, in the order the properties compose. */
