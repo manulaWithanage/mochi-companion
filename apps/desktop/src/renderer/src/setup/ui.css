@@ -1,0 +1,147 @@
+/*
+ * Interaction behaviour for the dashboard, in one place.
+ *
+ * Everything in this window is styled with inline React styles, which cannot
+ * express `:hover`, `:active` or `:focus-visible`. The result was that the
+ * shared `button()` helper had no hover state at all: a button changed only if
+ * its call site hand-rolled `onMouseEnter`/`onMouseLeave` into React state, and
+ * out of dozens of buttons roughly fourteen places bothered. Every other button
+ * in the app was visually dead under the pointer.
+ *
+ * These are element selectors rather than classes on purpose. A class would
+ * mean editing every call site across eleven tab files to opt in, and the ones
+ * most in need of a hover state are exactly the ones nobody remembered to give
+ * one. An element rule reaches all of them at once.
+ *
+ * Specificity is deliberate too. Inline styles beat a stylesheet, so any
+ * component that already animates itself keeps its own behaviour untouched —
+ * the category pills scale to 1.22 from React state and still do. This only
+ * fills the gap where nothing was defined.
+ */
+
+:root {
+  /*
+   * The motion scale.
+   *
+   * There were twelve different transition strings doing the same job —
+   * `all 160ms ease`, `all 140ms ease`, `all 0.15s ease`, `all 150ms ease`,
+   * `color 0.15s` — close enough to look accidental rather than designed, and
+   * different enough that two adjacent controls settled at different moments.
+   *
+   * Three durations, and a reason for each:
+   */
+
+  /* Pressed, ticked, switched. Must feel instant or it reads as lag. */
+  --motion-fast: 120ms;
+  /* Hover and focus. Long enough to be seen travelling, short enough to keep up. */
+  --motion-base: 160ms;
+  /* Something entering or leaving the screen, which needs time to be read. */
+  --motion-slow: 240ms;
+
+  /* Decelerating. Fast to start, settling at the end — the default for UI. */
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  /* Overshoots and comes back. For arrivals only; on a hover it reads as a wobble. */
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  --accent: #f2a6b3;
+}
+
+/*
+ * `transition: all` is banned, and this is not pedantry.
+ *
+ * `all` animates every property that changes, including ones that trigger
+ * layout, and it silently resets any longhand set alongside it — a
+ * `transitionDelay` beside a `transition` shorthand is overwritten, which is
+ * how the radial menu's stagger came to race its own reset. Naming the
+ * properties also keeps the work on the compositor.
+ */
+button,
+[role='button'] {
+  transition:
+    transform var(--motion-base) var(--ease-out),
+    filter var(--motion-base) var(--ease-out),
+    box-shadow var(--motion-base) var(--ease-out),
+    opacity var(--motion-base) var(--ease-out);
+}
+
+/*
+ * Lift and brighten rather than recolour.
+ *
+ * Buttons here carry a dozen different backgrounds — gradients, tints, plain
+ * transparency — so no single hover colour suits them. `filter: brightness`
+ * works against all of them and cannot clash with a background the stylesheet
+ * has never seen.
+ */
+button:hover:not(:disabled),
+[role='button']:hover:not([aria-disabled='true']) {
+  filter: brightness(1.14);
+  transform: translateY(-1px);
+}
+
+/* Under the finger. Faster than the hover, because a press wants to feel direct. */
+button:active:not(:disabled),
+[role='button']:active:not([aria-disabled='true']) {
+  transform: translateY(0) scale(0.97);
+  transition-duration: var(--motion-fast);
+}
+
+/*
+ * Keyboard focus only.
+ *
+ * `:focus` would ring every button the moment it is clicked, which is why
+ * so many designs end up removing focus styling altogether and taking keyboard
+ * users with it. `:focus-visible` is the browser's own answer to that.
+ */
+button:focus-visible,
+[role='button']:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+button:disabled,
+[aria-disabled='true'] {
+  cursor: not-allowed;
+  filter: none;
+  transform: none;
+}
+
+/* Fields respond too, or typing into one feels like typing into a picture. */
+input,
+select,
+textarea {
+  transition:
+    border-color var(--motion-base) var(--ease-out),
+    box-shadow var(--motion-base) var(--ease-out);
+}
+
+input:hover:not(:disabled),
+select:hover:not(:disabled),
+textarea:hover:not(:disabled) {
+  border-color: rgba(242, 166, 179, 0.45);
+}
+
+/*
+ * Some people get motion sick, and the operating system already knows which.
+ *
+ * Not "animate less": animate not at all. A reduced 40ms transform is still a
+ * transform. Colour and opacity are left alone because they are not movement.
+ */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  button:hover:not(:disabled),
+  [role='button']:hover:not([aria-disabled='true']) {
+    transform: none;
+  }
+}

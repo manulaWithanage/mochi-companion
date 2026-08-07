@@ -440,7 +440,11 @@ export interface MochiBridge {
   };
 }
 
-export type GmailTone = 'professional' | 'friendly' | 'brief';
+// Every id offered as a pill in the draft view must appear here AND carry an
+// instruction in email-prompt.ts AND pass the ipc.ts allowlist — an id missing
+// from any of the three is silently coerced to 'professional', which is how
+// two pills once produced professional drafts while claiming otherwise.
+export type GmailTone = 'professional' | 'friendly' | 'brief' | 'assertive';
 
 export interface GmailStatus {
   readonly connected: boolean;

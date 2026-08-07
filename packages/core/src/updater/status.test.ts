@@ -63,7 +63,7 @@ describe('describeUpdateStatus', () => {
   it('rounds the download percentage rather than printing a float', () => {
     expect(
       describeUpdateStatus({ state: 'downloading', version: '0.2.0', percent: 41.7 }, NOW),
-    ).toBe('Downloading 0.2.0 — 42%.');
+    ).toBe('Downloading 0.2.0, 42%.');
   });
 
   it('says what has to happen for a ready update to apply', () => {
@@ -71,7 +71,7 @@ describe('describeUpdateStatus', () => {
     // installed, and nothing said so. Both routes are named because they end
     // differently — the button brings Mochi back, quitting does not.
     expect(describeUpdateStatus({ state: 'ready', version: '0.1.5' }, NOW)).toBe(
-      '0.1.5 is ready — restart to finish, or it installs next time you quit.',
+      '0.1.5 is ready. Restart to finish, or it installs next time you quit.',
     );
   });
 

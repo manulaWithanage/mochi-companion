@@ -33,8 +33,23 @@ export interface IcsParseOptions {
  * `RRULE:FREQ=MINUTELY` with no COUNT or UNTIL is valid iCalendar and would
  * otherwise spin until the process dies. The window bounds the useful range;
  * this bounds the pathological one.
+ *
+ * Counts only occurrences that land inside the window. Counting every iterated
+ * occurrence spent the whole cap on skipped history: a daily standup created
+ * more than 400 days ago burned through the limit before reaching today, and
+ * the meeting silently vanished from the calendar.
  */
 const MAX_OCCURRENCES_PER_RULE = 400;
+
+/**
+ * Hard ceiling on iterator steps per rule, in-window or not.
+ *
+ * This is what actually stops a pathological rule now that skipped occurrences
+ * no longer count against `MAX_OCCURRENCES_PER_RULE`. Big enough that decades
+ * of a daily series still reach the window; small enough that an unbounded
+ * MINUTELY rule terminates in well under a second.
+ */
+const MAX_ITERATIONS_PER_RULE = 100_000;
 
 /** Total events returned, so one feed cannot exhaust memory. */
 const MAX_EVENTS = 2000;
@@ -157,9 +172,11 @@ export function parseIcs(text: string, options: IcsParseOptions): readonly Calen
 
       const iterator = event.iterator();
       let produced = 0;
+      let iterations = 0;
       for (let next = iterator.next(); next !== null; next = iterator.next()) {
         if (produced >= MAX_OCCURRENCES_PER_RULE) break;
-        produced += 1;
+        if (iterations >= MAX_ITERATIONS_PER_RULE) break;
+        iterations += 1;
 
         const details = event.getOccurrenceDetails(next);
         const startsAt = details.startDate.toJSDate().getTime();
@@ -169,6 +186,7 @@ export function parseIcs(text: string, options: IcsParseOptions): readonly Calen
         if (startsAt >= options.to) break;
         if (endsAt <= options.from) continue;
 
+        produced += 1;
         events.push(
           toEvent(details.item, details.item.component, startsAt, endsAt, options, `@${startsAt}`),
         );

@@ -182,6 +182,17 @@ function CalendarConnectionCard({
             </div>
           </div>
 
+          {/*
+            The service writes good messages here (a 404 explains the reset
+            link), but this card never read them — the feed could be dead for
+            days behind a green "connected" pill.
+          */}
+          {status?.error !== undefined && (
+            <p style={{ margin: '0 0 12px', fontSize: 12, color: C.warn, lineHeight: 1.5 }}>
+              ⚠ {status.error}
+            </p>
+          )}
+
           <div style={{ display: 'flex', gap: 10 }}>
             <button
               style={{ ...button('ghost'), fontSize: 12, padding: '6px 14px', borderRadius: 8 }}
@@ -346,6 +357,8 @@ export function CalendarTab(): JSX.Element {
 
   const workHours = settings?.workHours ?? { start: '09:00', end: '17:00' };
   const connected = status?.connected === true;
+  /** Connected but the last fetch failed — the pill must not stay green. */
+  const feedError = connected ? status?.error : undefined;
 
   const today = useMemo(() => {
     const window = workWindow(now, workHours);
@@ -416,17 +429,29 @@ export function CalendarTab(): JSX.Element {
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <button
             onClick={() => setShowConnectionPanel((v) => !v)}
+            title={feedError}
             style={{
               display: 'flex',
               alignItems: 'center',
               gap: 6,
               padding: '6px 14px',
               borderRadius: 20,
-              background: connected ? 'rgba(168, 230, 184, 0.12)' : 'rgba(242, 166, 179, 0.15)',
-              border: `1px solid ${connected ? 'rgba(168, 230, 184, 0.28)' : 'rgba(242, 166, 179, 0.35)'}`,
+              background:
+                feedError !== undefined
+                  ? 'rgba(240, 189, 103, 0.14)'
+                  : connected
+                    ? 'rgba(168, 230, 184, 0.12)'
+                    : 'rgba(242, 166, 179, 0.15)',
+              border: `1px solid ${
+                feedError !== undefined
+                  ? 'rgba(240, 189, 103, 0.4)'
+                  : connected
+                    ? 'rgba(168, 230, 184, 0.28)'
+                    : 'rgba(242, 166, 179, 0.35)'
+              }`,
               fontSize: 11.5,
               fontWeight: 600,
-              color: connected ? C.good : C.accent,
+              color: feedError !== undefined ? '#f0bd67' : connected ? C.good : C.accent,
               cursor: 'pointer',
               transition: 'all 0.15s ease',
             }}
@@ -436,11 +461,22 @@ export function CalendarTab(): JSX.Element {
                 width: 7,
                 height: 7,
                 borderRadius: '50%',
-                background: connected ? C.good : C.accent,
-                boxShadow: connected ? `0 0 8px ${C.good}` : `0 0 8px ${C.accent}`,
+                background: feedError !== undefined ? '#f0bd67' : connected ? C.good : C.accent,
+                boxShadow:
+                  feedError !== undefined
+                    ? '0 0 8px #f0bd67'
+                    : connected
+                      ? `0 0 8px ${C.good}`
+                      : `0 0 8px ${C.accent}`,
               }}
             />
-            {connected ? 'Calendar Connected' : 'Connect Calendar'}
+            {/* Amber, not green, when the last fetch failed — the panel below
+                carries the full error message. */}
+            {feedError !== undefined
+              ? 'Calendar Sync Issue'
+              : connected
+                ? 'Calendar Connected'
+                : 'Connect Calendar'}
             <span style={{ fontSize: 10, opacity: 0.7 }}>{showConnectionPanel ? '▲' : '▼'}</span>
           </button>
         </div>

@@ -11,6 +11,7 @@ reader needs.
 | File                                               | What it is                                                                            |
 | :------------------------------------------------- | :------------------------------------------------------------------------------------ |
 | [`RELEASING.md`](RELEASING.md)                     | How to ship a version, and the two steps CI cannot do                                 |
+| [`UI.md`](UI.md)                                   | Desktop UI guidelines: motion scale, interaction states, and what each rule prevents  |
 | [`FEASIBILITY_AUDIT.md`](FEASIBILITY_AUDIT.md)     | What was checked before committing to the approach                                    |
 | [`LAUNCH_PLAN.md`](LAUNCH_PLAN.md)                 | How a first release was meant to go                                                   |
 | [`SCALING_STRATEGY.md`](SCALING_STRATEGY.md)       | What would have to change if this got popular                                         |

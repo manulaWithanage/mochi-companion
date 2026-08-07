@@ -197,7 +197,7 @@ export function describeTriage(queue: ReplyQueue, modelConfigured: boolean): str
     return 'Sorted by rules. Connect a model in Settings and Mochi will double-check the borderline ones.';
   }
   if (queue.modelChecked === 0) {
-    return `${queue.total} sorted by rules — none were borderline enough to ask the model about.`;
+    return `${queue.total} sorted by rules. None were borderline enough to ask the model about.`;
   }
   return `${queue.total} sorted by rules, ${queue.modelChecked} double-checked by the model.`;
 }

@@ -10,7 +10,8 @@ export interface EmailReplyPromptInput {
   readonly subject: string;
   readonly bodyText: string;
   readonly userName: string;
-  readonly tone?: 'professional' | 'friendly' | 'brief';
+  /** Must cover every member of GmailTone (types/bridge.ts). */
+  readonly tone?: 'professional' | 'friendly' | 'brief' | 'assertive';
 }
 
 export interface EmailReplyPromptOutput {
@@ -27,10 +28,12 @@ export interface EmailReplyPromptOutput {
 export function buildEmailReplyPrompt(input: EmailReplyPromptInput): EmailReplyPromptOutput {
   const tone =
     input.tone === 'brief'
-      ? 'Keep the reply very short — 2 to 3 sentences maximum.'
+      ? 'Keep the reply very short: 2 to 3 sentences maximum.'
       : input.tone === 'friendly'
         ? 'Write in a warm, friendly, conversational tone.'
-        : 'Write in a professional, courteous tone.';
+        : input.tone === 'assertive'
+          ? 'Write in a firm, direct, confident tone. Be courteous, but state positions plainly and do not hedge or over-apologise.'
+          : 'Write in a professional, courteous tone.';
 
   const system = [
     `You are a personal email assistant for ${input.userName}.`,

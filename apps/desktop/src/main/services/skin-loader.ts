@@ -25,7 +25,19 @@ function skinRoots(): string[] {
   return [bundled, join(app.getPath('userData'), 'skins')];
 }
 
+/**
+ * A skin name must be a bare directory name.
+ *
+ * The name arrives from the renderer and is joined into a path, so a path
+ * separator or a `..` segment could climb out of the skin roots and read
+ * arbitrary directories (RULE 1: renderer input is untrusted).
+ */
+function isSafeSkinName(name: string): boolean {
+  return name.length > 0 && !/[/\\]/.test(name) && name !== '.' && name !== '..';
+}
+
 function findSkinDir(name: string): string | null {
+  if (!isSafeSkinName(name)) return null;
   for (const root of skinRoots()) {
     const candidate = join(root, name);
     if (existsSync(join(candidate, 'manifest.json'))) return candidate;
@@ -62,7 +74,15 @@ export function listSkins(): readonly SkinSummary[] {
     if (!existsSync(root)) continue;
     for (const entry of readdirSync(root)) {
       const dir = join(root, entry);
-      if (!statSync(dir).isDirectory()) continue;
+      // A broken entry — a dangling symlink, a permissions hole — must skip
+      // itself, not take the whole listing down with it.
+      let isDirectory: boolean;
+      try {
+        isDirectory = statSync(dir).isDirectory();
+      } catch {
+        continue;
+      }
+      if (!isDirectory) continue;
       const manifest = readManifest(dir);
       if (manifest !== null) found.set(manifest.name, toSummary(manifest));
     }

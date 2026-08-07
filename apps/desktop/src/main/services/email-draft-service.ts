@@ -84,7 +84,10 @@ export class EmailDraftService {
       fromEmail: email.replyToAddress || email.fromAddress,
       subject: email.subject,
       bodyText: full.bodyText,
-      userName: this.settings.get().assistantName ?? 'Mochi User',
+      // The person the draft is signed as — the user, never the mascot. This
+      // read `assistantName`, which signed every AI draft as "Mochi".
+      // gmail-manager.ts does it the same way.
+      userName: this.settings.get().userName || 'User',
       tone,
     });
     const result = await this.llm.generate({

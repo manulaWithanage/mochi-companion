@@ -145,6 +145,38 @@ export function MochiTab(): JSX.Element {
   const [deletingData, setDeletingData] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
 
+  const savedUserName = settings?.userName ?? '';
+  /**
+   * Blank field over a saved name. Save cannot honour this one edit: main
+   * drops an empty userName (settings:completeSetup would otherwise write a
+   * fallback over the real name), so the field says why instead of offering a
+   * Save that silently does nothing.
+   */
+  const nameCleared = userName.trim().length === 0 && savedUserName.length > 0;
+
+  /** Any identity field differs from what's saved — guards broadcast re-sync. */
+  const identityEdited =
+    settings !== null &&
+    (userName !== savedUserName ||
+      name !== settings.assistantName ||
+      skinName !== settings.skinName);
+
+  /** Whether Save would actually change anything (a cleared name would not). */
+  const dirty =
+    settings !== null &&
+    ((!nameCleared && userName !== savedUserName) ||
+      name !== settings.assistantName ||
+      skinName !== settings.skinName);
+
+  const hoursEdited =
+    settings !== null && (start !== settings.workHours.start || end !== settings.workHours.end);
+
+  // Refs so the onChange subscription (bound once) can see current dirtiness.
+  const identityEditedRef = useRef(false);
+  identityEditedRef.current = identityEdited;
+  const hoursEditedRef = useRef(false);
+  hoursEditedRef.current = hoursEdited;
+
   useEffect(() => {
     void window.mochi.settings.get().then((s) => {
       setSettings(s);
@@ -158,24 +190,29 @@ export function MochiTab(): JSX.Element {
     void window.mochi.skin.listAvailable().then(setSkins);
     return window.mochi.settings.onChange((s) => {
       setSettings(s);
-      setUserName(s.userName ?? '');
-      setName(s.assistantName);
       setMascotSize(s.mascotSize ?? 'medium');
-      setStart(s.workHours.start);
-      setEnd(s.workHours.end);
+      // Form fields sync only while untouched: any broadcast (a DND toggle
+      // from the overlay, a size click above) used to overwrite what was
+      // being typed mid-edit.
+      if (!identityEditedRef.current) {
+        setUserName(s.userName ?? '');
+        setName(s.assistantName);
+        setSkinName(s.skinName);
+      }
+      if (!hoursEditedRef.current) {
+        setStart(s.workHours.start);
+        setEnd(s.workHours.end);
+      }
     });
   }, []);
 
   if (settings === null) return <div style={card}>Loading…</div>;
 
-  const dirty =
-    userName !== settings.userName ||
-    name !== settings.assistantName ||
-    skinName !== settings.skinName;
-
   const saveIdentity = async (): Promise<void> => {
     await window.mochi.settings.completeSetup({
-      userName: userName.trim(),
+      // Blank means "no change": main keeps the stored name (see
+      // settings:completeSetup), so omit the field entirely, as Setup.tsx does.
+      ...(userName.trim().length > 0 ? { userName: userName.trim() } : {}),
       assistantName: name.trim() || 'Mochi',
       skinName,
       workHours: settings.workHours,
@@ -277,6 +314,11 @@ export function MochiTab(): JSX.Element {
               maxLength={24}
               onChange={(e) => setUserName(e.target.value)}
             />
+            {nameCleared && (
+              <p style={{ fontSize: 11.5, color: C.faint, margin: '4px 0 0', lineHeight: 1.4 }}>
+                Your name can&apos;t be cleared — leaving this blank keeps “{savedUserName}”.
+              </p>
+            )}
           </div>
           <div>
             <span style={label}>Assistant Name</span>

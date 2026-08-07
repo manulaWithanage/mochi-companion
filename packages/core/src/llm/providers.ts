@@ -89,6 +89,7 @@ export const PROVIDERS: Record<ProviderId, ProviderInfo> = {
     local: false,
     listShape: 'openai',
     modelsUrl: 'https://api.openai.com/v1/models',
+    setupUrl: 'https://platform.openai.com/api-keys',
   },
   anthropic: {
     id: 'anthropic',
@@ -97,6 +98,7 @@ export const PROVIDERS: Record<ProviderId, ProviderInfo> = {
     local: false,
     listShape: 'openai',
     modelsUrl: 'https://api.anthropic.com/v1/models',
+    setupUrl: 'https://console.anthropic.com',
   },
   google: {
     id: 'google',
@@ -105,6 +107,7 @@ export const PROVIDERS: Record<ProviderId, ProviderInfo> = {
     local: false,
     listShape: 'google',
     modelsUrl: 'https://generativelanguage.googleapis.com/v1beta/models',
+    setupUrl: 'https://aistudio.google.com/apikey',
   },
   ollama: {
     id: 'ollama',

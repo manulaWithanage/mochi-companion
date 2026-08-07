@@ -79,7 +79,7 @@ function Row({
         exactly the sort of thing this app is careful about elsewhere.
       */}
       <div style={{ marginTop: 2 }}>
-        <Tick label="Mark handled — stops the reminder, sends nothing" onDone={onHandled} />
+        <Tick label="Mark handled. Stops the reminder, sends nothing" onDone={onHandled} />
       </div>
 
       <div style={{ flex: 1, minWidth: 0 }}>
@@ -149,8 +149,8 @@ export function GmailRepliesPanel({
         <div style={{ fontSize: 12.5, color: C.dim }}>
           {/* Says what it looked at, so an empty list cannot be mistaken for a
               list that failed to load. */}
-          The rest of the inbox can wait — {cachedCount}{' '}
-          {cachedCount === 1 ? 'message' : 'messages'} checked.
+          The rest of the inbox can wait. {cachedCount} {cachedCount === 1 ? 'message' : 'messages'}{' '}
+          checked.
         </div>
       </div>
     );
@@ -215,7 +215,7 @@ export function GmailRepliesPanel({
       {queue.unsure.length > 0 && (
         <div>
           <div style={{ fontSize: 12, color: C.dim, fontWeight: 600, marginBottom: 8 }}>
-            Not sure about these — worth a reply?
+            Not sure about these. Worth a reply?
           </div>
           <div style={{ ...card, padding: '4px 6px', borderStyle: 'dashed' }}>
             {queue.unsure.map((item) => (
