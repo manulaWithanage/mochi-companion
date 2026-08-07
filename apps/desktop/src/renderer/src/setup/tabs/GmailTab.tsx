@@ -338,7 +338,7 @@ export function GmailTab(): JSX.Element {
       <div>
         <h2 style={h2}>Gmail Inbox</h2>
         <p style={sub}>
-          Read emails & generate AI draft replies. Uses your Gmail App Password — no Google Cloud
+          Read emails & generate AI draft replies. Uses your Gmail App Password, so no Google Cloud
           setup required.
         </p>
 
@@ -486,21 +486,34 @@ export function GmailTab(): JSX.Element {
             <div style={{ marginBottom: 14 }}>
               <span style={label}>AI Draft Tone</span>
               <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                {[
-                  { id: 'professional', label: '💼 Professional' },
-                  { id: 'concise', label: '⚡ Short & Sweet' },
-                  { id: 'friendly', label: '☕ Friendly' },
-                  { id: 'assertive', label: '💪 Firm' },
-                ].map((item) => {
+                {/*
+                  Typed against GmailTone rather than cast to it. Two of these
+                  pills once carried ids ('concise', 'assertive') outside the
+                  type, which main coerced to 'professional' — so they
+                  highlighted a choice while producing professional drafts.
+                  'Short & Sweet' is the existing 'brief' tone under a
+                  friendlier label; same instruction, so no near-duplicate id.
+                */}
+                {(
+                  [
+                    { id: 'professional', label: '💼 Professional' },
+                    { id: 'brief', label: '⚡ Short & Sweet' },
+                    { id: 'friendly', label: '☕ Friendly' },
+                    { id: 'assertive', label: '💪 Firm' },
+                  ] as readonly { id: GmailTone; label: string }[]
+                ).map((item) => {
                   const activeTone = tone === item.id;
                   return (
                     <button
                       key={item.id}
                       type="button"
                       onClick={() => {
-                        const newTone = item.id as GmailTone;
+                        const newTone = item.id;
                         setTone(newTone);
-                        const targetEmail = emails.find((e) => e.uid === draft.emailUid);
+                        // allEmails, not the visible category's list: drafts
+                        // also open from the Needs Reply queue, whose mail may
+                        // sit in a category that is not on screen.
+                        const targetEmail = allEmails.find((e) => e.uid === draft.emailUid);
                         if (targetEmail) {
                           void window.mochi.gmail
                             .generateDraft(targetEmail.emailId, newTone)
@@ -509,8 +522,11 @@ export function GmailTab(): JSX.Element {
                                 setDraft((prev) =>
                                   prev ? { ...prev, draftReply: res.draftReply! } : null,
                                 );
+                              } else if (!res.ok) {
+                                setGenerateError(res.error ?? 'Failed to generate draft.');
                               }
-                            });
+                            })
+                            .catch(() => setGenerateError('Failed to generate draft.'));
                         }
                       }}
                       style={{
@@ -591,9 +607,14 @@ export function GmailTab(): JSX.Element {
                 {savingDraft ? 'Saving…' : 'Save to Drafts'}
               </button>
               <button
-                onClick={() =>
-                  void handleGenerate({ ...emails.find((e) => e.uid === draft.emailUid)! })
-                }
+                onClick={() => {
+                  // allEmails, not the visible category's list — same reason
+                  // as the tone pills above. The old `emails.find(...)!` spread
+                  // undefined for Needs Reply mail and hung the generate call.
+                  const source = allEmails.find((e) => e.uid === draft.emailUid);
+                  if (source) void handleGenerate(source);
+                  else setGenerateError('This email is no longer in the local cache. Refresh and try again.');
+                }}
                 style={button('ghost')}
               >
                 Regenerate
@@ -824,7 +845,7 @@ export function GmailTab(): JSX.Element {
 
       {!CATEGORIES.find((c) => c.id === active)?.worthInterrupting && (
         <div style={{ ...sub, fontSize: 12, marginBottom: 14, color: C.dim }}>
-          Mochi never interrupts you about this tab — you'll only see it here.
+          Mochi never interrupts you about this tab. You'll only see it here.
         </div>
       )}
 

@@ -86,7 +86,7 @@ export const ROUTINE_PRESETS: readonly Omit<UserRoutine, 'id' | 'createdAt'>[] =
     enabled: true,
     mochiReminder: true,
     reminderMessage:
-      "You've been focused a while — stand up, stretch your back and relax your eyes.",
+      "You've been focused a while. Stand up, stretch your back and relax your eyes.",
   },
   {
     title: 'Mindful Reset',

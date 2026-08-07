@@ -1057,7 +1057,7 @@ export function TimeTab(): JSX.Element {
                               disabled={!isPrimary && primaryCount >= 3}
                               title={
                                 isPrimary
-                                  ? `Overlay slot ${primaryIndex + 1} — click to unpin`
+                                  ? `Overlay slot ${primaryIndex + 1} · click to unpin`
                                   : primaryCount >= 3
                                     ? 'All 3 overlay slots are full. Unpin one first.'
                                     : 'Pin to Mochi desktop overlay'

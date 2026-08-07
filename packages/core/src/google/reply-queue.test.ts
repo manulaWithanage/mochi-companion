@@ -256,7 +256,7 @@ describe('describeTriage', () => {
     // The list is complete either way; silence here reads as something missing.
     const queue = buildReplyQueue([email('x')], NOW);
 
-    expect(describeTriage(queue, true)).toContain('none were borderline');
+    expect(describeTriage(queue, true)).toContain('None were borderline');
   });
 
   it('counts how many the model actually looked at', () => {

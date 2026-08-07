@@ -804,7 +804,7 @@ export function Dashboard(): JSX.Element {
               lineHeight: 1.35,
             }}
           >
-            v{updateStatus.version} ready — restart
+            Restart for v{updateStatus.version}
           </button>
         )}
 
