@@ -47,14 +47,30 @@ export class UserRoutineScheduler {
    * feature is broken. It was emitted as `scheduled` and was dropped exactly
    * that way.
    */
-  triggerAlert(title?: string, message?: string, origin: EventOrigin = 'scheduled'): void {
+  triggerAlert(
+    title?: string,
+    message?: string,
+    origin: EventOrigin = 'scheduled',
+    routineId?: string,
+  ): void {
     const text = message || `${title || 'Routine Alert'}! Time for your scheduled routine.`;
+    // Keyed by routine, the way task reminders are keyed by task. The subject
+    // used to be `user-routine-alert:${Date.now()}` — fresh on every fire — so
+    // governor.dismiss(subject) could never suppress the routine again, and
+    // waving one away meant nothing. The Test button has no routine and keeps
+    // its own stable subject; it emits as `interactive`, which the governor
+    // allows before it ever consults dismissals.
+    const subject = routineId !== undefined ? `user-routine:${routineId}` : 'user-routine-test';
     this.bus.emit(
       makeEvent({
         source: 'routine',
         kind: 'break',
         at: Date.now(),
-        subject: `user-routine-alert:${Date.now()}`,
+        // Explicit, because the default id is `${source}:${kind}:${at}` — two
+        // routines firing on the same tick share a millisecond, and the
+        // governor would dedupe the second into silence.
+        id: `${subject}:${Date.now()}`,
+        subject,
         priority: 'high',
         text,
         origin,
@@ -93,31 +109,42 @@ export class UserRoutineScheduler {
     const routines = this.userRoutines.list();
 
     for (const routine of routines) {
-      if (!routine.enabled) continue;
-      if (!routine.days.includes(dayKey)) continue;
+      // The whole body is guarded. The vault and the IPC boundary both
+      // validate now, but this tick runs every ten seconds for as long as the
+      // app lives — one malformed routine slipping through must skip itself,
+      // not turn the loop into a permanent crash-and-retry.
+      try {
+        if (!routine.enabled) continue;
+        if (!Array.isArray(routine.days) || !routine.days.includes(dayKey)) continue;
 
-      const rawTimes = routine.times && routine.times.length > 0 ? routine.times : [routine.time];
-      const normalizedTimes = rawTimes.map((t) => {
-        const parts = t.split(':');
-        if (parts.length !== 2) return t;
-        return `${parts[0]!.padStart(2, '0')}:${parts[1]!.padStart(2, '0')}`;
-      });
+        const rawTimes =
+          Array.isArray(routine.times) && routine.times.length > 0 ? routine.times : [routine.time];
+        const normalizedTimes = rawTimes
+          .filter((t): t is string => typeof t === 'string')
+          .map((t) => {
+            const parts = t.split(':');
+            if (parts.length !== 2) return t;
+            return `${parts[0]!.padStart(2, '0')}:${parts[1]!.padStart(2, '0')}`;
+          });
 
-      if (!normalizedTimes.includes(currentHHMM)) continue;
+        if (!normalizedTimes.includes(currentHHMM)) continue;
 
-      const firedKey = `${routine.id}:${localDateKey}:${currentHHMM}`;
-      if (this.firedKeys.has(firedKey)) continue;
+        const firedKey = `${routine.id}:${localDateKey}:${currentHHMM}`;
+        if (this.firedKeys.has(firedKey)) continue;
 
-      this.firedKeys.add(firedKey);
+        this.firedKeys.add(firedKey);
 
-      const icon = routine.icon || '⏰';
-      const customMsg = routine.reminderMessage?.trim();
-      const text = customMsg
-        ? `${icon} ${routine.title}: ${customMsg}`
-        : `${icon} ${routine.title}: Time for your routine!`;
+        const icon = routine.icon || '⏰';
+        const customMsg = routine.reminderMessage?.trim();
+        const text = customMsg
+          ? `${icon} ${routine.title}: ${customMsg}`
+          : `${icon} ${routine.title}: Time for your routine!`;
 
-      console.log(`[user-routine] Firing routine alert for "${routine.title}" at ${currentHHMM}`);
-      this.triggerAlert(routine.title, text);
+        console.log(`[user-routine] Firing routine alert for "${routine.title}" at ${currentHHMM}`);
+        this.triggerAlert(routine.title, text, 'scheduled', routine.id);
+      } catch (error) {
+        console.error('[user-routine] skipped a malformed routine:', error);
+      }
     }
   }
 }

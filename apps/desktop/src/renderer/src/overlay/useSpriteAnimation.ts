@@ -23,6 +23,14 @@ interface Options {
 
 type Sheet = { image: HTMLImageElement; frames: number; fps: number; loop: boolean };
 
+/**
+ * Poll rate once a non-looping animation has finished. State changes arrive by
+ * mutating `stateRef` — they do not re-run the effect — so the tick chain must
+ * stay alive to notice one. Four checks a second, each a ref comparison and no
+ * draw, keeps resume latency under 250ms at effectively zero cost.
+ */
+const FINISHED_POLL_MS = 250;
+
 function loadImage(dataUrl: string): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
     const img = new Image();
@@ -102,17 +110,45 @@ export function useSpriteAnimation({ canvas, skin, state, visible }: Options): v
     }
 
     const dpr = window.devicePixelRatio || 1;
-    const cssWidth = canvas.clientWidth;
-    const cssHeight = canvas.clientHeight;
-    canvas.width = Math.round(cssWidth * dpr);
-    canvas.height = Math.round(cssHeight * dpr);
-    ctx.imageSmoothingEnabled = false;
+    let cssWidth = canvas.clientWidth;
+    let cssHeight = canvas.clientHeight;
 
     let raf = 0;
     let timer: ReturnType<typeof setTimeout> | undefined;
     let disposed = false;
     let lastState: MascotState | null = null;
+    // Which frame is on the canvas, so a tick that lands on the same index
+    // draws nothing. -1 means the canvas is blank (or stale) and must be drawn.
+    let lastDrawnIndex = -1;
     let animationStart = performance.now();
+
+    const resizeBackingStore = (): void => {
+      canvas.width = Math.round(cssWidth * dpr);
+      canvas.height = Math.round(cssHeight * dpr);
+      // Resizing wipes the canvas and resets context state.
+      ctx.imageSmoothingEnabled = false;
+      lastDrawnIndex = -1;
+    };
+    resizeBackingStore();
+
+    /**
+     * Mascot size is applied as a CSS width/height change in Overlay, which
+     * does not re-run this effect — so the backing store must follow the
+     * element itself. A stale backing store renders the sprite blurry AND
+     * skews Overlay's pixel-alpha hover test, which maps pointer coordinates
+     * against `canvas.width`/`canvas.height`. The redraw itself waits for the
+     * next scheduled tick; resizes come from a settings dropdown, not a
+     * per-frame animation.
+     */
+    const observer = new ResizeObserver(() => {
+      const w = canvas.clientWidth;
+      const h = canvas.clientHeight;
+      if (w === cssWidth && h === cssHeight) return;
+      cssWidth = w;
+      cssHeight = h;
+      resizeBackingStore();
+    });
+    observer.observe(canvas);
 
     /**
      * Frames are scheduled with setTimeout at the exact next boundary, then
@@ -146,6 +182,8 @@ export function useSpriteAnimation({ canvas, skin, state, visible }: Options): v
       if (current !== lastState) {
         lastState = current;
         animationStart = now;
+        // Different sheet: the same index shows a different image.
+        lastDrawnIndex = -1;
       }
 
       const fps = onBatteryRef.current ? Math.max(1, Math.floor(sheet.fps / 2)) : sheet.fps;
@@ -154,24 +192,34 @@ export function useSpriteAnimation({ canvas, skin, state, visible }: Options): v
       const raw = Math.floor(elapsed / frameDuration);
       const index = sheet.loop ? raw % sheet.frames : Math.min(raw, sheet.frames - 1);
 
-      const frameW = sheet.image.width / sheet.frames;
-      const frameH = sheet.image.height;
+      if (index !== lastDrawnIndex) {
+        lastDrawnIndex = index;
+        const frameW = sheet.image.width / sheet.frames;
+        const frameH = sheet.image.height;
 
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      ctx.drawImage(
-        sheet.image,
-        index * frameW,
-        0,
-        frameW,
-        frameH,
-        0,
-        0,
-        cssWidth * dpr,
-        cssHeight * dpr,
-      );
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(
+          sheet.image,
+          index * frameW,
+          0,
+          frameW,
+          frameH,
+          0,
+          0,
+          cssWidth * dpr,
+          cssHeight * dpr,
+        );
+      }
 
-      // A non-looping animation on its last frame has nothing left to do.
-      if (!sheet.loop && raw >= sheet.frames - 1) return;
+      // A non-looping animation on its last frame has nothing left to draw,
+      // but the chain must not die here: nothing else restarts it, so exiting
+      // outright froze the mascot on this frame until hide/show. Hold the
+      // frame and idle at a slow poll — the draw guard above makes each poll
+      // draw-free — so the next state change resumes animation.
+      if (!sheet.loop && raw >= sheet.frames - 1) {
+        scheduleNext(FINISHED_POLL_MS);
+        return;
+      }
 
       scheduleNext(Math.max(0, frameDuration - (elapsed % frameDuration)));
     };
@@ -180,6 +228,7 @@ export function useSpriteAnimation({ canvas, skin, state, visible }: Options): v
 
     return () => {
       disposed = true;
+      observer.disconnect();
       if (timer !== undefined) clearTimeout(timer);
       cancelAnimationFrame(raf);
     };

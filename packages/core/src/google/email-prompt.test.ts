@@ -56,6 +56,19 @@ describe('buildEmailReplyPrompt', () => {
     expect(system).toContain('short');
   });
 
+  it('applies assertive tone when specified', () => {
+    // Once offered in the UI but missing here, so it silently fell through to
+    // professional. Every GmailTone member must produce its own instruction.
+    const { system } = buildEmailReplyPrompt({
+      fromEmail: 'a@b.com',
+      subject: 'x',
+      bodyText: 'y',
+      userName: 'User',
+      tone: 'assertive',
+    });
+    expect(system).toContain('firm');
+  });
+
   it('instructs LLM to return JSON with required keys', () => {
     const { system } = buildEmailReplyPrompt({
       fromEmail: 'a@b.com',

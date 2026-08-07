@@ -23,15 +23,43 @@ export class UserRoutinesVault {
   private read(): UserRoutine[] {
     try {
       const raw = readFileSync(this.filePath, 'utf8');
-      const parsed = JSON.parse(raw) as UserRoutine[];
-      if (Array.isArray(parsed)) return parsed;
-      return this.defaultRoutines();
+      const parsed: unknown = JSON.parse(raw);
+      if (!Array.isArray(parsed)) return this.defaultRoutines();
+      // Entries are filtered, not trusted. A malformed routine — `days`
+      // missing, `time` not a string — used to load straight into the
+      // scheduler, whose ten-second tick then threw on it forever, surviving
+      // restarts because the file itself was never repaired.
+      const valid = parsed.filter(UserRoutinesVault.isStoredRoutine);
+      if (valid.length < parsed.length) {
+        console.warn(
+          `[user-routines] dropped ${parsed.length - valid.length} malformed routine(s) on load`,
+        );
+      }
+      return valid;
     } catch {
       const defaults = this.defaultRoutines();
       this.cache = defaults;
       this.write();
       return defaults;
     }
+  }
+
+  /** The fields the scheduler dereferences; anything missing one is dropped. */
+  private static isStoredRoutine(entry: unknown): entry is UserRoutine {
+    if (typeof entry !== 'object' || entry === null) return false;
+    const routine = entry as Record<string, unknown>;
+    return (
+      typeof routine['id'] === 'string' &&
+      routine['id'].length > 0 &&
+      typeof routine['title'] === 'string' &&
+      typeof routine['time'] === 'string' &&
+      Array.isArray(routine['days']) &&
+      routine['days'].every((day) => typeof day === 'string') &&
+      typeof routine['enabled'] === 'boolean' &&
+      (routine['times'] === undefined ||
+        (Array.isArray(routine['times']) &&
+          routine['times'].every((time) => typeof time === 'string')))
+    );
   }
 
   private defaultRoutines(): UserRoutine[] {

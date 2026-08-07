@@ -132,6 +132,44 @@ describe('parseIcs', () => {
     expect(Date.now() - started).toBeLessThan(5000);
   });
 
+  it('still yields in-window occurrences from a series started long ago', () => {
+    // The occurrence cap used to count every iterated occurrence, including the
+    // ones before the window. A daily event created more than 400 days ago
+    // exhausted the cap on skipped history and silently vanished from today.
+    const events = parseIcs(
+      ics([
+        'UID:old-daily',
+        'SUMMARY:Long-running standup',
+        // ~500 days before the query window.
+        'DTSTART:20250320T090000Z',
+        'DTEND:20250320T091500Z',
+        'RRULE:FREQ=DAILY',
+      ]),
+      WINDOW,
+    );
+    expect(events.length).toBeGreaterThan(0);
+    expect(events[0]?.startsAt).toBe(AUG(1, 9));
+  });
+
+  it('terminates on a runaway rule whose occurrences never reach the window', () => {
+    // Unbounded, and starting so far back that every stepped occurrence is
+    // pre-window — the occurrence cap never engages, so only the iteration
+    // ceiling stops this one. It must return, and return quickly.
+    const started = Date.now();
+    const events = parseIcs(
+      ics([
+        'UID:runaway-history',
+        'SUMMARY:Tick',
+        'DTSTART:20260401T000000Z',
+        'DTEND:20260401T000100Z',
+        'RRULE:FREQ=MINUTELY',
+      ]),
+      WINDOW,
+    );
+    expect(events).toEqual([]);
+    expect(Date.now() - started).toBeLessThan(5000);
+  });
+
   it('honours EXDATE, so a skipped occurrence does not appear', () => {
     const events = parseIcs(
       ics([

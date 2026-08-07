@@ -186,11 +186,15 @@ export class OverlayWindow {
     win.on('restore', () => this.setVisible(true));
 
     // Suspend and lock are the two states where an animating overlay is pure
-    // wasted battery.
+    // wasted battery. Coming back is not unconditional: if the user paused
+    // Mochi the window is genuinely hidden, and blindly flagging it visible on
+    // resume desynced `visible` from reality — the governor then believed the
+    // mascot was on screen and confirmed reminders delivered to a window
+    // nobody could see. The window's own state is the truth to restore from.
     powerMonitor.on('suspend', () => this.setVisible(false));
-    powerMonitor.on('resume', () => this.setVisible(true));
+    powerMonitor.on('resume', () => this.setVisible(this.windowShown()));
     powerMonitor.on('lock-screen', () => this.setVisible(false));
-    powerMonitor.on('unlock-screen', () => this.setVisible(true));
+    powerMonitor.on('unlock-screen', () => this.setVisible(this.windowShown()));
 
     // Monitor hot-plug and resolution changes must never strand the mascot.
     screen.on('display-removed', () => this.reclamp());
@@ -200,6 +204,11 @@ export class OverlayWindow {
     win.on('closed', () => {
       this.win = null;
     });
+  }
+
+  /** Whether the OS-level window is actually shown (not hidden or minimised). */
+  private windowShown(): boolean {
+    return this.win !== null && !this.win.isDestroyed() && this.win.isVisible();
   }
 
   private setVisible(visible: boolean): void {

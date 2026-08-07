@@ -5,6 +5,8 @@
  * custom icons/emojis, repeating days, category badges, and optional Mochi reminder prompts.
  */
 
+import { parseHhMm } from '../mascot/state.js';
+
 export type RoutineCategory = 'health' | 'focus' | 'mindfulness' | 'custom';
 export type RoutineDay = 'mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat' | 'sun';
 
@@ -123,7 +125,12 @@ const DAY_ORDER: readonly RoutineDay[] = ['sun', 'mon', 'tue', 'wed', 'thu', 'fr
 export function routineTimes(routine: UserRoutine): readonly string[] {
   const times =
     routine.times !== undefined && routine.times.length > 0 ? routine.times : [routine.time];
-  return [...times].filter((t) => /^\d{1,2}:\d{2}$/.test(t)).sort();
+  // Sorted by clock time, not as strings: single-digit hours are valid
+  // ('9:00'), and lexically '9:00' lands after '10:00', which made
+  // nextOccurrence return the later time and skip the earlier firing.
+  return [...times]
+    .filter((t) => parseHhMm(t) !== null)
+    .sort((a, b) => parseHhMm(a)! - parseHhMm(b)!);
 }
 
 /**
