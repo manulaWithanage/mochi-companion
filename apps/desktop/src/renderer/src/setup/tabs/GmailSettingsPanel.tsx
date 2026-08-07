@@ -1,4 +1,4 @@
-import { useEffect, useState, type JSX } from 'react';
+import { useEffect, useRef, useState, type JSX } from 'react';
 import { DEFAULT_SETTINGS, type GmailAiSettings } from '@mochi/core';
 import { button, C, card, input, label } from '../ui.js';
 
@@ -146,24 +146,51 @@ export function GmailSettingsPanel({
   const [vipText, setVipText] = useState(value.vipSenders.join('\n'));
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
   const [clearing, setClearing] = useState(false);
   const [clearMessage, setClearMessage] = useState<string | null>(null);
 
+  // Refs so the sync effect below can see the live form without depending on
+  // it — depending on draft/vipText would re-run the effect on every keystroke.
+  const draftRef = useRef(draft);
+  draftRef.current = draft;
+  const vipTextRef = useRef(vipText);
+  vipTextRef.current = vipText;
+  /** The settings value the form was last seeded from. */
+  const seededFrom = useRef(value);
+
   useEffect(() => {
-    setDraft(value);
-    setVipText(value.vipSenders.join('\n'));
+    // Re-seed the form when settings change elsewhere — but never over
+    // in-progress edits. This used to reset unconditionally, so any settings
+    // broadcast (a DND toggle from the overlay) wiped a half-typed VIP list.
+    const base = seededFrom.current;
+    const untouched =
+      JSON.stringify(draftRef.current) === JSON.stringify(base) &&
+      vipTextRef.current === base.vipSenders.join('\n');
+    if (untouched) {
+      setDraft(value);
+      setVipText(value.vipSenders.join('\n'));
+    }
+    seededFrom.current = value;
   }, [value]);
 
   const save = async (): Promise<void> => {
     setSaving(true);
+    setSaveError(null);
     const vipSenders = vipText
       .split(/[\n,]+/)
       .map((sender) => sender.trim())
       .filter((sender) => sender.length > 0);
-    await onSave({ ...draft, vipSenders });
-    setSaving(false);
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2200);
+    try {
+      await onSave({ ...draft, vipSenders });
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2200);
+    } catch {
+      // A rejected invoke used to leave "Applying…" stuck forever.
+      setSaveError('Could not apply settings. Please try again.');
+    } finally {
+      setSaving(false);
+    }
   };
 
   const restoreDefaults = (): void => {
@@ -453,6 +480,7 @@ export function GmailSettingsPanel({
         }}
       >
         {saved && <span style={{ color: C.good, fontSize: 12.5 }}>✓ Settings applied</span>}
+        {saveError !== null && <span style={{ color: C.warn, fontSize: 12.5 }}>{saveError}</span>}
         <button
           id="gmail-preview-alert"
           type="button"

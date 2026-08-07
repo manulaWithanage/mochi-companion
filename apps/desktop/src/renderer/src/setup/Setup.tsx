@@ -118,7 +118,13 @@ export function Setup(): JSX.Element {
   // So the row promised a switch over routine breaks that has never existed,
   // and turning it off silenced nothing.
   const [wellnessEnabled, setWellnessEnabled] = useState(true);
-  const [activityTrackingEnabled, setActivityTrackingEnabled] = useState(true);
+  // Off to match DEFAULT_SETTINGS.activityTracking: tracking is opt-in by
+  // design, and a pre-ticked box is not an opt-in. The step stays so the
+  // choice is offered; the user turns it on.
+  const [activityTrackingEnabled, setActivityTrackingEnabled] = useState(false);
+  // finish() awaits several IPC calls; any rejection used to strand the wizard
+  // on step 3 with no feedback at all.
+  const [finishError, setFinishError] = useState<string | null>(null);
 
   useEffect(() => {
     void (async () => {
@@ -139,42 +145,50 @@ export function Setup(): JSX.Element {
   );
 
   const finish = async (): Promise<void> => {
-    // Activity tracking is not part of SetupPayload and has its own channel,
-    // because it is opt-in by design and the setting has a dedicated setter.
-    // Passing it in the payload silently dropped the user's choice: the field
-    // was not in the contract, so the main process never read it.
-    //
-    // Applied first, so the settings completeSetup returns already include it
-    // and the snapshot below is not stale.
-    await window.mochi.settings.setActivityTracking(activityTrackingEnabled);
+    setFinishError(null);
+    try {
+      // Activity tracking is not part of SetupPayload and has its own channel,
+      // because it is opt-in by design and the setting has a dedicated setter.
+      // Passing it in the payload silently dropped the user's choice: the field
+      // was not in the contract, so the main process never read it.
+      //
+      // Applied first, so the settings completeSetup returns already include it
+      // and the snapshot below is not stale.
+      await window.mochi.settings.setActivityTracking(activityTrackingEnabled);
 
-    // The wellness toggle used to be write-only: its state was read by nothing
-    // but the styling of its own checkbox. `UserRoutinesVault` seeds every
-    // preset with `enabled: true`, so declining here still left Hydration Break
-    // and Stand & Stretch scheduled and firing — the wizard asked, and threw
-    // the answer away.
-    //
-    // Only routines that are currently on are touched, because `toggle` flips.
-    // Calling it unconditionally would switch a routine back on.
-    if (!wellnessEnabled) {
-      const routines = await window.mochi.userRoutines.list();
-      for (const routine of routines) {
-        if (routine.category === 'health' && routine.enabled) {
-          await window.mochi.userRoutines.toggle(routine.id);
+      // The wellness toggle used to be write-only: its state was read by
+      // nothing but the styling of its own checkbox. `UserRoutinesVault` seeds
+      // every preset with `enabled: true`, so declining here still left
+      // Hydration Break and Stand & Stretch scheduled and firing — the wizard
+      // asked, and threw the answer away.
+      //
+      // Only routines that are currently on are touched, because `toggle`
+      // flips. Calling it unconditionally would switch a routine back on.
+      if (!wellnessEnabled) {
+        const routines = await window.mochi.userRoutines.list();
+        for (const routine of routines) {
+          if (routine.category === 'health' && routine.enabled) {
+            await window.mochi.userRoutines.toggle(routine.id);
+          }
         }
       }
-    }
 
-    const updated = await window.mochi.settings.completeSetup({
-      // Optional on the contract and omitted when blank: main leaves the
-      // existing value alone rather than writing an empty one over it.
-      ...(userName.trim().length > 0 ? { userName: userName.trim() } : {}),
-      assistantName: name.trim() || 'Mochi',
-      skinName,
-      workHours: { start, end },
-    });
-    setSettings(updated);
-    window.mochi.window.closeSetup();
+      const updated = await window.mochi.settings.completeSetup({
+        // Optional on the contract and omitted when blank: main leaves the
+        // existing value alone rather than writing an empty one over it.
+        ...(userName.trim().length > 0 ? { userName: userName.trim() } : {}),
+        assistantName: name.trim() || 'Mochi',
+        skinName,
+        workHours: { start, end },
+      });
+      // Deliberately no `closeSetup()` here. `setupCompleted` is now true, so
+      // this render flips to the Dashboard below — the user lands in the
+      // settings panel where the tabs, tray and mascot are explained, instead
+      // of watching the only window vanish with nothing learned.
+      setSettings(updated);
+    } catch (cause) {
+      setFinishError(cause instanceof Error ? cause.message : 'Setup could not be saved.');
+    }
   };
 
   if (settings === null) {
@@ -258,7 +272,7 @@ export function Setup(): JSX.Element {
             <select style={input} value={skinName} onChange={(e) => setSkinName(e.target.value)}>
               {skins.map((s) => (
                 <option key={s.name} value={s.name}>
-                  {s.name} {s.author !== undefined ? ` — by ${s.author}` : ''}
+                  {s.name} {s.author !== undefined ? ` by ${s.author}` : ''}
                 </option>
               ))}
             </select>
@@ -277,22 +291,28 @@ export function Setup(): JSX.Element {
             </p>
           </div>
 
+          {/* Native time pickers rather than free text: "9am" typed here used
+              to fail HH:MM validation with no hint beyond the error line, and
+              first-run is the worst place to teach a format. The value a time
+              input yields is always HH:MM, exactly what `parseHhMm` wants.
+              `colorScheme` tells Chromium the field is dark so the clock glyph
+              is drawn light instead of vanishing into the background. */}
           <div style={{ display: 'flex', gap: 16 }}>
             <div style={{ flex: 1 }}>
               <span style={label}>Work Starts</span>
               <input
-                style={input}
+                type="time"
+                style={{ ...input, colorScheme: 'dark' }}
                 value={start}
-                placeholder="09:00"
                 onChange={(e) => setStart(e.target.value)}
               />
             </div>
             <div style={{ flex: 1 }}>
               <span style={label}>Work Ends</span>
               <input
-                style={input}
+                type="time"
+                style={{ ...input, colorScheme: 'dark' }}
                 value={end}
-                placeholder="17:00"
                 onChange={(e) => setEnd(e.target.value)}
               />
             </div>
@@ -300,7 +320,7 @@ export function Setup(): JSX.Element {
 
           {!hoursValid && (
             <p style={{ color: '#ffb3c1', fontSize: 12, margin: 0 }}>
-              Please enter valid times in HH:MM format (e.g. 09:00 and 17:00).
+              Please choose a start and an end time, and make them different.
             </p>
           )}
         </div>
@@ -312,7 +332,7 @@ export function Setup(): JSX.Element {
           <div>
             <h1 style={heading}>Personalize your experience</h1>
             <p style={subheading}>
-              Two things to decide now. Both can be changed later — routines from the Routines tab,
+              Two things to decide now. Both can be changed later: routines from the Routines tab,
               tracking from Settings.
             </p>
           </div>
@@ -344,10 +364,18 @@ export function Setup(): JSX.Element {
         </div>
       )}
 
+      {/* `marginTop: 'auto'` moves from the button row to this line while it
+          is showing, so the pair stays pinned to the bottom together. */}
+      {finishError !== null && (
+        <p style={{ color: '#ffb3c1', fontSize: 12, margin: 'auto 0 0', paddingTop: 16 }}>
+          Something went wrong finishing setup: {finishError} — try again.
+        </p>
+      )}
+
       {/* Navigation Buttons */}
       <div
         style={{
-          marginTop: 'auto',
+          marginTop: finishError !== null ? 0 : 'auto',
           display: 'flex',
           gap: 10,
           justifyContent: 'space-between',

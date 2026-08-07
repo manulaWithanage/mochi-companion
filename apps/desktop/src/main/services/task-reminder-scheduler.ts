@@ -333,8 +333,14 @@ export class TaskReminderScheduler {
         source: 'routine',
         kind: 'break',
         at: Date.now(),
+        // Explicit, because the default id is `${source}:${kind}:${at}` — two
+        // tasks announced in the same millisecond would collide and the
+        // governor would drop the second as a duplicate. The task id keeps
+        // same-tick reminders apart; the timestamp keeps each retry fresh, so
+        // dedupe cannot swallow a retry of an emit that never reached a window.
+        id: `${SUBJECT_PREFIX}${task.id}:${Date.now()}`,
         // Keyed by task, so the governor can tell two reminders apart.
-        subject: `task-reminder:${task.id}`,
+        subject: `${SUBJECT_PREFIX}${task.id}`,
         priority: 'high',
         text: `⏰ ${task.title}`,
         // The user asked for this at this exact time, so it is not rationed by

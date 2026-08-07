@@ -48,6 +48,18 @@ const SWATCH_OPTIONS = [
   '#A6D6F2',
 ];
 
+/** `2026-08-04` → a local Date at midnight, not a UTC one a day out. */
+function parseDay(day: string): Date {
+  const [y, m, d] = day.split('-');
+  return new Date(Number(y), Number(m) - 1, Number(d));
+}
+
+/** A Date → local `YYYY-MM-DD`. toISOString() would give the UTC day. */
+function formatDay(date: Date): string {
+  const pad = (n: number): string => String(n).padStart(2, '0');
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+}
+
 function formatCategoryName(name: string): string {
   const cleaned = name
     .replace(
@@ -85,9 +97,9 @@ export function TimeTab(): JSX.Element {
   const [customStartDate, setCustomStartDate] = useState(() => {
     const d = new Date();
     d.setDate(d.getDate() - 7);
-    return d.toISOString().split('T')[0]!;
+    return formatDay(d);
   });
-  const [customEndDate, setCustomEndDate] = useState(() => new Date().toISOString().split('T')[0]!);
+  const [customEndDate, setCustomEndDate] = useState(() => formatDay(new Date()));
   const [sessions, setSessions] = useState<readonly WorkSession[]>([]);
   const [projects, setProjects] = useState<readonly Project[]>([]);
   const [settings, setSettings] = useState<MochiSettings | null>(null);
@@ -280,8 +292,10 @@ export function TimeTab(): JSX.Element {
     if (dateRange === 'all') return sessions;
 
     if (dateRange === 'custom') {
-      const startMs = new Date(customStartDate).setHours(0, 0, 0, 0);
-      const endMs = new Date(customEndDate).setHours(23, 59, 59, 999);
+      // parseDay, not new Date('YYYY-MM-DD'): the latter is UTC midnight,
+      // which shifts the whole range by a day in any non-UTC timezone.
+      const startMs = parseDay(customStartDate).getTime();
+      const endMs = parseDay(customEndDate).setHours(23, 59, 59, 999);
       return sessions.filter((s) => s.startedAt >= startMs && s.startedAt <= endMs);
     }
 
@@ -1057,7 +1071,7 @@ export function TimeTab(): JSX.Element {
                               disabled={!isPrimary && primaryCount >= 3}
                               title={
                                 isPrimary
-                                  ? `Overlay slot ${primaryIndex + 1} — click to unpin`
+                                  ? `Overlay slot ${primaryIndex + 1} · click to unpin`
                                   : primaryCount >= 3
                                     ? 'All 3 overlay slots are full. Unpin one first.'
                                     : 'Pin to Mochi desktop overlay'

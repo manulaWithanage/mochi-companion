@@ -60,14 +60,14 @@ export function describeUpdateStatus(status: UpdateStatus, now: number): string 
     case 'checking':
       return 'Checking for updates…';
     case 'current':
-      return `Up to date — checked ${describeAgo(now - status.checkedAt)}.`;
+      return `Up to date. Checked ${describeAgo(now - status.checkedAt)}.`;
     case 'downloading':
-      return `Downloading ${status.version} — ${Math.round(status.percent)}%.`;
+      return `Downloading ${status.version}, ${Math.round(status.percent)}%.`;
     case 'ready':
       // Both routes named, because they are not the same offer: the button
       // reinstalls silently and brings Mochi back, while quitting applies it
       // and leaves the app closed, which is what someone quitting wants.
-      return `${status.version} is ready — restart to finish, or it installs next time you quit.`;
+      return `${status.version} is ready. Restart to finish, or it installs next time you quit.`;
     case 'failed':
       return status.reason;
   }

@@ -94,9 +94,28 @@ function cleanBody(raw: string): string {
 }
 
 /**
- * Build an RFC-822 MIME message suitable for appending to Gmail Drafts.
+ * Flatten a value destined for an RFC-822 header onto a single line.
+ *
+ * A CR or LF here would end the header and let the rest of the value inject
+ * arbitrary headers — or an early blank line, turning attacker text into the
+ * message body. None of the values that reach a header are trusted: the
+ * subject comes from the renderer, addresses come from IMAP envelopes and
+ * mailparser, and suggested subjects come from LLM output. Sanitised at the
+ * message-building level so every call site is covered.
  */
-function buildRawEmail(opts: {
+function headerValue(value: string): string {
+  return value
+    .replace(/[\r\n]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+/**
+ * Build an RFC-822 MIME message suitable for appending to Gmail Drafts.
+ *
+ * Exported for tests; production callers go through GmailImapService.
+ */
+export function buildRawEmail(opts: {
   from: string;
   to: string;
   subject: string;
@@ -106,16 +125,16 @@ function buildRawEmail(opts: {
 }): Buffer {
   const now = new Date().toUTCString();
   const lines: string[] = [
-    `From: ${opts.from}`,
-    `To: ${opts.to}`,
-    `Subject: ${opts.subject}`,
+    `From: ${headerValue(opts.from)}`,
+    `To: ${headerValue(opts.to)}`,
+    `Subject: ${headerValue(opts.subject)}`,
     `Date: ${now}`,
     `MIME-Version: 1.0`,
     `Content-Type: text/plain; charset=UTF-8`,
     `Content-Transfer-Encoding: 7bit`,
   ];
-  if (opts.inReplyTo) lines.push(`In-Reply-To: ${opts.inReplyTo}`);
-  if (opts.references) lines.push(`References: ${opts.references}`);
+  if (opts.inReplyTo) lines.push(`In-Reply-To: ${headerValue(opts.inReplyTo)}`);
+  if (opts.references) lines.push(`References: ${headerValue(opts.references)}`);
   lines.push('', opts.body);
   return Buffer.from(lines.join('\r\n'), 'utf8');
 }

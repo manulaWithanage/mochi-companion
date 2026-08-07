@@ -4,6 +4,7 @@ import {
   cleanAzureResourceName,
   normaliseBaseUrl,
   providerLabel,
+  providersOfKind,
   type LlmStatus,
   type LocalProviderStatus,
 } from '@mochi/core';
@@ -173,11 +174,11 @@ function LocalRuntimeRow({
             <div style={{ fontSize: 12, color: available ? C.ok : C.dim, marginTop: 2 }}>
               {available ? (
                 <span>
-                  🟢 Running — <strong>{status?.modelCount}</strong> model
+                  🟢 Running: <strong>{status?.modelCount}</strong> model
                   {status?.modelCount === 1 ? '' : 's'} ready
                 </span>
               ) : (
-                <span>⚪ Offline — Server not detected on port</span>
+                <span>⚪ Offline. Server not detected on port</span>
               )}
             </div>
           </div>
@@ -237,6 +238,25 @@ function LocalRuntimeRow({
           }}
         >
           {info.hint}
+          {/*
+            The download link, from PROVIDERS. The hint alone told people to
+            run a server they had no pointer to. `target="_blank"` routes
+            through main's setWindowOpenHandler, which opens https:// links in
+            the real browser and denies everything else.
+          */}
+          {info.setupUrl !== undefined && (
+            <>
+              {' '}
+              <a
+                href={info.setupUrl}
+                target="_blank"
+                rel="noreferrer"
+                style={{ color: C.accent, fontWeight: 600 }}
+              >
+                Get {info.label} →
+              </a>
+            </>
+          )}
         </div>
       )}
 
@@ -268,7 +288,7 @@ function LocalRuntimeRow({
           <p style={{ margin: '6px 0 0', fontSize: 11.5, opacity: 0.55, lineHeight: 1.5 }}>
             {url.trim().length > 0 && normaliseBaseUrl(url) !== url.trim() ? (
               <>
-                Will use <code>{normaliseBaseUrl(url)}</code> — Mochi adds the API path itself.
+                Will use <code>{normaliseBaseUrl(url)}</code>. Mochi adds the API path itself.
               </>
             ) : (
               <>
@@ -319,6 +339,9 @@ export function AiSection(): JSX.Element {
           text: result.error ?? 'That key did not work. Please check your API key prefix.',
         });
       }
+    } catch {
+      // A rejected invoke used to leave "Verifying…" stuck with no message.
+      setMessage({ ok: false, text: 'Could not verify the key. Please try again.' });
     } finally {
       setBusy(false);
     }
@@ -346,6 +369,11 @@ export function AiSection(): JSX.Element {
       } else {
         setAzureMessage({ ok: false, text: result.error ?? 'Azure credentials did not work.' });
       }
+    } catch {
+      setAzureMessage({
+        ok: false,
+        text: 'Could not validate Azure credentials. Please try again.',
+      });
     } finally {
       setAzureBusy(false);
     }
@@ -355,6 +383,10 @@ export function AiSection(): JSX.Element {
     setScanning(true);
     try {
       await window.mochi.llm.refresh();
+    } catch {
+      // Without this a rejected refresh was an unhandled rejection and the
+      // scan silently did nothing.
+      setMessage({ ok: false, text: 'Scan failed — could not check the local providers.' });
     } finally {
       setScanning(false);
     }
@@ -367,9 +399,11 @@ export function AiSection(): JSX.Element {
       const r = await window.mochi.llm.test();
       setMessage(
         r.ok
-          ? { ok: true, text: `✓ Test Passed — ${r.model}: "${r.text}" (${r.tokens} tokens)` }
+          ? { ok: true, text: `✓ Test passed. ${r.model}: "${r.text}" (${r.tokens} tokens)` }
           : { ok: false, text: `Test Failed: ${r.text}` },
       );
+    } catch {
+      setMessage({ ok: false, text: 'Test Failed: the request did not complete.' });
     } finally {
       setBusy(false);
     }
@@ -606,7 +640,7 @@ export function AiSection(): JSX.Element {
           </div>
           <p
             style={{
-              margin: '0 0 14px',
+              margin: '0 0 10px',
               fontSize: 12.5,
               color: C.text,
               opacity: 0.65,
@@ -616,6 +650,36 @@ export function AiSection(): JSX.Element {
             Paste your API key below. Mochi detects the provider automatically from the key prefix (
             <code>sk-...</code>, <code>sk-ant-...</code>, or <code>AIza...</code>).
           </p>
+
+          {/*
+            Where to get a key — read from PROVIDERS rather than hardcoded, so
+            a new key provider brings its own link. Without these the form was
+            a dead end for anyone who did not already have a key.
+          */}
+          <div
+            style={{
+              display: 'flex',
+              gap: 14,
+              flexWrap: 'wrap',
+              margin: '0 0 14px',
+              fontSize: 12,
+            }}
+          >
+            <span style={{ color: C.dim }}>No key yet?</span>
+            {providersOfKind('key').map((p) =>
+              p.setupUrl === undefined ? null : (
+                <a
+                  key={p.id}
+                  href={p.setupUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  style={{ color: C.accent, fontWeight: 600, textDecoration: 'none' }}
+                >
+                  Get a {p.label} key →
+                </a>
+              ),
+            )}
+          </div>
 
           <div style={{ display: 'flex', gap: 10 }}>
             <input

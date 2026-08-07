@@ -12,8 +12,11 @@ import type {
   InterruptionGovernor,
   LlmStatus,
   ProviderId,
+  RoutineCategory,
+  RoutineDay,
   SetupPayload,
   StorageAdapter,
+  UserRoutineInput,
 } from '@mochi/core';
 import {
   LOCAL_PROVIDERS,
@@ -87,6 +90,52 @@ const asString = (value: unknown, fallback: string): string =>
 
 const asFiniteNumber = (value: unknown): number =>
   typeof value === 'number' && Number.isFinite(value) ? value : 0;
+
+const ROUTINE_DAYS: readonly RoutineDay[] = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
+const ROUTINE_CATEGORIES: readonly RoutineCategory[] = ['health', 'focus', 'mindfulness', 'custom'];
+
+const isRoutineDay = (value: unknown): value is RoutineDay =>
+  typeof value === 'string' && (ROUTINE_DAYS as readonly string[]).includes(value);
+
+/**
+ * Validate a routine payload from the renderer.
+ *
+ * This used to be a bare cast. A malformed shape — `days` undefined, `time`
+ * not HH:MM — persisted straight into the vault, and the scheduler's
+ * ten-second tick then threw on it forever, surviving restarts because the
+ * file was never repaired. Null means "rejected"; nothing invalid is stored.
+ */
+function parseRoutineInput(raw: unknown): (UserRoutineInput & { id?: string }) | null {
+  if (typeof raw !== 'object' || raw === null) return null;
+  const input = raw as Record<string, unknown>;
+
+  const title = typeof input['title'] === 'string' ? input['title'].trim() : '';
+  const time =
+    typeof input['time'] === 'string' && parseHhMm(input['time']) !== null ? input['time'] : null;
+  const days = Array.isArray(input['days']) ? input['days'].filter(isRoutineDay) : [];
+  // A routine needs something to say, a valid time, and at least one day to
+  // fire on — anything less can never fire and only rots in the vault.
+  if (title.length === 0 || time === null || days.length === 0) return null;
+
+  const times = Array.isArray(input['times'])
+    ? input['times'].filter((t): t is string => typeof t === 'string' && parseHhMm(t) !== null)
+    : [];
+  const category = ROUTINE_CATEGORIES.find((c) => c === input['category']) ?? 'custom';
+
+  return {
+    ...(typeof input['id'] === 'string' && input['id'].length > 0 ? { id: input['id'] } : {}),
+    title,
+    time,
+    ...(times.length > 0 ? { times } : {}),
+    days,
+    category,
+    mochiReminder: input['mochiReminder'] === true,
+    ...(typeof input['icon'] === 'string' ? { icon: input['icon'] } : {}),
+    ...(typeof input['reminderMessage'] === 'string'
+      ? { reminderMessage: input['reminderMessage'] }
+      : {}),
+  };
+}
 
 export function registerIpc(ctx: IpcContext): void {
   // ---- timer -------------------------------------------------------------
@@ -595,7 +644,8 @@ export function registerIpc(ctx: IpcContext): void {
 
   ipcMain.handle('gmail:generateDraft', (_e, emailId: unknown, tone: unknown) => {
     const id = typeof emailId === 'string' ? emailId : '';
-    const validTone = tone === 'friendly' || tone === 'brief' ? tone : 'professional';
+    const validTone =
+      tone === 'friendly' || tone === 'brief' || tone === 'assertive' ? tone : 'professional';
     return id.length === 0
       ? { ok: false, error: 'Invalid email id.' }
       : ctx.gmail.generateDraft(id, validTone);
@@ -618,7 +668,11 @@ export function registerIpc(ctx: IpcContext): void {
   ipcMain.handle('userRoutines:list', () => ctx.userRoutines.list());
 
   ipcMain.handle('userRoutines:save', (_e, input: unknown) => {
-    const data = (input ?? {}) as import('@mochi/core').UserRoutineInput & { id?: string };
+    const data = parseRoutineInput(input);
+    if (data === null) {
+      console.warn('[user-routines] rejected a malformed routine payload');
+      return ctx.userRoutines.list();
+    }
     const result = ctx.userRoutines.save(data);
     ctx.setup.send('userRoutines:changed', result);
     return result;

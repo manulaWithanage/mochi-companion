@@ -66,6 +66,8 @@ export function GmailTab(): JSX.Element {
 
   const [view, setView] = useState<View>('inbox');
   const landed = useRef(false);
+  /** Fingerprint of the last gmailAi settings actually applied — see below. */
+  const appliedGmailAi = useRef<string | null>(null);
   const [draft, setDraft] = useState<DraftState | null>(null);
   const [generating, setGenerating] = useState(false);
   const [generateError, setGenerateError] = useState<string | null>(null);
@@ -143,6 +145,13 @@ export function GmailTab(): JSX.Element {
 
   useEffect(() => {
     const apply = (settings: GmailAiSettings): void => {
+      // Every settings broadcast (DND toggled from the overlay, mascot size…)
+      // arrives with a fresh gmailAi identity. Re-applying an unchanged value
+      // reset the sort and tone the user picked and re-seeded the settings
+      // form, wiping in-progress edits — so ignore no-op broadcasts.
+      const fingerprint = JSON.stringify(settings);
+      if (fingerprint === appliedGmailAi.current) return;
+      appliedGmailAi.current = fingerprint;
       setGmailSettings(settings);
       setSortMode(settings.defaultSort);
       setTone(settings.defaultDraftTone);
@@ -165,14 +174,21 @@ export function GmailTab(): JSX.Element {
   const handleConnect = async (): Promise<void> => {
     setConnecting(true);
     setConnectError(null);
-    const result = await window.mochi.gmail.connect(emailInput.trim(), passInput.trim());
-    setConnecting(false);
-    if (result.ok) {
-      const newStatus = await window.mochi.gmail.status();
-      setStatus(newStatus);
-      setPassInput('');
-    } else {
-      setConnectError(result.error ?? 'Unknown error');
+    // Same shape as handleFetch: a rejected invoke must not strand the button
+    // on "Testing connection…" with no message.
+    try {
+      const result = await window.mochi.gmail.connect(emailInput.trim(), passInput.trim());
+      if (result.ok) {
+        const newStatus = await window.mochi.gmail.status();
+        setStatus(newStatus);
+        setPassInput('');
+      } else {
+        setConnectError(result.error ?? 'Unknown error');
+      }
+    } catch {
+      setConnectError('Could not reach Gmail. Please try again.');
+    } finally {
+      setConnecting(false);
     }
   };
 
@@ -185,12 +201,16 @@ export function GmailTab(): JSX.Element {
     ) {
       return;
     }
-    await window.mochi.gmail.disconnect();
-    const newStatus = await window.mochi.gmail.status();
-    setStatus(newStatus);
-    setEmails([]);
-    setDraft(null);
-    setView('inbox');
+    try {
+      await window.mochi.gmail.disconnect();
+      const newStatus = await window.mochi.gmail.status();
+      setStatus(newStatus);
+      setEmails([]);
+      setDraft(null);
+      setView('inbox');
+    } catch {
+      setFetchError('Failed to disconnect Gmail. Please try again.');
+    }
   };
 
   const handleFetch = useCallback(
@@ -251,37 +271,47 @@ export function GmailTab(): JSX.Element {
       suggestedSubject: `Re: ${email.subject}`,
     });
 
-    const result = await window.mochi.gmail.generateDraft(email.emailId, tone);
-    setGenerating(false);
-    if (result.ok && result.draftReply) {
-      setDraft({
-        emailId: email.emailId,
-        emailUid: email.uid,
-        subject: email.subject,
-        from: email.replyToAddress || email.fromAddress,
-        draftReply: result.draftReply,
-        suggestedSubject: result.suggestedSubject ?? `Re: ${email.subject}`,
-      });
-      await loadCached(active, sortMode);
-    } else {
-      setGenerateError(result.error ?? 'Failed to generate draft.');
+    try {
+      const result = await window.mochi.gmail.generateDraft(email.emailId, tone);
+      if (result.ok && result.draftReply) {
+        setDraft({
+          emailId: email.emailId,
+          emailUid: email.uid,
+          subject: email.subject,
+          from: email.replyToAddress || email.fromAddress,
+          draftReply: result.draftReply,
+          suggestedSubject: result.suggestedSubject ?? `Re: ${email.subject}`,
+        });
+        await loadCached(active, sortMode);
+      } else {
+        setGenerateError(result.error ?? 'Failed to generate draft.');
+      }
+    } catch {
+      setGenerateError('Failed to generate draft.');
+    } finally {
+      setGenerating(false);
     }
   };
 
   const handleSaveDraft = async (): Promise<void> => {
     if (!draft) return;
     setSavingDraft(true);
-    const result = await window.mochi.gmail.saveGeneratedDraft(
-      draft.emailId,
-      draft.suggestedSubject,
-      draft.draftReply,
-    );
-    setSavingDraft(false);
-    if (result.ok) {
-      setSavedOk(true);
-      setTimeout(() => setSavedOk(false), 3000);
-    } else {
-      setGenerateError(result.error ?? 'Failed to save draft.');
+    try {
+      const result = await window.mochi.gmail.saveGeneratedDraft(
+        draft.emailId,
+        draft.suggestedSubject,
+        draft.draftReply,
+      );
+      if (result.ok) {
+        setSavedOk(true);
+        setTimeout(() => setSavedOk(false), 3000);
+      } else {
+        setGenerateError(result.error ?? 'Failed to save draft.');
+      }
+    } catch {
+      setGenerateError('Failed to save draft.');
+    } finally {
+      setSavingDraft(false);
     }
   };
 
@@ -338,7 +368,7 @@ export function GmailTab(): JSX.Element {
       <div>
         <h2 style={h2}>Gmail Inbox</h2>
         <p style={sub}>
-          Read emails & generate AI draft replies. Uses your Gmail App Password — no Google Cloud
+          Read emails & generate AI draft replies. Uses your Gmail App Password, so no Google Cloud
           setup required.
         </p>
 
@@ -486,21 +516,34 @@ export function GmailTab(): JSX.Element {
             <div style={{ marginBottom: 14 }}>
               <span style={label}>AI Draft Tone</span>
               <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                {[
-                  { id: 'professional', label: '💼 Professional' },
-                  { id: 'concise', label: '⚡ Short & Sweet' },
-                  { id: 'friendly', label: '☕ Friendly' },
-                  { id: 'assertive', label: '💪 Firm' },
-                ].map((item) => {
+                {/*
+                  Typed against GmailTone rather than cast to it. Two of these
+                  pills once carried ids ('concise', 'assertive') outside the
+                  type, which main coerced to 'professional' — so they
+                  highlighted a choice while producing professional drafts.
+                  'Short & Sweet' is the existing 'brief' tone under a
+                  friendlier label; same instruction, so no near-duplicate id.
+                */}
+                {(
+                  [
+                    { id: 'professional', label: '💼 Professional' },
+                    { id: 'brief', label: '⚡ Short & Sweet' },
+                    { id: 'friendly', label: '☕ Friendly' },
+                    { id: 'assertive', label: '💪 Firm' },
+                  ] as readonly { id: GmailTone; label: string }[]
+                ).map((item) => {
                   const activeTone = tone === item.id;
                   return (
                     <button
                       key={item.id}
                       type="button"
                       onClick={() => {
-                        const newTone = item.id as GmailTone;
+                        const newTone = item.id;
                         setTone(newTone);
-                        const targetEmail = emails.find((e) => e.uid === draft.emailUid);
+                        // allEmails, not the visible category's list: drafts
+                        // also open from the Needs Reply queue, whose mail may
+                        // sit in a category that is not on screen.
+                        const targetEmail = allEmails.find((e) => e.uid === draft.emailUid);
                         if (targetEmail) {
                           void window.mochi.gmail
                             .generateDraft(targetEmail.emailId, newTone)
@@ -509,8 +552,11 @@ export function GmailTab(): JSX.Element {
                                 setDraft((prev) =>
                                   prev ? { ...prev, draftReply: res.draftReply! } : null,
                                 );
+                              } else if (!res.ok) {
+                                setGenerateError(res.error ?? 'Failed to generate draft.');
                               }
-                            });
+                            })
+                            .catch(() => setGenerateError('Failed to generate draft.'));
                         }
                       }}
                       style={{
@@ -591,9 +637,17 @@ export function GmailTab(): JSX.Element {
                 {savingDraft ? 'Saving…' : 'Save to Drafts'}
               </button>
               <button
-                onClick={() =>
-                  void handleGenerate({ ...emails.find((e) => e.uid === draft.emailUid)! })
-                }
+                onClick={() => {
+                  // allEmails, not the visible category's list — same reason
+                  // as the tone pills above. The old `emails.find(...)!` spread
+                  // undefined for Needs Reply mail and hung the generate call.
+                  const source = allEmails.find((e) => e.uid === draft.emailUid);
+                  if (source) void handleGenerate(source);
+                  else
+                    setGenerateError(
+                      'This email is no longer in the local cache. Refresh and try again.',
+                    );
+                }}
                 style={button('ghost')}
               >
                 Regenerate
@@ -604,6 +658,9 @@ export function GmailTab(): JSX.Element {
       </div>
     );
   }
+
+  /** The last background-sync failure, if any — rendered in the header. */
+  const syncError = syncStatus?.lastError ?? null;
 
   const connectedHeader = (
     <>
@@ -620,14 +677,27 @@ export function GmailTab(): JSX.Element {
           <p style={{ margin: 0, fontSize: 12.5, color: C.dim }}>
             Connected as <strong style={{ color: C.accent }}>{status.email}</strong>
           </p>
-          <p style={{ margin: '4px 0 0', fontSize: 11.5, color: C.faint }}>
+          {/*
+            lastError comes over the same onSyncStatus channel as the rest of
+            this line. It used to be dropped here, so a background sync could
+            fail for hours behind a green "● Live inbox".
+          */}
+          <p
+            style={{
+              margin: '4px 0 0',
+              fontSize: 11.5,
+              color: syncError !== null && syncStatus?.syncing !== true ? C.warn : C.faint,
+            }}
+          >
             {syncStatus?.syncing
               ? 'Syncing inbox…'
-              : syncStatus?.watching
-                ? '● Live inbox'
-                : syncStatus?.lastSyncedAt
-                  ? `Last synced ${new Date(syncStatus.lastSyncedAt).toLocaleTimeString()}`
-                  : 'Starting inbox sync…'}
+              : syncError !== null
+                ? `⚠ Sync problem — ${syncError}`
+                : syncStatus?.watching
+                  ? '● Live inbox'
+                  : syncStatus?.lastSyncedAt
+                    ? `Last synced ${new Date(syncStatus.lastSyncedAt).toLocaleTimeString()}`
+                    : 'Starting inbox sync…'}
           </p>
         </div>
         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
@@ -824,7 +894,7 @@ export function GmailTab(): JSX.Element {
 
       {!CATEGORIES.find((c) => c.id === active)?.worthInterrupting && (
         <div style={{ ...sub, fontSize: 12, marginBottom: 14, color: C.dim }}>
-          Mochi never interrupts you about this tab — you'll only see it here.
+          Mochi never interrupts you about this tab. You'll only see it here.
         </div>
       )}
 
