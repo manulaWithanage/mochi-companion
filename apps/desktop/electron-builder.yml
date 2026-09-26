@@ -37,6 +37,59 @@ files:
 
 npmRebuild: false
 
+# ---------------------------------------------------------------------------
+# Electron fuses
+# ---------------------------------------------------------------------------
+# Fuses are bits flipped in the Electron binary at package time. Runtime code
+# cannot turn them back on, which is the point: each one closes a way to make
+# MochiTheCompanion.exe run code that is not ours using nothing more than an
+# environment variable, a command-line flag or a dropped-in folder. Decided
+# 2026-09-26. Option names checked against app-builder-lib 26.15.3's
+# FuseOptionsV1 (out/configuration.d.ts and scheme.json); the schema rejects
+# unknown keys, so a typo fails the build instead of silently doing nothing.
+#
+# Conflict checks made before turning these on:
+#   - asar is on: `asar` is not set here, and electron-builder defaults it to
+#     true. There are no asarUnpack entries, so all app code is in app.asar.
+#   - Nothing loads *code* from outside app.asar. resources/skins (extraResources)
+#     is read by skin-loader as JSON and PNG data, never required or imported,
+#     so onlyLoadAppFromAsar does not touch it. The only child process the app
+#     starts is powershell.exe (activity-sampler), not a forked Electron.
+#   - electron-updater 6.8.9 never sets or reads ELECTRON_RUN_AS_NODE (grepped
+#     its out/ for RUN_AS_NODE: no matches). The NSIS updater spawns the
+#     downloaded installer, or elevate.exe, directly — not process.execPath.
+#   - Embedded asar integrity on Windows needs Electron >= 30 (we ship 43).
+#     electron-builder hashes app.asar and writes the hash into the exe's
+#     resources itself, after app.asar is final, so the two cannot disagree.
+electronFuses:
+  # ELECTRON_RUN_AS_NODE=1 turns the app into a plain Node.js runtime that will
+  # execute any script it is handed. Also disables process.fork from the main
+  # process, which nothing here uses.
+  runAsNode: false
+  # Chromium's cookie store is plaintext SQLite by default. One-way: once on,
+  # turning it off again leaves the existing store unreadable.
+  enableCookieEncryption: true
+  # NODE_OPTIONS (e.g. --require=evil.js) and NODE_EXTRA_CA_CERTS would let an
+  # environment variable inject code, or trust a MITM certificate for every
+  # LLM and Gmail request the main process makes.
+  enableNodeOptionsEnvironmentVariable: false
+  # --inspect / --inspect-brk / SIGUSR1 open a debugger on the main process,
+  # which is where API keys and OAuth tokens are decrypted.
+  enableNodeCliInspectArguments: false
+  # Refuse to start if app.asar has been edited after packaging...
+  enableEmbeddedAsarIntegrityValidation: true
+  # ...and refuse to look for app code anywhere else. Without this a loose
+  # resources/app folder is tried when app.asar is missing, so integrity
+  # validation is bypassed by deleting app.asar and dropping in a folder.
+  onlyLoadAppFromAsar: true
+  # Left at their defaults on purpose:
+  #   loadBrowserProcessSpecificV8Snapshot — only matters with a custom
+  #     snapshot, which we do not build.
+  #   grantFileProtocolExtraPrivileges — both windows are loaded with loadFile
+  #     from file://, and the Vite bundles are ES module scripts fetched over
+  #     file://. Turning the extra privileges off without first moving to a
+  #     custom protocol risks a blank window. Revisit alongside such a move.
+
 # skin-loader reads process.resourcesPath/skins when packaged. Without this the
 # app installs fine and then cannot draw the mascot.
 extraResources:
