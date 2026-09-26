@@ -54,6 +54,91 @@ const MAX_ITERATIONS_PER_RULE = 100_000;
 /** Total events returned, so one feed cannot exhaust memory. */
 const MAX_EVENTS = 2000;
 
+/**
+ * The most days each month can have, February counted as 29.
+ *
+ * Leap years are assumed because the question is "can this ever occur", not
+ * "does it occur this year": a Feb-29 birthday is a real series.
+ */
+const MAX_DAYS_IN_MONTH = [31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31] as const;
+
+/** The parts of a rule the impossibility check reads, as ical.js exposes them. */
+export interface RecurrenceRule {
+  readonly freq?: string | undefined;
+  readonly parts: {
+    readonly BYDAY?: readonly string[] | undefined;
+    readonly BYMONTH?: readonly number[] | undefined;
+    readonly BYMONTHDAY?: readonly number[] | undefined;
+  };
+}
+
+/**
+ * Frequencies for which ical.js never matches an ordinal BYDAY (`1MO`, `-1FR`).
+ *
+ * RFC 5545 only gives the ordinal a meaning in MONTHLY and YEARLY rules.
+ * WEEKLY tolerates it; these four search forever for it. Verified against
+ * ical.js 2.2.1.
+ */
+const ORDINAL_BYDAY_NEVER_MATCHES = new Set(['SECONDLY', 'MINUTELY', 'HOURLY', 'DAILY']);
+
+/**
+ * Can this rule never produce an occurrence?
+ *
+ * ical.js checks its occurrence caps between `next()` calls, but for SECONDLY
+ * through WEEKLY it searches for the next match *inside* a single call, with no
+ * bound. A rule whose BY-parts contradict each other, such as
+ * `FREQ=DAILY;BYMONTH=2;BYMONTHDAY=30`, is valid syntax that never matches, so
+ * the first `next()` never returns. Verified against ical.js 2.2.1.
+ *
+ * This catches the obvious families (a day of the month that no listed month
+ * has; an ordinal weekday in a DAILY-or-finer rule) cheaply and before
+ * iterating. It is defence in depth, not the fix: the
+ * real bound is the worker timeout in ics-bounded.ts, which also covers the
+ * contradictions this does not recognise. BYYEARDAY is not checked because
+ * ical.js already rejects it outside YEARLY rules, and YEARLY does not hang.
+ */
+export function isImpossibleRecurrence(rule: RecurrenceRule): boolean {
+  const { parts } = rule;
+
+  // Every BYDAY entry carries an ordinal in a rule too fine-grained to use it.
+  // A single plain weekday alongside them still matches, so only "all" counts.
+  const weekdays = parts.BYDAY ?? [];
+  if (
+    weekdays.length > 0 &&
+    ORDINAL_BYDAY_NEVER_MATCHES.has(String(rule.freq ?? '').toUpperCase()) &&
+    weekdays.every((day) => /^[+-]?\d/.test(day))
+  ) {
+    return true;
+  }
+
+  const monthDays = parts.BYMONTHDAY ?? [];
+  if (monthDays.length === 0) return false;
+
+  // Out-of-range months never match. ical.js rejects them at parse time today,
+  // but this check must not depend on that to stay correct.
+  const months = (parts.BYMONTH ?? [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]).filter(
+    (m) => Number.isInteger(m) && m >= 1 && m <= 12,
+  );
+  if (months.length === 0) return true;
+
+  // Day 0 is outside the grammar (ical.js accepts it and then hangs on it), and
+  // a negative day counts back from the end, so only its magnitude matters.
+  return !monthDays.some(
+    (day) =>
+      Number.isInteger(day) &&
+      day !== 0 &&
+      months.some((month) => Math.abs(day) <= MAX_DAYS_IN_MONTH[month - 1]!),
+  );
+}
+
+/** True when any RRULE on this event can never occur. */
+function hasImpossibleRule(vevent: ICAL.Component): boolean {
+  return vevent.getAllProperties('rrule').some((property) => {
+    const value = property.getFirstValue();
+    return value instanceof ICAL.Recur && isImpossibleRecurrence(value);
+  });
+}
+
 function attendanceOf(vevent: ICAL.Component, selfEmail?: string): Attendance {
   if (selfEmail === undefined) return 'unknown';
   const wanted = selfEmail.trim().toLowerCase();
@@ -169,6 +254,10 @@ export function parseIcs(text: string, options: IcsParseOptions): readonly Calen
         }
         continue;
       }
+
+      // Skipped as a whole series: one impossible rule is enough to hang the
+      // iterator, even alongside rules that would have matched.
+      if (hasImpossibleRule(vevent)) continue;
 
       const iterator = event.iterator();
       let produced = 0;

@@ -11,7 +11,8 @@
  * very different things.
  */
 
-import { parseIcs, looksLikeIcsUrl, normaliseIcsUrl, redactIcsUrl } from './ics.js';
+import { looksLikeIcsUrl, normaliseIcsUrl, redactIcsUrl } from './ics.js';
+import type { IcsParser } from './ics-bounded.js';
 import type { CalendarConnectResult, CalendarEvent, CalendarStatus } from '@mochi/core';
 
 /**
@@ -72,8 +73,15 @@ export class CalendarService {
   /** Set by the server; lets an unchanged feed answer 304 instead of resending. */
   private etag: string | null = null;
 
+  /**
+   * `parse` is required, with no in-process default, on purpose: a default
+   * that ran ical.js on the main thread would be the hang this exists to
+   * prevent, reintroduced by forgetting one argument. index.ts passes the
+   * worker-backed parser; tests pass an in-process one.
+   */
   constructor(
     private readonly vault: CalendarFeedStore,
+    private readonly parse: IcsParser,
     private readonly fetchImpl: FetchLike = fetch,
   ) {}
 
@@ -114,23 +122,27 @@ export class CalendarService {
     const result = await this.fetchFeed(url);
     if (!result.ok) return { ok: false, error: result.error };
 
-    const parsed = parseIcs(result.text, {
+    const parsed = await this.parse(result.text, {
       ...this.window(),
       ...(selfEmail !== undefined ? { selfEmail } : {}),
     });
+    // A feed that cannot be parsed in time is not stored. Connecting it anyway
+    // would report zero events as success, then fail the same way on every
+    // refresh.
+    if (!parsed.ok) return { ok: false, error: parsed.error };
 
     if (!this.vault.store(url, selfEmail)) {
       return { ok: false, error: 'Could not save the calendar address securely.' };
     }
 
-    this.events = parsed;
+    this.events = parsed.events;
     this.lastSyncAt = Date.now();
     this.lastError = undefined;
     this.etag = result.etag;
     this.emit();
 
-    console.log(`[calendar] connected to ${redactIcsUrl(url)} — ${parsed.length} event(s)`);
-    return { ok: true, eventCount: parsed.length };
+    console.log(`[calendar] connected to ${redactIcsUrl(url)} — ${parsed.events.length} event(s)`);
+    return { ok: true, eventCount: parsed.events.length };
   }
 
   disconnect(): CalendarStatus {
@@ -172,10 +184,20 @@ export class CalendarService {
       }
 
       const selfEmail = this.vault.selfEmail;
-      this.events = parseIcs(result.text, {
+      const parsed = await this.parse(result.text, {
         ...this.window(),
         ...(selfEmail !== null ? { selfEmail } : {}),
       });
+      if (!parsed.ok) {
+        // Same rule as a failed fetch: keep what we had, say what went wrong.
+        // The etag is not kept either, or the next refresh would get a 304
+        // and report the unreadable feed as current.
+        this.etag = null;
+        this.lastError = parsed.error;
+        return this.status();
+      }
+
+      this.events = parsed.events;
       this.lastSyncAt = Date.now();
       this.lastError = undefined;
     } finally {
