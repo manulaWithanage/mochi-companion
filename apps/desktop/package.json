@@ -12,6 +12,8 @@
     "email": "manula.withanage@gmail.com"
   },
   "homepage": "https://mochicompanion.com",
+  "// electron": "Floor is the patch actually tested, not the first 43.x that happened to work. Stay on the 43 major: node:sqlite and the CI Node version (24) are tied to what Electron 43 bundles, so a major bump is its own piece of work. 43.7.4 also fixed 'ready-to-show' never firing for some hidden windows on Windows, which is the event our window-show logic depends on.",
+  "// mailparser": "Floor raised for security, not features. mailparser parses every inbound email, and before 3.9.20 it pulled nodemailer <9.1.1, whose addressparser is O(n^2) on crafted headers (GHSA-2x7j-588g-ccc2) — one hostile message could stall the main process. 3.9.28 brings nodemailer 10.x and html-to-text 10.0.1 (deepmerge-ts ^8, clearing GHSA-ggr8-5vv4-36mx). Fixed by upgrading the parent rather than overriding, so there is no override to forget to remove.",
   "main": "./out/main/index.mjs",
   "scripts": {
     "dev": "electron-vite dev",
@@ -24,7 +26,7 @@
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^6.0.4",
-    "electron": "^43.2.0",
+    "electron": "^43.7.5",
     "electron-builder": "^26.15.3",
     "electron-vite": "^5.0.0",
     "typescript": "^5.9.3",
@@ -43,7 +45,7 @@
     "electron-updater": "^6.8.9",
     "ical.js": "^2.2.1",
     "imapflow": "^1.6.5",
-    "mailparser": "^3.9.14",
+    "mailparser": "^3.9.28",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
     "zod": "^4.4.3"

@@ -2,12 +2,25 @@ packages:
   - 'apps/*'
   - 'packages/*'
 
-# pnpm blocks dependency build scripts by default. These three need theirs:
-#   electron         downloads the platform binary in postinstall
-#   better-sqlite3   compiles the native addon
-#   esbuild          fetches its platform binary
+# pnpm blocks dependency build scripts by default. These need theirs:
+#   electron              downloads the platform binary in postinstall
+#   esbuild               fetches its platform binary
+#   electron-winstaller   Squirrel.Windows tooling pulled in by electron-builder
+# better-sqlite3 used to be listed; it left with the move to node:sqlite (see
+# the Corrections Log in AGENT_INSTRUCTIONS.md) and must not come back here.
 allowBuilds:
   electron: true
-  better-sqlite3: true
   esbuild: true
   electron-winstaller: true
+
+# Security floors for transitive dependencies we do not declare directly.
+# Each one should be deleted once its parent's own range excludes the
+# vulnerable versions; left in place, it silently pins us after the reason
+# is gone.
+overrides:
+  # electron-updater (and @eslint/eslintrc) declare js-yaml ^4.1.0 and the
+  # lockfile had resolved 4.3.0, which is vulnerable to GHSA-5p4m-2wfm-xmqj and
+  # GHSA-2883-xcg3-v3hh (CPU exhaustion via !!omap and merge keys). The
+  # updater parses latest.yml from the release feed, so this is runtime code.
+  # Scoped to 4.x so nothing is forced across the 5.x major. Added 2026-09-26.
+  'js-yaml@^4.0.0': ^4.3.2
