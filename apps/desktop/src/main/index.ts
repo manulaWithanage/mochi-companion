@@ -35,6 +35,8 @@ import { TimerService } from './services/timer-service.js';
 import { MascotService } from './services/mascot-service.js';
 import { OverlayWindow } from './windows/overlay.js';
 import { SetupWindow } from './windows/setup.js';
+import { bundledRendererUrls, devRendererUrl } from './windows/renderer-source.js';
+import { isAllowedNavigation } from './windows/navigation-policy.js';
 import { MochiTray } from './tray.js';
 import { RoutineService } from './services/routine-service.js';
 import { UserRoutineScheduler } from './services/user-routine-scheduler.js';
@@ -561,8 +563,10 @@ async function bootstrap(): Promise<void> {
   tray.create();
 
   // First run opens the setup window; in dev mode, also open it automatically.
+  // "Dev mode" means an unpackaged build served by electron-vite: a packaged
+  // app with ELECTRON_RENDERER_URL set is not dev, and ignores the variable.
   const firstRun = !settings.get().setupCompleted;
-  const isDev = process.env['ELECTRON_RENDERER_URL'] !== undefined;
+  const isDev = devRendererUrl() !== undefined;
   if (firstRun || isDev) {
     setup.open();
   }
@@ -602,11 +606,16 @@ app.whenReady().then(() => {
 
   // Harden against a compromised renderer: block navigation to anywhere that
   // is not our own bundle, and force external links into the real browser.
+  // The rule itself lives in navigation-policy.ts, where it is unit tested.
+  const navigation = { devUrl: devRendererUrl(), bundledPages: bundledRendererUrls() };
   app.on('web-contents-created', (_event, contents) => {
     contents.on('will-navigate', (event, url) => {
-      const devUrl = process.env['ELECTRON_RENDERER_URL'];
-      const allowed = devUrl !== undefined && url.startsWith(devUrl);
-      if (!allowed && !url.startsWith('file://')) event.preventDefault();
+      if (!isAllowedNavigation(url, navigation)) event.preventDefault();
+    });
+    // A redirect is a navigation the renderer did not have to ask for: an
+    // allowed URL that answers 30x would otherwise land somewhere unchecked.
+    contents.on('will-redirect', (event, url) => {
+      if (!isAllowedNavigation(url, navigation)) event.preventDefault();
     });
     contents.setWindowOpenHandler(({ url }) => {
       if (url.startsWith('https://')) void shell.openExternal(url);

@@ -24,6 +24,7 @@ import {
   type OverlayPosition,
   type Point,
 } from '@mochi/core';
+import { bundledRendererPath, devRendererUrl } from './renderer-source.js';
 
 /** Debounce for persisting position while the user drags. */
 const SAVE_DEBOUNCE_MS = 400;
@@ -140,11 +141,11 @@ export class OverlayWindow {
 
   private async loadRenderer(): Promise<void> {
     if (this.win === null) return;
-    const devUrl = process.env['ELECTRON_RENDERER_URL'];
+    const devUrl = devRendererUrl();
     if (devUrl !== undefined) {
       await this.win.loadURL(`${devUrl}/overlay.html`);
     } else {
-      await this.win.loadFile(join(import.meta.dirname, '../renderer/overlay.html'));
+      await this.win.loadFile(bundledRendererPath('overlay'));
     }
   }
 

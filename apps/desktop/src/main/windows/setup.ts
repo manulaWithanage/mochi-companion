@@ -8,6 +8,7 @@
 
 import { BrowserWindow } from 'electron';
 import { join } from 'node:path';
+import { bundledRendererPath, devRendererUrl } from './renderer-source.js';
 
 export class SetupWindow {
   private win: BrowserWindow | null = null;
@@ -79,11 +80,11 @@ export class SetupWindow {
 
   private async load(): Promise<void> {
     if (this.win === null) return;
-    const devUrl = process.env['ELECTRON_RENDERER_URL'];
+    const devUrl = devRendererUrl();
     if (devUrl !== undefined) {
       await this.win.loadURL(`${devUrl}/setup.html`);
     } else {
-      await this.win.loadFile(join(import.meta.dirname, '../renderer/setup.html'));
+      await this.win.loadFile(bundledRendererPath('setup'));
     }
   }
 
