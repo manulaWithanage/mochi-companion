@@ -1,0 +1,43 @@
+version: 2
+
+updates:
+  # The npm ecosystem covers pnpm workspaces: Dependabot reads pnpm-lock.yaml
+  # and pnpm-workspace.yaml from the root. Security updates are raised as soon
+  # as an advisory lands, independent of this weekly schedule.
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    ignore:
+      # Electron majors move the bundled Node (node:sqlite, CI node-version)
+      # and are deliberate upgrades, not weekly churn.
+      - dependency-name: electron
+        update-types: ['version-update:semver-major']
+    groups:
+      # Electron, its tooling and the updater move together.
+      electron:
+        patterns:
+          - 'electron'
+          - 'electron-*'
+          - '@electron/*'
+      # The AI SDK packages are versioned as a set.
+      ai-sdk:
+        patterns:
+          - 'ai'
+          - '@ai-sdk/*'
+      # Lint, format, typecheck and test tooling: build-time only, low risk.
+      dev-tooling:
+        dependency-type: development
+        update-types: [minor, patch]
+        exclude-patterns:
+          - 'electron'
+          - 'electron-*'
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      actions:
+        patterns: ['*']
