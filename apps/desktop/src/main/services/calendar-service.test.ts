@@ -1,5 +1,22 @@
 import { describe, expect, it } from 'vitest';
 import { CalendarService, type CalendarFeedStore, type FetchLike } from './calendar-service.js';
+import type { IcsParser } from './ics-bounded.js';
+import { parseIcs } from './ics.js';
+
+/**
+ * Parses on the test thread. Production passes the worker-backed parser; the
+ * worker's timeout logic is tested on its own in ics-bounded.test.ts.
+ */
+const inProcess: IcsParser = async (text, options) => ({
+  ok: true,
+  events: parseIcs(text, options),
+});
+
+/** A parser that fails the way a timed-out worker does. */
+const timedOut: IcsParser = async () => ({
+  ok: false,
+  error: 'That calendar took too long to read.',
+});
 
 /** In-memory stand-in for the encrypted vault. */
 function fakeVault(initialUrl: string | null = null): CalendarFeedStore {
@@ -83,7 +100,7 @@ function spyFetch(handler: (url: string, init?: RequestInit) => Response): {
 describe('connect', () => {
   it('rejects a URL that is not a feed, without a network call', () => {
     const { fetch: impl, calls } = spyFetch(() => respond(icsWith('x')));
-    const service = new CalendarService(fakeVault(), impl);
+    const service = new CalendarService(fakeVault(), inProcess, impl);
     return service.connect('my calendar').then((result) => {
       expect(result.ok).toBe(false);
       expect(calls).toHaveLength(0);
@@ -91,7 +108,7 @@ describe('connect', () => {
   });
 
   it('rejects http, because the URL is a bearer credential', async () => {
-    const service = new CalendarService(fakeVault(), spyFetch(() => respond('')).fetch);
+    const service = new CalendarService(fakeVault(), inProcess, spyFetch(() => respond('')).fetch);
     expect((await service.connect('http://example.com/f.ics')).ok).toBe(false);
   });
 
@@ -99,7 +116,11 @@ describe('connect', () => {
     // A typo should fail while the user can still see what they typed, not as
     // an empty calendar hours later.
     const vault = fakeVault();
-    const service = new CalendarService(vault, spyFetch(() => respond('', { status: 404 })).fetch);
+    const service = new CalendarService(
+      vault,
+      inProcess,
+      spyFetch(() => respond('', { status: 404 })).fetch,
+    );
 
     const result = await service.connect(FEED);
     expect(result.ok).toBe(false);
@@ -109,6 +130,7 @@ describe('connect', () => {
   it('reports the event count so connecting confirms itself', async () => {
     const service = new CalendarService(
       fakeVault(),
+      inProcess,
       spyFetch(() => respond(icsWith('Design review'))).fetch,
     );
     const result = await service.connect(FEED);
@@ -121,6 +143,7 @@ describe('connect', () => {
     // parse to zero events and be indistinguishable from an empty calendar.
     const service = new CalendarService(
       fakeVault(),
+      inProcess,
       spyFetch(() => respond('<html><body>Not found</body></html>')).fetch,
     );
     const result = await service.connect(FEED);
@@ -132,6 +155,7 @@ describe('connect', () => {
     // The token in it grants read access to the whole calendar.
     const service = new CalendarService(
       fakeVault(),
+      inProcess,
       spyFetch(() => respond('', { status: 500 })).fetch,
     );
     const result = await service.connect(FEED);
@@ -141,6 +165,7 @@ describe('connect', () => {
   it('explains a rejected address in terms of what the user can do', async () => {
     const service = new CalendarService(
       fakeVault(),
+      inProcess,
       spyFetch(() => respond('', { status: 404 })).fetch,
     );
     expect((await service.connect(FEED)).error).toMatch(/reset/i);
@@ -154,6 +179,7 @@ describe('refresh', () => {
     let fail = false;
     const service = new CalendarService(
       fakeVault(),
+      inProcess,
       spyFetch(() => (fail ? respond('', { status: 500 }) : respond(icsWith('Standup')))).fetch,
     );
 
@@ -171,7 +197,7 @@ describe('refresh', () => {
     const { fetch: impl, calls } = spyFetch(() =>
       respond(icsWith('Standup'), { headers: { etag: 'W/"v1"' } }),
     );
-    const service = new CalendarService(fakeVault(), impl);
+    const service = new CalendarService(fakeVault(), inProcess, impl);
 
     await service.connect(FEED);
     await service.refresh();
@@ -184,6 +210,7 @@ describe('refresh', () => {
     let first = true;
     const service = new CalendarService(
       fakeVault(),
+      inProcess,
       spyFetch(() => {
         if (first) {
           first = false;
@@ -204,7 +231,7 @@ describe('refresh', () => {
 
   it('does nothing when no feed is configured', async () => {
     const { fetch: impl, calls } = spyFetch(() => respond(icsWith('x')));
-    const service = new CalendarService(fakeVault(), impl);
+    const service = new CalendarService(fakeVault(), inProcess, impl);
     const status = await service.refresh();
     expect(calls).toHaveLength(0);
     expect(status.connected).toBe(false);
@@ -219,7 +246,7 @@ describe('refresh', () => {
         resolveFetch = resolve;
       })) as unknown as FetchLike;
 
-    const service = new CalendarService(fakeVault(FEED), impl);
+    const service = new CalendarService(fakeVault(FEED), inProcess, impl);
     const first = service.refresh();
     const second = await service.refresh();
 
@@ -234,6 +261,7 @@ describe('refresh', () => {
     // someone else's file.
     const service = new CalendarService(
       fakeVault(FEED),
+      inProcess,
       spyFetch(() =>
         respond(icsWith('Huge'), { headers: { 'content-length': String(50 * 1024 * 1024) } }),
       ).fetch,
@@ -245,13 +273,14 @@ describe('refresh', () => {
 
 describe('status', () => {
   it('starts disconnected and empty', () => {
-    const status = new CalendarService(fakeVault()).status();
+    const status = new CalendarService(fakeVault(), inProcess).status();
     expect(status).toMatchObject({ connected: false, eventCount: 0, lastSyncAt: null });
   });
 
   it('never exposes the feed URL', async () => {
     const service = new CalendarService(
       fakeVault(),
+      inProcess,
       spyFetch(() => respond(icsWith('Standup'))).fetch,
     );
     await service.connect(FEED);
@@ -263,6 +292,7 @@ describe('status', () => {
   it('clears everything on disconnect', async () => {
     const service = new CalendarService(
       fakeVault(),
+      inProcess,
       spyFetch(() => respond(icsWith('Standup'))).fetch,
     );
     await service.connect(FEED);
@@ -277,6 +307,7 @@ describe('status', () => {
     const seen: number[] = [];
     const service = new CalendarService(
       fakeVault(),
+      inProcess,
       spyFetch(() => respond(icsWith('Standup'))).fetch,
     );
     service.onChange((s) => seen.push(s.eventCount));
@@ -289,6 +320,7 @@ describe('status', () => {
     let count = 0;
     const service = new CalendarService(
       fakeVault(),
+      inProcess,
       spyFetch(() => respond(icsWith('Standup'))).fetch,
     );
     const off = service.onChange(() => {
@@ -297,5 +329,59 @@ describe('status', () => {
     off();
     await service.connect(FEED);
     expect(count).toBe(0);
+  });
+});
+
+describe('parse failures', () => {
+  it('does not store a feed that cannot be parsed in time', async () => {
+    // Connecting anyway would report zero events as success and then fail the
+    // same way on every refresh.
+    const vault = fakeVault();
+    const service = new CalendarService(
+      vault,
+      timedOut,
+      spyFetch(() => respond(icsWith('x'))).fetch,
+    );
+
+    const result = await service.connect(FEED);
+    expect(result.ok).toBe(false);
+    expect(result.error).toMatch(/too long/i);
+    expect(vault.hasFeed).toBe(false);
+  });
+
+  it('keeps the previous events and reports the error when a refresh times out', async () => {
+    // A timeout is a failed refresh, not an empty calendar.
+    let parse: IcsParser = inProcess;
+    const service = new CalendarService(
+      fakeVault(),
+      (text, options) => parse(text, options),
+      spyFetch(() => respond(icsWith('Standup'), { headers: { etag: 'W/"v1"' } })).fetch,
+    );
+    await service.connect(FEED);
+    expect(service.cached).toHaveLength(1);
+
+    parse = timedOut;
+    const status = await service.refresh();
+    expect(service.cached).toHaveLength(1);
+    expect(status.error).toMatch(/too long/i);
+  });
+
+  it('forgets the etag after a failed parse, so the next refresh re-reads the feed', async () => {
+    // Keeping it would let the server answer 304 and the unreadable feed would
+    // be reported as current.
+    let parse: IcsParser = inProcess;
+    const { fetch: impl, calls } = spyFetch(() =>
+      respond(icsWith('Standup'), { headers: { etag: 'W/"v1"' } }),
+    );
+    const service = new CalendarService(fakeVault(), (text, options) => parse(text, options), impl);
+    await service.connect(FEED);
+
+    parse = timedOut;
+    await service.refresh();
+    parse = inProcess;
+    await service.refresh();
+
+    const headers = calls[2]?.init?.headers as Record<string, string> | undefined;
+    expect(headers?.['If-None-Match']).toBeUndefined();
   });
 });

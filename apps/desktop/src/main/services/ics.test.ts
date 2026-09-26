@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { looksLikeIcsUrl, normaliseIcsUrl, parseIcs, redactIcsUrl } from './ics.js';
+import {
+  isImpossibleRecurrence,
+  looksLikeIcsUrl,
+  normaliseIcsUrl,
+  parseIcs,
+  redactIcsUrl,
+} from './ics.js';
 
 /** Build an ICS document from VEVENT bodies. */
 const ics = (...events: readonly string[][]): string =>
@@ -170,6 +176,29 @@ describe('parseIcs', () => {
     expect(Date.now() - started).toBeLessThan(5000);
   });
 
+  it('skips a rule that can never occur, and keeps the rest of the calendar', () => {
+    // February never has a 30th. ical.js 2.2.1 searches for the first match
+    // inside a single next() call with no bound, so without the pre-filter this
+    // never returns. If this test hangs rather than fails, the pre-filter has
+    // regressed: the worker timeout still protects the app, but not this test.
+    const started = Date.now();
+    const events = parseIcs(
+      ics(
+        [
+          'UID:never',
+          'SUMMARY:Feb 30',
+          'DTSTART:20260101T090000Z',
+          'DTEND:20260101T100000Z',
+          'RRULE:FREQ=DAILY;BYMONTH=2;BYMONTHDAY=30',
+        ],
+        ['UID:ok', 'SUMMARY:Fine', 'DTSTART:20260803T090000Z', 'DTEND:20260803T100000Z'],
+      ),
+      WINDOW,
+    );
+    expect(events.map((e) => e.title)).toEqual(['Fine']);
+    expect(Date.now() - started).toBeLessThan(1000);
+  });
+
   it('honours EXDATE, so a skipped occurrence does not appear', () => {
     const events = parseIcs(
       ics([
@@ -324,6 +353,49 @@ describe('parseIcs', () => {
       WINDOW,
     );
     expect(events[0]?.title).toBe('(no title)');
+  });
+});
+
+describe('isImpossibleRecurrence', () => {
+  it('flags a day no listed month has', () => {
+    expect(isImpossibleRecurrence({ parts: { BYMONTH: [2], BYMONTHDAY: [30] } })).toBe(true);
+    expect(isImpossibleRecurrence({ parts: { BYMONTH: [2], BYMONTHDAY: [-30] } })).toBe(true);
+    expect(isImpossibleRecurrence({ parts: { BYMONTH: [4, 6, 9, 11], BYMONTHDAY: [31] } })).toBe(
+      true,
+    );
+  });
+
+  it('flags day 0, which is outside the grammar', () => {
+    expect(isImpossibleRecurrence({ parts: { BYMONTHDAY: [0] } })).toBe(true);
+  });
+
+  it('allows the 29th of February, which is a real leap-year series', () => {
+    expect(isImpossibleRecurrence({ parts: { BYMONTH: [2], BYMONTHDAY: [29] } })).toBe(false);
+  });
+
+  it('allows a rule if any listed day fits any listed month', () => {
+    expect(isImpossibleRecurrence({ parts: { BYMONTH: [2, 3], BYMONTHDAY: [30] } })).toBe(false);
+    expect(isImpossibleRecurrence({ parts: { BYMONTH: [2], BYMONTHDAY: [30, 1] } })).toBe(false);
+    expect(isImpossibleRecurrence({ parts: { BYMONTHDAY: [31] } })).toBe(false);
+  });
+
+  it('flags an ordinal weekday in a DAILY-or-finer rule', () => {
+    // FREQ=DAILY;BYDAY=1MO hangs ical.js 2.2.1 exactly as Feb 30 does.
+    expect(isImpossibleRecurrence({ freq: 'DAILY', parts: { BYDAY: ['1MO'] } })).toBe(true);
+    expect(isImpossibleRecurrence({ freq: 'HOURLY', parts: { BYDAY: ['-1FR', '+2TU'] } })).toBe(
+      true,
+    );
+  });
+
+  it('allows ordinal weekdays where they mean something, or beside a plain one', () => {
+    expect(isImpossibleRecurrence({ freq: 'MONTHLY', parts: { BYDAY: ['1MO'] } })).toBe(false);
+    expect(isImpossibleRecurrence({ freq: 'WEEKLY', parts: { BYDAY: ['1MO'] } })).toBe(false);
+    expect(isImpossibleRecurrence({ freq: 'DAILY', parts: { BYDAY: ['MO', '1TU'] } })).toBe(false);
+  });
+
+  it('leaves rules without BYMONTHDAY alone', () => {
+    expect(isImpossibleRecurrence({ parts: {} })).toBe(false);
+    expect(isImpossibleRecurrence({ parts: { BYMONTH: [2] } })).toBe(false);
   });
 });
 

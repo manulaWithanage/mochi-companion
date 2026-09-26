@@ -50,6 +50,13 @@ import { LlmClient } from './services/llm-client.js';
 import { GoogleService } from './services/google-service.js';
 import { GmailManager } from './services/gmail-manager.js';
 import { CalendarService } from './services/calendar-service.js';
+import { icsWorkerFactory, parseIcsBounded } from './services/ics-bounded.js';
+// Bundled by electron-vite as a separate, self-contained file in out/main
+// (ical.js inlined, only node:worker_threads imported) and resolved to its
+// absolute path at runtime, which is inside app.asar once packaged. ICS
+// parsing runs in it so a feed that hangs ical.js costs a terminated thread,
+// not a frozen app. If the worker cannot start, the refresh fails visibly.
+import icsWorkerPath from './services/ics-worker?modulePath';
 import { BriefingService } from './services/briefing-service.js';
 import { ActivityService } from './services/activity-service.js';
 import { CalendarVault } from './storage/calendar-vault.js';
@@ -199,7 +206,10 @@ async function bootstrap(): Promise<void> {
     },
   });
   const llmClient = new LlmClient(llm);
-  const calendar = new CalendarService(new CalendarVault());
+  const spawnIcsWorker = icsWorkerFactory(icsWorkerPath);
+  const calendar = new CalendarService(new CalendarVault(), (text, options) =>
+    parseIcsBounded(text, options, spawnIcsWorker),
+  );
   // Mochi could see the calendar and never mentioned it: nothing emitted a
   // meeting to the bus. Alerts are planned from the cache on every sync, which
   // is why a 15-minute poll can still deliver a 5-minute warning.
