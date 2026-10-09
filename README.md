@@ -6,9 +6,9 @@
 [![Release](https://img.shields.io/github/v/release/manulaWithanage/mochi-companion?label=release)](https://github.com/manulaWithanage/mochi-companion/releases/latest)
 [![CI](https://github.com/manulaWithanage/mochi-companion/actions/workflows/ci.yml/badge.svg)](https://github.com/manulaWithanage/mochi-companion/actions/workflows/ci.yml)
 
-**[mochicompanion.com](https://mochicompanion.com)** · **[Download for Windows](https://github.com/manulaWithanage/mochi-companion/releases/latest/download/Mochi-Setup.exe)**
+**[mochicompanion.com](https://mochicompanion.com)** · **[Download for Windows](https://github.com/manulaWithanage/mochi-companion/releases/latest/download/Mochi-Setup.exe)** · **[Code signing policy](CODE_SIGNING_POLICY.md)** · **[Privacy policy](PRIVACY.md)**
 
-> **The installer is not code-signed yet.** Windows SmartScreen will warn you on first run — click **More info → Run anyway**. Signing is being worked on; until then this warning is expected and the honest thing to say about it is that you are trusting the build, not a certificate.
+> **The installer is not code-signed yet.** Windows SmartScreen will warn you on first run — click **More info → Run anyway**. Mochi has applied to the SignPath Foundation for a free certificate; until it is approved this warning is expected, and the honest thing to say about it is that you are trusting the build, not a certificate. See the [code signing policy](CODE_SIGNING_POLICY.md).
 
 Mochi sits in the corner of your screen, tracks where your time actually goes, and speaks up when something genuinely needs you — a reply you owe, a meeting about to start, a task you set for yourself.
 
@@ -42,9 +42,9 @@ Keys live in the main process only, encrypted with the OS keystore (`safeStorage
 - **No Mochi account, no Mochi server.** There is nothing to sign up for.
 - **Your keys never leave your machine.** When you pick a cloud model, the content you ask about goes to _that provider_ and nowhere else. Pick Ollama and nothing leaves at all.
 - **Activity tracking records application names.** Window titles are read only if you switch on site tracking, matched against a fixed list, and discarded immediately — never stored, never logged, never sent to a model.
-- **Only application names reach an LLM**, and only to categorise ones the built-in table does not recognise.
+- **What reaches an LLM is listed, feature by feature.** Unrecognised application names, a short preview of each email for triage, and the facts behind the morning briefing. A full email body is sent only for a reply draft, and only if you switch that on.
 
-Full reasoning in [`docs/LLM_ROUTER_SECURITY.md`](docs/LLM_ROUTER_SECURITY.md).
+Exactly what is sent where is in the [privacy policy](PRIVACY.md); the reasoning behind it is in [`docs/LLM_ROUTER_SECURITY.md`](docs/LLM_ROUTER_SECURITY.md).
 
 ---
 
@@ -78,6 +78,14 @@ pnpm verify
 That runs all five gates — lint, format, typecheck, test, build — in the order CI runs them. A `pre-push` hook runs it for you and refuses the push if anything fails.
 
 Releases are tag-driven: bump the version in a commit, tag it, and the pipeline builds a draft release you publish when ready — see [`docs/RELEASING.md`](docs/RELEASING.md). See [`AGENT_INSTRUCTIONS.md`](AGENT_INSTRUCTIONS.md) for the architectural rules, and [`docs/`](docs/) for background.
+
+---
+
+## Code signing policy
+
+Free code signing provided by [SignPath.io](https://about.signpath.io), certificate by [SignPath Foundation](https://signpath.org). The application is pending, so current installers are still unsigned. What gets signed, how, and who approves it: [`CODE_SIGNING_POLICY.md`](CODE_SIGNING_POLICY.md).
+
+This project follows a [code of conduct](CODE_OF_CONDUCT.md).
 
 ---
 

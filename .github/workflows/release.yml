@@ -74,8 +74,14 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           # Already there on a re-run, and that is success rather than failure.
+          #
+          # The signing line is prepended to the generated notes, not appended
+          # by hand afterwards: the SignPath Foundation requires every download
+          # page to name the code signing policy, and the Releases page is the
+          # download page. A rule that depends on remembering it does not hold.
           if ! gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
-            gh release create "$GITHUB_REF_NAME" --draft --title "$GITHUB_REF_NAME" --generate-notes
+            gh release create "$GITHUB_REF_NAME" --draft --title "$GITHUB_REF_NAME" --generate-notes \
+              --notes "Free code signing provided by [SignPath.io](https://about.signpath.io), certificate by [SignPath Foundation](https://signpath.org). [Code signing policy](https://github.com/$GITHUB_REPOSITORY/blob/main/CODE_SIGNING_POLICY.md) · [Privacy policy](https://github.com/$GITHUB_REPOSITORY/blob/main/PRIVACY.md)"
           fi
           gh release view "$GITHUB_REF_NAME" --json isDraft,tagName
 
