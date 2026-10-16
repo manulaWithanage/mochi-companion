@@ -74,8 +74,15 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           # Already there on a re-run, and that is success rather than failure.
+          #
+          # The warning goes above the generated notes rather than being
+          # pasted in by hand afterwards. The releases page is the download
+          # page, the installer is unsigned, and the SmartScreen warning is
+          # the first thing a stranger arriving here needs to read. A rule
+          # that depends on remembering it does not hold.
           if ! gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
-            gh release create "$GITHUB_REF_NAME" --draft --title "$GITHUB_REF_NAME" --generate-notes
+            gh release create "$GITHUB_REF_NAME" --draft --title "$GITHUB_REF_NAME" --generate-notes \
+              --notes "**This installer is not code-signed.** Windows SmartScreen will warn you on first run: click **More info**, then **Run anyway**. Verify your download against the `SHA256SUMS-windows.txt` asset below. [What that does and does not prove](https://github.com/$GITHUB_REPOSITORY/blob/main/CODE_SIGNING_POLICY.md) · [Privacy policy](https://github.com/$GITHUB_REPOSITORY/blob/main/PRIVACY.md)"
           fi
           gh release view "$GITHUB_REF_NAME" --json isDraft,tagName
 
@@ -143,6 +150,26 @@ jobs:
             exit 1
           fi
           gh release view "$GITHUB_REF_NAME" --json assets --jq '.assets[] | "  \(.name)"'
+
+      # A hash is a weaker claim than a signature, and it is not the same
+      # claim: it shows the download was not altered on the way to you, not
+      # that the release is trustworthy, because the hash and the file come
+      # from the same place. It is still the strongest thing an unsigned build
+      # can offer, and generating it here means it describes the file that was
+      # actually published rather than one hashed by hand afterwards.
+      #
+      # Windows only. The dmg is built and offered to nobody, so a sums file
+      # for it would imply a download that does not exist.
+      - name: Publish SHA-256 sums for the installer
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
+        run: |
+          cd apps/desktop/release
+          sha256sum *.exe > SHA256SUMS-windows.txt
+          cat SHA256SUMS-windows.txt
+          # --clobber so a re-run replaces the file instead of failing on it.
+          gh release upload "$GITHUB_REF_NAME" SHA256SUMS-windows.txt --clobber
 
       # Kept alongside the draft release. The run artifact outlives a deleted
       # draft, which is the difference between "rebuild it" and "re-tag it".
