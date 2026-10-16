@@ -144,22 +144,28 @@ export interface SkinSummary {
  * Resolved sprite sheets for the active skin. Images arrive as data URLs so
  * the sandboxed renderer never needs filesystem access to draw them.
  */
+/** One decoded sheet: the base animation for a state, or a variant of it. */
+export interface LoadedSheet {
+  readonly dataUrl: string;
+  readonly frames: number;
+  readonly fps: number;
+  readonly loop: boolean;
+}
+
+export interface LoadedStateAnimation extends LoadedSheet {
+  /**
+   * One-shot breaks played occasionally instead of the next loop. Absent on
+   * states that have none, which is most of them.
+   */
+  readonly variants?: readonly LoadedSheet[];
+  /** Chance, per completed loop, that one of `variants` plays instead. */
+  readonly variantChance?: number;
+}
+
 export interface LoadedSkin {
   readonly summary: SkinSummary;
   readonly defaultState: MascotState;
-  readonly states: Readonly<
-    Partial<
-      Record<
-        MascotState,
-        {
-          readonly dataUrl: string;
-          readonly frames: number;
-          readonly fps: number;
-          readonly loop: boolean;
-        }
-      >
-    >
-  >;
+  readonly states: Readonly<Partial<Record<MascotState, LoadedStateAnimation>>>;
 }
 
 export interface MochiBridge {

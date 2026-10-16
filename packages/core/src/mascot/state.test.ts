@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  ALL_STATES,
   canTransition,
   DEFAULT_WORK_HOURS,
   deriveMascotState,
@@ -114,5 +115,55 @@ describe('deriveMascotState', () => {
 
   it('idles during work hours while the user is present', () => {
     expect(deriveMascotState(ctx({ userIdleMs: REST_AFTER_IDLE_MS - 1 }))).toBe('idle');
+  });
+});
+
+describe('thinking', () => {
+  const ctx = {
+    timerRunning: false,
+    now: new Date('2026-10-16T11:00:00'),
+    workHours: DEFAULT_WORK_HOURS,
+    userIdleMs: 0,
+  };
+
+  it('is shown while a call the user is waiting on is in flight', () => {
+    expect(deriveMascotState({ ...ctx, llmThinking: true })).toBe('thinking');
+  });
+
+  it('outranks an active timer', () => {
+    // Someone who asked a question four seconds ago needs the answer more
+    // than they need reminding the stopwatch is running.
+    expect(deriveMascotState({ ...ctx, timerRunning: true, llmThinking: true })).toBe('thinking');
+  });
+
+  it('outranks resting, so an answer at midnight still shows progress', () => {
+    const night = { ...ctx, now: new Date('2026-10-16T23:30:00'), llmThinking: true };
+    expect(deriveMascotState(night)).toBe('thinking');
+  });
+
+  it('is absent by default, so a caller that does not know stays as it was', () => {
+    expect(deriveMascotState(ctx)).toBe('idle');
+    expect(deriveMascotState({ ...ctx, llmThinking: false })).toBe('idle');
+  });
+});
+
+describe('the states added for expression', () => {
+  it('ranks happy below thinking', () => {
+    // Petting should not hold the face while an answer is being fetched.
+    expect(canTransition('happy', 'thinking')).toBe(true);
+    expect(canTransition('thinking', 'happy')).toBe(false);
+  });
+
+  it('never lets anything preempt an alert', () => {
+    for (const state of ALL_STATES) {
+      if (state === 'alert') continue;
+      expect(canTransition('alert', state), `${state} must not replace alert`).toBe(false);
+    }
+  });
+
+  it('recognises the new states as states', () => {
+    expect(isMascotState('happy')).toBe(true);
+    expect(isMascotState('celebrating')).toBe(true);
+    expect(isMascotState('dancing')).toBe(false);
   });
 });

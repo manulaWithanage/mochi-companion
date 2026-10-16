@@ -15,6 +15,14 @@ const TICK_MS = 15_000;
 export interface MascotInputs {
   isTimerRunning(): boolean;
   getWorkHours(): WorkHours;
+  /**
+   * Whether a model call the user is waiting on is in flight.
+   *
+   * Optional so the service stays constructible in tests and in any future
+   * caller that has no LLM wired up, rather than making every one of them
+   * invent an answer.
+   */
+  isLlmThinking?(): boolean;
 }
 
 export class MascotService {
@@ -48,6 +56,7 @@ export class MascotService {
       now,
       workHours: this.inputs.getWorkHours(),
       userIdleMs: powerMonitor.getSystemIdleTime() * 1000,
+      llmThinking: this.inputs.isLlmThinking?.() ?? false,
     });
 
     if (next !== this.current) {

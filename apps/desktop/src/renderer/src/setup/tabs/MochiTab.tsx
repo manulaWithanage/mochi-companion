@@ -10,7 +10,25 @@ import {
 import { button, C, card, h2, input, label, sub } from '../ui.js';
 import { UpdatesCard } from '../UpdatesCard.js';
 
-const STATES: readonly MascotState[] = ['idle', 'working', 'resting', 'alert'];
+/**
+ * The preview row in Settings.
+ *
+ * Every state the default skin draws, so a change to one of them can be seen
+ * without waiting for the condition that produces it. `speaking` and
+ * `thinking` were missing here for as long as they were missing everywhere
+ * else: they were declared states with no art and no producer, so there was
+ * nothing to preview.
+ */
+const STATES: readonly MascotState[] = [
+  'idle',
+  'working',
+  'resting',
+  'thinking',
+  'speaking',
+  'happy',
+  'celebrating',
+  'alert',
+];
 
 const Toggle = ({
   on,

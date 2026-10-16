@@ -120,9 +120,14 @@ async function bootstrap(): Promise<void> {
   const storage = openStorage();
   const timer = new TimerService(storage);
 
+  // `llmClient` is constructed further down, after the services it needs, so
+  // this reads through a holder rather than closing over a value that does not
+  // exist yet. A getter keeps the wiring in one direction.
+  let llmClientRef: { busy: boolean } | null = null;
   const mascot = new MascotService({
     isTimerRunning: () => timer.isRunning,
     getWorkHours: () => settings.get().workHours,
+    isLlmThinking: () => llmClientRef?.busy ?? false,
   });
 
   const overlay = new OverlayWindow({
@@ -324,6 +329,10 @@ async function bootstrap(): Promise<void> {
           task: 'phrase',
           system: 'You are Mochi, a small desktop companion. Reply in one short sentence.',
           prompt: 'Say hello and mention you are ready to help.',
+          // Somebody pressed a button and is watching a spinner. The briefing
+          // and the activity classifier above deliberately do not set this:
+          // nobody is waiting for either of them.
+          userWaiting: true,
         });
         if (result.ok) {
           return { ok: true, text: result.text, model: result.model, tokens: result.tokens };
@@ -545,6 +554,23 @@ async function bootstrap(): Promise<void> {
   // Kept live rather than only bubbled once, so a settings panel opened at any
   // point shows the real state instead of whatever it was told at mount.
   updater.onChange((status) => setup.send('updater:changed', status));
+
+  /*
+   * The thinking face: re-derive the moment a model call starts or finishes.
+   *
+   * The service otherwise re-evaluates every 15 seconds, which is fine for
+   * work hours and idle time and useless here. Most model calls are over well
+   * inside one tick, so the thinking face would usually appear after the
+   * answer had already arrived, if at all.
+   *
+   * Wired here, beside the other `start()` calls, rather than next to
+   * `new LlmClient(...)` where it was first written. That line is also where
+   * the ICS worker is wired on another branch, and two unrelated changes
+   * anchored to the same line is a merge conflict that neither of them needed
+   * to have.
+   */
+  llmClientRef = llmClient;
+  llmClient.onBusyChange(() => mascot.evaluate());
 
   await timer.restore();
   mascot.start();

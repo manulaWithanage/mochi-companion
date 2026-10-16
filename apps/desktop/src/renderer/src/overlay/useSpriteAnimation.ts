@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import type { LoadedSkin, MascotState } from '@mochi/core';
+import { pickVariant, type LoadedSkin, type MascotState } from '@mochi/core';
 
 /**
  * Canvas 2D sprite-sheet animation with a hard frame budget (RULE 4).
@@ -21,7 +21,23 @@ interface Options {
   visible: boolean;
 }
 
-type Sheet = { image: HTMLImageElement; frames: number; fps: number; loop: boolean };
+type Sheet = {
+  image: HTMLImageElement;
+  frames: number;
+  fps: number;
+  loop: boolean;
+  /** One-shot breaks, already decoded. Only ever set on the base sheet. */
+  variants?: readonly Sheet[];
+  variantChance?: number;
+};
+
+/**
+ * How long a state change takes to dissolve.
+ *
+ * Short enough that it reads as the same character changing rather than as a
+ * transition effect, and long enough that it is not a cut.
+ */
+const CROSSFADE_MS = 160;
 
 /**
  * Poll rate once a non-looping animation has finished. State changes arrive by
@@ -58,11 +74,40 @@ export function useSpriteAnimation({ canvas, skin, state, visible }: Options): v
         Object.entries(skin.states).map(async ([name, sheet]) => {
           if (sheet === undefined) return;
           try {
+            /*
+             * Variants decode alongside the base sheet and are allowed to fail
+             * individually: a stretch that will not decode should cost the
+             * stretch, not the state it belongs to. The main process already
+             * drops ones whose file is missing, so this covers a corrupt PNG
+             * rather than an absent one.
+             */
+            const variants = (
+              await Promise.all(
+                (sheet.variants ?? []).map(async (variant) => {
+                  try {
+                    return {
+                      image: await loadImage(variant.dataUrl),
+                      frames: variant.frames,
+                      fps: variant.fps,
+                      loop: false,
+                    };
+                  } catch (error) {
+                    console.error(`[sprite] ${name} variant:`, error);
+                    return null;
+                  }
+                }),
+              )
+            ).filter((variant): variant is Sheet => variant !== null);
+
             decoded[name as MascotState] = {
               image: await loadImage(sheet.dataUrl),
               frames: sheet.frames,
               fps: sheet.fps,
               loop: sheet.loop,
+              ...(variants.length > 0 ? { variants } : {}),
+              ...(variants.length > 0 && sheet.variantChance !== undefined
+                ? { variantChance: sheet.variantChance }
+                : {}),
             };
           } catch (error) {
             console.error(`[sprite] ${name}:`, error);
@@ -121,6 +166,11 @@ export function useSpriteAnimation({ canvas, skin, state, visible }: Options): v
     // draws nothing. -1 means the canvas is blank (or stale) and must be drawn.
     let lastDrawnIndex = -1;
     let animationStart = performance.now();
+    /** The sheet actually on screen: the state's base loop, or a variant. */
+    let playing: Sheet | null = null;
+    /** The outgoing frame, held only for the length of a cross-fade. */
+    let fadingFrom: { sheet: Sheet; index: number } | null = null;
+    let fadeStart = 0;
 
     const resizeBackingStore = (): void => {
       canvas.width = Math.round(cssWidth * dpr);
@@ -171,31 +221,75 @@ export function useSpriteAnimation({ canvas, skin, state, visible }: Options): v
       if (disposed) return;
 
       const current = stateRef.current;
-      const sheet = sheetsRef.current[current] ?? sheetsRef.current[skin.defaultState];
-      if (sheet === undefined) {
+      const base = sheetsRef.current[current] ?? sheetsRef.current[skin.defaultState];
+      if (base === undefined) {
         // Sheets may still be decoding on first paint.
         scheduleNext(100);
         return;
       }
 
-      // Restart timing on a state change so animations always begin at frame 0.
+      /*
+       * A state change cross-fades rather than cutting.
+       *
+       * The old behaviour reset the clock and the next frame was simply a
+       * different image, so idle to working snapped. A short dissolve costs
+       * one extra drawImage for a sixth of a second and does more for how
+       * finished the mascot looks than any amount of new art, because every
+       * state change a user sees goes through it.
+       *
+       * The outgoing frame is captured here — it is still what is on the
+       * canvas — rather than re-derived later from a clock that has moved on.
+       */
       if (current !== lastState) {
+        if (lastState !== null && lastDrawnIndex >= 0 && playing !== null) {
+          fadingFrom = { sheet: playing, index: lastDrawnIndex };
+          fadeStart = now;
+        }
         lastState = current;
+        playing = base;
         animationStart = now;
-        // Different sheet: the same index shows a different image.
         lastDrawnIndex = -1;
       }
 
+      if (playing === null) {
+        playing = base;
+        animationStart = now;
+      }
+
+      const sheet = playing;
       const fps = onBatteryRef.current ? Math.max(1, Math.floor(sheet.fps / 2)) : sheet.fps;
       const frameDuration = 1000 / fps;
       const elapsed = now - animationStart;
       const raw = Math.floor(elapsed / frameDuration);
-      const index = sheet.loop ? raw % sheet.frames : Math.min(raw, sheet.frames - 1);
 
-      if (index !== lastDrawnIndex) {
+      /*
+       * A completed loop is where a variant gets its chance.
+       *
+       * Rolled on the cycle boundary rather than on a timer, so a variant
+       * always begins from a pose the base loop has just returned to. Starting
+       * one mid-breath would make the mascot jump.
+       */
+      if (sheet.loop && sheet === base && raw >= sheet.frames) {
+        const variant = pickVariant(base, Math.random());
+        if (variant !== null) {
+          playing = variant;
+          animationStart = now;
+          lastDrawnIndex = -1;
+          scheduleNext(0);
+          return;
+        }
+        // No variant this time: fall through and keep looping the base.
+      }
+
+      const index = sheet.loop ? raw % sheet.frames : Math.min(raw, sheet.frames - 1);
+      const fadeElapsed = fadingFrom === null ? Infinity : now - fadeStart;
+      const fading = fadeElapsed < CROSSFADE_MS;
+      if (!fading) fadingFrom = null;
+
+      // During a fade the alpha changes every frame even when the sprite index
+      // does not, so the redraw guard has to stand down for its duration.
+      if (index !== lastDrawnIndex || fading) {
         lastDrawnIndex = index;
-        const frameW = sheet.image.width / sheet.frames;
-        const frameH = sheet.image.height;
 
         /*
          * Nearest-neighbour only when a frame maps to a whole number of device
@@ -205,6 +299,8 @@ export function useSpriteAnimation({ canvas, skin, state, visible }: Options): v
          * duplicates some pixel rows and not others, which shimmers as frames
          * advance. Crisp when it can be, filtered when crisp would be uneven.
          */
+        const frameW = sheet.image.width / sheet.frames;
+        const frameH = sheet.image.height;
         const integerScale =
           Number.isInteger((cssWidth * dpr) / frameW) &&
           Number.isInteger((cssHeight * dpr) / frameH);
@@ -212,6 +308,26 @@ export function useSpriteAnimation({ canvas, skin, state, visible }: Options): v
         if (!integerScale) ctx.imageSmoothingQuality = 'high';
 
         ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        if (fading && fadingFrom !== null) {
+          const t = fadeElapsed / CROSSFADE_MS;
+          const from = fadingFrom;
+          const fromW = from.sheet.image.width / from.sheet.frames;
+          ctx.globalAlpha = 1 - t;
+          ctx.drawImage(
+            from.sheet.image,
+            from.index * fromW,
+            0,
+            fromW,
+            from.sheet.image.height,
+            0,
+            0,
+            cssWidth * dpr,
+            cssHeight * dpr,
+          );
+          ctx.globalAlpha = t;
+        }
+
         ctx.drawImage(
           sheet.image,
           index * frameW,
@@ -223,6 +339,29 @@ export function useSpriteAnimation({ canvas, skin, state, visible }: Options): v
           cssWidth * dpr,
           cssHeight * dpr,
         );
+        // Always restore: the next draw must not inherit a partial alpha.
+        ctx.globalAlpha = 1;
+      }
+
+      // Run at display rate while dissolving. State changes are rare, so this
+      // is a short burst rather than a standing cost.
+      if (fading) {
+        raf = requestAnimationFrame(tick);
+        return;
+      }
+
+      /*
+       * A finished variant hands the state back to its base loop.
+       *
+       * Checked before the generic non-looping branch below, which would
+       * otherwise park the mascot on the last frame of a stretch for ever.
+       */
+      if (!sheet.loop && sheet !== base && raw >= sheet.frames - 1) {
+        playing = base;
+        animationStart = now;
+        lastDrawnIndex = -1;
+        scheduleNext(0);
+        return;
       }
 
       // A non-looping animation on its last frame has nothing left to draw,
