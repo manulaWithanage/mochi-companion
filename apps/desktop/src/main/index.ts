@@ -204,16 +204,6 @@ async function bootstrap(): Promise<void> {
     },
   });
   const llmClient = new LlmClient(llm);
-  llmClientRef = llmClient;
-  /*
-   * Re-derive the moment a call starts or finishes.
-   *
-   * The service otherwise re-evaluates every 15 seconds, which is fine for
-   * work hours and idle time and useless here: most model calls are over well
-   * inside one tick, so the thinking face would usually appear after the
-   * answer had already arrived, if at all.
-   */
-  llmClient.onBusyChange(() => mascot.evaluate());
   const calendar = new CalendarService(new CalendarVault());
   // Mochi could see the calendar and never mentioned it: nothing emitted a
   // meeting to the bus. Alerts are planned from the cache on every sync, which
@@ -564,6 +554,23 @@ async function bootstrap(): Promise<void> {
   // Kept live rather than only bubbled once, so a settings panel opened at any
   // point shows the real state instead of whatever it was told at mount.
   updater.onChange((status) => setup.send('updater:changed', status));
+
+  /*
+   * The thinking face: re-derive the moment a model call starts or finishes.
+   *
+   * The service otherwise re-evaluates every 15 seconds, which is fine for
+   * work hours and idle time and useless here. Most model calls are over well
+   * inside one tick, so the thinking face would usually appear after the
+   * answer had already arrived, if at all.
+   *
+   * Wired here, beside the other `start()` calls, rather than next to
+   * `new LlmClient(...)` where it was first written. That line is also where
+   * the ICS worker is wired on another branch, and two unrelated changes
+   * anchored to the same line is a merge conflict that neither of them needed
+   * to have.
+   */
+  llmClientRef = llmClient;
+  llmClient.onBusyChange(() => mascot.evaluate());
 
   await timer.restore();
   mascot.start();
