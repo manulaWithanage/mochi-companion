@@ -49,23 +49,74 @@ const memoryEndpointStore = (): LocalEndpointStore => {
   };
 };
 
+/**
+ * Where the daily token cap is read and written.
+ *
+ * Handed in for the same reason as the endpoints: a cap is the user's choice
+ * and belongs in settings, but this class should not know what a settings file
+ * is. Before this existed `setDailyTokenCap` mutated a field and nothing else,
+ * so raising the cap lasted until the next restart — and the router was
+ * meanwhile telling people to raise it.
+ */
+export interface DailyCapStore {
+  get(): number;
+  set(cap: number): void;
+}
+
+const memoryCapStore = (initial: number): DailyCapStore => {
+  let value = initial;
+  return {
+    get: () => value,
+    set: (next) => {
+      value = next;
+    },
+  };
+};
+
+/** A stored key that did not validate, and when we last tried. */
+interface KeyFailure {
+  readonly error: string;
+  readonly at: number;
+}
+
 export class LlmService {
   private readonly vault: KeyVault;
   private readonly providers: ProviderService;
   private readonly endpoints: LocalEndpointStore;
+  private readonly caps: DailyCapStore;
   private remoteModels = new Map<ProviderId, readonly DiscoveredModel[]>();
+  /**
+   * Why each stored key last failed to validate.
+   *
+   * Kept beside the vault rather than in it: the vault holds secrets, and a
+   * validation error is not one. Absent means the last check passed.
+   */
+  private keyFailures = new Map<ProviderId, KeyFailure>();
+  private lastKeyCheckAt: number | null = null;
   private budget: BudgetState = emptyBudget;
-  private config: BudgetConfig = DEFAULT_BUDGET;
   private readonly listeners = new Set<(status: LlmStatus) => void>();
 
   constructor(
     vault = new KeyVault(),
     providers = new ProviderService(),
     endpoints: LocalEndpointStore = memoryEndpointStore(),
+    caps: DailyCapStore = memoryCapStore(DEFAULT_BUDGET.dailyTokenCap),
   ) {
     this.vault = vault;
     this.providers = providers;
     this.endpoints = endpoints;
+    this.caps = caps;
+  }
+
+  /**
+   * The budget the router spends against.
+   *
+   * Derived from the cap store on every read rather than cached, so a cap
+   * changed in Settings applies to the very next call instead of the next
+   * launch.
+   */
+  private get config(): BudgetConfig {
+    return { ...DEFAULT_BUDGET, dailyTokenCap: this.caps.get() };
   }
 
   /**
@@ -76,8 +127,20 @@ export class LlmService {
    */
   async initialize(): Promise<LlmStatus> {
     await this.providers.probe(this.endpoints.get());
-    await Promise.all(this.vault.providers.map((p) => this.refreshProvider(p)));
+    await this.revalidateKeys();
     return this.emit();
+  }
+
+  /**
+   * Re-check every stored key and record the outcome.
+   *
+   * Separate from `initialize` so the Refresh button can run it too: a key
+   * that failed at launch because the network was down should be clearable
+   * without restarting Mochi.
+   */
+  private async revalidateKeys(): Promise<void> {
+    await Promise.all(this.vault.providers.map((p) => this.refreshProvider(p)));
+    this.lastKeyCheckAt = Date.now();
   }
 
   /**
@@ -106,13 +169,23 @@ export class LlmService {
 
   private async refreshProvider(provider: ProviderId): Promise<void> {
     const key = this.vault.reveal(provider);
-    if (key === null) return;
+    if (key === null) {
+      // A key in the vault that cannot be decrypted is its own failure, and a
+      // loud one: safeStorage is bound to the OS account, so this is what a
+      // restored profile or a new machine looks like.
+      this.noteKeyFailure(
+        provider,
+        'The stored key could not be decrypted on this machine. Paste it again.',
+      );
+      return;
+    }
 
     if (provider === 'azure') {
       const credentials = unpackAzureKey(key);
       if (credentials === null) {
         console.warn('[llm] stored azure credentials are malformed; dropping');
         this.remoteModels.delete('azure');
+        this.noteKeyFailure('azure', 'The stored Azure credentials are malformed. Connect again.');
         return;
       }
       const result = await validateAzureKey({
@@ -123,9 +196,11 @@ export class LlmService {
       if (result.ok) {
         this.remoteModels.set('azure', result.models);
         this.providers.markConfigured('azure');
+        this.clearKeyFailure('azure');
       } else {
         this.remoteModels.delete('azure');
         console.warn(`[llm] azure key did not validate: ${result.error ?? 'unknown'}`);
+        this.noteKeyFailure('azure', result.error);
       }
       return;
     }
@@ -134,12 +209,27 @@ export class LlmService {
     if (result.ok) {
       this.remoteModels.set(provider, result.models);
       this.providers.markConfigured(provider);
+      this.clearKeyFailure(provider);
     } else {
       // Keep the key — a network blip is not a revocation — but drop the
-      // models so nothing tries to route to them.
+      // models so nothing tries to route to them, and record *why*, because
+      // dropping the models silently is what made a dead key indistinguishable
+      // from a provider nobody had configured.
       this.remoteModels.delete(provider);
       console.warn(`[llm] ${provider} key did not validate: ${result.error ?? 'unknown'}`);
+      this.noteKeyFailure(provider, result.error);
     }
+  }
+
+  private noteKeyFailure(provider: ProviderId, error?: string): void {
+    this.keyFailures.set(provider, {
+      error: error ?? 'The key did not validate, and the provider gave no reason.',
+      at: Date.now(),
+    });
+  }
+
+  private clearKeyFailure(provider: ProviderId): void {
+    this.keyFailures.delete(provider);
   }
 
   /**
@@ -174,6 +264,8 @@ export class LlmService {
     this.vault.store(result.provider, rawKey);
     this.remoteModels.set(result.provider, result.models);
     this.providers.markConfigured(result.provider);
+    // This key just validated, so any error from the old one is history.
+    this.clearKeyFailure(result.provider);
     this.emit();
 
     return {
@@ -234,6 +326,7 @@ export class LlmService {
     );
     this.remoteModels.set('azure', result.models);
     this.providers.markConfigured('azure');
+    this.clearKeyFailure('azure');
     this.emit();
 
     return { ok: true, provider: 'azure', redacted: result.redacted, modelCount: 1 };
@@ -243,17 +336,27 @@ export class LlmService {
     this.vault.forget(provider);
     this.remoteModels.delete(provider);
     this.providers.forget(provider);
+    // The provider is gone from `configured`, so a failure attached to it
+    // would never be shown again and would resurface against the next key.
+    this.clearKeyFailure(provider);
     return this.emit();
   }
 
   setDailyTokenCap(cap: number): LlmStatus {
-    this.config = { ...this.config, dailyTokenCap: cap };
+    this.caps.set(Math.max(0, Math.floor(cap)));
     return this.emit();
   }
 
-  /** Re-probe, for when the user starts Ollama after Mochi is already open. */
+  /**
+   * Re-probe the local runtimes *and* re-check the stored keys.
+   *
+   * The local half is for someone who started Ollama after Mochi; the key half
+   * is the only way to clear a validation error without a restart, which is
+   * what makes the error worth showing in the first place.
+   */
   async refresh(): Promise<LlmStatus> {
     await this.providers.probe(this.endpoints.get());
+    await this.revalidateKeys();
     return this.emit();
   }
 
@@ -306,10 +409,17 @@ export class LlmService {
     return {
       local,
       anyLocalAvailable: local.some((l) => l.available),
-      configured: this.vault.summaries().map((s) => ({
-        provider: s.provider,
-        redacted: s.redacted,
-      })),
+      configured: this.vault.summaries().map((s) => {
+        const failure = this.keyFailures.get(s.provider);
+        return {
+          provider: s.provider,
+          redacted: s.redacted,
+          ...(failure !== undefined ? { error: failure.error } : {}),
+          // The time of the last check, not of the failure, so "checked just
+          // now and still fine" is distinguishable from "nobody has looked".
+          ...(this.lastKeyCheckAt !== null ? { checkedAt: this.lastKeyCheckAt } : {}),
+        };
+      }),
       models: this.models,
       ready: this.models.length > 0,
       spentToday: spentToday(this.budget, now),

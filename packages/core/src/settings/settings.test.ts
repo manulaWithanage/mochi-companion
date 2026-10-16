@@ -127,4 +127,43 @@ describe('normalizeSettings', () => {
     expect(settings.gmailAi.deleteCachedDataOnDisconnect).toBe(true);
     expect(settings.gmailAi.allowEmailBodyForAiDrafts).toBe(false);
   });
+  it('defaults launchOnLogin off — starting at sign-in is a decision, not an inheritance', () => {
+    const { settings } = normalizeSettings({});
+    expect(settings.launchOnLogin).toBe(false);
+  });
+
+  it('only accepts a literal true for launchOnLogin', () => {
+    // The OS is the authority on this one, so anything ambiguous in the file
+    // must read as off rather than as a claim the OS has not confirmed.
+    expect(normalizeSettings({ launchOnLogin: true }).settings.launchOnLogin).toBe(true);
+    expect(normalizeSettings({ launchOnLogin: 'yes' }).settings.launchOnLogin).toBe(false);
+    expect(normalizeSettings({ launchOnLogin: 1 }).settings.launchOnLogin).toBe(false);
+  });
+
+  it('defaults the daily token cap to the number the router budgets against', () => {
+    const { settings } = normalizeSettings({});
+    expect(settings.dailyTokenCap).toBe(DEFAULT_SETTINGS.dailyTokenCap);
+  });
+
+  it('keeps a zero cap, because zero means "no cap" rather than "unset"', () => {
+    const { settings } = normalizeSettings({ dailyTokenCap: 0 });
+    expect(settings.dailyTokenCap).toBe(0);
+  });
+
+  it('floors a fractional cap and rejects a negative one', () => {
+    expect(normalizeSettings({ dailyTokenCap: 1234.9 }).settings.dailyTokenCap).toBe(1234);
+
+    const negative = normalizeSettings({ dailyTokenCap: -50 });
+    expect(negative.settings.dailyTokenCap).toBe(DEFAULT_SETTINGS.dailyTokenCap);
+    expect(negative.issues.some((i) => i.field === 'dailyTokenCap')).toBe(true);
+  });
+
+  it('falls back from a non-numeric cap', () => {
+    expect(normalizeSettings({ dailyTokenCap: 'lots' }).settings.dailyTokenCap).toBe(
+      DEFAULT_SETTINGS.dailyTokenCap,
+    );
+    expect(normalizeSettings({ dailyTokenCap: Number.NaN }).settings.dailyTokenCap).toBe(
+      DEFAULT_SETTINGS.dailyTokenCap,
+    );
+  });
 });

@@ -54,6 +54,25 @@ export interface LocalProviderStatus {
   readonly error?: string;
 }
 
+/**
+ * A provider with a key in the vault.
+ *
+ * `error` is the whole point of this being a shape rather than a pair of
+ * strings. A revoked or expired key used to look exactly like a working one:
+ * the key stayed in the vault, the row kept saying "Key saved", and only the
+ * models quietly vanished, so the first symptom was a briefing that never
+ * arrived. The failure now travels with the provider it belongs to.
+ */
+export interface ConfiguredProviderStatus {
+  readonly provider: ProviderId;
+  /** Never the key itself (RULE 1) — a prefix and a tail, nothing more. */
+  readonly redacted: string;
+  /** Why the last validation of this stored key failed. Safe to show. */
+  readonly error?: string;
+  /** Epoch ms of the last validation attempt, successful or not. */
+  readonly checkedAt?: number;
+}
+
 export interface LlmStatus {
   /**
    * Every local runtime Mochi knows about, probed or not.
@@ -65,8 +84,14 @@ export interface LlmStatus {
   readonly local: readonly LocalProviderStatus[];
   /** At least one local runtime answered — the zero-key path is live. */
   readonly anyLocalAvailable: boolean;
-  /** Providers with a stored, working key. Never includes the key itself. */
-  readonly configured: readonly { provider: ProviderId; redacted: string }[];
+  /**
+   * Providers with a stored key — working or not.
+   *
+   * Not "working": a provider whose key has just been revoked still belongs
+   * here, carrying the error, because telling the user their key is gone is
+   * the useful thing to do and dropping the row is not.
+   */
+  readonly configured: readonly ConfiguredProviderStatus[];
   readonly models: readonly DiscoveredModel[];
   /** True when Mochi can call a model right now, by any route. */
   readonly ready: boolean;
@@ -205,6 +230,14 @@ export interface MochiBridge {
     setPaused(paused: boolean): Promise<MochiSettings>;
     setDoNotDisturb(dnd: boolean): Promise<MochiSettings>;
     setAlwaysOnTop(alwaysOnTop: boolean): Promise<MochiSettings>;
+    /**
+     * Ask the OS to start Mochi at sign-in, and report what it actually did.
+     *
+     * The returned settings carry the OS's answer, not the request — if the
+     * platform refuses or does not support login items, the toggle goes back
+     * to where it was instead of claiming a change that never happened.
+     */
+    setLaunchOnLogin(enabled: boolean): Promise<MochiSettings>;
     setCenterScreenAlerts(enabled: boolean): Promise<MochiSettings>;
     setMascotSize(size: MascotSize): Promise<MochiSettings>;
     setPrimaryProjects(ids: readonly string[]): Promise<MochiSettings>;
