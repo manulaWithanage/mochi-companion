@@ -1,81 +1,92 @@
-# 🔏 Code signing policy
+# 🔏 Code signing and build integrity
 
-Free code signing provided by [SignPath.io](https://about.signpath.io), certificate by [SignPath Foundation](https://signpath.org).
+**Mochi is not code-signed. On Windows, SmartScreen will warn you every time you download it.**
 
-A signature lets you check two things before you run an installer: that it was published by this project, and that nobody has changed it since. This page says what Mochi signs, how a signed build is produced, and who can approve one.
+That is the first thing on this page because it is the thing you need to know before you run the installer, and a page that buried it would be dishonest.
+
+A signature lets you check two things before running an installer: that it was published by this project, and that nobody changed it on the way to you. Mochi cannot offer you the first one yet. This page says exactly what it can offer instead, and what would have to change for that to improve.
 
 ---
 
 ## Status
 
-| Platform | Signed                                                                                                              |
-| :------- | :------------------------------------------------------------------------------------------------------------------ |
-| Windows  | **Not yet.** Mochi applied to the SignPath Foundation on 2026-10-09. Until it is approved, installers are unsigned. |
-| macOS    | **No.** Signing needs an Apple Developer ID, which the project does not have yet. The disk image is experimental.   |
-| Linux    | Not distributed yet.                                                                                                |
+| Platform | Signed | What that means for you                                                                                                                            |
+| :------- | :----- | :------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Windows  | **No** | SmartScreen warns on first run. Click **More info**, then **Run anyway**. Auto-update still works, but it is not protected by a signature check.   |
+| macOS    | **No** | Gatekeeper refuses the disk image outright, and an unsigned build cannot auto-update at all. The dmg is built every release and offered to nobody. |
+| Linux    | n/a    | Not distributed.                                                                                                                                   |
 
-This page is updated when any of these change. Until a platform says **Yes**, its downloads carry no signature at all, and your operating system will warn you before running them.
+This page is updated when any of that changes.
 
 ---
 
-## What gets signed
+## Why it is unsigned
 
-Only files built from this repository by its own release workflow:
+A certificate costs a few hundred a year, and reputation attaches to the certificate rather than to the project: SmartScreen's warning does not fade with download volume unless the builds are signed, so every unsigned release starts from zero no matter how many people have installed the last one.
 
-- `Mochi-Setup.exe`, the Windows installer published on [GitHub Releases](https://github.com/manulaWithanage/mochi-companion/releases)
+The free route for open-source projects is a certificate donated through a foundation programme. Mochi applied to one on 2026-10-09 and was **rejected on 2026-10-15**. No alternative has been assessed yet, and the honest summary is that this is an open problem rather than a scheduled fix.
+
+Signing is the single most valuable unresolved thing in Mochi's distribution, because the update channel is the whole trust root. An unsigned build with automatic updates means that anyone who could publish a release to this repository could reach every installed copy. There is no second check behind that: `electron-updater` verifies signatures, and there is no signature to verify.
+
+---
+
+## What you can verify instead
+
+This is weaker than a signature, and it is not nothing.
+
+**Every release is built in public, from a tag, by a workflow you can read.** No installer is ever built on a maintainer's machine. The steps are in [`release.yml`](.github/workflows/release.yml) and [`ci.yml`](.github/workflows/ci.yml):
+
+1. **A version tag is pushed.** The run starts from that exact commit.
+2. **The tag is checked** against the version in `apps/desktop/package.json`. A mismatch stops the release before anything is built.
+3. **Every gate runs** on Windows, macOS and Linux: lint, format, typecheck, tests, build.
+4. **The installer is built from source** with `electron-builder`, on a GitHub-hosted runner.
+5. **Artifacts are uploaded to a draft.** Nothing reaches anyone until a maintainer reviews that draft and publishes it by hand.
+
+You can open the run for any release and read every command that produced the file you downloaded.
+
+**Each release publishes a `SHA256SUMS-windows.txt`.** It is generated by the workflow from the file it just built, so you can confirm that the installer you have is byte-for-byte the one that run produced:
+
+```powershell
+Get-FileHash .\Mochi-Setup.exe -Algorithm SHA256
+```
+
+Compare the result with the line in `SHA256SUMS-windows.txt` on the release page.
+
+Be clear about what that proves: it proves your download was not corrupted or swapped in transit. It does **not** prove the release itself is trustworthy, because the hash and the file come from the same place. A signature is what closes that gap, and Mochi does not have one.
+
+---
+
+## What is covered
+
+Only files built from this repository by its own release workflow, and published on [GitHub Releases](https://github.com/manulaWithanage/mochi-companion/releases):
+
+- `Mochi-Setup.exe`, the Windows installer
 - the application executable and uninstaller inside it
 
-Nothing built on a developer's own machine is ever signed. Third-party projects, forks and builds from other sources are not covered by this policy, even when they use the Mochi name.
+Forks, rebuilds and third-party distributions are not covered by anything on this page, even when they use the Mochi name. If you did not get the installer from the releases page linked above, nothing here applies to it.
 
 ---
 
-## How a signed build is produced
-
-Every step runs on GitHub-hosted runners, defined in files that are public in this repository:
-
-1. **A version tag is pushed.** [`release.yml`](.github/workflows/release.yml) starts from that exact commit.
-2. **The tag is checked** against the version in `apps/desktop/package.json`. A mismatch stops the release.
-3. **Every gate runs** on Windows, macOS and Linux: lint, format, typecheck, tests and build ([`ci.yml`](.github/workflows/ci.yml)).
-4. **The installer is built from source** with `electron-builder`.
-5. **The build is submitted to SignPath for signing.** SignPath checks that it came from this repository's workflow, and an approver (below) must approve the request by hand. The private key never leaves SignPath's hardware security module, so no maintainer holds it.
-6. **The signed installer is uploaded to a draft release.** Nothing is offered to anyone until a maintainer reviews the draft and publishes it.
-
-Build scripts and workflow files are treated as source code: they are reviewed in the same way as any other change.
-
----
-
-## Team roles
+## Who can publish a release
 
 | Role                     | Who can                                                       | Members                                                |
 | :----------------------- | :------------------------------------------------------------ | :----------------------------------------------------- |
 | Committers and reviewers | Change the source code, and review every outside contribution | [Manula Withanage](https://github.com/manulaWithanage) |
-| Approvers                | Approve each signing request                                  | [Manula Withanage](https://github.com/manulaWithanage) |
+| Release publishers       | Publish a draft release                                       | [Manula Withanage](https://github.com/manulaWithanage) |
 
-Changes from anyone who is not a committer arrive as pull requests and are reviewed by a committer before they are merged. Every team member uses multi-factor authentication for both GitHub and SignPath.
+Changes from anyone who is not a committer arrive as pull requests and are reviewed before they are merged. Build scripts and workflow files are treated as source code and reviewed the same way, because they decide what reaches users.
 
 ---
 
 ## Privacy
 
-Mochi has no account, no server and no telemetry. It only contacts the services you connect yourself, such as an AI provider or your mail and calendar, plus GitHub Releases to check for updates. The full details are in the [privacy policy](PRIVACY.md).
-
----
-
-## Checking a signature
-
-Once Windows signing is live, right-click the installer, choose **Properties**, then the **Digital Signatures** tab. Or, in PowerShell:
-
-```powershell
-Get-AuthenticodeSignature .\Mochi-Setup.exe | Format-List Status, SignerCertificate
-```
-
-`Status` should be `Valid`. If it is anything else, do not run the file.
+Mochi has no account, no server and no telemetry. It contacts the services you connect yourself, such as an AI provider or your mail and calendar, plus GitHub Releases to check for updates. The details are in the [privacy policy](PRIVACY.md).
 
 ---
 
 ## Reporting a problem
 
-If you think a signed Mochi file is malicious, has been tampered with, or was signed by mistake, email **manula.withanage@gmail.com** with the file's SHA-256 hash and where you downloaded it. You can get the hash with:
+If you think a Mochi installer has been tampered with, or that a release should not have been published, email **manula.withanage@gmail.com** with the file's SHA-256 hash and where you downloaded it:
 
 ```powershell
 Get-FileHash .\Mochi-Setup.exe -Algorithm SHA256

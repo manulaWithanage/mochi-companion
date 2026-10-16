@@ -8,7 +8,7 @@
 
 **[mochicompanion.com](https://mochicompanion.com)** · **[Download for Windows](https://github.com/manulaWithanage/mochi-companion/releases/latest/download/Mochi-Setup.exe)** · **[Code signing policy](CODE_SIGNING_POLICY.md)** · **[Privacy policy](PRIVACY.md)**
 
-> **The installer is not code-signed yet.** Windows SmartScreen will warn you on first run — click **More info → Run anyway**. Mochi has applied to the SignPath Foundation for a free certificate; until it is approved this warning is expected, and the honest thing to say about it is that you are trusting the build, not a certificate. See the [code signing policy](CODE_SIGNING_POLICY.md).
+> **The installer is not code-signed, and there is no date for when it will be.** Windows SmartScreen will warn you on first run — click **More info → Run anyway**. The honest thing to say is that you are trusting the build, not a certificate. Every release is built in public from a tag and ships a `SHA256SUMS-windows.txt` you can check your download against; what that does and does not prove is in the [code signing policy](CODE_SIGNING_POLICY.md).
 
 Mochi sits in the corner of your screen, tracks where your time actually goes, and speaks up when something genuinely needs you — a reply you owe, a meeting about to start, a task you set for yourself.
 
@@ -81,9 +81,9 @@ Releases are tag-driven: bump the version in a commit, tag it, and the pipeline 
 
 ---
 
-## Code signing policy
+## Code signing and build integrity
 
-Free code signing provided by [SignPath.io](https://about.signpath.io), certificate by [SignPath Foundation](https://signpath.org). The application is pending, so current installers are still unsigned. What gets signed, how, and who approves it: [`CODE_SIGNING_POLICY.md`](CODE_SIGNING_POLICY.md).
+Mochi is **unsigned on every platform.** A free certificate was applied for through a foundation programme on 2026-10-09 and refused on 2026-10-15, and no alternative has been assessed, so this is an open problem rather than a scheduled fix. It matters more than it looks: automatic updates with no signature mean the release channel is the whole trust root. What you can verify instead, and what it is worth: [`CODE_SIGNING_POLICY.md`](CODE_SIGNING_POLICY.md).
 
 This project follows a [code of conduct](CODE_OF_CONDUCT.md).
 
