@@ -98,6 +98,8 @@ const bridge: MochiBridge = {
       ipcRenderer.invoke('settings:setDoNotDisturb', dnd) as Promise<MochiSettings>,
     setAlwaysOnTop: (alwaysOnTop) =>
       ipcRenderer.invoke('settings:setAlwaysOnTop', alwaysOnTop) as Promise<MochiSettings>,
+    setLaunchOnLogin: (enabled) =>
+      ipcRenderer.invoke('settings:setLaunchOnLogin', enabled) as Promise<MochiSettings>,
     setCenterScreenAlerts: (enabled) =>
       ipcRenderer.invoke('settings:setCenterScreenAlerts', enabled) as Promise<MochiSettings>,
     setMascotSize: (size) =>

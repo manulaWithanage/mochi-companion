@@ -35,6 +35,8 @@ import type { MascotService } from './services/mascot-service.js';
 import type { SettingsStore } from './storage/settings-store.js';
 import type { OverlayWindow } from './windows/overlay.js';
 import type { SetupWindow } from './windows/setup.js';
+import { applyLaunchOnLogin } from './login-item.js';
+import { electronLoginItemOs } from './login-item-electron.js';
 import { listSkins, loadSkin } from './services/skin-loader.js';
 import type { GmailManager } from './services/gmail-manager.js';
 import type { UserRoutinesVault } from './storage/user-routines-vault.js';
@@ -294,6 +296,14 @@ export function registerIpc(ctx: IpcContext): void {
     const next = ctx.settings.update({ alwaysOnTop: alwaysOnTop !== false });
     ctx.overlay.setAlwaysOnTop(next.alwaysOnTop);
     return next;
+  });
+
+  // Store what the OS did, not what was asked. applyLaunchOnLogin reads the
+  // login item back after writing it, so a refusal persists as `false` and
+  // the toggle in Settings returns to where it was.
+  ipcMain.handle('settings:setLaunchOnLogin', (_e, enabled: unknown) => {
+    const launchOnLogin = applyLaunchOnLogin(electronLoginItemOs, enabled === true);
+    return ctx.settings.update({ launchOnLogin });
   });
 
   ipcMain.handle('settings:setCenterScreenAlerts', (_e, enabled: unknown) => {

@@ -309,6 +309,15 @@ export function AiSection(): JSX.Element {
   const [message, setMessage] = useState<Note>(null);
   const [scanning, setScanning] = useState(false);
 
+  /**
+   * The cap field, as typed.
+   *
+   * Held as a string rather than a number so the field can be emptied while
+   * being edited. `null` means "not editing" and the stored cap is shown.
+   */
+  const [capDraft, setCapDraft] = useState<string | null>(null);
+  const [capSaved, setCapSaved] = useState(false);
+
   const [showAzure, setShowAzure] = useState(false);
   const [azureResource, setAzureResource] = useState('');
   const [azureDeployment, setAzureDeployment] = useState('');
@@ -391,6 +400,26 @@ export function AiSection(): JSX.Element {
       setScanning(false);
     }
   }, []);
+
+  /**
+   * Store the typed cap.
+   *
+   * The draft is cleared on success so the field falls back to showing the
+   * status the main process sent back — the stored number, not the typed one.
+   * If the two ever disagree, that is worth seeing rather than hiding behind
+   * optimistic local state.
+   */
+  const saveCap = useCallback(async () => {
+    if (capDraft === null || capDraft.length === 0) return;
+    const cap = Number.parseInt(capDraft, 10);
+    if (!Number.isFinite(cap) || cap < 0) return;
+
+    const next = await window.mochi.llm.setDailyTokenCap(cap);
+    setStatus(next);
+    setCapDraft(null);
+    setCapSaved(true);
+    window.setTimeout(() => setCapSaved(false), 1600);
+  }, [capDraft]);
 
   const runTest = useCallback(async () => {
     setBusy(true);
@@ -558,7 +587,14 @@ export function AiSection(): JSX.Element {
                       <div style={{ fontSize: 14.5, fontWeight: 650, color: '#ffffff' }}>
                         {providerLabel(c.provider)}
                       </div>
-                      <div style={{ fontSize: 12, color: C.ok, opacity: 0.9, marginTop: 3 }}>
+                      <div
+                        style={{
+                          fontSize: 12,
+                          color: c.error === undefined ? C.ok : C.warn,
+                          opacity: 0.9,
+                          marginTop: 3,
+                        }}
+                      >
                         Key saved:{' '}
                         <code
                           style={{
@@ -570,6 +606,26 @@ export function AiSection(): JSX.Element {
                           {c.redacted}
                         </code>
                       </div>
+                      {/*
+                        A revoked or expired key used to be invisible here: the
+                        row kept saying "Key saved" and only the model list
+                        quietly emptied, so the first sign of trouble was a
+                        briefing that never arrived.
+                      */}
+                      {c.error !== undefined && (
+                        <div
+                          style={{
+                            fontSize: 12,
+                            color: C.warn,
+                            marginTop: 6,
+                            lineHeight: 1.5,
+                            maxWidth: 460,
+                          }}
+                        >
+                          <strong>This key is not working.</strong> {c.error} The key is still
+                          stored. Press Refresh to try again, or paste a new one below.
+                        </div>
+                      )}
                     </div>
                   </div>
 
@@ -814,6 +870,13 @@ export function AiSection(): JSX.Element {
       {status.ready && (
         <div style={{ borderTop: `1px solid ${C.border}`, paddingTop: 16 }}>
           <span style={labelStyle}>Today&apos;s Token Consumption</span>
+          {/*
+            The router refuses a task that cannot fit under the cap with the
+            words "Raise the cap in Settings". Until this field existed there
+            was nothing in Settings to raise, and the number it named was held
+            in memory, so even the IPC call behind it forgot the answer on the
+            next launch.
+          */}
           <div
             style={{ height: 6, borderRadius: 3, background: C.track, overflow: 'hidden' }}
             title={`${status.spentToday.toLocaleString()} of ${status.dailyTokenCap.toLocaleString()} tokens`}
@@ -833,6 +896,40 @@ export function AiSection(): JSX.Element {
             tokens used today. Local models are free and private; cloud providers bill directly from
             your own account.
           </p>
+
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 10,
+              marginTop: 14,
+              flexWrap: 'wrap',
+            }}
+          >
+            <span style={{ fontSize: 12.5, opacity: 0.8 }}>Daily cap</span>
+            <input
+              style={{ ...monoInputStyle, maxWidth: 140 }}
+              type="text"
+              inputMode="numeric"
+              value={capDraft ?? String(status.dailyTokenCap)}
+              spellCheck={false}
+              onChange={(e) => setCapDraft(e.target.value.replace(/[^\d]/g, ''))}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') void saveCap();
+              }}
+            />
+            <button
+              onClick={() => void saveCap()}
+              disabled={capDraft === null || capDraft.length === 0}
+              style={primaryButton(capDraft === null || capDraft.length === 0)}
+            >
+              {capSaved ? 'Saved' : 'Set Cap'}
+            </button>
+            <span style={{ fontSize: 12, color: C.dim }}>
+              0 removes the cap entirely: your provider&apos;s own limits then apply, not
+              Mochi&apos;s.
+            </span>
+          </div>
         </div>
       )}
     </div>

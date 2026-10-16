@@ -6,6 +6,7 @@
  */
 
 import { isActivityCategoryId } from '../activity/activity.js';
+import { DEFAULT_BUDGET } from '../llm/router.js';
 import { DEFAULT_WORK_HOURS, parseHhMm, type WorkHours } from '../mascot/state.js';
 
 export interface OverlayPosition {
@@ -93,6 +94,24 @@ export interface MochiSettings {
    * "use the documented default".
    */
   readonly localEndpoints: Readonly<Record<string, string>>;
+  /**
+   * Start Mochi when the user signs in.
+   *
+   * The OS owns the truth here, not this file: a login item can be removed
+   * from Task Manager or System Settings without Mochi ever running. So this
+   * is reconciled against `app.getLoginItemSettings()` on every launch rather
+   * than trusted — a setting that says "on" while the OS says "off" is the
+   * same silent lie as a checkbox wired to nothing.
+   */
+  readonly launchOnLogin: boolean;
+  /**
+   * Tokens Mochi may spend on cloud models in a day. Zero means no cap.
+   *
+   * Lives here rather than in the budget defaults because the router already
+   * tells people to "raise the cap in Settings", and until now there was no
+   * control to raise and nowhere for the answer to survive a restart.
+   */
+  readonly dailyTokenCap: number;
   readonly gmailAi: GmailAiSettings;
 }
 
@@ -122,6 +141,10 @@ export const DEFAULT_SETTINGS: MochiSettings = {
   trackBrowsingSites: false,
   primaryProjectIds: [],
   localEndpoints: {},
+  launchOnLogin: false,
+  // The same number the router budgets against, so the meter in Settings and
+  // the refusal the router produces cannot disagree.
+  dailyTokenCap: DEFAULT_BUDGET.dailyTokenCap,
   gmailAi: {
     priorityEnabled: true,
     backgroundDraftsEnabled: false,
@@ -254,6 +277,19 @@ export function normalizeSettings(raw: unknown): {
     }
   }
 
+  // Zero is a real value — "no cap" — so it has to survive, which rules out
+  // the `|| default` shorthand. A negative or fractional cap is a corrupt
+  // file, not a choice, and falls back rather than capping at something
+  // nonsensical.
+  let dailyTokenCap = DEFAULT_SETTINGS.dailyTokenCap;
+  if (typeof input.dailyTokenCap === 'number' && Number.isFinite(input.dailyTokenCap)) {
+    if (input.dailyTokenCap < 0) {
+      issues.push({ field: 'dailyTokenCap', message: 'negative, using default' });
+    } else {
+      dailyTokenCap = Math.floor(input.dailyTokenCap);
+    }
+  }
+
   let gmailAi = DEFAULT_SETTINGS.gmailAi;
   const rawGmailAi = input.gmailAi;
   if (typeof rawGmailAi === 'object' && rawGmailAi !== null) {
@@ -325,6 +361,8 @@ export function normalizeSettings(raw: unknown): {
       trackBrowsingSites: input.trackBrowsingSites === true,
       primaryProjectIds,
       localEndpoints,
+      launchOnLogin: input.launchOnLogin === true,
+      dailyTokenCap,
       gmailAi,
     },
     issues,

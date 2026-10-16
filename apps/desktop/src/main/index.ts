@@ -36,6 +36,8 @@ import { MascotService } from './services/mascot-service.js';
 import { OverlayWindow } from './windows/overlay.js';
 import { SetupWindow } from './windows/setup.js';
 import { MochiTray } from './tray.js';
+import { reconcileLaunchOnLogin } from './login-item.js';
+import { electronLoginItemOs } from './login-item-electron.js';
 import { RoutineService } from './services/routine-service.js';
 import { UserRoutineScheduler } from './services/user-routine-scheduler.js';
 import { TaskReminderScheduler } from './services/task-reminder-scheduler.js';
@@ -116,6 +118,18 @@ function openStorage(): StorageAdapter {
 async function bootstrap(): Promise<void> {
   let resettingLocalData = false;
   const settings = new SettingsStore();
+
+  // The OS owns start-at-sign-in, so ask it rather than trusting the file.
+  // Someone who removed Mochi from Task Manager's Startup tab should see the
+  // toggle off here, not a setting insisting it is on.
+  const actualLaunchOnLogin = reconcileLaunchOnLogin(
+    electronLoginItemOs,
+    settings.get().launchOnLogin,
+  );
+  if (actualLaunchOnLogin !== settings.get().launchOnLogin) {
+    settings.update({ launchOnLogin: actualLaunchOnLogin });
+  }
+
   const userRoutines = new UserRoutinesVault();
   const storage = openStorage();
   const timer = new TimerService(storage);
@@ -192,12 +206,25 @@ async function bootstrap(): Promise<void> {
   const google = new GoogleService(join(app.getPath('userData'), 'google.enc.json'));
   // Local base URLs are a host and port, not a secret, so they live in
   // settings — visible and fixable — rather than in the encrypted vault.
-  const llm = new LlmService(new KeyVault(), new ProviderService(), {
-    get: () => settings.get().localEndpoints,
-    set: (localEndpoints) => {
-      settings.update({ localEndpoints });
+  const llm = new LlmService(
+    new KeyVault(),
+    new ProviderService(),
+    {
+      get: () => settings.get().localEndpoints,
+      set: (localEndpoints) => {
+        settings.update({ localEndpoints });
+      },
     },
-  });
+    // The cap is a number the user chose, so it belongs in settings alongside
+    // the endpoints. Held in memory it survived until the next restart, while
+    // the router told people to go and raise it.
+    {
+      get: () => settings.get().dailyTokenCap,
+      set: (dailyTokenCap) => {
+        settings.update({ dailyTokenCap });
+      },
+    },
+  );
   const llmClient = new LlmClient(llm);
   const calendar = new CalendarService(new CalendarVault());
   // Mochi could see the calendar and never mentioned it: nothing emitted a

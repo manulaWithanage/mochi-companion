@@ -138,6 +138,15 @@ export function MochiTab(): JSX.Element {
   const [preview, setPreview] = useState<MascotState>('idle');
   const [saved, setSaved] = useState(false);
 
+  /**
+   * Set when the OS declined to create the login item.
+   *
+   * The handler returns what the OS reports *after* the write, so a refusal
+   * arrives as settings that still say false. Without this the toggle would
+   * flick back with no explanation, which is worse than not offering it.
+   */
+  const [loginRefused, setLoginRefused] = useState(false);
+
   const [start, setStart] = useState('09:00');
   const [end, setEnd] = useState('17:00');
   const [hoursSaved, setHoursSaved] = useState(false);
@@ -439,6 +448,38 @@ export function MochiTab(): JSX.Element {
           title={`Hide ${settings.assistantName}`}
           desc="Removes the mascot from the screen entirely. The tray icon stays."
         />
+      </div>
+
+      <div style={{ ...card, marginBottom: 16 }}>
+        <div style={{ fontSize: 13, fontWeight: 600, color: C.text, marginBottom: 4 }}>
+          Starting Up
+        </div>
+
+        <Toggle
+          on={settings.launchOnLogin}
+          onChange={(v) => {
+            void (async () => {
+              const next = await window.mochi.settings.setLaunchOnLogin(v);
+              // Compare against what was asked for, not against the previous
+              // value: the OS is the authority, and this is the only place a
+              // refusal can be seen.
+              setLoginRefused(next.launchOnLogin !== v);
+            })();
+          }}
+          title="Start Mochi when I sign in"
+          desc={`${settings.assistantName} starts quietly in the tray, so your time is tracked from the beginning of the day rather than from whenever you remember to open it.`}
+        />
+        {loginRefused && (
+          <p style={{ color: C.warn, fontSize: 12, margin: '8px 0 0', lineHeight: 1.5 }}>
+            This system did not allow the change. On Windows a managed machine can lock startup
+            entries; on Linux Mochi cannot create one at all. Nothing was changed.
+          </p>
+        )}
+        <p style={{ fontSize: 12, color: C.faint, margin: '10px 0 0', lineHeight: 1.5 }}>
+          This reads from your operating system, not from Mochi&apos;s settings. If you remove Mochi
+          from startup yourself, using Task Manager on Windows or Login Items on macOS, this switch
+          will show it the next time Mochi opens.
+        </p>
       </div>
 
       <UpdatesCard />
