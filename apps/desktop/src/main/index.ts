@@ -120,9 +120,14 @@ async function bootstrap(): Promise<void> {
   const storage = openStorage();
   const timer = new TimerService(storage);
 
+  // `llmClient` is constructed further down, after the services it needs, so
+  // this reads through a holder rather than closing over a value that does not
+  // exist yet. A getter keeps the wiring in one direction.
+  let llmClientRef: { busy: boolean } | null = null;
   const mascot = new MascotService({
     isTimerRunning: () => timer.isRunning,
     getWorkHours: () => settings.get().workHours,
+    isLlmThinking: () => llmClientRef?.busy ?? false,
   });
 
   const overlay = new OverlayWindow({
@@ -199,6 +204,16 @@ async function bootstrap(): Promise<void> {
     },
   });
   const llmClient = new LlmClient(llm);
+  llmClientRef = llmClient;
+  /*
+   * Re-derive the moment a call starts or finishes.
+   *
+   * The service otherwise re-evaluates every 15 seconds, which is fine for
+   * work hours and idle time and useless here: most model calls are over well
+   * inside one tick, so the thinking face would usually appear after the
+   * answer had already arrived, if at all.
+   */
+  llmClient.onBusyChange(() => mascot.evaluate());
   const calendar = new CalendarService(new CalendarVault());
   // Mochi could see the calendar and never mentioned it: nothing emitted a
   // meeting to the bus. Alerts are planned from the cache on every sync, which
@@ -324,6 +339,10 @@ async function bootstrap(): Promise<void> {
           task: 'phrase',
           system: 'You are Mochi, a small desktop companion. Reply in one short sentence.',
           prompt: 'Say hello and mention you are ready to help.',
+          // Somebody pressed a button and is watching a spinner. The briefing
+          // and the activity classifier above deliberately do not set this:
+          // nobody is waiting for either of them.
+          userWaiting: true,
         });
         if (result.ok) {
           return { ok: true, text: result.text, model: result.model, tokens: result.tokens };

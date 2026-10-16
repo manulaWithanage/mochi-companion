@@ -31,6 +31,18 @@ export interface GenerateRequest {
   readonly task: TaskId;
   readonly prompt: string;
   readonly system?: string;
+  /**
+   * Somebody is waiting for this answer, so the mascot should show that it is
+   * working on it.
+   *
+   * Off by default, and that default is the important half. Most calls here
+   * are background: the email triage pass, speculative drafts, the briefing
+   * assembled before anyone asks for it. If those set the thinking face, a
+   * mascot that is supposed to indicate "your answer is coming" would instead
+   * be pulling a concentrating face at intervals all day, and would mean
+   * nothing.
+   */
+  readonly userWaiting?: boolean;
 }
 
 export type GenerateResult =
@@ -119,6 +131,35 @@ export class LlmClient {
   constructor(private readonly llm: LlmService) {}
 
   /**
+   * How many calls somebody is currently waiting on.
+   *
+   * A count rather than a boolean: two overlapping requests that each flipped
+   * a flag would have the first one to finish clear it while the second was
+   * still running, and the mascot would stop looking busy halfway through.
+   */
+  private waiting = 0;
+  private readonly busyListeners = new Set<(busy: boolean) => void>();
+
+  /** True while at least one user-facing call is in flight. */
+  get busy(): boolean {
+    return this.waiting > 0;
+  }
+
+  /** Notified on the transitions only, not on every call. */
+  onBusyChange(listener: (busy: boolean) => void): () => void {
+    this.busyListeners.add(listener);
+    return () => this.busyListeners.delete(listener);
+  }
+
+  private setWaiting(delta: number): void {
+    const was = this.busy;
+    this.waiting = Math.max(0, this.waiting + delta);
+    if (this.busy !== was) {
+      for (const listener of this.busyListeners) listener(this.busy);
+    }
+  }
+
+  /**
    * Whether any model is available at all.
    *
    * For callers that have expensive work to do *before* they can ask — the email
@@ -142,6 +183,20 @@ export class LlmClient {
    * on, because the caller is usually a speech bubble.
    */
   async generate(request: GenerateRequest): Promise<GenerateResult> {
+    if (request.userWaiting !== true) return this.runGenerate(request);
+
+    this.setWaiting(1);
+    try {
+      return await this.runGenerate(request);
+    } finally {
+      // `finally` rather than after the await: `runGenerate` is written never
+      // to throw, and a counter that leaks on the day that stops being true
+      // would leave the mascot thinking for the rest of the session.
+      this.setWaiting(-1);
+    }
+  }
+
+  private async runGenerate(request: GenerateRequest): Promise<GenerateResult> {
     const spec = TASKS[request.task];
     const decision = route(
       spec,

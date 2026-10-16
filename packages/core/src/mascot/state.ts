@@ -7,7 +7,7 @@
  */
 
 export const V1_STATES = ['idle', 'working', 'resting'] as const;
-export const V2_STATES = ['thinking', 'speaking', 'alert'] as const;
+export const V2_STATES = ['thinking', 'speaking', 'happy', 'celebrating', 'alert'] as const;
 
 export type MascotState = (typeof V1_STATES)[number] | (typeof V2_STATES)[number];
 
@@ -25,8 +25,20 @@ const PRIORITY: Record<MascotState, number> = {
   idle: 0,
   resting: 1,
   working: 2,
+  /**
+   * `happy` sits below `thinking` on purpose. It is a reaction to being
+   * stroked, and it should not hold the face while a model call the user is
+   * waiting on is running underneath it.
+   */
+  happy: 2,
   thinking: 3,
   speaking: 4,
+  /**
+   * Above `speaking`, because a celebration is a thing Mochi does *while*
+   * telling you about it, and below `alert`, because nothing outranks an
+   * alert.
+   */
+  celebrating: 4,
   alert: 5,
 };
 
@@ -79,6 +91,15 @@ export interface MascotContext {
   readonly workHours: WorkHours;
   /** How long the user has been away from keyboard/mouse. */
   readonly userIdleMs: number;
+  /**
+   * A model call the user is waiting on is in flight.
+   *
+   * Only calls somebody asked for. Background work — the email triage pass,
+   * speculative draft generation — deliberately does not set this: a mascot
+   * that looks busy while nobody is waiting is noise, and it would be on
+   * screen for most of the working day.
+   */
+  readonly llmThinking?: boolean;
 }
 
 /** Idle this long outside of an active timer and the mascot settles down. */
@@ -92,6 +113,17 @@ export const REST_AFTER_IDLE_MS = 5 * 60_000;
  * extend, and it keeps the renderer free of scheduling logic.
  */
 export function deriveMascotState(ctx: MascotContext): MascotState {
+  /*
+   * Thinking outranks everything derivable here, including an active timer.
+   *
+   * It is the only state in this function that answers "is something
+   * happening right now that you are waiting for", and a user who asked a
+   * question four seconds ago needs that answer more than they need to be
+   * reminded the stopwatch is running. It is also brief by construction: it
+   * lasts exactly as long as the call.
+   */
+  if (ctx.llmThinking === true) return 'thinking';
+
   // An active timer always wins: the user is demonstrably at the desk.
   if (ctx.timerRunning) return 'working';
   if (!isWithinWorkHours(ctx.now, ctx.workHours)) return 'resting';

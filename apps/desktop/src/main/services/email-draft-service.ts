@@ -94,6 +94,10 @@ export class EmailDraftService {
       task: background ? 'background-draft' : 'draft',
       system: prompt.system,
       prompt: prompt.prompt,
+      // The same distinction the task id already makes: a draft the user
+      // asked for has them watching a "generating" row, a speculative one
+      // runs during a sync and nobody knows it happened.
+      userWaiting: !background,
     });
     if (!result.ok) {
       await this.fail(account, emailId, result.reason);

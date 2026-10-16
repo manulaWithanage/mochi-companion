@@ -104,11 +104,43 @@ export function loadSkin(name: string): LoadedSkin {
       // Filenames are validated as bare names by parseSkinManifest, so this
       // cannot escape the skin directory.
       const bytes = readFileSync(join(dir, animation.file));
+
+      /*
+       * A variant whose file is missing is dropped, not fatal. It is a
+       * decoration on a state that already has a working base sheet, so
+       * failing the whole skin over one would take the mascot off screen to
+       * avoid losing an occasional stretch. The error is still logged, because
+       * a silently shorter variant list is the kind of thing that otherwise
+       * goes unnoticed for months.
+       */
+      const variants = (animation.variants ?? []).flatMap((variant) => {
+        try {
+          const variantBytes = readFileSync(join(dir, variant.file));
+          return [
+            {
+              dataUrl: `data:image/png;base64,${variantBytes.toString('base64')}`,
+              frames: variant.frames,
+              fps: variant.fps,
+              loop: false,
+            },
+          ];
+        } catch (error) {
+          console.error(`[skin] missing variant ${variant.file} for state ${state}:`, error);
+          return [];
+        }
+      });
+
       states[state] = {
         dataUrl: `data:image/png;base64,${bytes.toString('base64')}`,
         frames: animation.frames,
         fps: animation.fps,
         loop: animation.loop,
+        ...(variants.length > 0 ? { variants } : {}),
+        // Dropped along with the variants: a chance with nothing to pick from
+        // would roll every loop and never produce anything.
+        ...(variants.length > 0 && animation.variantChance !== undefined
+          ? { variantChance: animation.variantChance }
+          : {}),
       };
     } catch (error) {
       console.error(`[skin] missing sheet ${animation.file} for state ${state}:`, error);

@@ -10,6 +10,7 @@ import {
   magicianPose,
   MASCOT_BOX,
   PettingDetector,
+  priorityOf,
   smokeMode,
   type ArrivalStep,
   type BubbleAction,
@@ -27,6 +28,21 @@ const MASCOT_SIZE_MAP: Record<MascotSize, number> = {
   medium: 170,
   large: 210,
 };
+
+/**
+ * How long the celebrate one-shot is held: 16 frames at 12fps, plus a beat so
+ * the last frame is actually seen rather than replaced on the same tick.
+ */
+const CELEBRATE_MS = (16 / 12) * 1000 + 120;
+
+/**
+ * Shortest session worth celebrating.
+ *
+ * The same threshold the rest of the project uses to decide a session was a
+ * misclick. Congratulating someone for a misclick is worse than saying
+ * nothing.
+ */
+const CELEBRATE_MIN_SESSION_MS = 10_000;
 
 /** How long the delight wiggle owns the wrapper; matches the CSS animation. */
 const DELIGHT_MS = 700;
@@ -103,6 +119,24 @@ export function Overlay(): JSX.Element {
   const delightTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   useEffect(() => () => clearTimeout(delightTimer.current), []);
 
+  /**
+   * Celebrating: a one-shot jump when a tracked session ends.
+   *
+   * Held for exactly as long as the sheet takes to play. The sprite loop has
+   * no way to tell a caller that a non-looping animation has finished — it
+   * holds the last frame and polls — so the duration lives here, derived from
+   * the frame count rather than guessed.
+   */
+  const [celebrating, setCelebrating] = useState(false);
+  const celebrateTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  useEffect(() => () => clearTimeout(celebrateTimer.current), []);
+
+  const beginCelebrate = useCallback(() => {
+    setCelebrating(true);
+    if (celebrateTimer.current !== undefined) clearTimeout(celebrateTimer.current);
+    celebrateTimer.current = setTimeout(() => setCelebrating(false), CELEBRATE_MS);
+  }, []);
+
   /** Where the pointer sits over the mascot, -1..1, for the attention lean. */
   const [hoverLean, setHoverLean] = useState(0);
 
@@ -115,7 +149,45 @@ export function Overlay(): JSX.Element {
     y: 0,
   });
 
-  useSpriteAnimation({ canvas, skin, state: mascotState, visible });
+  /*
+   * A ref as well as state: the subscription callbacks further down are
+   * registered once and would otherwise close over the phase from the first
+   * render. Declared up here because the sprite state below reads it too.
+   */
+  const performingRef = useRef(false);
+  useEffect(() => {
+    performingRef.current = phase !== 'none';
+  }, [phase]);
+
+  /*
+   * Mochi's face while it is talking to you.
+   *
+   * `speaking` was a declared mascot state that nothing in the app ever set,
+   * and the default skin had no sheet for it — and a missing sheet silently
+   * falls back to the default state, so even setting it would have changed
+   * nothing visible. The result was that the one thing a companion does, tell
+   * you something, happened with the character breathing underneath exactly
+   * as if it had nothing to say.
+   *
+   * Derived here rather than pushed from main, because the renderer is where
+   * the bubble's whole lifetime is known: main emits a message, and the
+   * renderer decides how long it stays and when a button dismisses it.
+   *
+   * `alert` still wins. The magician entrance performs its own state and must
+   * not be overwritten by the bubble it is arriving to deliver, which is the
+   * ordering `priorityOf` already encodes.
+   */
+  const candidates: MascotState[] = [mascotState];
+  if (celebrating) candidates.push('celebrating');
+  if (bubble !== null && !performingRef.current) candidates.push('speaking');
+  if (delighted) candidates.push('happy');
+  // Highest priority wins, read from `priorityOf` rather than from an if-chain
+  // here, so there is one ordering in the codebase and not two that can drift.
+  const expressed = candidates.reduce((best, next) =>
+    priorityOf(next) > priorityOf(best) ? next : best,
+  );
+
+  useSpriteAnimation({ canvas, skin, state: expressed, visible });
 
   // ---- initial load ------------------------------------------------------
   useEffect(() => {
@@ -224,13 +296,6 @@ export function Overlay(): JSX.Element {
   // ---- magician phase ----------------------------------------------------
   useEffect(() => window.mochi.overlay.onMagicianPhase(setPhase), []);
 
-  // A ref as well as state: the subscription callbacks below are registered
-  // once and would otherwise close over the phase from first render.
-  const performingRef = useRef(false);
-  useEffect(() => {
-    performingRef.current = phase !== 'none';
-  }, [phase]);
-
   /**
    * Re-arrive when visibility returns after a real absence — un-hidden from
    * the tray, screen unlocked. The minimum-hidden threshold is what keeps a
@@ -274,7 +339,22 @@ export function Overlay(): JSX.Element {
       if (!performingRef.current) setMascotState(state);
     });
     const offTimer = window.mochi.timer.onChange((s) => {
-      setTimer(s);
+      /*
+       * A session that just ended earns a celebration.
+       *
+       * Read from the previous snapshot rather than from the incoming one,
+       * because "stopped" on its own is the resting condition — it is true all
+       * night. The transition is the event.
+       *
+       * The floor keeps it honest: the project already treats a sub-10-second
+       * session as a misclick, and congratulating someone for a misclick is
+       * worse than staying quiet.
+       */
+      setTimer((previous) => {
+        const ended = previous?.running === true && !s.running;
+        if (ended && previous.elapsedMs >= CELEBRATE_MIN_SESSION_MS) beginCelebrate();
+        return s;
+      });
       void window.mochi.mascot.current().then((st) => {
         if (!performingRef.current) setMascotState(st);
       });
